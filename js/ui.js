@@ -1,5 +1,6 @@
 // V2.3 — rendu général, historique, menus et navigation
 function render(){
+ syncHouseholdUi();
  const m=metrics();
  document.getElementById("balanceValue").innerHTML=`${euro(m.balance).replace("€","")}<small>€</small>`;
  document.querySelector("#plannedRest .meta-value").textContent=euro(m.plannedBalance);
