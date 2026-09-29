@@ -1,5 +1,14 @@
 # Changelog
 
+## Maintenance pré-V2.4
+
+### Git
+- Création de `develop` comme tronc de développement V2.
+- Création de `gh-pages` pour séparer publication et code source.
+- Ajout de l'audit automatique **App integrity**.
+- Support de l'audit V1 monolithique et V2 modulaire.
+- Workflow préparé pour les Pull Requests vers `main` et `develop`.
+
 ## V2.3 — preview publiée
 
 ### Objectif
