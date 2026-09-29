@@ -72,7 +72,6 @@ function normalizeState(x){
    x.transactions.push({id:`migration-${type}-${key}-${category}-${uid()}`,type,category,owner,amount:delta,date:`${key}-01`,seed:false,adjustment:true,adjustmentLabel:"Ajustement migré"});migrated=true;
   })});x[prop]={};
  });
- if(migrated)localStorage.setItem(STORAGE_KEY,JSON.stringify(x));
  return x;
 }
 function loadState(){
