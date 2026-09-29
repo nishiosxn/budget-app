@@ -350,7 +350,7 @@ function validateImportedState(candidate){
  if(!isPlainObject(candidate)||!Array.isArray(candidate.transactions)||typeof candidate.selectedMonth!=="string")return false;
  if(!/^(Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre) \d{4}$/.test(candidate.selectedMonth))return false;
  const ownerOk=o=>o==null||["common","B","A"].includes(o);
- const txOk=t=>isPlainObject(t)&&typeof t.id==="string"&&["income","expense"].includes(t.type)&&typeof t.category==="string"&&Number.isFinite(Number(t.amount))&&Number(t.amount)>=0&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&ownerOk(t.owner)&&(t.scope==null||t.scope==="forward")&&(t.excludedMonths==null||Array.isArray(t.excludedMonths))&&(t.overrides==null||isPlainObject(t.overrides));
+ const txOk=t=>isPlainObject(t)&&typeof t.id==="string"&&["income","expense"].includes(t.type)&&typeof t.category==="string"&&Number.isFinite(Number(t.amount))&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&ownerOk(t.owner)&&(t.scope==null||t.scope==="forward")&&(t.excludedMonths==null||Array.isArray(t.excludedMonths))&&(t.overrides==null||isPlainObject(t.overrides));
  if(!candidate.transactions.every(txOk))return false;
  for(const key of ["customExpenseCategories","customIncomeCategories","deletedCategoriesGlobal","deletedIncomeCategoriesGlobal"]){if(candidate[key]!=null&&!Array.isArray(candidate[key]))return false}
  for(const key of ["categoryBudgets","incomeBudgets","categoryOwners","incomeCategoryOwners","categoryNames","incomeCategoryNames","expensePlanChanges","incomePlanChanges","deletedCategoryMonths","deletedIncomeCategoryMonths"]){if(candidate[key]!=null&&!isPlainObject(candidate[key]))return false}
