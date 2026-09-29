@@ -1,6 +1,6 @@
 # Changelog
 
-## V2.2 — validation terminée, publication en cours
+## V2.2 — preview publiée
 
 ### Objectif
 - Refactorisation pure de l'architecture JavaScript.
@@ -16,6 +16,11 @@
 - 125 fonctions métier conservées.
 - Nombre d'écouteurs et d'accès au stockage inchangé.
 - Syntaxe JS, IDs DOM et références DOM vérifiés.
+
+### Publication
+- Preview disponible sous `/v2.2/`.
+- PR de publication #3 fusionnée en squash.
+- PR source #4 conservée en brouillon pour validation.
 
 ### Corrigé
 - Conflit de classe CSS `balance` supprimé.
