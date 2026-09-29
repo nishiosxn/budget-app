@@ -1,5 +1,17 @@
 # Changelog
 
+## V2.3 — en développement
+
+### Objectif
+- Supprimer les transactions et budgets personnels du code actif.
+- Introduire un état local V5 autonome.
+- Ajouter un onboarding et une migration V1/V2.x.
+
+### Confidentialité
+- Le nouveau template est neutre et vide.
+- Les noms du foyer deviennent des données locales.
+- Les exports V5 embarquent leur catalogue de catégories afin de ne plus dépendre des constantes publiques.
+
 ## V2.2 — preview publiée
 
 ### Objectif
