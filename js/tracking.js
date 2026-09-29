@@ -1,4 +1,4 @@
-// V2.2 — suivi annuel, comparaisons et graphique
+// V2.3 — suivi annuel, comparaisons et graphique
 let trackingYear=Number(monthKey(state.selectedMonth).slice(0,4));
 function labelsForYear(year){return Array.from({length:12},(_,i)=>labelFromYM(year,i+1))}
 function currentMonthKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
