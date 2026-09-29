@@ -41,7 +41,7 @@ function validateLegacyState(candidate){
  return true
 }
 function legacyCreatedMonth(candidate){
- const months=(candidate.transactions||[]).map(t=>String(t.date||"").slice(0,7)).filter(/^\d{4}-\d{2}$/).sort();
+ const months=(candidate.transactions||[]).map(t=>String(t.date||"").slice(0,7)).filter(value=>/^\d{4}-\d{2}$/.test(value)).sort();
  return months[0]||monthKey(candidate.selectedMonth||currentMonthLabel())
 }
 function inferLegacyPerson(candidate,profile,owner,fallback){
