@@ -21,12 +21,13 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
-- **PR V2.2 source** : #4, brouillon
+- **PR V2.2 source** : #4, fermée comme jalon
+- **PR V2.3 source** : #7, brouillon
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
 ## Fonctionnalités principales
 
-La V1 permet de gérer les revenus, dépenses, épargne, catégories, budgets prévus, récurrences, historique, attribution Baptiste / Anaëlle / à deux, export/import JSON et navigation mensuelle.
+La V1 permet de gérer les revenus, dépenses, épargne, catégories, budgets prévus, récurrences, historique, attribution Personne 1 / Personne 2 / à deux, export/import JSON et navigation mensuelle.
 
 La V2 ajoute un onglet **Suivi** avec bilan annuel, comparaison mensuelle, reste cumulé, détail individuel et graphique réel / prévu.
 
@@ -60,10 +61,11 @@ La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés 
 ## Données locales
 
 - V1 : `budget-foyer-v1`
-- V2 source : `budget-foyer-v2`
+- V2.3 source : `budget-foyer-v2.3`
+- Preview V2.3 : `budget-foyer-v2.3-preview`
 - Chaque preview publiée utilise une clé dédiée afin de ne pas modifier une autre version.
 
-La V2.1 propose une copie **V1 → V2** depuis les paramètres. Cette action ne modifie jamais la V1.
+La V2.3 propose une migration non destructive depuis les versions locales V1/V2.x et les sauvegardes legacy V4.
 
 ## Méthode de travail GitHub
 
