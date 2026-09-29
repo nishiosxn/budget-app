@@ -1,6 +1,6 @@
 # Changelog
 
-## V2.3 — preview prête à publier
+## V2.3 — preview publiée
 
 ### Objectif
 - Supprimer les transactions et budgets personnels du code actif.
@@ -22,6 +22,11 @@
 - Import des sauvegardes legacy V4.
 - Paramètres pour modifier le nom du foyer et des deux personnes.
 - Helper legacy isolé pour reconstruire le profil historique sans remettre les données dans V2.3.
+
+### Publication
+- Preview disponible sous `/v2.3/`.
+- PR de publication #6 fusionnée en squash.
+- PR source #7 conservée en brouillon pour validation.
 
 ### Technique
 - Schéma local passé de V4 à V5.
@@ -79,7 +84,7 @@ Toutes les évolutions importantes du projet sont consignées ici.
 - Moteur central `metricsForMonth()`.
 - Onglet Suivi annuel.
 - Revenus, dépenses, épargne et reste cumulé annuels.
-- Détail Baptiste / Anaëlle.
+- Détail individuel des deux personnes.
 - Comparaison mensuelle et reste cumulé.
 - Graphique réel / prévu.
 - Édition technique des opérations simples.
@@ -92,7 +97,7 @@ Toutes les évolutions importantes du projet sont consignées ici.
 - Vue d'ensemble mensuelle.
 - Revenus, dépenses et épargne.
 - Catégories et budgets prévu/réel.
-- Attribution à deux / Baptiste / Anaëlle.
+- Attribution à deux / Personne 1 / Personne 2.
 - Historique.
 - Opérations récurrentes.
 - Export/import JSON.
