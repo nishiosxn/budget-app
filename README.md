@@ -15,7 +15,7 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **Production** : V1
 - **Développement actif** : V2.1
 - **Branche active** : `v2.1`
-- **PR V2.0 historique** : #1, conservée comme jalon
+- **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon\n- **PR V2.1 active** : #2, brouillon
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
 ## Fonctionnalités principales
