@@ -122,7 +122,7 @@ if(modular&&exists("js/settings.js")){
 
 if(exists("workstate.md")){
   const ws=read("workstate.md");
-  if(!/Branche active/i.test(ws)) fail("workstate.md ne précise pas la branche active");
+  if(!/(Branche active|Branche de développement de référence|Tronc de développement)/i.test(ws)) fail("workstate.md ne précise pas la branche de travail");
   else ok("workstate.md présent");
 }
 
