@@ -19,6 +19,7 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : refactorisation JS terminée, preview publiée
+- **PR V2.2 source** : #4, brouillon
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
 ## Fonctionnalités principales
