@@ -167,3 +167,6 @@ legacy-profile.html
 ## 12. Audit CI central
 
 Depuis la maintenance pré-V2.4, les Pull Requests vers `main` exécutent le check GitHub Actions **App integrity**. La V2.3 sert de première branche source pour vérifier ce contrôle avant de démarrer V2.4.
+
+
+- Audit CI central validé : le workflow supporte désormais la V1 monolithique et l'architecture V2 modulaire. Le prochain commit V2.3 déclenche le check `App integrity`.
