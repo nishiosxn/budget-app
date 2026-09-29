@@ -22,7 +22,8 @@ const SEPTEMBER_ACTUAL={
  income:{"salary-b":1043.64,"salary-a":1234.83,"prime":0,"apl":0,"extra-a":1201.75},
  expense:{rent:128,electricity:80,action:60.55,internet:0,"mutuelle-b":0,"car-insurance":0,"home-insurance":12,phone:10.99,fuel:142.77,"saving-b":0,"saving-a":0,chatgpt:25,discord:9.99,"icloud-b":2.99,"snap-b":3.99,netflix:14.99,"combat-patrol":51.96,spotify:17.2,"snap-a":3.99,"icloud-a":2.99,"car-maint":0,"home-products":0,health:0,clothes:0,restaurants:75.3,"leisure-b":0,"leisure-a":0,gifts:0,vacations:0,"home-equipment":0,amazon:46.03,foire:1.99,coffee:3,zevent:1,aldi:1,"expense-b":468,"expense-a":1776.42}
 };
-const STORAGE_KEY="budget-foyer-v1";
+const STORAGE_KEY="budget-foyer-v2";
+const V1_STORAGE_KEY="budget-foyer-v1";
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits:2}).format(Number(n)||0);
 const escapeHtml=s=>String(s).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -153,7 +154,7 @@ function renderCategories(m){
  document.getElementById("categoryGrid").innerHTML=`<section class="category-group"><div class="category-group-head"><h2>Revenus</h2><span>Entrées d’argent · réel / prévu</span></div><div class="category-cards income-cards">${incomeCard}</div></section><section class="category-group"><div class="category-group-head"><h2>Dépenses</h2><span>Argent réellement consommé · hors épargne</span></div><div class="category-cards">${expenseCards}</div></section><section class="category-group saving-group"><div class="category-group-head"><h2>Épargne</h2><span>Argent mis de côté · déduit du disponible</span></div><div class="category-cards income-cards">${savingCard}</div></section>`;
 }
 function ownerLabel(o){return o==="common"?"À deux":o==="B"?"Baptiste":"Anaëlle"}
-function renderHistory(m){const entries=historyEntries(m);document.getElementById("historyList").innerHTML=entries.length?entries.map(entry=>{if(entry.group){const p=groupPresentation(entry),date=new Date((entry.date||transactionDateForSelectedMonth())+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});return `<div class="history-group" data-history-group="${entry.id}"><div class="history-row"><div class="history-icon ${p.type}">${p.icon}</div><div><div class="history-title">${escapeHtml(entry.label)}</div><div class="history-date">${entry.tx.length} opérations · ${date} <button class="history-toggle" type="button" data-toggle-group="${entry.id}">Voir le détail</button></div></div><div class="history-amount row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div><div class="history-actions"><button class="history-delete" title="Supprimer ce groupe" data-delete-group="${entry.id}" aria-label="Supprimer ce groupe">×</button></div></div><div class="history-group-details">${entry.tx.map(t=>{const tp=transactionPresentation(t);return `<div class="history-detail-row"><span>${escapeHtml(transactionTitle(t))}</span><strong>${tp.prefix}${euro(Math.abs(tp.amount))}</strong></div>`}).join("")}</div></div>`}const t=entry.tx,p=transactionPresentation(t),recurring=!!t.recurringOccurrence||t.scope==="forward",actions=recurring?`<div class="history-actions"><button class="history-edit" type="button" title="Modifier la récurrence" aria-label="Modifier la récurrence" data-edit-recurring="${t.sourceId||t.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="history-delete" title="Supprimer la récurrence" aria-label="Supprimer la récurrence" data-delete-recurring="${t.sourceId||t.id}">×</button></div>`:`<div class="history-actions"><button class="history-delete" title="Supprimer" aria-label="Supprimer l’opération" data-delete="${t.id}">×</button></div>`;return `<div class="history-row"><div class="history-icon ${p.saving?'saving':t.type}">${p.icon}</div><div><div class="history-title">${escapeHtml(transactionTitle(t))}</div><div class="history-date">${transactionContext(t,false)}</div></div><div class="history-amount row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div>${actions}</div>`}).join(""):`<div class="empty">Aucune opération sur ce mois.</div>`}
+function renderHistory(m){const entries=historyEntries(m);document.getElementById("historyList").innerHTML=entries.length?entries.map(entry=>{if(entry.group){const p=groupPresentation(entry),date=new Date((entry.date||transactionDateForSelectedMonth())+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});return `<div class="history-group" data-history-group="${entry.id}"><div class="history-row"><div class="history-icon ${p.type}">${p.icon}</div><div><div class="history-title">${escapeHtml(entry.label)}</div><div class="history-date">${entry.tx.length} opérations · ${date} <button class="history-toggle" type="button" data-toggle-group="${entry.id}">Voir le détail</button></div></div><div class="history-amount row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div><div class="history-actions"><button class="history-delete" title="Supprimer ce groupe" data-delete-group="${entry.id}" aria-label="Supprimer ce groupe">×</button></div></div><div class="history-group-details">${entry.tx.map(t=>{const tp=transactionPresentation(t);return `<div class="history-detail-row"><span>${escapeHtml(transactionTitle(t))}</span><strong>${tp.prefix}${euro(Math.abs(tp.amount))}</strong></div>`}).join("")}</div></div>`}const t=entry.tx,p=transactionPresentation(t),recurring=!!t.recurringOccurrence||t.scope==="forward",actions=recurring?`<div class="history-actions"><button class="history-edit" type="button" title="Modifier la récurrence" aria-label="Modifier la récurrence" data-edit-recurring="${t.sourceId||t.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="history-delete" title="Supprimer la récurrence" aria-label="Supprimer la récurrence" data-delete-recurring="${t.sourceId||t.id}">×</button></div>`:`<div class="history-actions"><button class="history-edit" type="button" title="Modifier l’opération" aria-label="Modifier l’opération" data-edit-transaction="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="history-delete" title="Supprimer" aria-label="Supprimer l’opération" data-delete="${t.id}">×</button></div>`;return `<div class="history-row"><div class="history-icon ${p.saving?'saving':t.type}">${p.icon}</div><div><div class="history-title">${escapeHtml(transactionTitle(t))}</div><div class="history-date">${transactionContext(t,false)}</div></div><div class="history-amount row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div>${actions}</div>`}).join(""):`<div class="empty">Aucune opération sur ce mois.</div>`}
 
 
 const customSelects=new Map();
@@ -164,26 +165,62 @@ function buildCustomSelect(select){
   const root=document.querySelector(`.custom-select[data-select="${select.id}"]`);if(!root)return null;
   const trigger=root.querySelector(".custom-select-trigger"),valueEl=root.querySelector(".custom-select-value"),menu=root.querySelector(".custom-select-menu"),scroller=menu.querySelector(".custom-select-scroll");
   const check=`<span class="custom-select-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4L18 8"/></svg></span>`;
+  function options(){return [...scroller.querySelectorAll(".custom-select-option")]}
+  function close(returnFocus=false){root.classList.remove("open");trigger.setAttribute("aria-expanded","false");if(returnFocus)trigger.focus()}
+  function focusOption(index){
+    const list=options();if(!list.length)return;
+    const next=Math.max(0,Math.min(index,list.length-1));
+    list.forEach((o,i)=>o.classList.toggle("focused",i===next));
+    list[next].focus();list[next].scrollIntoView({block:"nearest"})
+  }
+  function open(prefer="selected"){
+    closeCustomSelects(root);root.classList.add("open");trigger.setAttribute("aria-expanded","true");
+    const list=options();if(!list.length)return;
+    let index=prefer==="last"?list.length-1:0;
+    if(prefer==="selected"){const selectedIndex=list.findIndex(o=>o.dataset.value===select.value);index=selectedIndex>=0?selectedIndex:0}
+    requestAnimationFrame(()=>focusOption(index))
+  }
+  function choose(option){
+    if(!option)return;select.value=option.dataset.value;select.dispatchEvent(new Event("change",{bubbles:true}));close(true)
+  }
   function rebuild(){
     const parts=[];
     [...select.children].forEach(node=>{
       if(node.tagName==="OPTGROUP"){
         parts.push(`<div class="custom-select-group">${escapeHtml(node.label)}</div>`);
         [...node.children].forEach(opt=>{if(opt.disabled&&opt.value==="")return;const create=opt.value==="__create__"?" create-option":"";parts.push(`<button type="button" class="custom-select-option${create}" role="option" data-value="${escapeHtml(opt.value)}">${check}<span style="flex:1">${escapeHtml(opt.textContent)}</span></button>`)});
-      } else if(node.tagName==="OPTION"){if(node.disabled&&node.value==="")return;const create=node.value==="__create__"?" create-option":"";parts.push(`<button type="button" class="custom-select-option${create}" role="option" data-value="${escapeHtml(node.value)}">${check}<span style="flex:1">${escapeHtml(node.textContent)}</span></button>`)}
+      }else if(node.tagName==="OPTION"){
+        if(node.disabled&&node.value==="")return;const create=node.value==="__create__"?" create-option":"";
+        parts.push(`<button type="button" class="custom-select-option${create}" role="option" data-value="${escapeHtml(node.value)}">${check}<span style="flex:1">${escapeHtml(node.textContent)}</span></button>`)
+      }
     });
-    scroller.innerHTML=parts.join("");sync();
+    scroller.innerHTML=parts.join("");sync()
   }
   function sync(){
     const selected=select.options[select.selectedIndex];
     valueEl.textContent=selected?selected.textContent:"Choisir";
-    scroller.querySelectorAll(".custom-select-option").forEach(o=>{const active=o.dataset.value===select.value;o.classList.toggle("selected",active);o.setAttribute("aria-selected",active?"true":"false")});
+    options().forEach(o=>{const active=o.dataset.value===select.value;o.classList.toggle("selected",active);o.classList.remove("focused");o.setAttribute("aria-selected",active?"true":"false")})
   }
-  trigger.addEventListener("click",e=>{e.stopPropagation();const willOpen=!root.classList.contains("open");closeCustomSelects(root);root.classList.toggle("open",willOpen);trigger.setAttribute("aria-expanded",willOpen?"true":"false");if(willOpen){const sel=scroller.querySelector(".selected");sel?.scrollIntoView({block:"nearest"})}});
-  menu.addEventListener("click",e=>{const option=e.target.closest(".custom-select-option");if(!option)return;select.value=option.dataset.value;select.dispatchEvent(new Event("change",{bubbles:true}));root.classList.remove("open");trigger.setAttribute("aria-expanded","false")});
-  trigger.addEventListener("keydown",e=>{if(["ArrowDown","ArrowUp","Enter"," "].includes(e.key)){e.preventDefault();root.classList.add("open");trigger.setAttribute("aria-expanded","true")}if(e.key==="Escape"){root.classList.remove("open");trigger.setAttribute("aria-expanded","false")}});
+  trigger.addEventListener("click",e=>{e.stopPropagation();root.classList.contains("open")?close():open("selected")});
+  menu.addEventListener("click",e=>{const option=e.target.closest(".custom-select-option");if(option)choose(option)});
+  trigger.addEventListener("keydown",e=>{
+    if(e.key==="ArrowDown"){e.preventDefault();open("selected")}
+    else if(e.key==="ArrowUp"){e.preventDefault();open("last")}
+    else if(e.key==="Enter"||e.key===" "){e.preventDefault();root.classList.contains("open")?close():open("selected")}
+    else if(e.key==="Escape"){e.preventDefault();close()}
+  });
+  menu.addEventListener("keydown",e=>{
+    const list=options(),current=list.indexOf(document.activeElement);if(current<0)return;
+    if(e.key==="ArrowDown"){e.preventDefault();focusOption((current+1)%list.length)}
+    else if(e.key==="ArrowUp"){e.preventDefault();focusOption((current-1+list.length)%list.length)}
+    else if(e.key==="Home"){e.preventDefault();focusOption(0)}
+    else if(e.key==="End"){e.preventDefault();focusOption(list.length-1)}
+    else if(e.key==="Enter"||e.key===" "){e.preventDefault();choose(list[current])}
+    else if(e.key==="Escape"){e.preventDefault();close(true)}
+    else if(e.key==="Tab"){close(false)}
+  });
   select.addEventListener("change",sync);
-  const api={root,trigger,menu,rebuild,sync};customSelects.set(select,api);rebuild();return api;
+  const api={root,trigger,menu,rebuild,sync,close,open};customSelects.set(select,api);rebuild();return api;
 }
 function rebuildCustomSelect(select){customSelects.get(select)?.rebuild()}
 function syncCustomSelect(select){customSelects.get(select)?.sync()}
@@ -232,7 +269,19 @@ function setTransactionScope(scope){transactionScope=scope;transactionScopeButto
 function modalDataType(){return modalType==="saving"?"expense":modalType}
 function categoryDefaultOwner(){const type=modalDataType(),c=catById(categorySelect.value,type);return c?planForCategory(c,state.selectedMonth,type).owner||"common":"common"}
 function groupedExpenseOptions(cats){return ["Obligatoires","Abonnements","Vie courante"].map(s=>`<optgroup label="${s}">${cats.filter(c=>c.section===s).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}</optgroup>`).join("")}
-function populateTransactionCategories(selected=""){const isSaving=modalType==="saving",type=modalDataType(),cats=isSaving?visibleSavingCategories():type==="expense"?visibleExpenseCategories():visibleIncomeCategories(),placeholder=`<option value="" disabled>Choisir une catégorie</option>`,choices=type==="expense"?groupedExpenseOptions(cats):cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(""),create=isSaving?"":`<optgroup label="Nouveau"><option value="__create__">＋ Créer un nouveau champ…</option></optgroup>`;categorySelect.innerHTML=placeholder+choices+create;categorySelect.value=selected&&[...categorySelect.options].some(o=>o.value===selected)?selected:"";rebuildCustomSelect(categorySelect);syncCustomSelect(categorySelect)}
+function populateTransactionCategories(selected=""){
+ const isSaving=modalType==="saving",type=modalDataType(),cats=isSaving?visibleSavingCategories():type==="expense"?visibleExpenseCategories():visibleIncomeCategories();
+ const placeholder=`<option value="" disabled>Choisir une catégorie</option>`;
+ let choices=type==="expense"?groupedExpenseOptions(cats):cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+ if(selected&&!cats.some(c=>c.id===selected)){
+   const archived=catById(selected,type);
+   if(archived&&(!isSaving||archived.saving))choices+=`<optgroup label="Archivée"><option value="${escapeHtml(archived.id)}">${escapeHtml(archived.name)} · archivée</option></optgroup>`;
+ }
+ const create=isSaving?"":`<optgroup label="Nouveau"><option value="__create__">＋ Créer un nouveau champ…</option></optgroup>`;
+ categorySelect.innerHTML=placeholder+choices+create;
+ categorySelect.value=selected&&[...categorySelect.options].some(o=>o.value===selected)?selected:"";
+ rebuildCustomSelect(categorySelect);syncCustomSelect(categorySelect)
+}
 function selectCreatedTransactionCategory(id){populateTransactionCategories(id);setModalOwner(categoryDefaultOwner());refreshAmountState();setTimeout(()=>amountInput.focus(),40)}
 function openModal(type,transaction=null){
  modalType=type;editingTransactionId=transaction?.id||null;const isSaving=type==="saving",editing=!!transaction;
@@ -281,6 +330,20 @@ document.getElementById("historyList").addEventListener("click",e=>{const toggle
 
 const settingsBackdrop=document.getElementById("settingsBackdrop");function openSettings(){settingsBackdrop.classList.add("open");settingsBackdrop.setAttribute("aria-hidden","false")}function closeSettings(){settingsBackdrop.classList.remove("open");settingsBackdrop.setAttribute("aria-hidden","true")}document.getElementById("settingsBtn").addEventListener("click",openSettings);document.getElementById("closeSettings").addEventListener("click",closeSettings);settingsBackdrop.addEventListener("click",e=>{if(e.target===settingsBackdrop)closeSettings()});
 
+function reloadUiFromState(){
+ applyCategoryState();ensureMonthAvailable(state.selectedMonth);
+ MONTHS.forEach(label=>{if(![...monthSelect.options].some(o=>o.value===label)){const o=document.createElement("option");o.value=label;o.textContent=label;monthSelect.appendChild(o)}});
+ rebuildCustomSelect(monthSelect);monthSelect.value=state.selectedMonth;syncCustomSelect(monthSelect);trackingYear=Number(monthKey(state.selectedMonth).slice(0,4));updateMonthNav();render()
+}
+document.getElementById("copyV1Btn")?.addEventListener("click",()=>{
+ try{
+  const raw=localStorage.getItem(V1_STORAGE_KEY);if(!raw){alert("Aucune donnée V1 locale n’a été trouvée dans ce navigateur.");return}
+  const candidate=JSON.parse(raw);if(!candidate||!Array.isArray(candidate.transactions)){alert("Les données V1 trouvées ne sont pas exploitables.");return}
+  if(!confirm("Copier les données V1 dans cette V2 ? Les données V1 resteront intactes, mais les données actuelles de la V2 seront remplacées."))return;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify({...candidate,schemaVersion:4}));state=loadState();reloadUiFromState();showUndoToast("Données V1 copiées dans la V2");closeSettings()
+ }catch{alert("Impossible de copier les données V1 dans cette V2.")}
+});
+
 document.getElementById("exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify({app:"Budget foyer",version:4,exportedAt:new Date().toISOString(),state},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`budget-foyer-${monthKey(state.selectedMonth)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 function isPlainObject(v){return !!v&&typeof v==="object"&&!Array.isArray(v)}
 function validateImportedState(candidate){
@@ -293,22 +356,30 @@ function validateImportedState(candidate){
  for(const key of ["categoryBudgets","incomeBudgets","categoryOwners","incomeCategoryOwners","categoryNames","incomeCategoryNames","expensePlanChanges","incomePlanChanges","deletedCategoryMonths","deletedIncomeCategoryMonths"]){if(candidate[key]!=null&&!isPlainObject(candidate[key]))return false}
  return true
 }
-const importFile=document.getElementById("importFile");document.getElementById("importBtn").addEventListener("click",()=>importFile.click());importFile.addEventListener("change",async()=>{const file=importFile.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),candidate=parsed?.state||parsed;if(!validateImportedState(candidate))throw new Error("format");if(!confirm("Importer cette sauvegarde et remplacer les données locales actuelles ?")){importFile.value="";return}candidate.schemaVersion=4;localStorage.setItem(STORAGE_KEY,JSON.stringify(candidate));state=loadState();applyCategoryState();ensureMonthAvailable(state.selectedMonth);MONTHS.forEach(label=>{if(![...monthSelect.options].some(o=>o.value===label)){const o=document.createElement("option");o.value=label;o.textContent=label;monthSelect.appendChild(o)}});rebuildCustomSelect(monthSelect);monthSelect.value=state.selectedMonth;syncCustomSelect(monthSelect);trackingYear=Number(monthKey(state.selectedMonth).slice(0,4));updateMonthNav();render();showUndoToast("Sauvegarde importée")}catch{alert("Ce fichier n’est pas une sauvegarde valide de Budget foyer.")}finally{importFile.value=""}});
+const importFile=document.getElementById("importFile");document.getElementById("importBtn").addEventListener("click",()=>importFile.click());importFile.addEventListener("change",async()=>{const file=importFile.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),candidate=parsed?.state||parsed;if(!validateImportedState(candidate))throw new Error("format");if(!confirm("Importer cette sauvegarde et remplacer les données locales actuelles ?")){importFile.value="";return}candidate.schemaVersion=4;localStorage.setItem(STORAGE_KEY,JSON.stringify(candidate));state=loadState();reloadUiFromState();showUndoToast("Sauvegarde importée")}catch{alert("Ce fichier n’est pas une sauvegarde valide de Budget foyer.")}finally{importFile.value=""}});
 document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Réinitialiser toutes les données avec la base de septembre 2026 ? Cette action efface les modifications locales.")){state=seedState();applyCategoryState();saveState();monthSelect.value=state.selectedMonth;syncCustomSelect(monthSelect);updateMonthNav();render();closeSettings()}});
 
 let trackingYear=Number(monthKey(state.selectedMonth).slice(0,4));
 function labelsForYear(year){return Array.from({length:12},(_,i)=>labelFromYM(year,i+1))}
-function hasMonthActivity(m){return m.tx.length>0||m.plannedIncome>0||m.plannedExpense>0||m.plannedSaving>0}
+function currentMonthKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
+function monthStatus(m){
+ const now=currentMonthKey();
+ if(m.key>now)return"future";
+ if(m.key===now)return"current";
+ return"past"
+}
+function hasActualActivity(m){return monthStatus(m)!=="future"&&m.tx.length>0}
 function annualMetrics(year){
  const months=labelsForYear(year).map(label=>metricsForMonth(label));
- const active=months.filter(hasMonthActivity);
- const total=prop=>sum(months.map(m=>Number(m[prop])||0));
+ const active=months.filter(hasActualActivity);
+ const actualTotal=prop=>sum(active.map(m=>Number(m[prop])||0));
+ const plannedTotal=prop=>sum(months.map(m=>Number(m[prop])||0));
  return {
   year,months,active,
-  income:total("income"),expense:total("expense"),saving:total("saving"),balance:total("balance"),
-  plannedIncome:total("plannedIncome"),plannedExpense:total("plannedExpense"),plannedSaving:total("plannedSaving"),plannedBalance:total("plannedBalance"),
-  incomeB:total("incomeB"),incomeA:total("incomeA"),expenseB:total("expenseB"),expenseA:total("expenseA"),
-  savingB:total("savingBShare"),savingA:total("savingAShare"),restB:total("restB"),restA:total("restA")
+  income:actualTotal("income"),expense:actualTotal("expense"),saving:actualTotal("saving"),balance:actualTotal("balance"),
+  plannedIncome:plannedTotal("plannedIncome"),plannedExpense:plannedTotal("plannedExpense"),plannedSaving:plannedTotal("plannedSaving"),plannedBalance:plannedTotal("plannedBalance"),
+  incomeB:actualTotal("incomeB"),incomeA:actualTotal("incomeA"),expenseB:actualTotal("expenseB"),expenseA:actualTotal("expenseA"),
+  savingB:actualTotal("savingBShare"),savingA:actualTotal("savingAShare"),restB:actualTotal("restB"),restA:actualTotal("restA")
  }
 }
 function formatSignedEuro(v){return `${v>0.005?"+":""}${euro(v)}`}
@@ -316,45 +387,54 @@ function trendClass(v,positiveIsGood=true){if(Math.abs(v)<.005)return"neutral";c
 function monthShort(label){return label.split(" ")[0].slice(0,4).replace("é","e").replace("û","u")}
 function renderTrackingChart(months){
  const host=document.getElementById("trackingChart");if(!host)return;
- const values=months.flatMap(m=>[m.balance,m.plannedBalance]),max=Math.max(1,...values.map(v=>Math.abs(Number(v)||0)));
+ const actualMonths=months.filter(hasActualActivity),values=[...months.map(m=>m.plannedBalance),...actualMonths.map(m=>m.balance)],max=Math.max(1,...values.map(v=>Math.abs(Number(v)||0)));
  const W=900,H=270,pad={l:54,r:18,t:18,b:42},innerW=W-pad.l-pad.r,innerH=H-pad.t-pad.b,zeroY=pad.t+innerH/2,scale=(innerH/2-12)/max;
  const x=i=>pad.l+(innerW*(i/(months.length-1||1))),y=v=>zeroY-(Number(v)||0)*scale;
- const real=months.map((m,i)=>`${x(i)},${y(m.balance)}`).join(" "),planned=months.map((m,i)=>`${x(i)},${y(m.plannedBalance)}`).join(" ");
+ const planned=months.map((m,i)=>`${x(i)},${y(m.plannedBalance)}`).join(" ");
+ const realPoints=months.map((m,i)=>hasActualActivity(m)?{m,i}:null).filter(Boolean),real=realPoints.map(({m,i})=>`${x(i)},${y(m.balance)}`).join(" ");
  const grid=[-1,-.5,0,.5,1].map(f=>{const yy=zeroY-f*(innerH/2-12),val=f*max;return `<line class="${f===0?"chart-zero-line":"chart-grid-line"}" x1="${pad.l}" x2="${W-pad.r}" y1="${yy}" y2="${yy}"/><text class="chart-axis-label" x="${pad.l-8}" y="${yy+3}" text-anchor="end">${Math.round(val)} €</text>`}).join("");
  const labels=months.map((m,i)=>`<text class="chart-month-label" x="${x(i)}" y="${H-12}" text-anchor="middle">${monthShort(m.label)}</text>`).join("");
- const realPts=months.map((m,i)=>`<circle class="chart-real-point" cx="${x(i)}" cy="${y(m.balance)}" r="4"><title>${m.label} · Réel ${euro(m.balance)}</title></circle>`).join("");
+ const realPts=realPoints.map(({m,i})=>`<circle class="chart-real-point" cx="${x(i)}" cy="${y(m.balance)}" r="4"><title>${m.label} · Réel ${euro(m.balance)}</title></circle>`).join("");
  const plannedPts=months.map((m,i)=>`<circle class="chart-planned-point" cx="${x(i)}" cy="${y(m.plannedBalance)}" r="3"><title>${m.label} · Prévu ${euro(m.plannedBalance)}</title></circle>`).join("");
- host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du reste mensuel réel et prévu"><g>${grid}</g><polyline class="chart-planned-line" points="${planned}"/><polyline class="chart-real-line" points="${real}"/>${plannedPts}${realPts}${labels}</svg>`;
+ host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du reste mensuel réel et prévu"><g>${grid}</g><polyline class="chart-planned-line" points="${planned}"/>${realPoints.length>1?`<polyline class="chart-real-line" points="${real}"/>`:""}${plannedPts}${realPts}${labels}</svg>`;
 }
 function renderTracking(){
  const yearEl=document.getElementById("trackingYear");if(!yearEl)return;
- const a=annualMetrics(trackingYear),activeCount=Math.max(1,a.active.length);
+ const a=annualMetrics(trackingYear),activeCount=a.active.length;
  yearEl.textContent=String(trackingYear);
  document.getElementById("yearIncome").textContent=euro(a.income);
  document.getElementById("yearExpense").textContent=euro(a.expense);
  document.getElementById("yearSaving").textContent=euro(a.saving);
  document.getElementById("yearBalance").textContent=euro(a.balance);
- document.getElementById("yearIncomeDelta").textContent=`Prévu ${euro(a.plannedIncome)}`;
- document.getElementById("yearExpenseDelta").textContent=`Prévu ${euro(a.plannedExpense)}`;
- document.getElementById("yearSavingDelta").textContent=`Prévu ${euro(a.plannedSaving)}`;
- document.getElementById("yearBalanceAverage").textContent=`Moyenne ${euro(a.balance/activeCount)} / mois actif`;
+ document.getElementById("yearIncomeDelta").textContent=`Prévu année ${euro(a.plannedIncome)}`;
+ document.getElementById("yearExpenseDelta").textContent=`Prévu année ${euro(a.plannedExpense)}`;
+ document.getElementById("yearSavingDelta").textContent=`Prévu année ${euro(a.plannedSaving)}`;
+ document.getElementById("yearBalanceAverage").textContent=activeCount?`Moyenne ${euro(a.balance/activeCount)} / mois renseigné`:"Aucun mois renseigné";
  document.getElementById("yearRestB").textContent=euro(a.restB);
  document.getElementById("yearRestA").textContent=euro(a.restA);
  document.getElementById("yearPersonBDetail").textContent=`${euro(a.incomeB)} de revenus · ${euro(a.expenseB)} dépensés · ${euro(a.savingB)} épargnés`;
  document.getElementById("yearPersonADetail").textContent=`${euro(a.incomeA)} de revenus · ${euro(a.expenseA)} dépensés · ${euro(a.savingA)} épargnés`;
- const currentKey=monthKey(state.selectedMonth);
+ const selectedKey=monthKey(state.selectedMonth);
+ let actualCumulative=0,forecastCumulative=0;
  document.getElementById("trackingMonths").innerHTML=a.months.map((m,i)=>{
-   const prev=i>0?a.months[i-1]:metricsForMonth(labelFromYM(trackingYear-1,12)),delta=m.balance-prev.balance,trend=trendClass(delta,true),empty=!hasMonthActivity(m),cumulative=sum(a.months.slice(0,i+1).map(x=>x.balance));
-   return `<div class="tracking-month-row ${empty?"empty":""} ${m.key===currentKey?"current":""}">
-     <span class="month-name">${m.label}</span>
-     <span class="money">${euro(m.income)}</span>
-     <span class="money">${euro(m.expense)}</span>
-     <span class="money">${euro(m.saving)}</span>
-     <span class="money">${euro(m.balance)}</span>
-     <span class="money">${euro(cumulative)}</span>
-     <span class="trend ${trend}">${Math.abs(delta)<.005?"0 €":formatSignedEuro(delta)}</span>
-     <div class="month-main" style="display:none"><span>Reste du mois</span><strong>${euro(m.balance)}</strong></div>
-     <div class="month-sub"><span>Revenus ${euro(m.income)}</span><span>Dépenses ${euro(m.expense)}</span><span>Épargne ${euro(m.saving)}</span><span>Cumul ${euro(cumulative)}</span></div>
+   const status=monthStatus(m),future=status==="future",hasActual=hasActualActivity(m);
+   if(hasActual)actualCumulative+=m.balance;
+   forecastCumulative+=future?m.plannedBalance:(hasActual?m.balance:0);
+   const prevActual=[...a.months.slice(0,i)].reverse().find(hasActualActivity);
+   const delta=hasActual&&prevActual?m.balance-prevActual.balance:null,trend=delta==null?"neutral":trendClass(delta,true);
+   const shownIncome=future?m.plannedIncome:m.income,shownExpense=future?m.plannedExpense:m.expense,shownSaving=future?m.plannedSaving:m.saving,shownBalance=future?m.plannedBalance:m.balance,shownCumulative=future?forecastCumulative:actualCumulative;
+   const badge=future?'<span class="month-status future">À venir · prévu</span>':status==="current"?'<span class="month-status current">En cours</span>':hasActual?'<span class="month-status done">Réalisé</span>':'<span class="month-status empty">Non renseigné</span>';
+   const trendText=future?"Prévision":delta==null?"—":Math.abs(delta)<.005?"0 €":formatSignedEuro(delta);
+   return `<div class="tracking-month-row ${future?"future":""} ${!hasActual&&!future?"empty":""} ${m.key===selectedKey?"current-selected":""}">
+     <span class="month-name"><span>${m.label}</span>${badge}</span>
+     <span class="money ${future?"planned-value":""}">${euro(shownIncome)}</span>
+     <span class="money ${future?"planned-value":""}">${euro(shownExpense)}</span>
+     <span class="money ${future?"planned-value":""}">${euro(shownSaving)}</span>
+     <span class="money ${future?"planned-value":""}">${euro(shownBalance)}</span>
+     <span class="money ${future?"planned-value":""}">${euro(shownCumulative)}</span>
+     <span class="trend ${future?"forecast":trend}">${trendText}</span>
+     <div class="month-main" style="display:none"><span>${future?"Reste prévu":"Reste du mois"}</span><strong>${euro(shownBalance)}</strong></div>
+     <div class="month-sub"><span>Revenus ${euro(shownIncome)}</span><span>Dépenses ${euro(shownExpense)}</span><span>Épargne ${euro(shownSaving)}</span><span>Cumul ${euro(shownCumulative)}</span></div>
    </div>`
  }).join("");
  renderTrackingChart(a.months);
