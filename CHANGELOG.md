@@ -1,5 +1,30 @@
 # Changelog
 
+## V2.2 — preview publiée
+
+### Objectif
+- Refactorisation pure de l'architecture JavaScript.
+- Aucun changement fonctionnel volontaire par rapport à V2.1.
+
+### Refactorisation
+- `js/app.js` découpé en 10 fichiers spécialisés.
+- `app.js` réduit à l'initialisation finale.
+- Ordre de chargement explicite via scripts `defer`.
+- Schéma de données version 4 inchangé.
+
+### Validation
+- 125 fonctions métier conservées.
+- Nombre d'écouteurs et d'accès au stockage inchangé.
+- Syntaxe JS, IDs DOM et références DOM vérifiés.
+
+### Publication
+- Preview versionnée disponible sous `/v2.2/`.
+- Stockage local de preview isolé des V1/V2.0/V2.1.
+
+### Corrigé
+- Conflit de classe CSS `balance` supprimé.
+- Le `letter-spacing` négatif est maintenant limité au grand montant de la carte principale.
+
 Toutes les évolutions importantes du projet sont consignées ici.
 
 ## V2.1 — preview
