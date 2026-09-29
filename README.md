@@ -7,7 +7,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Version stable V1** : https://nishiosxn.github.io/budget-app/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
 - **Preview V2.1** : https://nishiosxn.github.io/budget-app/v2.1/
-- **Preview V2.2** : sera publiée à la fin du jalon, sans écraser V2.1
+- **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/ *(après fusion de la PR de publication)*
 
 Le dépôt est public. Les opérations saisies dans l'application restent dans le `localStorage` du navigateur et ne sont pas envoyées sur GitHub. Les données initiales présentes directement dans le code source restent en revanche visibles dans le dépôt.
 
@@ -18,7 +18,7 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **Branche active** : `v2.2`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
-- **V2.2** : refactorisation JS en cours
+- **V2.2** : refactorisation JS terminée, validation statique OK
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
 ## Fonctionnalités principales
@@ -36,13 +36,22 @@ index.html
 css/
   style.css
 js/
+  config.js
+  data.js
+  storage.js
+  calculations.js
+  ui.js
+  categories.js
+  transactions.js
+  settings.js
+  tracking.js
   app.js
 README.md
 workstate.md
 CHANGELOG.md
 ```
 
-La V2.2 est dédiée au découpage de `js/app.js` en fichiers spécialisés, sans modification fonctionnelle.
+La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés sans modifier volontairement la logique métier. `app.js` ne contient plus que l'initialisation finale.
 
 ## Données locales
 
