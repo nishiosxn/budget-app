@@ -5,113 +5,139 @@
 ## 1. État de référence
 
 - Dépôt : `nishiosxn/budget-app`
-- Branche de production : `main`
-- Version publique stable : **V1**
-- Branche de développement active : **v2.1**
-- Base de v2.1 : branche **v2**
-- Dernier commit fonctionnel connu de v2.1 : `24c85660b25a14d7f8ca0566c6b336f4dd0d2035`
-- Schéma de données local : **4**
-- PR V2.0 historique (fermée, non fusionnée) : https://github.com/nishiosxn/budget-app/pull/1\n- PR V2.1 active (brouillon) : https://github.com/nishiosxn/budget-app/pull/2
-
-## 2. URLs
-
-- Production V1 : https://nishiosxn.github.io/budget-app/
-- Snapshot V2.0 : https://nishiosxn.github.io/budget-app/v2/
+- Production : `main` → V1
+- Branche active : **v2.2**
+- Base : **v2.1**
+- Objectif V2.2 : **refactorisation JavaScript uniquement**
+- Schéma de données : **4**, inchangé
+- V2.1 fonctionnelle de référence : `24c85660b25a14d7f8ca0566c6b336f4dd0d2035`
+- PR V2.1 : https://github.com/nishiosxn/budget-app/pull/2
 - Preview V2.1 : https://nishiosxn.github.io/budget-app/v2.1/
 
-Règle : ne jamais remplacer un ancien dossier de preview. Une nouvelle version reçoit un nouveau chemin.
+## 2. Règle principale V2.2
 
-## 3. Protocole de travail obligatoire
+La V2.2 ne doit introduire **aucune modification fonctionnelle volontaire**.
 
-1. Lire `README.md` puis `workstate.md`.
-2. Identifier la branche active et le dernier commit de référence.
-3. Utiliser un diff GitHub entre la branche active et sa base avant toute inspection large.
-4. Lire uniquement les fichiers ou sections qui ont changé, sauf incohérence détectée.
-5. Avant chaque écriture, récupérer le SHA actuel du fichier ciblé.
-6. Ne jamais utiliser de force-push ni réécrire l'historique.
-7. Pour un nouveau jalon fonctionnel, créer une nouvelle branche/version au lieu de modifier un snapshot précédent.
-8. Après les changements : vérifier syntaxe JS, IDs HTML dupliqués, références DOM manquantes et cohérence des liens de preview.
-9. Mettre à jour `workstate.md`, `CHANGELOG.md` et le README si l'état visible du projet change.
-10. Publier une nouvelle preview versionnée sur GitHub Pages sans supprimer les anciennes.
+Doivent rester identiques à V2.1 :
+- calculs ;
+- données ;
+- stockage ;
+- interface ;
+- wording visible ;
+- récurrences ;
+- historique ;
+- page Suivi ;
+- comportement responsive.
 
-## 4. Architecture à connaître
+Le seul objectif est de rendre le code plus lisible et maintenable avant V2.3 et V2.4.
 
-Source V2.x :
+## 3. Architecture cible V2.2
 
 ```text
-index.html
-css/style.css
-js/app.js
+js/
+  config.js
+  data.js
+  storage.js
+  calculations.js
+  ui.js
+  categories.js
+  transactions.js
+  settings.js
+  tracking.js
+  app.js
 ```
 
-La V1 historique était principalement monolithique. La V2 a déjà séparé HTML, CSS et JavaScript. Le découpage de `app.js` en `data.js`, `storage.js`, `calculations.js`, `ui.js` et `tracking.js` est reporté à une V2.x ultérieure.
+Responsabilités :
 
-## 5. Stockage
+- `config.js` : constantes techniques, formatage, mois et utilitaires généraux.
+- `data.js` : catégories et données seed actuelles. Elles seront retirées du code public en V2.3.
+- `storage.js` : état local, chargement, migration, sauvegarde.
+- `calculations.js` : budgets, visibilité, récurrences, métriques mensuelles.
+- `ui.js` : rendu général, historique, dropdowns, navigation mois/onglets.
+- `categories.js` : création, édition, suppression et ajustement des catégories.
+- `transactions.js` : opérations simples, récurrences, annulation et actions d'historique.
+- `settings.js` : paramètres, copie V1 → V2, import/export/reset.
+- `tracking.js` : calcul et rendu de la page Suivi annuel.
+- `app.js` : initialisation finale uniquement.
 
-- V1 : `budget-foyer-v1`
-- V2 source : `budget-foyer-v2`
-- Preview V2.0 : `budget-foyer-v2-preview`
-- Preview V2.1 : `budget-foyer-v2.1-preview`
+## 4. Ordre d'exécution navigateur
 
-Les previews doivent rester isolées. La V2.1 contient une action explicite permettant de copier les données V1 vers la V2 sans modifier la V1.
+Les scripts restent des scripts classiques `defer`, chargés dans cet ordre :
 
-## 6. V2.1 — travail effectué
+```text
+config → data → storage → calculations → ui → categories
+→ transactions → settings → tracking → app
+```
 
-Objectifs issus de l'audit V2.0 :
+Choix volontaire : pas d'ES modules pendant ce jalon afin de minimiser les changements fonctionnels et éviter d'introduire des dépendances circulaires avant la V2.3.
 
-- [x] Ne plus considérer les mois futurs comme des mois réalisés actifs.
-- [x] Arrêter la courbe « Réel » au dernier mois réellement renseigné.
-- [x] Distinguer visuellement les mois futurs avec statut « À venir · prévu ».
-- [x] Ajouter la copie locale V1 → V2.
-- [x] Conserver une catégorie archivée comme option lors de l'édition d'une ancienne opération.
-- [x] Rendre les menus personnalisés utilisables avec Flèche haut/bas, Home, End, Entrée, Espace et Échap.
-- [x] Optimiser les quatre onglets sur mobile, avec passage en grille 2×2 sur les petits écrans.
-- [x] Afficher réellement le bouton d'édition des opérations simples dans l'historique.
+## 5. Plan V2.2
 
-Contrôles statiques réalisés après modifications :
+### Phase A — préparation
+- [x] Lire README/workstate.
+- [x] Comparer V2.1 à V2.0.
+- [x] Créer la branche `v2.2`.
+- [x] Définir les responsabilités des fichiers.
 
-- syntaxe JavaScript valide ;
+### Phase B — découpage
+- [x] Extraire config/data/storage.
+- [x] Extraire calculations.
+- [x] Extraire UI/rendu/navigation.
+- [x] Extraire catégories.
+- [x] Extraire transactions/récurrences.
+- [x] Extraire settings.
+- [x] Extraire tracking.
+- [x] Réduire `app.js` à l'initialisation.
+
+### Phase C — validation
+- [x] Vérifier syntaxe de chaque fichier JS.
+- [x] Vérifier qu'aucune déclaration n'est perdue ou dupliquée.
+- [x] Vérifier tous les IDs DOM référencés.
+- [x] Vérifier l'ordre des scripts dans `index.html`.
+- [x] Comparer les chaînes et fonctions métier avant/après.
+- [x] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
+- [x] Publier `/v2.2/` avec stockage local isolé.
+- [ ] Créer une PR brouillon V2.2 source vers `main` (ne pas fusionner avant validation visuelle).
+- [x] Mettre à jour README, CHANGELOG et ce workstate.
+
+## 6. Validation V2.2
+
+Contrôles effectués :
+- chaque fichier JS passe la syntaxe individuellement ;
+- concaténation des 10 fichiers JS syntaxiquement valide ;
+- 125 fonctions en V2.1, 125 fonctions conservées en V2.2 ;
+- 56 écouteurs `addEventListener` avant/après ;
+- 6 accès `localStorage` avant/après ;
+- aucune fonction métier perdue ;
 - aucun ID HTML dupliqué ;
 - aucune référence `getElementById()` manquante ;
-- stockage V2 séparé de la V1 ;
-- contrôles de migration, catégories archivées, suivi futur et navigation clavier présents.
+- ordre des scripts validé ;
+- conflit CSS `.balance` supprimé : la typographie négative est désormais limitée à la carte hero.
 
-## 7. Règles métier importantes
+Dernier commit source V2.2 validé : `c38d460774607bfca6f7719fb5f2a4635262e8c0`.
 
-- `Reste du mois = revenus - dépenses - épargne`.
-- L'épargne réduit le disponible mais n'est pas une dépense de consommation.
-- « À deux » répartit les montants à 50/50.
-- Les budgets prévus peuvent s'appliquer au mois uniquement ou à partir du mois.
-- Les catégories créées plus tard ne doivent pas apparaître rétroactivement.
-- Une catégorie supprimée peut rester archivée si des opérations historiques l'utilisent.
-- Les récurrences peuvent être modifiées/supprimées pour le mois, à partir du mois ou pour toute la série.
-- L'historique est la source explicative des montants réels.
+Preview publiée sous `/v2.2/` avec la clé locale `budget-foyer-v2.2-preview`.
 
-## 8. Points volontairement reportés à une V2.x
+## 7. Méthode de travail
 
-- Découpage de `js/app.js` en modules.
-- Suppression/migration des données personnelles initiales codées en dur.
-- Synchronisation Baptiste/Anaëlle via backend et authentification.
-- Éventuelle intégration Supabase.
-- Tests automatisés navigateur/end-to-end.
-- Revue plus poussée de l'accessibilité générale hors menus.
-- Gestion de migration entre différentes previews V2.x si elle devient nécessaire.
+Au début d'une prochaine session :
+1. lire ce fichier ;
+2. comparer `v2.2` à `v2.1` ;
+3. ne lire que les fichiers modifiés ;
+4. reprendre la première case non cochée du plan.
 
-## 9. Convention de versions
+Ne rescanner tout le dépôt qu'en cas d'incohérence ou avant fusion majeure.
 
-- **V1.x** : production historique.
-- **V2.0** : premier jalon Suivi annuel.
-- **V2.1** : fiabilisation UX/calculs du Suivi et migration V1.
-- **V2.2+** : nouveaux lots fonctionnels.
-- Une version déjà publiée n'est jamais écrasée ; les corrections suivantes incrémentent la version.
+## 8. Règles Git
 
-## 10. Consigne pour la prochaine session
+- ne jamais force-push ;
+- ne jamais modifier un snapshot V2.0/V2.1 déjà publié ;
+- chaque jalon reçoit sa branche et sa preview ;
+- `main` reste protégé et passe par Pull Request ;
+- la preview V2.2 sera publiée par un changement versionné, pas en remplaçant `/v2.1/`.
 
-Ne pas rescanner tout le dépôt par défaut.
+## 9. Après V2.2
 
-Commencer par :
-- lire ce fichier ;
-- comparer la branche active à son dernier jalon ;
-- inspecter uniquement les fichiers modifiés depuis le dernier commit indiqué ici.
-
-Un rescan complet n'est justifié que si le workstate ne correspond plus au dépôt, si des modifications externes inconnues sont détectées, ou avant une fusion majeure vers `main`.
+- **V2.3** : retirer les données personnelles/seed du code public et créer un onboarding/import propre.
+- **V2.4** : backend Supabase, authentification et foyer partagé.
+- **V2.5** : fiabilisation de la synchronisation et UX multi-utilisateur.
