@@ -80,27 +80,43 @@ Choix volontaire : pas d'ES modules pendant ce jalon afin de minimiser les chang
 - [x] Définir les responsabilités des fichiers.
 
 ### Phase B — découpage
-- [ ] Extraire config/data/storage.
-- [ ] Extraire calculations.
-- [ ] Extraire UI/rendu/navigation.
-- [ ] Extraire catégories.
-- [ ] Extraire transactions/récurrences.
-- [ ] Extraire settings.
-- [ ] Extraire tracking.
-- [ ] Réduire `app.js` à l'initialisation.
+- [x] Extraire config/data/storage.
+- [x] Extraire calculations.
+- [x] Extraire UI/rendu/navigation.
+- [x] Extraire catégories.
+- [x] Extraire transactions/récurrences.
+- [x] Extraire settings.
+- [x] Extraire tracking.
+- [x] Réduire `app.js` à l'initialisation.
 
 ### Phase C — validation
-- [ ] Vérifier syntaxe de chaque fichier JS.
-- [ ] Vérifier qu'aucune déclaration n'est perdue ou dupliquée.
-- [ ] Vérifier tous les IDs DOM référencés.
-- [ ] Vérifier l'ordre des scripts dans `index.html`.
-- [ ] Comparer les chaînes et fonctions métier avant/après.
-- [ ] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
+- [x] Vérifier syntaxe de chaque fichier JS.
+- [x] Vérifier qu'aucune déclaration n'est perdue ou dupliquée.
+- [x] Vérifier tous les IDs DOM référencés.
+- [x] Vérifier l'ordre des scripts dans `index.html`.
+- [x] Comparer les chaînes et fonctions métier avant/après.
+- [x] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
 - [ ] Publier `/v2.2/` avec stockage local isolé.
 - [ ] Créer une PR brouillon V2.2.
-- [ ] Mettre à jour README, CHANGELOG et ce workstate.
+- [x] Mettre à jour README, CHANGELOG et ce workstate.
 
-## 6. Méthode de travail
+## 6. Validation V2.2
+
+Contrôles effectués :
+- chaque fichier JS passe la syntaxe individuellement ;
+- concaténation des 10 fichiers JS syntaxiquement valide ;
+- 125 fonctions en V2.1, 125 fonctions conservées en V2.2 ;
+- 56 écouteurs `addEventListener` avant/après ;
+- 6 accès `localStorage` avant/après ;
+- aucune fonction métier perdue ;
+- aucun ID HTML dupliqué ;
+- aucune référence `getElementById()` manquante ;
+- ordre des scripts validé ;
+- conflit CSS `.balance` supprimé : la typographie négative est désormais limitée à la carte hero.
+
+Dernier commit fonctionnel avant publication de preview : `7a1f21bd3c1d0f89c560f37ff36aeed16cab61a8`.
+
+## 7. Méthode de travail
 
 Au début d'une prochaine session :
 1. lire ce fichier ;
@@ -110,7 +126,7 @@ Au début d'une prochaine session :
 
 Ne rescanner tout le dépôt qu'en cas d'incohérence ou avant fusion majeure.
 
-## 7. Règles Git
+## 8. Règles Git
 
 - ne jamais force-push ;
 - ne jamais modifier un snapshot V2.0/V2.1 déjà publié ;
@@ -118,7 +134,7 @@ Ne rescanner tout le dépôt qu'en cas d'incohérence ou avant fusion majeure.
 - `main` reste protégé et passe par Pull Request ;
 - la preview V2.2 sera publiée par un changement versionné, pas en remplaçant `/v2.1/`.
 
-## 8. Après V2.2
+## 9. Après V2.2
 
 - **V2.3** : retirer les données personnelles/seed du code public et créer un onboarding/import propre.
 - **V2.4** : backend Supabase, authentification et foyer partagé.
