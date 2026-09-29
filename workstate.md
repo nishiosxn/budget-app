@@ -96,8 +96,8 @@ Choix volontaire : pas d'ES modules pendant ce jalon afin de minimiser les chang
 - [x] Vérifier l'ordre des scripts dans `index.html`.
 - [x] Comparer les chaînes et fonctions métier avant/après.
 - [x] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
-- [ ] Publier `/v2.2/` avec stockage local isolé.
-- [ ] Créer une PR brouillon V2.2.
+- [x] Publier `/v2.2/` avec stockage local isolé.
+- [x] Créer une PR brouillon V2.2.
 - [x] Mettre à jour README, CHANGELOG et ce workstate.
 
 ## 6. Validation V2.2
