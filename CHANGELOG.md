@@ -2,6 +2,13 @@
 
 ## Maintenance Git avant V2.4
 
+### Finalisé
+- GitHub Pages basculé vers `gh-pages /(root)`.
+- Déploiement depuis `gh-pages` validé.
+- Snapshots `v2/`, `v2.1/`, `v2.2/`, `v2.3/` retirés de `main`.
+- `develop` préparée comme tronc de développement V2.
+- Audit **App integrity** validé sur une PR réelle vers `develop`.
+
 ### Ajouté
 - Branche de publication `gh-pages` préparée.
 - Audit automatique des Pull Requests vers `main`.

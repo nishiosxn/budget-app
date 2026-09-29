@@ -15,14 +15,15 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.3
-- **Branche active** : `v2.3`
+- **Dernier jalon validé** : V2.3
+- **Prochaine version** : V2.4
+- **Tronc de développement** : `develop`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
-- **PR V2.3 source** : #7, brouillon
+- **PR V2.3 source** : jalon archivé
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
 ## Fonctionnalités principales
@@ -78,7 +79,7 @@ Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 
 ## Contrôle qualité automatique
 
-Les Pull Requests vers `main` exécutent `.github/workflows/validate.yml`.
+Les Pull Requests vers `main` exécutent `.github/workflows/validate.yml`. Le même audit est également préparé sur `develop` pour les futures versions.
 
 Le contrôle vérifie notamment :
 - syntaxe de tous les modules JavaScript ;
@@ -91,9 +92,9 @@ Le contrôle vérifie notamment :
 - présence du moteur de migration V4/V5 ;
 - cohérence minimale de `workstate.md`.
 
-La branche `gh-pages` est réservée à la publication des snapshots GitHub Pages. Une fois GitHub Pages basculé sur cette branche, `main` pourra être nettoyée des dossiers de previews historiques.
+GitHub Pages publie désormais depuis `gh-pages`. La branche `main` est nettoyée des dossiers de previews historiques et ne contient plus que la production stable, la documentation et l'outillage CI.
 
 
 ## Publication
 
-Les previews sont publiées depuis `gh-pages`. La branche `main` ne conserve plus les copies de `v2/`, `v2.1/`, `v2.2/` et `v2.3/` une fois la bascule GitHub Pages effectuée.
+Les previews sont publiées depuis `gh-pages`. La branche `main` ne contient plus les copies de `v2/`, `v2.1/`, `v2.2/` et `v2.3/`.

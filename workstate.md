@@ -6,13 +6,13 @@
 
 - Dépôt : `nishiosxn/budget-app`
 - Production : `main` → V1
-- Dernier jalon validé : **V2.2**
-- Branche active : **v2.3**
-- Base : **v2.2**
+- Dernier jalon validé : **V2.3**
+- Branche de développement de référence : **develop**
+- Base du prochain jalon : **develop**
 - Preview V2.2 : https://nishiosxn.github.io/budget-app/v2.2/
 - PR V2.2 #4 : fermée comme jalon historique
 - PR de publication V2.3 #6 : fusionnée en squash dans `main`
-- PR source V2.3 #7 : brouillon, ne pas fusionner avant validation visuelle
+- PR source V2.3 archivée comme jalon historique
 - Objectif V2.3 : **retirer les données personnelles du code actif et rendre les sauvegardes autonomes**
 
 ## 2. Principes V2.3
@@ -179,11 +179,26 @@ gh-pages    → production + previews versionnées
 tags        → jalons immuables
 ```
 
-Après activation de GitHub Pages sur `gh-pages /(root)` :
-1. vérifier que les URLs /, /v2/, /v2.1/, /v2.2/, /v2.3/ répondent ;
-2. retirer les dossiers de previews de `main` ;
-3. supprimer les branches temporaires fusionnées ;
-4. conserver uniquement les branches de développement nécessaires ;
-5. activer le status check `App integrity` comme obligatoire sur `main`.
+État après bascule GitHub Pages :
+1. [x] GitHub Pages utilise `gh-pages /(root)`.
+2. [x] Déploiement GitHub Pages depuis `gh-pages` réussi.
+3. [x] Les dossiers de previews ont été retirés de `main`.
+4. [x] `develop` existe comme tronc V2.
+5. [x] Le check **App integrity** a été validé sur une PR vers `develop`.
+6. [ ] Créer les tags de jalon V2.0 / V2.1 / V2.2 / V2.3.
+7. [ ] Supprimer les branches temporaires fusionnées.
+8. [ ] Rendre le status check **App integrity** obligatoire sur `main` et idéalement `develop`.
 
 Les opérations d'administration GitHub (source GitHub Pages, création de tags et suppression de branches) doivent rester traçables et ne sont pas simulées par des branches ordinaires.
+
+
+## 13. État de maintenance avant V2.4
+
+- GitHub Pages : `gh-pages /(root)`.
+- `main` : V1 + documentation + CI uniquement.
+- `develop` : tronc V2 à utiliser pour créer `v2.4`.
+- `gh-pages` : production et previews historiques.
+- Audit automatique : **App integrity**.
+- Dernier test réel CI sur architecture modulaire : **success**.
+
+Ne pas démarrer V2.4 tant que les trois tâches d'administration GitHub restantes (tags, suppression des branches temporaires, check obligatoire) ne sont pas terminées.
