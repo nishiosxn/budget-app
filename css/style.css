@@ -147,3 +147,42 @@
   .tab{font-size:12px;min-height:42px}
   .settings-trigger{grid-column:2;grid-row:1 / span 2}
 }
+
+
+/* === V2.3 · onboarding et profil local === */
+.settings-household{padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel-2);margin-bottom:14px}
+.settings-name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.settings-household .field{margin-top:0;margin-bottom:10px}
+.settings-household .btn{width:100%}
+
+.onboarding-backdrop{position:fixed;inset:0;z-index:900;background:rgba(236,240,235,.96);backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:42px 18px 70px}
+.onboarding-backdrop.open{display:flex}
+.onboarding-panel{width:min(680px,100%);background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 28px 80px rgba(25,37,30,.16)}
+.onboarding-brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.onboarding-brand .logo{flex:0 0 auto}
+.onboarding-brand h2{font-size:26px;margin:4px 0 0;letter-spacing:-.7px}
+.onboarding-intro{margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.6}
+.onboarding-card{border:1px solid var(--line);border-radius:18px;padding:17px;margin-top:12px;background:#fff}
+.onboarding-card h3{font-size:14px;margin:0 0 12px}
+.onboarding-card>p{font-size:11px;color:var(--muted);line-height:1.5;margin:0 0 12px}
+.onboarding-primary{width:100%;margin-top:4px}
+.legacy-source-list{display:grid;gap:8px;margin-bottom:10px}
+.legacy-source{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:13px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;color:var(--text)}
+.legacy-source:hover{border-color:#b9cec1;background:var(--accent-soft)}
+.legacy-source:disabled{opacity:.65;cursor:wait}
+.legacy-source strong{display:block;font-size:11px}
+.legacy-source small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.legacy-empty{padding:12px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:10px;text-align:center}
+.onboarding-status{min-height:18px;margin:12px 2px 0;font-size:10px;font-weight:750;color:var(--muted)}
+.onboarding-status.success{color:#216b4d}
+.onboarding-status.error{color:#a23f35}
+.onboarding-close{margin-top:12px;border:0;background:transparent;color:var(--muted);font-size:10px;font-weight:800;padding:8px 4px}
+.onboarding-close:hover{color:var(--text)}
+
+@media(max-width:580px){
+  .settings-name-grid{grid-template-columns:1fr}
+  .onboarding-backdrop{padding:14px 10px 90px;align-items:flex-start}
+  .onboarding-panel{border-radius:19px;padding:17px}
+  .onboarding-brand h2{font-size:22px}
+  .onboarding-card{padding:14px}
+}
