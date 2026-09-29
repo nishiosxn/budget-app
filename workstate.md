@@ -197,6 +197,7 @@ Depuis la maintenance pré-V2.4, les Pull Requests vers `main` exécutent le che
 - [x] Audit automatique central ajouté.
 - [x] Audit compatible avec V1 monolithique et V2 modulaire.
 - [x] Workflow `develop` configuré pour les PR vers `develop` et `main`.
+- [x] Smoke test réel sur PR vers `develop` : **App integrity = success**.
 - [ ] Basculer GitHub Pages de `main /(root)` vers `gh-pages /(root)`.
 - [ ] Après bascule Pages, retirer les dossiers de previews de `main`.
 - [ ] Créer les tags de jalon V2.0 / V2.1 / V2.2 / V2.3.
