@@ -1,24 +1,37 @@
-// V2.2 — définition des catégories et données initiales historiques
-const INCOME_CATEGORIES=[
-  {id:"salary-b",name:"Salaire Baptiste",budget:1100,owner:"B"},{id:"salary-a",name:"Salaire Anaëlle",budget:1400,owner:"A"},
-  {id:"prime",name:"Prime d'activité",budget:200,owner:"common"},{id:"apl",name:"APL",budget:117,owner:"common"},
-  {id:"extra-b",name:"Revenu supplémentaire Baptiste",budget:0,owner:"B"},{id:"extra-a",name:"Revenu supplémentaire Anaëlle",budget:0,owner:"A"}
-];
-const EXPENSE_CATEGORIES=[
-  {id:"rent",name:"Loyer (charges comprises)",budget:640,section:"Obligatoires",owner:"common"},{id:"electricity",name:"Électricité",budget:100,section:"Obligatoires",owner:"common"},{id:"groceries",name:"Courses",budget:250,section:"Obligatoires",owner:"common"},{id:"action",name:"Action",budget:60,section:"Obligatoires",owner:"common"},{id:"internet",name:"Box internet",budget:40,section:"Obligatoires",owner:"common"},{id:"mutuelle-b",name:"Mutuelle Baptiste",budget:30,section:"Obligatoires",owner:"B"},{id:"car-insurance",name:"Assurance voiture",budget:50,section:"Obligatoires",owner:"common"},{id:"home-insurance",name:"Assurance habitation",budget:12,section:"Obligatoires",owner:"common"},{id:"phone",name:"Forfait téléphone",budget:10.99,section:"Obligatoires",owner:"B"},{id:"fuel",name:"Essence",budget:140,section:"Obligatoires",owner:"common"},{id:"saving-b",name:"Épargne Baptiste",budget:100,section:"Obligatoires",owner:"B",saving:true},{id:"saving-a",name:"Épargne compagne",budget:100,section:"Obligatoires",owner:"A",saving:true},
-  {id:"chatgpt",name:"ChatGPT",budget:25,section:"Abonnements",owner:"B"},{id:"discord",name:"Discord",budget:9.99,section:"Abonnements",owner:"B"},{id:"icloud-b",name:"iCloud+ Baptiste",budget:2.99,section:"Abonnements",owner:"B"},{id:"snap-b",name:"Snapchat+ Baptiste",budget:3.99,section:"Abonnements",owner:"B"},{id:"netflix",name:"Netflix Standard",budget:14.99,section:"Abonnements",owner:"B"},{id:"combat-patrol",name:"Hachette Combat Patrol Premium",budget:51.96,section:"Abonnements",owner:"B"},{id:"spotify",name:"Spotify Duo",budget:17.2,section:"Abonnements",owner:"common"},{id:"snap-a",name:"Snapchat+ Anaëlle",budget:3.99,section:"Abonnements",owner:"A"},{id:"icloud-a",name:"iCloud+ Anaëlle",budget:2.99,section:"Abonnements",owner:"A"},
-  {id:"car-maint",name:"Entretien voiture",budget:60,section:"Vie courante",owner:"common"},{id:"home-products",name:"Maison / produits ménagers",budget:40,section:"Vie courante",owner:"common"},{id:"health",name:"Santé / pharmacie",budget:30,section:"Vie courante",owner:"common"},{id:"psy-a",name:"Psy Anaëlle",budget:60,section:"Vie courante",owner:"A"},{id:"clothes",name:"Vêtements / chaussures",budget:40,section:"Vie courante",owner:"common"},{id:"restaurants",name:"Restaurants / fast-food / sorties",budget:120,section:"Vie courante",owner:"common"},{id:"leisure-b",name:"Loisirs / achats perso Baptiste",budget:100,section:"Vie courante",owner:"B"},{id:"leisure-a",name:"Loisirs / achats perso Anaëlle",budget:200,section:"Vie courante",owner:"A"},{id:"gifts",name:"Cadeaux / anniversaires / Noël",budget:50,section:"Vie courante",owner:"common"},{id:"vacations",name:"Vacances / week-ends",budget:75,section:"Vie courante",owner:"common"},{id:"home-equipment",name:"Entretien / équipement logement",budget:40,section:"Vie courante",owner:"common"},{id:"deposit",name:"Caution",budget:0,section:"Vie courante",owner:"common"},{id:"amazon",name:"Amazon",budget:50,section:"Vie courante",owner:"common"},{id:"foire",name:"Foire fouille",budget:0,section:"Vie courante",owner:"common"},{id:"coffee",name:"Café",budget:0,section:"Vie courante",owner:"common"},{id:"zevent",name:"Zevent",budget:0,section:"Vie courante",owner:"common"},{id:"aldi",name:"Aldi",budget:0,section:"Vie courante",owner:"common"},{id:"expense-b",name:"Dépense Baptiste",budget:0,section:"Vie courante",owner:"B"},{id:"expense-a",name:"Dépense Anaëlle",budget:0,section:"Vie courante",owner:"A"}
-];
-const BASE_INCOME_COUNT=INCOME_CATEGORIES.length;
-const BASE_INCOME_NAMES=Object.fromEntries(INCOME_CATEGORIES.map(c=>[c.id,c.name]));
-const BASE_INCOME_BUDGETS=Object.fromEntries(INCOME_CATEGORIES.map(c=>[c.id,c.budget]));
-const BASE_INCOME_OWNERS=Object.fromEntries(INCOME_CATEGORIES.map(c=>[c.id,c.owner||"common"]));
-const BASE_EXPENSE_COUNT=EXPENSE_CATEGORIES.length;
-const BASE_EXPENSE_NAMES=Object.fromEntries(EXPENSE_CATEGORIES.map(c=>[c.id,c.name]));
-const BASE_EXPENSE_BUDGETS=Object.fromEntries(EXPENSE_CATEGORIES.map(c=>[c.id,c.budget]));
-const BASE_EXPENSE_OWNERS=Object.fromEntries(EXPENSE_CATEGORIES.map(c=>[c.id,c.owner||"common"]));
+// V2.3 — template neutre. Aucune donnée financière personnelle n'est codée ici.
+const DEFAULT_HOUSEHOLD={name:"Mon foyer",personB:"Personne 1",personA:"Personne 2"};
 
-const SEPTEMBER_ACTUAL={
- income:{"salary-b":1043.64,"salary-a":1234.83,"prime":0,"apl":0,"extra-a":1201.75},
- expense:{rent:128,electricity:80,action:60.55,internet:0,"mutuelle-b":0,"car-insurance":0,"home-insurance":12,phone:10.99,fuel:142.77,"saving-b":0,"saving-a":0,chatgpt:25,discord:9.99,"icloud-b":2.99,"snap-b":3.99,netflix:14.99,"combat-patrol":51.96,spotify:17.2,"snap-a":3.99,"icloud-a":2.99,"car-maint":0,"home-products":0,health:0,clothes:0,restaurants:75.3,"leisure-b":0,"leisure-a":0,gifts:0,vacations:0,"home-equipment":0,amazon:46.03,foire:1.99,coffee:3,zevent:1,aldi:1,"expense-b":468,"expense-a":1776.42}
-};
+const NEUTRAL_INCOME_TEMPLATE=[
+  {id:"salary-b",name:"Salaire personne 1",budget:0,owner:"B"},
+  {id:"salary-a",name:"Salaire personne 2",budget:0,owner:"A"},
+  {id:"benefits",name:"Aides / allocations",budget:0,owner:"common"},
+  {id:"extra-b",name:"Autre revenu personne 1",budget:0,owner:"B"},
+  {id:"extra-a",name:"Autre revenu personne 2",budget:0,owner:"A"}
+];
+
+const NEUTRAL_EXPENSE_TEMPLATE=[
+  {id:"rent",name:"Loyer / logement",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"electricity",name:"Électricité / énergie",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"groceries",name:"Courses",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"internet",name:"Internet",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"home-insurance",name:"Assurance habitation",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"car-insurance",name:"Assurance véhicule",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"phone-b",name:"Téléphone personne 1",budget:0,section:"Obligatoires",owner:"B"},
+  {id:"phone-a",name:"Téléphone personne 2",budget:0,section:"Obligatoires",owner:"A"},
+  {id:"fuel",name:"Transport / carburant",budget:0,section:"Obligatoires",owner:"common"},
+  {id:"saving-b",name:"Épargne personne 1",budget:0,section:"Obligatoires",owner:"B",saving:true},
+  {id:"saving-a",name:"Épargne personne 2",budget:0,section:"Obligatoires",owner:"A",saving:true},
+  {id:"subscriptions",name:"Abonnements",budget:0,section:"Abonnements",owner:"common"},
+  {id:"home-products",name:"Maison / produits ménagers",budget:0,section:"Vie courante",owner:"common"},
+  {id:"health",name:"Santé / pharmacie",budget:0,section:"Vie courante",owner:"common"},
+  {id:"clothes",name:"Vêtements / chaussures",budget:0,section:"Vie courante",owner:"common"},
+  {id:"restaurants",name:"Restaurants / sorties",budget:0,section:"Vie courante",owner:"common"},
+  {id:"leisure-b",name:"Loisirs personne 1",budget:0,section:"Vie courante",owner:"B"},
+  {id:"leisure-a",name:"Loisirs personne 2",budget:0,section:"Vie courante",owner:"A"},
+  {id:"gifts",name:"Cadeaux",budget:0,section:"Vie courante",owner:"common"},
+  {id:"vacations",name:"Vacances / week-ends",budget:0,section:"Vie courante",owner:"common"},
+  {id:"home-equipment",name:"Entretien / équipement logement",budget:0,section:"Vie courante",owner:"common"}
+];
+
+const INCOME_CATEGORIES=[];
+const EXPENSE_CATEGORIES=[];
