@@ -1,6 +1,6 @@
 # Changelog
 
-## V2.3 — en développement
+## V2.3 — preview prête à publier
 
 ### Objectif
 - Supprimer les transactions et budgets personnels du code actif.
@@ -9,8 +9,24 @@
 
 ### Confidentialité
 - Le nouveau template est neutre et vide.
+- Aucun montant réel historique n'est seedé dans le code actif.
 - Les noms du foyer deviennent des données locales.
+- Les catégories neuves ont des budgets à 0 €.
 - Les exports V5 embarquent leur catalogue de catégories afin de ne plus dépendre des constantes publiques.
+
+### Ajouté
+- Onboarding au premier lancement.
+- Création d'un budget vide.
+- Détection des anciennes versions locales.
+- Migration V1 / V2.0 / V2.1 / V2.2 vers V5.
+- Import des sauvegardes legacy V4.
+- Paramètres pour modifier le nom du foyer et des deux personnes.
+- Helper legacy isolé pour reconstruire le profil historique sans remettre les données dans V2.3.
+
+### Technique
+- Schéma local passé de V4 à V5.
+- `baseIncomeCategories` et `baseExpenseCategories` sont maintenant inclus dans l'état utilisateur.
+- La preview V2.3 utilise une clé localStorage dédiée.
 
 ## V2.2 — preview publiée
 
