@@ -92,3 +92,8 @@ Le contrôle vérifie notamment :
 - cohérence minimale de `workstate.md`.
 
 La branche `gh-pages` est réservée à la publication des snapshots GitHub Pages. Une fois GitHub Pages basculé sur cette branche, `main` pourra être nettoyée des dossiers de previews historiques.
+
+
+## Publication
+
+Les previews sont publiées depuis `gh-pages`. La branche `main` ne conserve plus les copies de `v2/`, `v2.1/`, `v2.2/` et `v2.3/` une fois la bascule GitHub Pages effectuée.
