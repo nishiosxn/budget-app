@@ -97,7 +97,7 @@ Choix volontaire : pas d'ES modules pendant ce jalon afin de minimiser les chang
 - [x] Comparer les chaînes et fonctions métier avant/après.
 - [x] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
 - [x] Publier `/v2.2/` avec stockage local isolé.
-- [ ] Créer une PR brouillon V2.2 source vers `main` (ne pas fusionner avant validation visuelle).
+- [x] Créer une PR brouillon V2.2.
 - [x] Mettre à jour README, CHANGELOG et ce workstate.
 
 ## 6. Validation V2.2
@@ -114,9 +114,7 @@ Contrôles effectués :
 - ordre des scripts validé ;
 - conflit CSS `.balance` supprimé : la typographie négative est désormais limitée à la carte hero.
 
-Dernier commit source V2.2 validé : `c38d460774607bfca6f7719fb5f2a4635262e8c0`.
-
-Preview publiée sous `/v2.2/` avec la clé locale `budget-foyer-v2.2-preview`.
+Dernier commit fonctionnel avant publication de preview : `7a1f21bd3c1d0f89c560f37ff36aeed16cab61a8`.
 
 ## 7. Méthode de travail
 
