@@ -18,8 +18,9 @@
 - Syntaxe JS, IDs DOM et références DOM vérifiés.
 
 ### Publication
-- Preview versionnée disponible sous `/v2.2/`.
-- Stockage local de preview isolé des V1/V2.0/V2.1.
+- Preview disponible sous `/v2.2/`.
+- PR de publication #3 fusionnée en squash.
+- PR source #4 conservée en brouillon pour validation.
 
 ### Corrigé
 - Conflit de classe CSS `balance` supprimé.
