@@ -7,8 +7,8 @@
 - Dépôt : `nishiosxn/budget-app`
 - Production : `main` → V1
 - Dernier jalon validé : **V2.2**
-- Branche active : **v2.3**
-- Base : **v2.2**
+- Branche de développement de référence : **develop**
+- Dernier jalon source : **v2.3**
 - Preview V2.2 : https://nishiosxn.github.io/budget-app/v2.2/
 - PR V2.2 #4 : fermée comme jalon historique
 - PR de publication V2.3 #6 : fusionnée en squash dans `main`
@@ -150,12 +150,30 @@ js/
 legacy-profile.html
 ```
 
-## 10. Après V2.3
+## 10. Workflow Git après V2.3
+
+```text
+main       → production stable
+develop    → tronc V2
+v2.4       → prochain jalon, créé depuis develop
+gh-pages   → publication et previews
+```
+
+Règle à partir de V2.4 :
+1. créer `v2.4` depuis `develop`;
+2. développer et auditer sur `v2.4`;
+3. Pull Request `v2.4 → develop`;
+4. le check **App integrity** doit réussir ;
+5. après validation, fusion squash dans `develop`;
+6. publier le snapshot sur `gh-pages`;
+7. ne fusionner `develop → main` que lorsqu'une V2 est jugée stable pour remplacer la V1.
+
+## 11. Après V2.3
 
 - **V2.4** : Supabase, authentification, foyer partagé et synchronisation.
 - **V2.5** : conflits de synchronisation, cache/offline et UX multi-utilisateur.
 
-## 11. Reprise de travail
+## 12. Reprise de travail
 
 À la prochaine session :
 1. lire ce fichier ;
@@ -164,9 +182,23 @@ legacy-profile.html
 4. ne rescanner que les fichiers concernés.
 
 
-## 12. Audit CI central
+## 13. Audit CI central
 
 Depuis la maintenance pré-V2.4, les Pull Requests vers `main` exécutent le check GitHub Actions **App integrity**. La V2.3 sert de première branche source pour vérifier ce contrôle avant de démarrer V2.4.
 
 
 - Audit CI central validé : le workflow supporte désormais la V1 monolithique et l'architecture V2 modulaire. Le prochain commit V2.3 déclenche le check `App integrity`.
+
+
+## 14. Maintenance pré-V2.4
+
+- [x] Branche `gh-pages` préparée avec la production et les previews actuelles.
+- [x] Branche `develop` créée depuis V2.3.
+- [x] Audit automatique central ajouté.
+- [x] Audit compatible avec V1 monolithique et V2 modulaire.
+- [x] Workflow `develop` configuré pour les PR vers `develop` et `main`.
+- [ ] Basculer GitHub Pages de `main /(root)` vers `gh-pages /(root)`.
+- [ ] Après bascule Pages, retirer les dossiers de previews de `main`.
+- [ ] Créer les tags de jalon V2.0 / V2.1 / V2.2 / V2.3.
+- [ ] Supprimer les branches temporaires déjà fusionnées.
+- [ ] Rendre le check `App integrity` obligatoire sur `main` (et idéalement `develop`).
