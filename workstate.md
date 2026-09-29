@@ -1,37 +1,122 @@
 # Workstate — Budget foyer
 
-> Document de continuité de développement. À lire en premier au début de chaque nouvelle session.
+> Source de vérité pour reprendre le développement sans rescanner le dépôt.
 
-## 1. État de référence
+## 1. État actuel
 
 - Dépôt : `nishiosxn/budget-app`
 - Production : `main` → V1
-- Branche active : **v2.2**
-- Base : **v2.1**
-- Objectif V2.2 : **refactorisation JavaScript uniquement**
-- Schéma de données : **4**, inchangé
-- V2.1 fonctionnelle de référence : `24c85660b25a14d7f8ca0566c6b336f4dd0d2035`
-- PR V2.1 : https://github.com/nishiosxn/budget-app/pull/2
-- Preview V2.1 : https://nishiosxn.github.io/budget-app/v2.1/
+- Dernier jalon validé : **V2.2**
+- Branche active : **v2.3**
+- Base : **v2.2**
+- Preview V2.2 : https://nishiosxn.github.io/budget-app/v2.2/
+- PR V2.2 #4 : fermée comme jalon historique
+- Objectif V2.3 : **retirer les données personnelles du code actif et rendre les sauvegardes autonomes**
 
-## 2. Règle principale V2.2
+## 2. Principes V2.3
 
-La V2.2 ne doit introduire **aucune modification fonctionnelle volontaire**.
+La V2.3 doit :
+- ne contenir aucune transaction personnelle initiale dans le code ;
+- ne contenir aucun montant de budget personnel dans le template neuf ;
+- ne dépendre d'aucun prénom codé en dur dans l'interface active ;
+- stocker le nom du foyer et les deux noms localement ;
+- stocker le catalogue de catégories de base dans l'état utilisateur ;
+- permettre une migration explicite depuis V1/V2.x ;
+- produire des exports V5 autonomes contenant toute la configuration nécessaire ;
+- conserver les anciennes previews sans les modifier.
 
-Doivent rester identiques à V2.1 :
-- calculs ;
-- données ;
-- stockage ;
-- interface ;
-- wording visible ;
-- récurrences ;
-- historique ;
-- page Suivi ;
-- comportement responsive.
+Important : les anciennes versions déjà publiées restent historiquement accessibles dans le dépôt public. V2.3 nettoie la version active et les futurs exports ; elle ne réécrit pas l'historique Git.
 
-Le seul objectif est de rendre le code plus lisible et maintenable avant V2.3 et V2.4.
+## 3. Schéma V5
 
-## 3. Architecture cible V2.2
+Nouveaux champs principaux :
+
+```text
+schemaVersion: 5
+onboardingComplete
+household:
+  name
+  personB
+  personA
+baseIncomeCategories[]
+baseExpenseCategories[]
+transactions[]
+... champs historiques de plans / suppressions / catégories custom
+```
+
+Les catégories de base deviennent donc des **données locales**, et non plus une configuration personnelle imposée par le code.
+
+## 4. Template neuf
+
+Le code public ne fournit qu'un template neutre :
+- Personne 1 / Personne 2 ;
+- catégories génériques ;
+- budgets prévus à 0 € ;
+- aucune transaction ;
+- aucune marque/service personnel spécifique.
+
+## 5. Migration legacy
+
+La migration V1/V2.x doit :
+1. lire la sauvegarde locale legacy ;
+2. charger le profil structurel V2.2 depuis un helper de migration isolé ;
+3. reconstruire les catégories historiques ;
+4. conserver transactions, budgets, noms personnalisés, plans, suppressions et récurrences ;
+5. inférer les noms des deux personnes depuis la configuration legacy lorsque possible ;
+6. enregistrer immédiatement un état V5 autonome.
+
+Aucune donnée V1/V2 ne doit être effacée pendant cette copie.
+
+## 6. Onboarding
+
+Au premier lancement :
+- créer un nouveau budget ;
+- migrer une version locale détectée ;
+- importer une sauvegarde JSON.
+
+Pour un nouveau budget :
+- nom du foyer ;
+- nom Personne 1 ;
+- nom Personne 2.
+
+L'application reste utilisable localement ensuite sans compte ni backend.
+
+## 7. Plan
+
+### Phase A — modèle
+- [x] V2.2 validée par l'utilisateur.
+- [x] PR V2.2 archivée.
+- [x] Branche `v2.3` créée.
+- [x] Plan V2.3 documenté.
+- [ ] Passer le stockage au schéma V5.
+- [ ] Remplacer les données seed par un template neutre.
+- [ ] Rendre le catalogue de catégories local/autonome.
+
+### Phase B — interface
+- [ ] Remplacer les prénoms codés en dur par les données du foyer.
+- [ ] Ajouter l'onboarding.
+- [ ] Ajouter la modification des noms du foyer dans Paramètres.
+- [ ] Adapter reset/import/export au schéma V5.
+
+### Phase C — migration
+- [ ] Ajouter le helper legacy V2.2.
+- [ ] Migrer V2.2/V2.1/V2/V1 sans écraser les anciennes données.
+- [ ] Supporter l'import de sauvegardes legacy V4.
+
+### Phase D — validation/publication
+- [ ] Vérifier absence des anciennes transactions/montants personnels dans le code V2.3.
+- [ ] Vérifier syntaxe JS de chaque module.
+- [ ] Vérifier IDs/références DOM.
+- [ ] Vérifier création neuve.
+- [ ] Vérifier migration locale.
+- [ ] Vérifier import/export V5.
+- [ ] Publier `/v2.3/` avec clé localStorage isolée.
+- [ ] Créer PR V2.3 brouillon.
+- [ ] Mettre à jour README / CHANGELOG / workstate.
+
+## 8. Architecture
+
+V2.2 conservée, plus un module :
 
 ```text
 js/
@@ -44,98 +129,20 @@ js/
   transactions.js
   settings.js
   tracking.js
+  onboarding.js
   app.js
+legacy-profile.html
 ```
 
-Responsabilités :
+## 9. Après V2.3
 
-- `config.js` : constantes techniques, formatage, mois et utilitaires généraux.
-- `data.js` : catégories et données seed actuelles. Elles seront retirées du code public en V2.3.
-- `storage.js` : état local, chargement, migration, sauvegarde.
-- `calculations.js` : budgets, visibilité, récurrences, métriques mensuelles.
-- `ui.js` : rendu général, historique, dropdowns, navigation mois/onglets.
-- `categories.js` : création, édition, suppression et ajustement des catégories.
-- `transactions.js` : opérations simples, récurrences, annulation et actions d'historique.
-- `settings.js` : paramètres, copie V1 → V2, import/export/reset.
-- `tracking.js` : calcul et rendu de la page Suivi annuel.
-- `app.js` : initialisation finale uniquement.
+- **V2.4** : Supabase, authentification, foyer partagé et synchronisation.
+- **V2.5** : conflits de synchronisation, cache/offline et UX multi-utilisateur.
 
-## 4. Ordre d'exécution navigateur
+## 10. Reprise de travail
 
-Les scripts restent des scripts classiques `defer`, chargés dans cet ordre :
-
-```text
-config → data → storage → calculations → ui → categories
-→ transactions → settings → tracking → app
-```
-
-Choix volontaire : pas d'ES modules pendant ce jalon afin de minimiser les changements fonctionnels et éviter d'introduire des dépendances circulaires avant la V2.3.
-
-## 5. Plan V2.2
-
-### Phase A — préparation
-- [x] Lire README/workstate.
-- [x] Comparer V2.1 à V2.0.
-- [x] Créer la branche `v2.2`.
-- [x] Définir les responsabilités des fichiers.
-
-### Phase B — découpage
-- [x] Extraire config/data/storage.
-- [x] Extraire calculations.
-- [x] Extraire UI/rendu/navigation.
-- [x] Extraire catégories.
-- [x] Extraire transactions/récurrences.
-- [x] Extraire settings.
-- [x] Extraire tracking.
-- [x] Réduire `app.js` à l'initialisation.
-
-### Phase C — validation
-- [x] Vérifier syntaxe de chaque fichier JS.
-- [x] Vérifier qu'aucune déclaration n'est perdue ou dupliquée.
-- [x] Vérifier tous les IDs DOM référencés.
-- [x] Vérifier l'ordre des scripts dans `index.html`.
-- [x] Comparer les chaînes et fonctions métier avant/après.
-- [x] Corriger le conflit CSS `.balance` déjà identifié, séparément et explicitement.
-- [x] Publier `/v2.2/` avec stockage local isolé.
-- [x] Créer une PR brouillon V2.2.
-- [x] Mettre à jour README, CHANGELOG et ce workstate.
-
-## 6. Validation V2.2
-
-Contrôles effectués :
-- chaque fichier JS passe la syntaxe individuellement ;
-- concaténation des 10 fichiers JS syntaxiquement valide ;
-- 125 fonctions en V2.1, 125 fonctions conservées en V2.2 ;
-- 56 écouteurs `addEventListener` avant/après ;
-- 6 accès `localStorage` avant/après ;
-- aucune fonction métier perdue ;
-- aucun ID HTML dupliqué ;
-- aucune référence `getElementById()` manquante ;
-- ordre des scripts validé ;
-- conflit CSS `.balance` supprimé : la typographie négative est désormais limitée à la carte hero.
-
-Dernier commit fonctionnel avant publication de preview : `7a1f21bd3c1d0f89c560f37ff36aeed16cab61a8`.
-
-## 7. Méthode de travail
-
-Au début d'une prochaine session :
+À la prochaine session :
 1. lire ce fichier ;
-2. comparer `v2.2` à `v2.1` ;
-3. ne lire que les fichiers modifiés ;
-4. reprendre la première case non cochée du plan.
-
-Ne rescanner tout le dépôt qu'en cas d'incohérence ou avant fusion majeure.
-
-## 8. Règles Git
-
-- ne jamais force-push ;
-- ne jamais modifier un snapshot V2.0/V2.1 déjà publié ;
-- chaque jalon reçoit sa branche et sa preview ;
-- `main` reste protégé et passe par Pull Request ;
-- la preview V2.2 sera publiée par un changement versionné, pas en remplaçant `/v2.1/`.
-
-## 9. Après V2.2
-
-- **V2.3** : retirer les données personnelles/seed du code public et créer un onboarding/import propre.
-- **V2.4** : backend Supabase, authentification et foyer partagé.
-- **V2.5** : fiabilisation de la synchronisation et UX multi-utilisateur.
+2. comparer `v2.3` à `v2.2` ;
+3. reprendre la première case non cochée ;
+4. ne rescanner que les fichiers concernés.
