@@ -11,6 +11,8 @@
 - Base : **v2.2**
 - Preview V2.2 : https://nishiosxn.github.io/budget-app/v2.2/
 - PR V2.2 #4 : fermée comme jalon historique
+- PR de publication V2.3 #6 : fusionnée en squash dans `main`
+- PR source V2.3 #7 : brouillon, ne pas fusionner avant validation visuelle
 - Objectif V2.3 : **retirer les données personnelles du code actif et rendre les sauvegardes autonomes**
 
 ## 2. Principes V2.3
@@ -110,8 +112,8 @@ L'application reste utilisable localement ensuite sans compte ni backend.
 - [x] Vérifier création neuve par inspection du flux et état V5 neutre.
 - [x] Vérifier moteur de migration locale et helper legacy statiquement.
 - [x] Vérifier import/export V5 statiquement.
-- [ ] Publier `/v2.3/` avec clé localStorage isolée. *(snapshot préparé)*
-- [ ] Créer PR V2.3 brouillon.
+- [x] Publier `/v2.3/` avec clé localStorage isolée.
+- [x] Créer PR V2.3 brouillon.
 - [x] Mettre à jour README / CHANGELOG / workstate.
 
 ## 8. Validation effectuée
@@ -123,7 +125,7 @@ L'application reste utilisable localement ensuite sans compte ni backend.
 - aucune déclaration de fonction dupliquée ;
 - plus aucune occurrence active des anciennes valeurs financières seed ;
 - plus aucun prénom historique codé en dur dans l’interface ou les modules actifs ;
-- clé de preview préparée : `budget-foyer-v2.3-preview`;
+- clé de preview active : `budget-foyer-v2.3-preview`;
 - helper legacy charge uniquement l’ancien profil V2.2 pour reconstruire les catégories lors d’une migration.
 
 Limite volontaire : l’historique Git et les anciennes previews restent publics. V2.3 ne réécrit pas l’historique.
