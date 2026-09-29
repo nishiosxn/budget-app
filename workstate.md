@@ -88,33 +88,47 @@ L'application reste utilisable localement ensuite sans compte ni backend.
 - [x] PR V2.2 archivée.
 - [x] Branche `v2.3` créée.
 - [x] Plan V2.3 documenté.
-- [ ] Passer le stockage au schéma V5.
-- [ ] Remplacer les données seed par un template neutre.
-- [ ] Rendre le catalogue de catégories local/autonome.
+- [x] Passer le stockage au schéma V5.
+- [x] Remplacer les données seed par un template neutre.
+- [x] Rendre le catalogue de catégories local/autonome.
 
 ### Phase B — interface
-- [ ] Remplacer les prénoms codés en dur par les données du foyer.
-- [ ] Ajouter l'onboarding.
-- [ ] Ajouter la modification des noms du foyer dans Paramètres.
-- [ ] Adapter reset/import/export au schéma V5.
+- [x] Remplacer les prénoms codés en dur par les données du foyer.
+- [x] Ajouter l'onboarding.
+- [x] Ajouter la modification des noms du foyer dans Paramètres.
+- [x] Adapter reset/import/export au schéma V5.
 
 ### Phase C — migration
-- [ ] Ajouter le helper legacy V2.2.
-- [ ] Migrer V2.2/V2.1/V2/V1 sans écraser les anciennes données.
-- [ ] Supporter l'import de sauvegardes legacy V4.
+- [x] Ajouter le helper legacy V2.2.
+- [x] Migrer V2.2/V2.1/V2/V1 sans écraser les anciennes données.
+- [x] Supporter l'import de sauvegardes legacy V4.
 
 ### Phase D — validation/publication
-- [ ] Vérifier absence des anciennes transactions/montants personnels dans le code V2.3.
-- [ ] Vérifier syntaxe JS de chaque module.
-- [ ] Vérifier IDs/références DOM.
-- [ ] Vérifier création neuve.
-- [ ] Vérifier migration locale.
-- [ ] Vérifier import/export V5.
-- [ ] Publier `/v2.3/` avec clé localStorage isolée.
+- [x] Vérifier absence des anciennes transactions/montants personnels dans le code V2.3.
+- [x] Vérifier syntaxe JS de chaque module.
+- [x] Vérifier IDs/références DOM.
+- [x] Vérifier création neuve par inspection du flux et état V5 neutre.
+- [x] Vérifier moteur de migration locale et helper legacy statiquement.
+- [x] Vérifier import/export V5 statiquement.
+- [ ] Publier `/v2.3/` avec clé localStorage isolée. *(snapshot préparé)*
 - [ ] Créer PR V2.3 brouillon.
-- [ ] Mettre à jour README / CHANGELOG / workstate.
+- [x] Mettre à jour README / CHANGELOG / workstate.
 
-## 8. Architecture
+## 8. Validation effectuée
+
+- syntaxe valide pour les 11 modules JavaScript ;
+- concaténation globale valide ;
+- aucun ID HTML dupliqué ;
+- aucune référence DOM manquante ;
+- aucune déclaration de fonction dupliquée ;
+- plus aucune occurrence active des anciennes valeurs financières seed ;
+- plus aucun prénom historique codé en dur dans l’interface ou les modules actifs ;
+- clé de preview préparée : `budget-foyer-v2.3-preview`;
+- helper legacy charge uniquement l’ancien profil V2.2 pour reconstruire les catégories lors d’une migration.
+
+Limite volontaire : l’historique Git et les anciennes previews restent publics. V2.3 ne réécrit pas l’historique.
+
+## 9. Architecture
 
 V2.2 conservée, plus un module :
 
@@ -134,12 +148,12 @@ js/
 legacy-profile.html
 ```
 
-## 9. Après V2.3
+## 10. Après V2.3
 
 - **V2.4** : Supabase, authentification, foyer partagé et synchronisation.
 - **V2.5** : conflits de synchronisation, cache/offline et UX multi-utilisateur.
 
-## 10. Reprise de travail
+## 11. Reprise de travail
 
 À la prochaine session :
 1. lire ce fichier ;
