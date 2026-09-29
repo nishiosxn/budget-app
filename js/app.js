@@ -323,16 +323,17 @@ function renderTracking(){
  document.getElementById("yearPersonADetail").textContent=`${euro(a.incomeA)} de revenus · ${euro(a.expenseA)} dépensés · ${euro(a.savingA)} épargnés`;
  const currentKey=monthKey(state.selectedMonth);
  document.getElementById("trackingMonths").innerHTML=a.months.map((m,i)=>{
-   const prev=i>0?a.months[i-1]:metricsForMonth(labelFromYM(trackingYear-1,12)),delta=m.balance-prev.balance,trend=trendClass(delta,true),empty=!hasMonthActivity(m);
+   const prev=i>0?a.months[i-1]:metricsForMonth(labelFromYM(trackingYear-1,12)),delta=m.balance-prev.balance,trend=trendClass(delta,true),empty=!hasMonthActivity(m),cumulative=sum(a.months.slice(0,i+1).map(x=>x.balance));
    return `<div class="tracking-month-row ${empty?"empty":""} ${m.key===currentKey?"current":""}">
      <span class="month-name">${m.label}</span>
      <span class="money">${euro(m.income)}</span>
      <span class="money">${euro(m.expense)}</span>
      <span class="money">${euro(m.saving)}</span>
      <span class="money">${euro(m.balance)}</span>
+     <span class="money">${euro(cumulative)}</span>
      <span class="trend ${trend}">${Math.abs(delta)<.005?"0 €":formatSignedEuro(delta)}</span>
      <div class="month-main" style="display:none"><span>Reste du mois</span><strong>${euro(m.balance)}</strong></div>
-     <div class="month-sub"><span>Revenus ${euro(m.income)}</span><span>Dépenses ${euro(m.expense)}</span><span>Épargne ${euro(m.saving)}</span></div>
+     <div class="month-sub"><span>Revenus ${euro(m.income)}</span><span>Dépenses ${euro(m.expense)}</span><span>Épargne ${euro(m.saving)}</span><span>Cumul ${euro(cumulative)}</span></div>
    </div>`
  }).join("");
  renderTrackingChart(a.months);
