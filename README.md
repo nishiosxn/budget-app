@@ -8,7 +8,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
 - **Preview V2.1** : https://nishiosxn.github.io/budget-app/v2.1/
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
-- **Preview V2.3** : à publier après validation
+- **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 
 Le dépôt est public. Les opérations saisies dans l'application restent dans le `localStorage` du navigateur et ne sont pas envoyées sur GitHub. Les données initiales présentes directement dans le code source restent en revanche visibles dans le dépôt.
 
@@ -20,7 +20,7 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
-- **V2.3** : données personnelles hors du code public + onboarding
+- **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, brouillon
 - **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
 
@@ -30,7 +30,7 @@ La V1 permet de gérer les revenus, dépenses, épargne, catégories, budgets pr
 
 La V2 ajoute un onglet **Suivi** avec bilan annuel, comparaison mensuelle, reste cumulé, détail individuel et graphique réel / prévu.
 
-La V2.1 fiabilise le suivi annuel, distingue les mois futurs des mois réalisés, arrête la courbe réelle au dernier mois renseigné, permet la copie V1 → V2, conserve les catégories archivées lors de l'édition, améliore les menus au clavier et adapte la navigation mobile à quatre onglets.
+La V2.1 fiabilise le suivi annuel. La V2.2 modularise le JavaScript. La V2.3 introduit un schéma local V5 autonome : aucun historique financier personnel n’est seedé dans le code actif, les noms du foyer sont locaux et un onboarding permet de créer un budget vide, migrer une ancienne version ou importer une sauvegarde.
 
 ## Architecture actuelle
 
@@ -48,6 +48,7 @@ js/
   transactions.js
   settings.js
   tracking.js
+  onboarding.js
   app.js
 README.md
 workstate.md
