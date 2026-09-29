@@ -9,9 +9,9 @@
 - Version publique stable : **V1**
 - Branche de développement active : **v2.1**
 - Base de v2.1 : branche **v2**
-- Dernier commit fonctionnel connu de v2.1 avant documentation : `6491a071d0b82451abd82690e5190558dea72d88`
+- Dernier commit fonctionnel connu de v2.1 : `24c85660b25a14d7f8ca0566c6b336f4dd0d2035`
 - Schéma de données local : **4**
-- PR V2.0 historique : https://github.com/nishiosxn/budget-app/pull/1
+- PR V2.0 historique (fermée, non fusionnée) : https://github.com/nishiosxn/budget-app/pull/1\n- PR V2.1 active (brouillon) : https://github.com/nishiosxn/budget-app/pull/2
 
 ## 2. URLs
 
