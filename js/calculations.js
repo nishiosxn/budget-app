@@ -1,4 +1,4 @@
-// V2.2 — règles métier et calculs mensuels
+// V2.3 — règles métier et calculs mensuels
 function planStoreForType(type){return type==="income"?(state.incomePlanChanges=state.incomePlanChanges||{}):(state.expensePlanChanges=state.expensePlanChanges||{})}
 function planForCategoryAtKey(c,key,type="expense"){
  const record=planStoreForType(type)[c.id]||{},forward=record.forward||{},month=record.month||{};let budget=Number(c.budget)||0,owner=c.owner||"common";
@@ -13,7 +13,7 @@ function setCategoryPlan(id,type,budget,owner,scope="forward"){
  const value={budget:Math.max(0,Math.round((Number(budget)||0)*100)/100),owner:owner||"common"};
  if(scope==="month")record.month[key]=value;else{record.forward[key]=value;delete record.month[key]}
 }
-function categoryCreatedFrom(id,type="expense"){const c=(type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES).find(x=>x.id===id);return c?.createdFrom||"2026-09"}
+function categoryCreatedFrom(id,type="expense"){const c=(type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES).find(x=>x.id===id);return c?.createdFrom||state.createdMonth||monthKey(state.selectedMonth)}
 function isCategoryVisible(id,label=state.selectedMonth,type="expense"){const key=monthKey(label),globalDeleted=type==="income"?(state.deletedIncomeCategoriesGlobal||[]):(state.deletedCategoriesGlobal||[]),monthDeleted=type==="income"?(state.deletedIncomeCategoryMonths?.[key]||[]):(state.deletedCategoryMonths?.[key]||[]);return key>=categoryCreatedFrom(id,type)&&!globalDeleted.includes(id)&&!monthDeleted.includes(id)}
 function visibleExpenseCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>!c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label))}
 function visibleSavingCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label))}
