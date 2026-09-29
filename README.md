@@ -74,3 +74,21 @@ Le fichier **[workstate.md](workstate.md)** est la source de continuité du proj
 Les versions déjà publiées ou utilisées comme jalons ne sont pas écrasées. Une évolution significative crée une nouvelle branche/version (`v2.1`, `v2.2`, etc.) et une nouvelle URL de preview. Les anciens snapshots restent disponibles.
 
 Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
+
+
+## Contrôle qualité automatique
+
+Les Pull Requests vers `main` exécutent `.github/workflows/validate.yml`.
+
+Le contrôle vérifie notamment :
+- syntaxe de tous les modules JavaScript ;
+- IDs HTML uniques et références DOM existantes ;
+- scripts référencés réellement présents ;
+- absence de fonctions globales dupliquées ;
+- template public neutre et sans transactions seedées ;
+- schéma local V5 ;
+- formules métier critiques ;
+- présence du moteur de migration V4/V5 ;
+- cohérence minimale de `workstate.md`.
+
+La branche `gh-pages` est réservée à la publication des snapshots GitHub Pages. Une fois GitHub Pages basculé sur cette branche, `main` pourra être nettoyée des dossiers de previews historiques.

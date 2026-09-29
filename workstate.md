@@ -162,3 +162,28 @@ legacy-profile.html
 2. comparer `v2.3` à `v2.2` ;
 3. reprendre la première case non cochée ;
 4. ne rescanner que les fichiers concernés.
+
+
+## 12. Workflow Git cible avant V2.4
+
+Préparation effectuée :
+- branche `gh-pages` créée depuis le site publié actuel ;
+- audit automatique ajouté via `scripts/validate.mjs` ;
+- workflow `.github/workflows/validate.yml` sur chaque PR vers `main`.
+
+Architecture cible :
+```text
+main        → code stable uniquement
+v2.x        → développement actif
+gh-pages    → production + previews versionnées
+tags        → jalons immuables
+```
+
+Après activation de GitHub Pages sur `gh-pages /(root)` :
+1. vérifier que les URLs /, /v2/, /v2.1/, /v2.2/, /v2.3/ répondent ;
+2. retirer les dossiers de previews de `main` ;
+3. supprimer les branches temporaires fusionnées ;
+4. conserver uniquement les branches de développement nécessaires ;
+5. activer le status check `App integrity` comme obligatoire sur `main`.
+
+Les opérations d'administration GitHub (source GitHub Pages, création de tags et suppression de branches) doivent rester traçables et ne sont pas simulées par des branches ordinaires.

@@ -1,5 +1,13 @@
 # Changelog
 
+## Maintenance Git avant V2.4
+
+### Ajouté
+- Branche de publication `gh-pages` préparée.
+- Audit automatique des Pull Requests vers `main`.
+- Vérifications de syntaxe JS, DOM, données seed, formules critiques et migrations V4/V5.
+- Documentation du workflow Git cible avant V2.4.
+
 ## V2.3 — preview publiée
 
 ### Objectif
