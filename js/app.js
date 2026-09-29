@@ -92,23 +92,25 @@ function transactionsForMonthKey(key){return state.transactions.flatMap(t=>{cons
 function getMonthTransactions(){return transactionsForMonthKey(monthKey(state.selectedMonth))}
 const LEGACY_CATEGORY_DEFS={"extra-1":{id:"extra-1",name:"Revenu supplémentaire 1",owner:"common",legacy:true,type:"income"},"extra-2":{id:"extra-2",name:"Revenu supplémentaire 2",owner:"common",legacy:true,type:"income"},"expense-1":{id:"expense-1",name:"Dépense 1",owner:"common",section:"Vie courante",legacy:true,type:"expense"},"expense-2":{id:"expense-2",name:"Dépense 2",owner:"common",section:"Vie courante",legacy:true,type:"expense"},"expense-3":{id:"expense-3",name:"Dépense 3",owner:"common",section:"Vie courante",legacy:true,type:"expense"},"expense-4":{id:"expense-4",name:"Dépense 4",owner:"common",section:"Vie courante",legacy:true,type:"expense"}};
 function catById(id,type){return (type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES).find(c=>c.id===id)||(LEGACY_CATEGORY_DEFS[id]?.type===type?LEGACY_CATEGORY_DEFS[id]:null)}
-function totalsByCategory(type){const map={};getMonthTransactions().filter(t=>t.type===type).forEach(t=>map[t.category]=(map[t.category]||0)+(Number(t.amount)||0));return map}
+function totalsByCategoryAtKey(type,key){const map={};transactionsForMonthKey(key).filter(t=>t.type===type).forEach(t=>map[t.category]=(map[t.category]||0)+(Number(t.amount)||0));return map}
+function totalsByCategory(type){return totalsByCategoryAtKey(type,monthKey(state.selectedMonth))}
 function sum(list){return list.reduce((a,b)=>a+b,0)}
 function shareAmount(owner,amount,person){if(owner==="common")return amount/2;if(owner===person)return amount;return 0}
 function transactionOwner(t){if(t.owner)return t.owner;const c=catById(t.category,t.type);if(!c)return "common";return planForCategoryAtKey(c,String(t.date||"").slice(0,7)||monthKey(state.selectedMonth),t.type).owner||"common"}
 function actualForCategoryAtMonth(id,key,type="expense"){return Math.round(sum(transactionsForMonthKey(key).filter(t=>t.type===type&&t.category===id).map(t=>Number(t.amount)||0))*100)/100}
 function cumulativeCategoryActual(id,type="expense",throughLabel=state.selectedMonth){const through=monthKey(throughLabel);return MONTHS.map(monthKey).filter(key=>key<=through).reduce((total,key)=>total+actualForCategoryAtMonth(id,key,type),0)}
-function metrics(){
- const tx=getMonthTransactions(),incMap=totalsByCategory("income"),expMap=totalsByCategory("expense");
+function metricsForMonth(label=state.selectedMonth){
+ const key=monthKey(label),tx=transactionsForMonthKey(key),incMap=totalsByCategoryAtKey("income",key),expMap=totalsByCategoryAtKey("expense",key);
  const income=sum(tx.filter(t=>t.type==="income").map(t=>Number(t.amount)||0));
  const expense=sum(tx.filter(t=>t.type==="expense"&&!catById(t.category,"expense")?.saving).map(t=>Number(t.amount)||0));
  const saving=sum(tx.filter(t=>t.type==="expense"&&catById(t.category,"expense")?.saving).map(t=>Number(t.amount)||0));
- const plannedIncome=sum(visibleIncomeCategories().map(c=>c.budget)),plannedExpense=sum(visibleExpenseCategories().map(c=>c.budget)),plannedSaving=sum(visibleSavingCategories().map(c=>c.budget));
+ const plannedIncome=sum(visibleIncomeCategories(label).map(c=>c.budget)),plannedExpense=sum(visibleExpenseCategories(label).map(c=>c.budget)),plannedSaving=sum(visibleSavingCategories(label).map(c=>c.budget));
  let incomeB=0,incomeA=0,expenseB=0,expenseA=0,savingBShare=0,savingAShare=0;
  tx.forEach(t=>{const owner=transactionOwner(t),amount=Number(t.amount)||0;if(t.type==="income"){incomeB+=shareAmount(owner,amount,"B");incomeA+=shareAmount(owner,amount,"A")}else if(catById(t.category,"expense")?.saving){savingBShare+=shareAmount(owner,amount,"B");savingAShare+=shareAmount(owner,amount,"A")}else{expenseB+=shareAmount(owner,amount,"B");expenseA+=shareAmount(owner,amount,"A")}});
- const savingsBMonth=expMap["saving-b"]||0,savingsAMonth=expMap["saving-a"]||0,savingsB=cumulativeCategoryActual("saving-b","expense"),savingsA=cumulativeCategoryActual("saving-a","expense");
- return {tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB:incomeB-expenseB-savingBShare,restA:incomeA-expenseA-savingAShare,savingsB,savingsA,savingsBMonth,savingsAMonth};
+ const savingsBMonth=expMap["saving-b"]||0,savingsAMonth=expMap["saving-a"]||0,savingsB=cumulativeCategoryActual("saving-b","expense",label),savingsA=cumulativeCategoryActual("saving-a","expense",label);
+ return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB:incomeB-expenseB-savingBShare,restA:incomeA-expenseA-savingAShare,savingsB,savingsA,savingsBMonth,savingsAMonth};
 }
+function metrics(){return metricsForMonth(state.selectedMonth)}
 function render(){
  const m=metrics();
  document.getElementById("balanceValue").innerHTML=`${euro(m.balance).replace("€","")}<small>€</small>`;
@@ -123,7 +125,7 @@ function render(){
  document.getElementById("restB").textContent=euro(m.restB);document.getElementById("restA").textContent=euro(m.restA);
  document.getElementById("personBDetail").textContent=`${euro(m.incomeB)} de revenus · ${euro(m.expenseB)} dépensés · ${euro(m.savingBShare)} épargnés`;
  document.getElementById("personADetail").textContent=`${euro(m.incomeA)} de revenus · ${euro(m.expenseA)} dépensés · ${euro(m.savingAShare)} épargnés`;
- renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);renderHistory(m);
+ renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);renderHistory(m);renderTracking();
  document.getElementById("transactionCount").textContent=`${m.tx.length} opération${m.tx.length>1?"s":""}`;
 }
 function renderSections(m){const sections=["Obligatoires","Abonnements","Vie courante"];document.getElementById("sectionCards").innerHTML=sections.map(s=>{const cats=visibleExpenseCategories().filter(c=>c.section===s),planned=sum(cats.map(c=>c.budget)),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===s).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===s).map(c=>m.expMap[c.id]||0)),pct=planned?actual/planned*100:(actual?100:0),over=actual>planned;return `<article class="card budget-card"><div class="budget-card-head"><h3>${s}</h3><span class="${over?'row-value exp':'row-sub'}">${Math.round(pct)}%</span></div><div class="nums"><strong>${euro(actual)}</strong> / ${euro(planned)}</div><div class="progress ${over?'over':''}"><span style="width:${Math.min(pct,100)}%"></span></div><div class="budget-foot">${over?`Dépassement de ${euro(actual-planned)}`:`Il reste ${euro(Math.max(planned-actual,0))}`}</div></article>`}).join("")}
@@ -272,5 +274,71 @@ const settingsBackdrop=document.getElementById("settingsBackdrop");function open
 document.getElementById("exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify({app:"Budget foyer",version:3,exportedAt:new Date().toISOString(),state},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`budget-foyer-${monthKey(state.selectedMonth)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 const importFile=document.getElementById("importFile");document.getElementById("importBtn").addEventListener("click",()=>importFile.click());importFile.addEventListener("change",async()=>{const file=importFile.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),candidate=parsed?.state||parsed;if(!candidate||!Array.isArray(candidate.transactions))throw new Error("format");if(!confirm("Importer cette sauvegarde et remplacer les données locales actuelles ?")){importFile.value="";return}localStorage.setItem(STORAGE_KEY,JSON.stringify(candidate));state=loadState();applyCategoryState();ensureMonthAvailable(state.selectedMonth);MONTHS.forEach(label=>{if(![...monthSelect.options].some(o=>o.value===label)){const o=document.createElement("option");o.value=label;o.textContent=label;monthSelect.appendChild(o)}});rebuildCustomSelect(monthSelect);monthSelect.value=state.selectedMonth;syncCustomSelect(monthSelect);updateMonthNav();render();showUndoToast("Sauvegarde importée")}catch{alert("Ce fichier n’est pas une sauvegarde valide de Budget foyer.")}finally{importFile.value=""}});
 document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Réinitialiser toutes les données avec la base de septembre 2026 ? Cette action efface les modifications locales.")){state=seedState();applyCategoryState();saveState();monthSelect.value=state.selectedMonth;syncCustomSelect(monthSelect);updateMonthNav();render();closeSettings()}});
+
+let trackingYear=Number(monthKey(state.selectedMonth).slice(0,4));
+function labelsForYear(year){return Array.from({length:12},(_,i)=>labelFromYM(year,i+1))}
+function hasMonthActivity(m){return m.tx.length>0||m.plannedIncome>0||m.plannedExpense>0||m.plannedSaving>0}
+function annualMetrics(year){
+ const months=labelsForYear(year).map(label=>metricsForMonth(label));
+ const active=months.filter(hasMonthActivity);
+ const total=prop=>sum(months.map(m=>Number(m[prop])||0));
+ return {
+  year,months,active,
+  income:total("income"),expense:total("expense"),saving:total("saving"),balance:total("balance"),
+  plannedIncome:total("plannedIncome"),plannedExpense:total("plannedExpense"),plannedSaving:total("plannedSaving"),plannedBalance:total("plannedBalance"),
+  incomeB:total("incomeB"),incomeA:total("incomeA"),expenseB:total("expenseB"),expenseA:total("expenseA"),
+  savingB:total("savingBShare"),savingA:total("savingAShare"),restB:total("restB"),restA:total("restA")
+ }
+}
+function formatSignedEuro(v){return `${v>0.005?"+":""}${euro(v)}`}
+function trendClass(v,positiveIsGood=true){if(Math.abs(v)<.005)return"neutral";const good=positiveIsGood?v>0:v<0;return good?"positive":"negative"}
+function monthShort(label){return label.split(" ")[0].slice(0,4).replace("é","e").replace("û","u")}
+function renderTrackingChart(months){
+ const host=document.getElementById("trackingChart");if(!host)return;
+ const values=months.flatMap(m=>[m.balance,m.plannedBalance]),max=Math.max(1,...values.map(v=>Math.abs(Number(v)||0)));
+ const W=900,H=270,pad={l:54,r:18,t:18,b:42},innerW=W-pad.l-pad.r,innerH=H-pad.t-pad.b,zeroY=pad.t+innerH/2,scale=(innerH/2-12)/max;
+ const x=i=>pad.l+(innerW*(i/(months.length-1||1))),y=v=>zeroY-(Number(v)||0)*scale;
+ const real=months.map((m,i)=>`${x(i)},${y(m.balance)}`).join(" "),planned=months.map((m,i)=>`${x(i)},${y(m.plannedBalance)}`).join(" ");
+ const grid=[-1,-.5,0,.5,1].map(f=>{const yy=zeroY-f*(innerH/2-12),val=f*max;return `<line class="${f===0?"chart-zero-line":"chart-grid-line"}" x1="${pad.l}" x2="${W-pad.r}" y1="${yy}" y2="${yy}"/><text class="chart-axis-label" x="${pad.l-8}" y="${yy+3}" text-anchor="end">${Math.round(val)} €</text>`}).join("");
+ const labels=months.map((m,i)=>`<text class="chart-month-label" x="${x(i)}" y="${H-12}" text-anchor="middle">${monthShort(m.label)}</text>`).join("");
+ const realPts=months.map((m,i)=>`<circle class="chart-real-point" cx="${x(i)}" cy="${y(m.balance)}" r="4"><title>${m.label} · Réel ${euro(m.balance)}</title></circle>`).join("");
+ const plannedPts=months.map((m,i)=>`<circle class="chart-planned-point" cx="${x(i)}" cy="${y(m.plannedBalance)}" r="3"><title>${m.label} · Prévu ${euro(m.plannedBalance)}</title></circle>`).join("");
+ host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du reste mensuel réel et prévu"><g>${grid}</g><polyline class="chart-planned-line" points="${planned}"/><polyline class="chart-real-line" points="${real}"/>${plannedPts}${realPts}${labels}</svg>`;
+}
+function renderTracking(){
+ const yearEl=document.getElementById("trackingYear");if(!yearEl)return;
+ const a=annualMetrics(trackingYear),activeCount=Math.max(1,a.active.length);
+ yearEl.textContent=String(trackingYear);
+ document.getElementById("yearIncome").textContent=euro(a.income);
+ document.getElementById("yearExpense").textContent=euro(a.expense);
+ document.getElementById("yearSaving").textContent=euro(a.saving);
+ document.getElementById("yearBalance").textContent=euro(a.balance);
+ document.getElementById("yearIncomeDelta").textContent=`Prévu ${euro(a.plannedIncome)}`;
+ document.getElementById("yearExpenseDelta").textContent=`Prévu ${euro(a.plannedExpense)}`;
+ document.getElementById("yearSavingDelta").textContent=`Prévu ${euro(a.plannedSaving)}`;
+ document.getElementById("yearBalanceAverage").textContent=`Moyenne ${euro(a.balance/activeCount)} / mois actif`;
+ document.getElementById("yearRestB").textContent=euro(a.restB);
+ document.getElementById("yearRestA").textContent=euro(a.restA);
+ document.getElementById("yearPersonBDetail").textContent=`${euro(a.incomeB)} de revenus · ${euro(a.expenseB)} dépensés · ${euro(a.savingB)} épargnés`;
+ document.getElementById("yearPersonADetail").textContent=`${euro(a.incomeA)} de revenus · ${euro(a.expenseA)} dépensés · ${euro(a.savingA)} épargnés`;
+ const currentKey=monthKey(state.selectedMonth);
+ document.getElementById("trackingMonths").innerHTML=a.months.map((m,i)=>{
+   const prev=i>0?a.months[i-1]:metricsForMonth(labelFromYM(trackingYear-1,12)),delta=m.balance-prev.balance,trend=trendClass(delta,true),empty=!hasMonthActivity(m);
+   return `<div class="tracking-month-row ${empty?"empty":""} ${m.key===currentKey?"current":""}">
+     <span class="month-name">${m.label}</span>
+     <span class="money">${euro(m.income)}</span>
+     <span class="money">${euro(m.expense)}</span>
+     <span class="money">${euro(m.saving)}</span>
+     <span class="money">${euro(m.balance)}</span>
+     <span class="trend ${trend}">${Math.abs(delta)<.005?"0 €":formatSignedEuro(delta)}</span>
+     <div class="month-main" style="display:none"><span>Reste du mois</span><strong>${euro(m.balance)}</strong></div>
+     <div class="month-sub"><span>Revenus ${euro(m.income)}</span><span>Dépenses ${euro(m.expense)}</span><span>Épargne ${euro(m.saving)}</span></div>
+   </div>`
+ }).join("");
+ renderTrackingChart(a.months);
+}
+document.getElementById("prevYear")?.addEventListener("click",()=>{trackingYear--;renderTracking()});
+document.getElementById("nextYear")?.addEventListener("click",()=>{trackingYear++;renderTracking()});
+
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeCategoryEditor();closeCategoryDelete();closeRecurrenceDelete();closeRecurrenceEdit();closeSettings()}});
 render();
