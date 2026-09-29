@@ -74,3 +74,13 @@ Le fichier **[workstate.md](workstate.md)** est la source de continuité du proj
 Les versions déjà publiées ou utilisées comme jalons ne sont pas écrasées. Une évolution significative crée une nouvelle branche/version (`v2.1`, `v2.2`, etc.) et une nouvelle URL de preview. Les anciens snapshots restent disponibles.
 
 Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
+
+
+## Branches de travail
+
+- `main` : version stable actuellement en production.
+- `develop` : tronc de développement de la future V2.
+- `v2.x` : branche de version créée depuis `develop`, puis fusionnée vers `develop` après validation.
+- `gh-pages` : branche réservée à la publication GitHub Pages et aux anciennes previews.
+
+Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
