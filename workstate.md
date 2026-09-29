@@ -162,3 +162,8 @@ legacy-profile.html
 2. comparer `v2.3` à `v2.2` ;
 3. reprendre la première case non cochée ;
 4. ne rescanner que les fichiers concernés.
+
+
+## 12. Audit CI central
+
+Depuis la maintenance pré-V2.4, les Pull Requests vers `main` exécutent le check GitHub Actions **App integrity**. La V2.3 sert de première branche source pour vérifier ce contrôle avant de démarrer V2.4.
