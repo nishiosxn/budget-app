@@ -128,6 +128,149 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .compare-panel{border-radius:var(--radius)}
 .compare-separator{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:4px 0 2px}
 
+
+/* APRÈS = système fluide et accessible. Toutes les évolutions visuelles restent scopées ici. */
+.after-demo{
+  --after-text-secondary:#56635b;
+  --after-text-tertiary:#66746b;
+  --after-fs-meta:clamp(.75rem,.72rem + .12vw,.82rem);
+  --after-fs-label:clamp(.76rem,.73rem + .13vw,.84rem);
+  --after-fs-row-title:clamp(.80rem,.77rem + .16vw,.90rem);
+  --after-fs-row-value:clamp(.82rem,.79rem + .15vw,.92rem);
+  --after-space-row:clamp(.78rem,.70rem + .35vw,1rem);
+  --after-space-card:clamp(.90rem,.82rem + .45vw,1.2rem);
+  --after-gap:clamp(.55rem,.48rem + .35vw,.9rem);
+  min-width:0;
+}
+.after-demo .type-meta,
+.after-demo .type-muted,
+.after-demo .kpi-sub,
+.after-demo .sample-sub,
+.after-demo .history-date,
+.after-demo .watch-meta{
+  color:var(--after-text-secondary);
+  font-size:var(--after-fs-meta);
+  font-weight:550;
+  line-height:1.5;
+}
+.after-demo .kpi-label{
+  color:var(--after-text-secondary);
+  font-size:var(--after-fs-label);
+  font-weight:600;
+  line-height:1.4;
+}
+.after-demo .sample-title,
+.after-demo .history-title,
+.after-demo .watch-title{
+  color:var(--text-strong);
+  font-size:var(--after-fs-row-title);
+  font-weight:650;
+  line-height:1.35;
+}
+.after-demo .sample-amount,
+.after-demo .history-amount{
+  font-size:var(--after-fs-row-value);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.after-demo .watch-meta,
+.after-demo .sample-sub,
+.after-demo .history-date,
+.after-demo .kpi-sub,
+.after-demo .meta-pill,
+.after-demo .watch-pill{
+  font-variant-numeric:tabular-nums;
+}
+.after-demo .watch-pill{
+  padding:.42rem .58rem;
+  font-size:clamp(.70rem,.68rem + .10vw,.77rem);
+  font-weight:650;
+  line-height:1.25;
+}
+.after-demo .sample-row,
+.after-demo .watch-row,
+.after-demo .history-row{
+  gap:var(--after-gap);
+  padding-block:var(--after-space-row);
+}
+.after-demo.sample-list,
+.after-demo.watch,
+.after-demo.history-card{
+  padding-inline:var(--after-space-card);
+}
+.after-demo .sample-row>div,
+.after-demo .watch-row>div,
+.after-demo .history-row>div{
+  min-width:0;
+}
+.after-demo .kpis{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(.65rem,.58rem + .3vw,.9rem);
+}
+.after-demo .kpi{
+  padding:clamp(1rem,.92rem + .45vw,1.35rem);
+  min-width:0;
+}
+.after-demo .kpi-value{
+  font-size:clamp(1.42rem,1.28rem + .55vw,1.72rem);
+  font-weight:700;
+  line-height:1.08;
+}
+.after-demo.balance{
+  padding:clamp(1.35rem,1.18rem + .8vw,1.85rem);
+}
+.after-demo .balance-label{
+  font-size:clamp(.78rem,.74rem + .15vw,.86rem);
+  font-weight:600;
+}
+.after-demo .balance-value{
+  font-size:clamp(2.65rem,2.25rem + 1.5vw,3.15rem);
+}
+.after-demo .balance-value small{
+  font-size:.5em;
+}
+.after-demo .meta-pill{
+  font-size:clamp(.72rem,.69rem + .12vw,.79rem);
+  line-height:1.35;
+}
+.after-demo .meta-pill strong{
+  font-size:1em;
+}
+.after-demo.type-demo{
+  gap:clamp(.9rem,.8rem + .45vw,1.2rem);
+}
+.after-demo .type-row{
+  grid-template-columns:minmax(7rem,9.4rem) minmax(0,1fr);
+  gap:clamp(.75rem,.68rem + .3vw,1rem);
+  padding-block:clamp(.8rem,.72rem + .35vw,1rem);
+}
+.after-demo .type-body{
+  font-size:clamp(.78rem,.75rem + .12vw,.84rem);
+  line-height:1.55;
+}
+.after-demo .type-title{
+  font-size:var(--after-fs-row-title);
+}
+.after-demo .type-heading{
+  font-size:clamp(1.05rem,1rem + .25vw,1.18rem);
+}
+.after-demo .type-display{
+  font-size:clamp(1.65rem,1.48rem + .65vw,1.95rem);
+}
+.after-demo button,
+.after-demo [role="button"]{
+  min-inline-size:2.75rem;
+  min-block-size:2.75rem;
+}
+@media(max-width:24rem){
+  .after-demo .type-row{grid-template-columns:1fr}
+}
+@media(max-width:22rem){
+  .after-demo .kpis{grid-template-columns:1fr}
+  .after-demo .watch-row{grid-template-columns:1fr}
+  .after-demo .watch-pill{justify-self:start}
+}
+
 /* AVANT = styles actuels de la V2.4 fixe */
 .before-demo{--before-text:#17201b;--before-muted:#707973}
 .before-demo .type-display{font-size:30px;font-weight:800;letter-spacing:-.04em;color:var(--before-text)}
@@ -178,8 +321,6 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   .card-pad{padding:18px}
   .sample-row,.watch-row{gap:10px}
   .history-row{grid-template-columns:34px minmax(0,1fr) auto;gap:9px}
-  .history-title,.sample-title,.watch-title{font-size:12.5px}
-  .sample-sub,.history-date,.watch-meta{font-size:10.5px;line-height:1.4}
 }
 </style>
 </head>
@@ -222,12 +363,12 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
       </article>
       <div class="compare-separator"></div>
       <div class="compare-label after">Après · proposition V2.4.test</div>
-      <article class="card card-pad type-demo compare-panel">
-        <div class="type-row"><div class="type-meta">30 px · 720<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
-        <div class="type-row"><div class="type-meta">18 px · 700<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
-        <div class="type-row"><div class="type-meta">13 px · 650<br>Titre de ligne</div><div class="type-title">Courses & quotidien</div></div>
-        <div class="type-row"><div class="type-meta">12 px · 450<br>Texte normal</div><div class="type-body">Le contenu reste net sans donner l’impression d’être constamment en gras.</div></div>
-        <div class="type-row"><div class="type-meta">11,5 px · 500<br>Métadonnées</div><div class="type-muted">01 octobre 2026 · À deux</div></div>
+      <article class="card card-pad type-demo compare-panel after-demo">
+        <div class="type-row"><div class="type-meta">clamp() fluide · 700–720<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
+        <div class="type-row"><div class="type-meta">clamp() fluide · 700<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
+        <div class="type-row"><div class="type-meta">clamp() fluide · 650<br>Titre de ligne</div><div class="type-title">Courses & quotidien</div></div>
+        <div class="type-row"><div class="type-meta">clamp() fluide · 450<br>Texte normal</div><div class="type-body">Le contenu reste net sans donner l’impression d’être constamment en gras.</div></div>
+        <div class="type-row"><div class="type-meta">12–13 px équiv. · 550<br>Métadonnées</div><div class="type-muted">01 octobre 2026 · À deux</div></div>
       </article>
     </div>
   </section>
@@ -256,8 +397,8 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
       </div>
       <div class="compare-separator"></div>
       <div class="compare-label after">Après · proposition V2.4.test</div>
-      <div class="grid two">
-        <article class="card balance">
+      <div class="grid two after-demo">
+        <article class="card balance after-demo">
           <div>
             <div class="balance-label">Reste disponible ce mois</div>
             <div class="balance-value">1 238,40 <small>€</small></div>
@@ -288,7 +429,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
       </article>
       <div class="compare-separator"></div>
       <div class="compare-label after">Après · proposition V2.4.test</div>
-      <article class="card watch compare-panel">
+      <article class="card watch compare-panel after-demo">
         <div class="watch-row"><div><div class="watch-title">Loyer & charges</div><div class="watch-meta">640,00 € / 640,00 €</div></div><div class="watch-pill ok">Il reste 0,00 €</div></div>
         <div class="watch-row"><div><div class="watch-title">Courses</div><div class="watch-meta">232,40 € / 250,00 €</div></div><div class="watch-pill">Il reste 17,60 €</div></div>
         <div class="watch-row"><div><div class="watch-title">Transport</div><div class="watch-meta">86,20 € / 100,00 €</div></div><div class="watch-pill">Il reste 13,80 €</div></div>
@@ -307,7 +448,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
       </article>
       <div class="compare-separator"></div>
       <div class="compare-label after">Après · proposition V2.4.test</div>
-      <article class="card sample-list compare-panel">
+      <article class="card sample-list compare-panel after-demo">
         <div class="sample-row"><div><div class="sample-title">Remboursement</div><div class="sample-sub">Aujourd’hui · Personnel</div></div><div class="sample-amount pos">+50,00 €</div></div>
         <div class="sample-row"><div><div class="sample-title">Courses</div><div class="sample-sub">Hier · À deux</div></div><div class="sample-amount neg">−42,80 €</div></div>
         <div class="sample-row"><div><div class="sample-title">Abonnement</div><div class="sample-sub">28 sept. · Personnel</div></div><div class="sample-amount neg">−12,99 €</div></div>
@@ -327,7 +468,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
       </article>
       <div class="compare-separator"></div>
       <div class="compare-label after">Après · proposition V2.4.test</div>
-      <article class="card history-card compare-panel">
+      <article class="card history-card compare-panel after-demo">
         <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Rentrée exceptionnelle</div><div class="history-date">01 octobre 2026 · Personnel</div></div><div class="history-amount pos">+50,00 €</div></div>
         <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Courses</div><div class="history-date">01 octobre 2026 · À deux</div></div><div class="history-amount neg">−42,80 €</div></div>
         <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Entretien du logement</div><div class="history-date">30 septembre 2026 · À deux</div></div><div class="history-amount neg">−25,00 €</div></div>
