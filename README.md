@@ -15,15 +15,15 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.3
-- **Branche active** : `v2.3`
+- **Développement actif** : V2.4
+- **Branche active** : `v2.4`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
 - **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
+- **Synchronisation multi-appareils** : en cours d’implémentation avec Supabase dans V2.4
 
 ## Fonctionnalités principales
 
@@ -84,3 +84,26 @@ Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 - `gh-pages` : branche réservée à la publication GitHub Pages et aux anciennes previews.
 
 Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
+
+
+## V2.4 — Cloud partagé
+
+La V2.4 conserve le modèle local V5 de V2.3 comme cache et introduit un backend Supabase pour :
+- authentification par Magic Link ;
+- foyer partagé entre plusieurs comptes ;
+- catégories, budgets, transactions et récurrences synchronisés ;
+- mises à jour Realtime ;
+- migration contrôlée des données locales V5 vers le cloud ;
+- fonctionnement dégradé local en cas de perte réseau.
+
+Configuration publique utilisée côté navigateur :
+- Project URL : `https://bqbemjxwdctyovtlpxpm.supabase.co`
+- Publishable key Supabase uniquement ; aucun secret serveur n’est stocké dans le dépôt.
+
+Sécurité côté Supabase validée avant développement :
+- RLS actif sur 6 tables ;
+- policies RLS présentes ;
+- aucun accès direct `anon` aux tables ;
+- RPC `create_household` inaccessible à `anon` ;
+- Realtime actif sur les 6 tables ;
+- schéma `private` inaccessible à `anon`.
