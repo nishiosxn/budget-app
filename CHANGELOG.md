@@ -1,5 +1,20 @@
 # Changelog
 
+## V2.5.1 — réorganisation du header
+
+### Interface
+- Header desktop réorganisé : identité + synchronisation/paramètres sur la première ligne.
+- Navigation + mois + actions de transaction regroupés sur la seconde ligne.
+- Header mobile compact : identité à gauche et synchronisation/paramètres à droite.
+- Sélecteur du mois déplacé sur sa propre ligne mobile, navigation placée en dessous.
+- Badge de synchronisation réduit au voyant seul sur les écrans très étroits.
+- Nom du foyer tronqué proprement lorsqu'il manque de place.
+
+### Technique
+- Aucun changement de logique métier, Supabase, RLS ou synchronisation.
+- Branche dédiée `v2.5.1` et preview séparée `/v2.5.1/`.
+
+
 ## V2.5 — synchronisation robuste
 
 ### Synchronisation
