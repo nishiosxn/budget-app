@@ -1,4 +1,4 @@
-// V2.4 — authentification Supabase email/mot de passe et Magic Link
+// V2.5 — authentification Supabase email/mot de passe et Magic Link
 let cloudSession=null;
 let pendingInviteToken="";
 let cloudAuthSubscription=null;
@@ -34,14 +34,14 @@ function cloudAuthRedirectUrl(mode=""){
 function readPendingInvite(){
  const urlToken=new URLSearchParams(location.search).get("invite");
  if(urlToken){
-  localStorage.setItem("budget-foyer-v2.4-pending-invite",urlToken);
+  localStorage.setItem("budget-foyer-v2.5-pending-invite",urlToken);
   return urlToken;
  }
- return localStorage.getItem("budget-foyer-v2.4-pending-invite")||"";
+ return localStorage.getItem("budget-foyer-v2.5-pending-invite")||"";
 }
 function clearPendingInvite(){
  pendingInviteToken="";
- localStorage.removeItem("budget-foyer-v2.4-pending-invite");
+ localStorage.removeItem("budget-foyer-v2.5-pending-invite");
  const url=new URL(location.href);
  url.searchParams.delete("invite");
  history.replaceState({},document.title,url.pathname+url.search);
@@ -56,13 +56,13 @@ function clearPasswordRecoveryUrl(){
  history.replaceState({},document.title,url.pathname+url.search);
 }
 function pendingPersonalProfile(){
- try{return JSON.parse(localStorage.getItem("budget-foyer-v2.4-pending-profile")||"null")||{}}catch{return{}}
+ try{return JSON.parse(localStorage.getItem("budget-foyer-v2.5-pending-profile")||"null")||{}}catch{return{}}
 }
 function setPendingPersonalProfile(profile){
- localStorage.setItem("budget-foyer-v2.4-pending-profile",JSON.stringify(profile));
+ localStorage.setItem("budget-foyer-v2.5-pending-profile",JSON.stringify(profile));
 }
 function clearPendingPersonalProfile(){
- localStorage.removeItem("budget-foyer-v2.4-pending-profile");
+ localStorage.removeItem("budget-foyer-v2.5-pending-profile");
 }
 function setCloudGateView(name){
  [cloudLoginView,cloudLoadingView,cloudInviteView,cloudResetView].forEach(el=>{if(el)el.hidden=true});
@@ -202,7 +202,7 @@ async function cloudSignOut(){
  cloudSyncReady=false;
  activeHouseholdId=null;
  activeMembership=null;
- localStorage.removeItem("budget-foyer-v2.4-offline-user");
+ localStorage.removeItem("budget-foyer-v2.5-offline-user");
  await cloudClient.auth.signOut();
 }
 async function initCloudAuth(){
@@ -210,7 +210,7 @@ async function initCloudAuth(){
  setCloudGateView("loading");
  setCloudGateStatus("Vérification de la session…");
  if(!cloudClient){
-  if(state.onboardingComplete&&localStorage.getItem("budget-foyer-v2.4-offline-user")){
+  if(state.onboardingComplete&&localStorage.getItem("budget-foyer-v2.5-offline-user")){
    hideCloudGate();
    setCloudStatus("Cloud indisponible · cache local","offline");
   }else{
@@ -222,7 +222,7 @@ async function initCloudAuth(){
  const {data,error}=await cloudClient.auth.getSession();
  if(error)console.error("Session Supabase",error);
  cloudSession=data?.session||null;
- if(cloudSession)localStorage.setItem("budget-foyer-v2.4-offline-user",cloudSession.user.id);
+ if(cloudSession)localStorage.setItem("budget-foyer-v2.5-offline-user",cloudSession.user.id);
  updateCloudAccountUi();
  if(cloudSession&&isPasswordRecoveryReturn()){
   setCloudGateView("reset");
@@ -238,7 +238,7 @@ async function initCloudAuth(){
  cloudAuthSubscription?.unsubscribe?.();
  const {data:listener}=cloudClient.auth.onAuthStateChange((event,session)=>{
   cloudSession=session||null;
-  if(session)localStorage.setItem("budget-foyer-v2.4-offline-user",session.user.id);
+  if(session)localStorage.setItem("budget-foyer-v2.5-offline-user",session.user.id);
   updateCloudAccountUi();
   if(event==="PASSWORD_RECOVERY"){
    setCloudGateView("reset");
@@ -250,7 +250,7 @@ async function initCloudAuth(){
    cloudSyncReady=false;
    activeHouseholdId=null;
    activeMembership=null;
-   localStorage.removeItem("budget-foyer-v2.4-offline-user");
+   localStorage.removeItem("budget-foyer-v2.5-offline-user");
    setCloudGateView("login");
    setCloudAuthMode("login");
    setCloudGateStatus("Session fermée.");
