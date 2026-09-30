@@ -9,6 +9,25 @@
   const isAndroid=()=>/android/i.test(navigator.userAgent);
   const isMobile=()=>window.matchMedia("(max-width: 820px)").matches||isIos()||isAndroid();
 
+  function configureMobileShell(){
+    const root=document.documentElement;
+    const standalone=isStandalone();
+    root.classList.toggle("mobile-web",isMobile());
+    root.classList.toggle("display-standalone",standalone);
+    root.classList.toggle("display-browser",!standalone);
+
+    if(!isMobile())return;
+
+    const viewport=document.querySelector('meta[name="viewport"]');
+    if(viewport){
+      viewport.setAttribute("content","width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover");
+    }
+
+    ["gesturestart","gesturechange","gestureend"].forEach(type=>{
+      document.addEventListener(type,event=>event.preventDefault(),{passive:false});
+    });
+  }
+
   function registerServiceWorker(){
     if(!("serviceWorker" in navigator))return;
     window.addEventListener("load",()=>{
@@ -157,6 +176,7 @@
     closeInstallPrompt(false);
   });
 
+  configureMobileShell();
   registerServiceWorker();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",schedulePrompt,{once:true});
   else schedulePrompt();
