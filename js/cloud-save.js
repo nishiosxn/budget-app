@@ -1,4 +1,4 @@
-// V2.4 — sauvegarde du cache local V5 vers Supabase
+// V2.5 — sauvegarde locale et délégation au moteur de fusion optimiste
 let cloudLastSyncedDigest="";
 let cloudPushRequested=false;
 
@@ -7,7 +7,7 @@ function cloudSyncDigest(source=state){
  delete snapshot.selectedMonth;
  return JSON.stringify(snapshot);
 }
-function cloudPendingKey(){return `budget-foyer-v2.4-cloud-pending:${activeHouseholdId||"none"}`}
+function cloudPendingKey(){return "budget-foyer-v2.5-cloud-pending:"+(activeHouseholdId||"none")}
 function setCloudSyncedBaseline(digest=cloudSyncDigest()){
  cloudLastSyncedDigest=digest;
  if(!activeHouseholdId)return;
@@ -20,8 +20,14 @@ function queueCloudSync(){
  if(digest===cloudLastSyncedDigest)return;
  localStorage.setItem(cloudPendingKey(),"1");
  clearTimeout(cloudPushTimer);
+ if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict){
+  setCloudStatus("Conflit de synchronisation · action requise","error");
+  return;
+ }
  setCloudStatus(navigator.onLine?"Modification en attente…":"Hors ligne · modification conservée","offline");
- cloudPushTimer=setTimeout(()=>cloudPushLocalState().catch(error=>console.error("Cloud push",error)),650);
+ cloudPushTimer=setTimeout(()=>cloudPushLocalState().catch(error=>{
+  if(error?.code!=="CLOUD_SYNC_CONFLICT")console.error("Cloud push",error);
+ }),650);
 }
 function cloudLocalCategories(source=state){
  const rows=[];
@@ -179,6 +185,7 @@ async function cloudSyncTransactions(idMap,source=state){
  }));
 }
 async function cloudPushLocalState({force=false}={}){
+ if(typeof cloudPushLocalStateV25==="function")return cloudPushLocalStateV25({force});
  if(!cloudSession||!activeHouseholdId)return;
  if(cloudPushInProgress){cloudPushRequested=true;return}
  const snapshot=cloneData(state),digest=cloudSyncDigest(snapshot);
