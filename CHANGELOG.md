@@ -1,5 +1,31 @@
 # Changelog
 
+## V2.5 — synchronisation robuste
+
+### Synchronisation
+- Ajout d'une baseline locale par foyer avec les payloads normalisés et les `updated_at` distants.
+- Fusion à trois versions : baseline, état local et état Supabase.
+- Fusion automatique des changements indépendants sur une même ligne.
+- Détection explicite lorsque le même champ est modifié différemment sur plusieurs appareils.
+- Détection des conflits suppression / modification.
+- Résolution manuelle depuis les paramètres avec priorité locale ou priorité cloud.
+- Les changements non conflictuels sont conservés quelle que soit la préférence choisie pour le conflit.
+
+### Fiabilité
+- Écritures optimistes protégées par `updated_at`.
+- Une modification distante survenant pendant l'envoi stoppe l'écriture au lieu d'être écrasée.
+- Reprise non destructive des caches V2.4/V2.4.1 vers un cache V2.5 séparé.
+- Reprise de l'ancien indicateur de modifications hors ligne.
+- Index uniques `(household_id, legacy_id)` sur catégories, transactions et récurrences pour limiter les doublons liés aux retries et doubles onglets.
+
+### Interface
+- État « Conflit de synchronisation » conservé pendant les événements Realtime.
+- Carte de résolution des conflits dans Paramètres & données.
+
+### Supabase
+- Migration `20260930104500_v2_5_sync_deduplication.sql` appliquée.
+
+
 ## V2.4.1 — amélioration UX/UI responsive
 
 ### Interface
