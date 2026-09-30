@@ -11,7 +11,10 @@ function cloudPendingKey(){
  const key="budget-foyer-v2.5-cloud-pending:"+(activeHouseholdId||"none");
  if(activeHouseholdId&&!localStorage.getItem(key)){
   const previous="budget-foyer-v2.4-cloud-pending:"+activeHouseholdId;
-  if(localStorage.getItem(previous)==="1")localStorage.setItem(key,"1");
+  if(localStorage.getItem(previous)==="1"){
+   localStorage.setItem(key,"1");
+   localStorage.removeItem(previous);
+  }
  }
  return key;
 }
