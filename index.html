@@ -9,8 +9,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Budget" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/favicon.ico" type="image/x-icon" sizes="16x16 32x32 48x48" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>Budget foyer</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -18,7 +19,7 @@
 <div class="app">
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><div class="logo">B</div><div><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
+      <div class="brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
       <div class="top-actions">
         <div class="month-nav" aria-label="Navigation entre les mois">
           <button id="prevMonth" class="month-arrow" type="button" aria-label="Mois précédent" title="Mois précédent">
@@ -230,7 +231,7 @@
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
     <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
     <div class="onboarding-card">
       <h3>Nouveau budget</h3>
@@ -254,7 +255,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>

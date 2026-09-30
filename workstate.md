@@ -84,7 +84,10 @@ But : empêcher les doublons lors de retries, doubles onglets ou écritures conc
 ## Installation PWA
 
 - Manifest `manifest.webmanifest` avec affichage `standalone`.
-- Icône PNG 192 px pour iOS + icône SVG responsive/maskable.
+- Logo Smart Budget validé dans `icons/icon.svg` : carré vert `#285F49` et symbole crème `#F4F5F1`, sans police.
+- Déclinaisons communes : `favicon.ico` (16/32/48 px), `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` (180 px).
+- L'en-tête, l'onboarding, le panneau d'installation PWA et la page admin utilisent le même logo.
+- Pour toute version créée depuis `v2.5`, conserver les cinq fichiers de `icons/` ainsi que les liens HTML, le manifest et le précache ; incrémenter le nom du cache dans `sw.js` après changement d'icône.
 - Balises iOS pour l'ajout à l'écran d'accueil et l'ouverture sans interface Safari.
 - Service worker `sw.js` pour l'installation et le repli local des ressources statiques.
 - Module `js/pwa.js` : proposition d'installation uniquement sur mobile, après accès à l'application.

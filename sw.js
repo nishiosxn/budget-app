@@ -1,7 +1,8 @@
-const CACHE_NAME="budget-foyer-v25-pwa-20260930-3";
+const CACHE_NAME="budget-foyer-v25-pwa-20260930-4";
 const APP_SHELL=[
   "./","./index.html","./css/style.css","./manifest.webmanifest",
-  "./icons/icon-192.png","./icons/icon.svg",
+  "./icons/icon.svg","./icons/favicon.ico","./icons/icon-192.png",
+  "./icons/icon-512.png","./icons/apple-touch-icon.png",
   "./js/config.js","./js/data.js","./js/storage.js","./js/calculations.js","./js/ui.js",
   "./js/categories.js","./js/transactions.js","./js/settings.js","./js/tracking.js","./js/onboarding.js",
   "./js/supabase-config.js","./js/supabase-client.js","./js/auth.js","./js/cloud-household.js",

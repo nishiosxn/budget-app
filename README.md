@@ -109,6 +109,8 @@ Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actio
 
 La V2.5 conserve l'architecture cloud de V2.4/V2.4.1 mais remplace la stratégie « dernier écrivain gagnant » par une fusion optimiste basée sur une baseline locale et les `updated_at` Supabase.
 
+L'identité Smart Budget validée est conservée dans `icons/icon.svg`. Les fichiers `favicon.ico`, `icon-192.png`, `icon-512.png` et `apple-touch-icon.png` du même dossier en sont les déclinaisons. Toute nouvelle version créée depuis `v2.5` doit reprendre le dossier `icons/`, les liens du document HTML, les entrées du manifest et le précache du service worker, puis incrémenter le nom de son cache PWA.
+
 Principes :
 - les changements locaux et distants sur des éléments différents sont conservés ;
 - deux champs différents d'une même ligne peuvent être fusionnés automatiquement ;

@@ -17,6 +17,26 @@ if(!exists("workstate.md")) fail("workstate.md manquant");
 if(!exists("CHANGELOG.md")) fail("CHANGELOG.md manquant");
 
 const html=exists("index.html")?read("index.html"):"";
+const iconFiles=["icon.svg","favicon.ico","icon-192.png","icon-512.png","apple-touch-icon.png"];
+const missingIcons=iconFiles.filter(file=>!exists(path.join("icons",file)));
+if(missingIcons.length)fail("Icônes Smart Budget manquantes: "+missingIcons.join(", "));
+else{
+  const svg=read("icons/icon.svg");
+  if(!svg.includes("#285F49")||!svg.includes("#F4F5F1")||/<text\b|>B</i.test(svg))fail("Logo SVG validé absent ou ancien B conservé");
+  const pngSizes={"icon-192.png":192,"icon-512.png":512,"apple-touch-icon.png":180};
+  for(const [file,size] of Object.entries(pngSizes)){
+    const png=fs.readFileSync(path.join(root,"icons",file));
+    if(png.subarray(0,8).toString("hex")!=="89504e470d0a1a0a"||png.readUInt32BE(16)!==size||png.readUInt32BE(20)!==size)fail(`Dimensions ou format invalide: icons/${file}`);
+  }
+  const ico=fs.readFileSync(path.join(root,"icons","favicon.ico"));
+  if(ico.readUInt16LE(0)!==0||ico.readUInt16LE(2)!==1||ico.readUInt16LE(4)!==3)fail("favicon.ico doit contenir trois tailles");
+  if(!iconFiles.every(file=>read("sw.js").includes(`./icons/${file}`)))fail("Icônes absentes du précache PWA");
+  if(!["icons/icon.svg","icons/favicon.ico","icons/apple-touch-icon.png"].every(file=>html.includes(file)))fail("Favicon ou icône Apple absents de index.html");
+  if(/class="logo">B</.test(html)||/class=\\"logo\\">B</.test(read("js/pwa.js")))fail("Ancien logo B encore affiché");
+  const manifest=JSON.parse(read("manifest.webmanifest"));
+  if(!["icons/icon.svg","icons/icon-192.png","icons/icon-512.png"].every(file=>manifest.icons.some(icon=>icon.src===file)))fail("Manifest PWA incomplet");
+  if(!errors.some(error=>/Icônes|Logo SVG|Dimensions|favicon|précache|Ancien logo|Manifest PWA/.test(error)))ok("Identité Smart Budget et icônes PWA cohérentes");
+}
 const jsDir=path.join(root,"js");
 const jsFiles=fs.existsSync(jsDir)
   ? fs.readdirSync(jsDir).filter(f=>f.endsWith(".js")).sort()
@@ -64,7 +84,8 @@ if(duplicateIds.length) fail("IDs HTML dupliqués: "+duplicateIds.join(", "));
 else ok("IDs HTML uniques");
 
 const domRefs=[...allJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
-const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)))];
+const dynamicIds=[...allJs.matchAll(/\.id\s*=\s*"([^"]+)"/g)].map(m=>m[1]);
+const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.includes(id)))];
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 

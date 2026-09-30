@@ -23,6 +23,7 @@
 - Carte de résolution des conflits dans Paramètres & données.
 - Correctifs mobile : Paramètres défilables et haut de page réorganisé sur petits écrans.
 - Installation PWA : manifest, icônes, mode standalone, service worker et guide d'ajout à l'écran d'accueil sur mobile.
+- Identité Smart Budget validée : ancien B remplacé dans l'application et les icônes SVG, ICO, Android et Apple ; précache PWA renouvelé.
 
 ### Supabase
 - Migration `20260930104500_v2_5_sync_deduplication.sql` appliquée.
