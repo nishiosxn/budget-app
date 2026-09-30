@@ -483,3 +483,41 @@ body{
     animation-iteration-count:1!important;
   }
 }
+
+
+/* === V2.5 · conflits de synchronisation === */
+.cloud-conflict-card{
+  display:grid;
+  gap:var(--space-md, .8rem);
+  margin:0 0 var(--space-md, .8rem);
+  padding:clamp(.9rem,.82rem + .4vw,1.15rem);
+  border:1px solid #ead9b8;
+  border-radius:1rem;
+  background:#fff8ec;
+}
+.cloud-conflict-card[hidden]{display:none!important}
+.cloud-conflict-card strong{
+  display:block;
+  color:#6f4d16;
+  font-size:var(--fs-row, .85rem);
+  font-weight:700;
+}
+.cloud-conflict-card p{
+  margin:.28rem 0 0;
+  color:#765f39;
+  font-size:var(--fs-meta, .78rem);
+  font-weight:550;
+  line-height:1.5;
+}
+.cloud-conflict-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.55rem;
+}
+.cloud-conflict-actions .btn{
+  min-height:2.75rem;
+  justify-content:center;
+}
+@media(max-width:32.5rem){
+  .cloud-conflict-actions{display:grid;grid-template-columns:1fr}
+}
