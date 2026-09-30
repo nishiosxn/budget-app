@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Administration · Budget foyer</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div><span class="eyebrow">Budget foyer · V2.4.1</span><h1>Administration</h1></div>
+      <div class="header-actions"><a href="../">Retour à l’application</a><button id="adminSignOutBtn" type="button" hidden>Déconnexion</button></div>
+    </header>
+
+    <section id="adminLoginView" class="card auth-card">
+      <h2>Connexion administrateur</h2>
+      <p>Connecte-toi avec le compte auquel le rôle administrateur a été attribué en base.</p>
+      <label>Email<input id="adminEmail" type="email" autocomplete="email"></label>
+      <label>Mot de passe<input id="adminPassword" type="password" autocomplete="current-password"></label>
+      <button id="adminLoginBtn" class="primary" type="button">Se connecter</button>
+    </section>
+
+    <section id="adminDeniedView" class="card denied" hidden>
+      <h2>Accès refusé</h2>
+      <p>Ce compte est authentifié, mais ne possède pas le rôle administrateur global.</p>
+      <button id="adminDeniedSignOutBtn" type="button">Changer de compte</button>
+    </section>
+
+    <section id="adminLoadingView" class="card loading" hidden aria-live="polite">Chargement sécurisé…</section>
+
+    <div id="adminDashboard" hidden>
+      <section class="stats" id="adminStats"></section>
+      <section class="card">
+        <div class="section-head"><div><span class="eyebrow">COMPTES</span><h2>Utilisateurs</h2></div><button id="adminRefreshBtn" type="button">Actualiser</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Email</th><th>État</th><th>Créé</th><th>Dernière connexion</th><th>Foyers</th><th>Actions</th></tr></thead><tbody id="adminUsersBody"></tbody></table></div>
+      </section>
+      <section class="card">
+        <div class="section-head"><div><span class="eyebrow">DONNÉES</span><h2>Foyers et membres</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Foyer</th><th>Créé</th><th>Membres</th><th>Données actives</th><th>Action</th></tr></thead><tbody id="adminHouseholdsBody"></tbody></table></div>
+      </section>
+    </div>
+    <p id="adminStatus" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" defer></script>
+  <script src="../js/supabase-config.js" defer></script>
+  <script src="../js/supabase-client.js" defer></script>
+  <script src="admin.js" defer></script>
+</body>
+</html>

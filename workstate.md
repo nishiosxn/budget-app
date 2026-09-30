@@ -1,205 +1,146 @@
-# Workstate — Budget foyer
+# Workstate — Budget foyer V2.4.1
 
 > Source de vérité pour reprendre le développement sans rescanner le dépôt.
 
-## 1. État actuel
+## État final
 
 - Dépôt : `nishiosxn/budget-app`
+- Branche active : `v2.4.1`
 - Production : `main` → V1
-- Dernier jalon validé : **V2.2**
-- Branche de développement de référence : **develop**
-- Dernier jalon source : **v2.3**
-- Preview V2.2 : https://nishiosxn.github.io/budget-app/v2.2/
-- PR V2.2 #4 : fermée comme jalon historique
-- PR de publication V2.3 #6 : fusionnée en squash dans `main`
-- PR source V2.3 #7 : brouillon, ne pas fusionner avant validation visuelle
-- Objectif V2.3 : **retirer les données personnelles du code actif et rendre les sauvegardes autonomes**
+- Tronc V2 : `develop`
+- Preview V2.4 : `https://nishiosxn.github.io/budget-app/v2.4/`
+- Preview V2.4.1 : `https://nishiosxn.github.io/budget-app/v2.4.1/`
+- Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, `eu-west-1`)
+- V2.4 reste le socle cloud/sécurité. V2.4.1 est une évolution UX/UI uniquement, sans modification métier ni Supabase.
+- Les changements V2.4.1 portent sur la typographie, le contraste, les tailles fluides, les espacements, les grilles et les très petits écrans.
+- Validation utilisateur terminée : UX/UI desktop/mobile, inscription, confirmation email, mot de passe oublié, isolation des foyers, invitation, synchronisation et accès admin testés avec succès.
 
-## 2. Principes V2.3
+## Invariants
 
-La V2.3 doit :
-- ne contenir aucune transaction personnelle initiale dans le code ;
-- ne contenir aucun montant de budget personnel dans le template neuf ;
-- ne dépendre d'aucun prénom codé en dur dans l'interface active ;
-- stocker le nom du foyer et les deux noms localement ;
-- stocker le catalogue de catégories de base dans l'état utilisateur ;
-- permettre une migration explicite depuis V1/V2.x ;
-- produire des exports V5 autonomes contenant toute la configuration nécessaire ;
-- conserver les anciennes previews sans les modifier.
+- Le schéma local V5 reste le format métier et le cache hors ligne.
+- Les anciennes clés V2.3 sont migrables sans effacement.
+- Les caches V2.4 sont désormais séparés par identifiant de foyer.
+- Toutes les données synchronisées portent un `household_id` et sont filtrées par RLS.
+- Les suppressions métier synchronisées restent des archives `archived_at`.
+- La stratégie de synchronisation reste dernier écrivain gagnant, avec Realtime, file d'attente locale et reprise après reconnexion.
+- Seule la clé publishable Supabase est présente dans le navigateur. Aucun secret serveur n'est versionné.
 
-Important : les anciennes versions déjà publiées restent historiquement accessibles dans le dépôt public. V2.3 nettoie la version active et les futurs exports ; elle ne réécrit pas l'historique Git.
 
-## 3. Schéma V5
+## Couche UX/UI V2.4.1
 
-Nouveaux champs principaux :
+- Palette : texte principal adouci `#26342d`, texte secondaire renforcé `#56635b`, vert `#23704d`, rouge `#ad5046`.
+- Hiérarchie typographique allégée : titres de ligne autour de 650, montants autour de 700, métadonnées autour de 550.
+- Les informations secondaires importantes utilisent des tailles fluides avec un plancher proche de 12 px équivalent.
+- Les tailles, espacements et montants critiques utilisent `rem` + `clamp()`.
+- Les grilles principales utilisent des colonnes flexibles et `minmax(0,1fr)` lorsque nécessaire.
+- Un breakpoint très étroit (22 rem) adapte KPI, historique et blocs de surveillance aux formats Fold.
+- Les contrôles principaux disposent de cibles tactiles renforcées.
+- `prefers-reduced-motion` est respecté.
+- Le cache `budget-foyer-v2.4` et le backend V2.4 sont conservés : V2.4.1 ne crée pas un nouveau silo de données.
 
-```text
-schemaVersion: 5
-onboardingComplete
-household:
-  name
-  personB
-  personA
-baseIncomeCategories[]
-baseExpenseCategories[]
-transactions[]
-... champs historiques de plans / suppressions / catégories custom
-```
+## Authentification
 
-Les catégories de base deviennent donc des **données locales**, et non plus une configuration personnelle imposée par le code.
+- Email + mot de passe : `signUp` et `signInWithPassword`.
+- Confirmation d'email active côté projet (`mailer_autoconfirm=false`).
+- Mot de passe oublié : `resetPasswordForEmail`, retour `mode=recovery`, puis `updateUser`.
+- Magic Link conservé comme méthode secondaire.
+- Une inscription normale sans invitation appelle l'RPC idempotente `ensure_personal_household` et crée un foyer personnel vide.
+- Une inscription ouverte depuis une invitation ne crée pas de foyer personnel avant l'acceptation : elle rejoint uniquement le foyer explicitement invité.
+- Après déconnexion, l'autorisation de cache hors ligne est retirée.
 
-## 4. Template neuf
+## Isolation et invitations
 
-Le code public ne fournit qu'un template neutre :
-- Personne 1 / Personne 2 ;
-- catégories génériques ;
-- budgets prévus à 0 € ;
-- aucune transaction ;
-- aucune marque/service personnel spécifique.
+- Tables métier : `households`, `household_members`, `categories`, `budgets`, `transactions`, `recurrences`, `household_invites`.
+- RLS actif sur toutes les tables publiques.
+- Aucun grant direct `anon`.
+- Les mutations directes `INSERT/UPDATE/DELETE` de `household_members` sont révoquées pour `authenticated`.
+- Le foyer est limité à deux membres par les RPC et par le trigger `household_members_limit_two`.
+- Les invitations expirent après sept jours, sont limitées au foyer/slot demandé et consommées atomiquement.
+- Le jeton brut n'est jamais stocké : seule sa valeur SHA-256 (`token_hash`) est conservée.
+- Les appels sensibles disponibles à `authenticated` contrôlent `auth.uid()`, le rôle propriétaire, le foyer, le slot, l'expiration et la limite de membres.
 
-## 5. Migration legacy
+## Administration globale
 
-La migration V1/V2.x doit :
-1. lire la sauvegarde locale legacy ;
-2. charger le profil structurel V2.2 depuis un helper de migration isolé ;
-3. reconstruire les catégories historiques ;
-4. conserver transactions, budgets, noms personnalisés, plans, suppressions et récurrences ;
-5. inférer les noms des deux personnes depuis la configuration legacy lorsque possible ;
-6. enregistrer immédiatement un état V5 autonome.
+- Interface séparée : `admin/index.html` (`/v2.4.1/admin/` sur la preview V2.4.1).
+- Rôle global : `public.app_admins`, RLS actif, aucun grant `anon` ou `authenticated`.
+- Journal : `public.admin_audit_log`, également inaccessible aux clients.
+- Edge Function : `admin-api`, SDK épinglé, `verify_jwt=true`, origine GitHub Pages/localhost contrôlée.
+- Chaque appel valide le JWT côté serveur puis vérifie `app_admins` en base.
+- Fonctions : liste des utilisateurs/foyers/membres/dates/états, désactivation/réactivation, suppression d'utilisateur, suppression de foyer.
+- `SUPABASE_SERVICE_ROLE_KEY` est lue uniquement depuis l'environnement natif de l'Edge Function.
+- L'unique compte existant lors de ce chantier a été désigné premier administrateur côté base ; les inscriptions futures ne deviennent jamais administratrices automatiquement.
+- Pour ajouter volontairement un autre admin depuis le SQL Editor : `select private.grant_app_admin_by_email('adresse@example.com');`.
 
-Aucune donnée V1/V2 ne doit être effacée pendant cette copie.
-
-## 6. Onboarding
-
-Au premier lancement :
-- créer un nouveau budget ;
-- migrer une version locale détectée ;
-- importer une sauvegarde JSON.
-
-Pour un nouveau budget :
-- nom du foyer ;
-- nom Personne 1 ;
-- nom Personne 2.
-
-L'application reste utilisable localement ensuite sans compte ni backend.
-
-## 7. Plan
-
-### Phase A — modèle
-- [x] V2.2 validée par l'utilisateur.
-- [x] PR V2.2 archivée.
-- [x] Branche `v2.3` créée.
-- [x] Plan V2.3 documenté.
-- [x] Passer le stockage au schéma V5.
-- [x] Remplacer les données seed par un template neutre.
-- [x] Rendre le catalogue de catégories local/autonome.
-
-### Phase B — interface
-- [x] Remplacer les prénoms codés en dur par les données du foyer.
-- [x] Ajouter l'onboarding.
-- [x] Ajouter la modification des noms du foyer dans Paramètres.
-- [x] Adapter reset/import/export au schéma V5.
-
-### Phase C — migration
-- [x] Ajouter le helper legacy V2.2.
-- [x] Migrer V2.2/V2.1/V2/V1 sans écraser les anciennes données.
-- [x] Supporter l'import de sauvegardes legacy V4.
-
-### Phase D — validation/publication
-- [x] Vérifier absence des anciennes transactions/montants personnels dans le code V2.3.
-- [x] Vérifier syntaxe JS de chaque module.
-- [x] Vérifier IDs/références DOM.
-- [x] Vérifier création neuve par inspection du flux et état V5 neutre.
-- [x] Vérifier moteur de migration locale et helper legacy statiquement.
-- [x] Vérifier import/export V5 statiquement.
-- [x] Publier `/v2.3/` avec clé localStorage isolée.
-- [x] Créer PR V2.3 brouillon.
-- [x] Mettre à jour README / CHANGELOG / workstate.
-
-## 8. Validation effectuée
-
-- syntaxe valide pour les 11 modules JavaScript ;
-- concaténation globale valide ;
-- aucun ID HTML dupliqué ;
-- aucune référence DOM manquante ;
-- aucune déclaration de fonction dupliquée ;
-- plus aucune occurrence active des anciennes valeurs financières seed ;
-- plus aucun prénom historique codé en dur dans l’interface ou les modules actifs ;
-- clé de preview active : `budget-foyer-v2.3-preview`;
-- helper legacy charge uniquement l’ancien profil V2.2 pour reconstruire les catégories lors d’une migration.
-
-Limite volontaire : l’historique Git et les anciennes previews restent publics. V2.3 ne réécrit pas l’historique.
-
-## 9. Architecture
-
-V2.2 conservée, plus un module :
+## Architecture utile
 
 ```text
+index.html
+css/style.css
 js/
-  config.js
-  data.js
-  storage.js
-  calculations.js
-  ui.js
-  categories.js
-  transactions.js
-  settings.js
-  tracking.js
-  onboarding.js
-  app.js
-legacy-profile.html
+  storage.js              cache V5 isolé par foyer
+  auth.js                 password, confirmation, recovery, Magic Link
+  cloud-household.js      provisionnement, adhésions, invitations
+  cloud-state-core.js
+  cloud-load.js
+  cloud-save.js
+  cloud-realtime.js
+admin/
+  index.html
+  admin.css
+  admin.js
+supabase/
+  functions/admin-api/
+  migrations/
+scripts/validate.mjs
 ```
 
-## 10. Workflow Git après V2.3
+## Migrations appliquées et versionnées
 
 ```text
-main       → production stable
-develop    → tronc V2
-v2.4       → prochain jalon, créé depuis develop
-gh-pages   → publication et previews
+20260930001858_v2_4_household_invites_and_slots.sql
+20260930002106_v2_4_sync_fields_and_security_hardening.sql
+20260930002728_v2_4_archive_sync_rows.sql
+20260930011901_v2_4_multi_user_security_and_admin.sql
+20260930012443_v2_4_admin_service_permissions.sql
+20260930012820_v2_4_admin_advisor_hardening.sql
+20260930012844_v2_4_retire_legacy_household_rpc.sql
 ```
 
-Règle à partir de V2.4 :
-1. créer `v2.4` depuis `develop`;
-2. développer et auditer sur `v2.4`;
-3. Pull Request `v2.4 → develop`;
-4. le check **App integrity** doit réussir ;
-5. après validation, fusion squash dans `develop`;
-6. publier le snapshot sur `gh-pages`;
-7. ne fusionner `develop → main` que lorsqu'une V2 est jugée stable pour remplacer la V1.
+## Audits
 
-## 11. Après V2.3
+- `node scripts/validate.mjs` couvre les 19 modules, les deux conversions V5/cloud, l'auth complète, le cache par foyer, les invitations hachées, l'admin, la syntaxe Edge, les migrations et l'absence de secret serveur.
+- Edge Function sans `Authorization` : HTTP 401 vérifié.
+- Test SQL transactionnel avec rôle `authenticated` : foyer propre lisible, foyer/catégorie étrangers invisibles et non modifiables, insertion directe d'un membre refusée ; toutes les données de test ont été annulées par rollback.
+- Security Advisor : trois warnings intentionnels pour les RPC `SECURITY DEFINER` exposées uniquement à `authenticated` (`ensure_personal_household`, `create_household_invite`, `accept_household_invite`). Ils sont nécessaires pour des écritures atomiques malgré les grants clients révoqués et valident explicitement l'identité et le périmètre.
+- Security Advisor : un réglage Auth hébergé reste manuel, **Leaked Password Protection**. Il n'est pas pilotable par migration SQL.
+- Performance Advisor : uniquement des index encore inutilisés sur ce faible volume ; les foreign keys sont toutes indexées.
 
-- **V2.4** : Supabase, authentification, foyer partagé et synchronisation.
-- **V2.5** : conflits de synchronisation, cache/offline et UX multi-utilisateur.
+## Réglages Supabase / email
 
-## 12. Reprise de travail
+Dans le Dashboard Supabase :
 
-À la prochaine session :
-1. lire ce fichier ;
-2. comparer `v2.3` à `v2.2` ;
-3. reprendre la première case non cochée ;
-4. ne rescanner que les fichiers concernés.
+1. `Authentication → URL Configuration` autorise les previews V2.4 et V2.4.1 pour les confirmations, Magic Links et récupérations ;
+2. le SMTP personnalisé est activé avec Brevo ; l'expéditeur applicatif est configuré sous le nom **Smart Budget** ;
+3. inscription, confirmation d'email et récupération de mot de passe ont été testées avec succès sur V2.4.1 ;
+4. **Leaked Password Protection** reste un réglage Auth hébergé optionnel à activer manuellement si le plan le permet.
 
+Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmation d'email reste requise. Aucun secret SMTP n'est versionné dans le dépôt.
 
-## 13. Audit CI central
+## Validation manuelle
 
-Depuis la maintenance pré-V2.4, les Pull Requests vers `main` exécutent le check GitHub Actions **App integrity**. La V2.3 sert de première branche source pour vérifier ce contrôle avant de démarrer V2.4.
+Validation utilisateur terminée sur V2.4.1 :
 
+- création de compte email/mot de passe et confirmation email ;
+- récupération et changement du mot de passe ;
+- création de foyers indépendants entre comptes ;
+- invitation d'un second membre dans un foyer ;
+- synchronisation des opérations et comportement multi-session ;
+- contrôle d'accès à l'administration ;
+- validation visuelle desktop/mobile de la couche UX/UI V2.4.1.
 
-- Audit CI central validé : le workflow supporte désormais la V1 monolithique et l'architecture V2 modulaire. Le prochain commit V2.3 déclenche le check `App integrity`.
+## Workflow Git
 
-
-## 14. Maintenance pré-V2.4
-
-- [x] Branche `gh-pages` préparée avec la production et les previews actuelles.
-- [x] Branche `develop` créée depuis V2.3.
-- [x] Audit automatique central ajouté.
-- [x] Audit compatible avec V1 monolithique et V2 modulaire.
-- [x] Workflow `develop` configuré pour les PR vers `develop` et `main`.
-- [x] Smoke test réel sur PR vers `develop` : **App integrity = success**.
-- [ ] Basculer GitHub Pages de `main /(root)` vers `gh-pages /(root)`.
-- [ ] Après bascule Pages, retirer les dossiers de previews de `main`.
-- [ ] Créer les tags de jalon V2.0 / V2.1 / V2.2 / V2.3.
-- [ ] Supprimer les branches temporaires déjà fusionnées.
-- [ ] Rendre le check `App integrity` obligatoire sur `main` (et idéalement `develop`).
+- V2.4.1 est validée côté utilisateur et prête pour Pull Request vers `develop`.
+- Ne pas fusionner directement dans `main`.
+- Laisser **App integrity** valider la PR avant merge vers `develop`.
+- La preview reste publiée dans `gh-pages/v2.4.1/` sans modifier `/v2.4/` ni les previews historiques.

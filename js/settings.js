@@ -1,4 +1,4 @@
-// V2.3 — paramètres, import/export V5 et migration non destructive
+// V2.4 — paramètres, import/export V5 et synchronisation cloud
 const settingsBackdrop=document.getElementById("settingsBackdrop");
 const settingsHouseholdName=document.getElementById("settingsHouseholdName");
 const settingsPersonB=document.getElementById("settingsPersonB");
@@ -10,7 +10,7 @@ function fillHouseholdSettings(){
  settingsPersonB.value=household.personB;
  settingsPersonA.value=household.personA;
 }
-function openSettings(){fillHouseholdSettings();settingsBackdrop.classList.add("open");settingsBackdrop.setAttribute("aria-hidden","false")}
+function openSettings(){fillHouseholdSettings();if(typeof updateCloudAccountUi==="function")updateCloudAccountUi();if(typeof updateCloudHouseholdUi==="function")updateCloudHouseholdUi();settingsBackdrop.classList.add("open");settingsBackdrop.setAttribute("aria-hidden","false")}
 function closeSettings(){settingsBackdrop.classList.remove("open");settingsBackdrop.setAttribute("aria-hidden","true")}
 document.getElementById("settingsBtn").addEventListener("click",openSettings);
 document.getElementById("closeSettings").addEventListener("click",closeSettings);
@@ -115,13 +115,13 @@ importFile.addEventListener("change",async()=>{
  const file=importFile.files?.[0];if(!file)return;
  try{
   const next=await readStateFile(file);
-  if(!confirm("Importer cette sauvegarde et remplacer les données locales actuelles de V2.3 ?"))return;
+  if(!confirm("Importer cette sauvegarde et remplacer les données actuelles du foyer partagé V2.4 ?"))return;
   installPreparedState(next);showUndoToast("Sauvegarde importée")
  }catch{alert("Ce fichier n’est pas une sauvegarde compatible de Budget foyer.")}
  finally{importFile.value=""}
 });
 
 document.getElementById("resetBtn").addEventListener("click",()=>{
- if(!confirm("Réinitialiser les données V2.3 et revenir à l’écran de configuration ?"))return;
+ if(!confirm("Réinitialiser les données du foyer partagé V2.4 ? Cette modification sera synchronisée sur les autres appareils."))return;
  state=seedState();saveState();reloadUiFromState();closeSettings();openOnboarding(false)
 });
