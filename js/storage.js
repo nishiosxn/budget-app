@@ -1,4 +1,4 @@
-// V2.4 — cache local V5, catalogue autonome et sauvegarde
+// V2.5 — cache local V5 isolé et reprise non destructive
 function neutralBaseCategories(template,createdFrom){
  return template.map(c=>({...cloneData(c),createdFrom:c.createdFrom||createdFrom}));
 }
@@ -77,20 +77,38 @@ function normalizeState(x){
 function householdStorageKey(householdId){
  return householdId?`${STORAGE_KEY}:household:${householdId}`:STORAGE_KEY;
 }
-function currentStorageKey(){
+function preferredHouseholdId(){
  const runtimeId=typeof activeHouseholdId!=="undefined"?activeHouseholdId:null;
- const householdId=runtimeId||localStorage.getItem("budget-foyer-v2.4-active-household");
- return householdStorageKey(householdId);
+ if(runtimeId)return runtimeId;
+ const current=localStorage.getItem(ACTIVE_HOUSEHOLD_KEY);
+ if(current)return current;
+ for(const key of PREVIOUS_ACTIVE_HOUSEHOLD_KEYS||[]){
+  const previous=localStorage.getItem(key);
+  if(previous){
+   localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,previous);
+   return previous;
+  }
+ }
+ return null;
+}
+function currentStorageKey(){
+ return householdStorageKey(preferredHouseholdId());
+}
+function previousHouseholdStorageKeys(householdId){
+ return (PREVIOUS_STORAGE_KEYS||[]).map(key=>householdId?key+":household:"+householdId:key);
 }
 function loadState(){
  try{
   const targetKey=currentStorageKey();
   let raw=localStorage.getItem(targetKey);
-  if(!raw&&targetKey!==STORAGE_KEY){
-   const previousV24=localStorage.getItem(STORAGE_KEY);
-   if(previousV24){
-    raw=previousV24;
-    localStorage.setItem(targetKey,previousV24);
+  if(!raw){
+   const householdId=preferredHouseholdId();
+   for(const key of previousHouseholdStorageKeys(householdId)){
+    const previous=localStorage.getItem(key);
+    if(!previous)continue;
+    raw=previous;
+    localStorage.setItem(targetKey,previous);
+    break;
    }
   }
   if(!raw){
@@ -108,7 +126,16 @@ function loadState(){
 }
 function switchHouseholdCache(householdId){
  const key=householdStorageKey(householdId);
- const raw=localStorage.getItem(key);
+ let raw=localStorage.getItem(key);
+ if(!raw){
+  for(const previousKey of previousHouseholdStorageKeys(householdId)){
+   const previous=localStorage.getItem(previousKey);
+   if(!previous)continue;
+   raw=previous;
+   localStorage.setItem(key,previous);
+   break;
+  }
+ }
  state=raw?normalizeState(JSON.parse(raw)):seedState();
  applyCategoryState();
  return !!raw;
