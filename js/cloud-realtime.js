@@ -1,4 +1,4 @@
-// V2.4 — actualisation Realtime du foyer actif
+// V2.5 — Realtime avec priorité aux modifications locales et conflits explicites
 let cloudRealtimeChannel=null;
 let cloudRealtimeTimer=null;
 
@@ -10,6 +10,10 @@ function stopCloudRealtime(){
 }
 function scheduleCloudRealtimeReload(){
  if(Date.now()<cloudIgnoreRealtimeUntil||cloudPushInProgress)return;
+ if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict){
+  setCloudStatus("Conflit de synchronisation · action requise","error");
+  return;
+ }
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(async()=>{
   if(!cloudSession||!activeHouseholdId||cloudPushInProgress)return;
@@ -40,7 +44,9 @@ function startCloudRealtime(){
   .on("postgres_changes",{event:"*",schema:"public",table:"transactions",filter:memberFilter},scheduleCloudRealtimeReload)
   .on("postgres_changes",{event:"*",schema:"public",table:"recurrences",filter:memberFilter},scheduleCloudRealtimeReload)
   .subscribe(status=>{
-   if(status==="SUBSCRIBED")setCloudStatus("Synchronisé","ok");
-   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setCloudStatus("Realtime indisponible","error");
+   if(status==="SUBSCRIBED"){
+    if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict)setCloudStatus("Conflit de synchronisation · action requise","error");
+    else setCloudStatus("Synchronisé","ok");
+   }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setCloudStatus("Realtime indisponible","error");
   });
 }
