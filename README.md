@@ -9,21 +9,24 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.1** : https://nishiosxn.github.io/budget-app/v2.1/
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
+- **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
+- **Preview V2.4.1 UX/UI** : https://nishiosxn.github.io/budget-app/v2.4.1/
+- **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
 Le dépôt est public. Les opérations saisies dans l'application restent dans le `localStorage` du navigateur et ne sont pas envoyées sur GitHub. Les données initiales présentes directement dans le code source restent en revanche visibles dans le dépôt.
 
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.3
-- **Branche active** : `v2.3`
+- **Développement actif** : V2.4.1
+- **Branche active** : `v2.4.1`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
 - **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : non implémentée ; prévue pour une V2.x ultérieure
+- **Synchronisation multi-appareils** : implémentée en V2.4 ; V2.4.1 améliore l’UX/UI sans modifier le backend
 
 ## Fonctionnalités principales
 
