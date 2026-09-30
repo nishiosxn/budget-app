@@ -11,6 +11,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 - **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
 - **Preview V2.4.1 UX/UI** : https://nishiosxn.github.io/budget-app/v2.4.1/
+- **Preview V2.5 Sync** : https://nishiosxn.github.io/budget-app/v2.5/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
 Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
@@ -18,15 +19,15 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.4.1 (amélioration UX/UI de V2.4)
-- **Branche active** : `v2.4.1`
+- **Développement actif** : V2.5 (synchronisation robuste et gestion des conflits)
+- **Branche active** : `v2.5`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
 - **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : implémentée sur la branche V2.4 avec isolation par foyer, comptes email/mot de passe et Magic Link facultatif
+- **Synchronisation multi-appareils** : V2.5 ajoute une fusion optimiste par entité et évite les écrasements silencieux en cas de conflit
 
 ## Fonctionnalités principales
 
@@ -60,6 +61,7 @@ js/
   cloud-state-core.js
   cloud-load.js
   cloud-save.js
+  cloud-sync-v25.js
   cloud-realtime.js
   app.js
 supabase/migrations/
@@ -78,6 +80,7 @@ La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés 
 - V2.3 source : `budget-foyer-v2.3`
 - Preview V2.3 : `budget-foyer-v2.3-preview`
 - V2.4 : `budget-foyer-v2.4`
+- V2.5 : `budget-foyer-v2.5`
 - Chaque preview publiée utilise une clé dédiée afin de ne pas modifier une autre version.
 
 La V2.3 propose une migration non destructive depuis les versions locales V1/V2.x et les sauvegardes legacy V4. La V2.4 copie également un cache V2.3 détecté vers sa propre clé sans effacer la source.
@@ -101,6 +104,21 @@ Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
 
 
+
+## V2.5 — Synchronisation robuste
+
+La V2.5 conserve l'architecture cloud de V2.4/V2.4.1 mais remplace la stratégie « dernier écrivain gagnant » par une fusion optimiste basée sur une baseline locale et les `updated_at` Supabase.
+
+Principes :
+- les changements locaux et distants sur des éléments différents sont conservés ;
+- deux champs différents d'une même ligne peuvent être fusionnés automatiquement ;
+- le même champ modifié différemment sur deux appareils crée un conflit explicite au lieu d'écraser une version ;
+- une suppression concurrente à une modification déclenche aussi un conflit ;
+- l'utilisateur choisit alors entre priorité locale et priorité cloud, sans perdre les changements non conflictuels ;
+- les écritures sont protégées par une vérification optimiste de `updated_at` ;
+- des index uniques sur `(household_id, legacy_id)` empêchent les doublons dus aux retries ou doubles onglets.
+
+La V2.5 utilise un cache local séparé et reprend de manière non destructive les caches V2.4/V2.4.1.
 
 ## V2.4.1 — UX/UI responsive
 
@@ -129,7 +147,7 @@ La V2.4 conserve le modèle local V5 de V2.3 comme cache et introduit un backend
 - fonctionnement dégradé local en cas de perte réseau ;
 - interface `/admin/` protégée par un rôle en base et une Edge Function Supabase.
 
-La synchronisation envoie des snapshots cohérents, archive les suppressions et conserve les modifications locales qui surviennent pendant un envoi. La stratégie V2.4 est « dernier écrivain gagnant » ; la résolution fine des conflits est réservée à V2.5.
+La synchronisation V2.4 envoie des snapshots cohérents et archive les suppressions. La résolution fine des conflits est implémentée à partir de V2.5.
 
 Configuration publique utilisée côté navigateur :
 - Project URL : `https://bqbemjxwdctyovtlpxpm.supabase.co`
