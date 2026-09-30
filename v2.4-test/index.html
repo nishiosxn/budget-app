@@ -120,6 +120,47 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .note{padding:16px 18px;background:#f8faf8;border:1px dashed #cfd8d2;border-radius:16px;color:var(--muted);font-size:12px;line-height:1.6}
 .note strong{color:var(--text-strong);font-weight:650}
 
+
+.compare-block{display:grid;gap:12px}
+.compare-label{display:inline-flex;align-items:center;gap:7px;width:max-content;padding:6px 9px;border-radius:9px;font-size:10.5px;font-weight:700;letter-spacing:.015em}
+.compare-label.before{background:#eef0ec;color:#66716a}
+.compare-label.after{background:var(--accent-soft);color:var(--accent)}
+.compare-panel{border-radius:var(--radius)}
+.compare-separator{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:4px 0 2px}
+
+/* AVANT = styles actuels de la V2.4 fixe */
+.before-demo{--before-text:#17201b;--before-muted:#707973}
+.before-demo .type-display{font-size:30px;font-weight:800;letter-spacing:-.04em;color:var(--before-text)}
+.before-demo .type-heading{font-size:18px;font-weight:800;color:var(--before-text)}
+.before-demo .type-title{font-size:13px;font-weight:750;color:var(--before-text)}
+.before-demo .type-body{font-size:12px;font-weight:700;color:var(--before-text)}
+.before-demo .type-muted{font-size:10px;font-weight:700;color:var(--before-muted)}
+.before-demo .type-meta{font-size:10px;color:var(--before-muted)}
+
+.before-balance{padding:30px;min-height:220px;background:linear-gradient(145deg,#173c2d 0%,#285f49 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+.before-balance .balance-label{font-size:13px;font-weight:750;color:rgba(255,255,255,.68)}
+.before-balance .balance-value{margin-top:8px;font-size:49px;font-weight:800;letter-spacing:-.045em}
+.before-balance .balance-value small{font-size:23px;font-weight:800}
+.before-balance .meta-pill{font-size:10px;font-weight:800}
+.before-balance .meta-pill strong{font-size:11px;font-weight:850}
+
+.before-kpi .kpi-label{font-size:13px;font-weight:700;color:#707973}
+.before-kpi .kpi-value{font-size:28px;font-weight:800;letter-spacing:-.04em;color:#17201b}
+.before-kpi .kpi-sub{font-size:12px;font-weight:400;color:#707973}
+
+.before-watch .watch-title{font-size:12px;font-weight:800;color:#17201b}
+.before-watch .watch-meta{font-size:10px;font-weight:400;color:#707973}
+.before-watch .watch-pill{font-size:10px;font-weight:850}
+
+.before-list .sample-title{font-size:13px;font-weight:720;color:#17201b}
+.before-list .sample-sub{font-size:11px;font-weight:400;color:#707973}
+.before-list .sample-amount{font-size:13px;font-weight:800}
+
+.before-history .history-title{font-size:12px;font-weight:750;color:#17201b}
+.before-history .history-date{font-size:10px;font-weight:400;color:#707973}
+.before-history .history-amount{font-size:13px;font-weight:850}
+.before-history .history-icon{font-weight:900}
+
 @media(max-width:800px){
   .page{width:min(100% - 24px,680px);padding-top:20px}
   .hero{align-items:flex-start}
@@ -170,66 +211,129 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 
   <section class="section">
     <div class="section-head"><h2>Hiérarchie typographique</h2></div>
-    <article class="card card-pad type-demo">
-      <div class="type-row"><div class="type-meta">30 px · 720<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
-      <div class="type-row"><div class="type-meta">18 px · 700<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
-      <div class="type-row"><div class="type-meta">13 px · 650<br>Titre de ligne</div><div class="type-title">Courses & quotidien</div></div>
-      <div class="type-row"><div class="type-meta">12 px · 450<br>Texte normal</div><div class="type-body">Le contenu reste net sans donner l’impression d’être constamment en gras.</div></div>
-      <div class="type-row"><div class="type-meta">10 px · 500<br>Métadonnées</div><div class="type-muted">01 octobre 2026 · À deux</div></div>
-    </article>
+    <div class="compare-block">
+      <div class="compare-label before">Avant · V2.4 actuelle</div>
+      <article class="card card-pad type-demo before-demo compare-panel">
+        <div class="type-row"><div class="type-meta">30 px · 800<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
+        <div class="type-row"><div class="type-meta">18 px · 800<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
+        <div class="type-row"><div class="type-meta">13 px · 750<br>Titre de ligne</div><div class="type-title">Courses & quotidien</div></div>
+        <div class="type-row"><div class="type-meta">12 px · 700<br>Texte courant accentué</div><div class="type-body">Le contenu paraît plus dense car beaucoup d’éléments utilisent un poids fort.</div></div>
+        <div class="type-row"><div class="type-meta">10 px · 700<br>Métadonnées</div><div class="type-muted">01 octobre 2026 · À deux</div></div>
+      </article>
+      <div class="compare-separator"></div>
+      <div class="compare-label after">Après · proposition V2.4.test</div>
+      <article class="card card-pad type-demo compare-panel">
+        <div class="type-row"><div class="type-meta">30 px · 720<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
+        <div class="type-row"><div class="type-meta">18 px · 700<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
+        <div class="type-row"><div class="type-meta">13 px · 650<br>Titre de ligne</div><div class="type-title">Courses & quotidien</div></div>
+        <div class="type-row"><div class="type-meta">12 px · 450<br>Texte normal</div><div class="type-body">Le contenu reste net sans donner l’impression d’être constamment en gras.</div></div>
+        <div class="type-row"><div class="type-meta">11,5 px · 500<br>Métadonnées</div><div class="type-muted">01 octobre 2026 · À deux</div></div>
+      </article>
+    </div>
   </section>
 
   <section class="section">
     <div class="section-head"><h2>Vue d’ensemble</h2></div>
-    <div class="grid two">
-      <article class="card balance">
-        <div>
-          <div class="balance-label">Reste disponible ce mois</div>
-          <div class="balance-value">1 238,40 <small>€</small></div>
+    <div class="compare-block">
+      <div class="compare-label before">Avant · V2.4 actuelle</div>
+      <div class="grid two before-demo">
+        <article class="card before-balance">
+          <div>
+            <div class="balance-label">Reste disponible ce mois</div>
+            <div class="balance-value">1 238,40 <small>€</small></div>
+          </div>
+          <div class="balance-meta">
+            <div class="meta-pill">Prévu <strong>1 410 €</strong></div>
+            <div class="meta-pill">Écart <strong>+171,60 €</strong></div>
+          </div>
+        </article>
+        <div class="kpis before-kpi">
+          <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value">2 650 €</div><div class="kpi-sub">Prévu 2 650 €</div></article>
+          <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value">1 411,60 €</div><div class="kpi-sub">Budget 1 540 €</div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne</div><div class="kpi-value">180 €</div><div class="kpi-sub">Ce mois</div></article>
+          <article class="card kpi"><div class="kpi-label">Budget restant</div><div class="kpi-value">128,40 €</div><div class="kpi-sub">Sur les enveloppes</div></article>
         </div>
-        <div class="balance-meta">
-          <div class="meta-pill">Prévu <strong>1 410 €</strong></div>
-          <div class="meta-pill">Écart <strong>+171,60 €</strong></div>
+      </div>
+      <div class="compare-separator"></div>
+      <div class="compare-label after">Après · proposition V2.4.test</div>
+      <div class="grid two">
+        <article class="card balance">
+          <div>
+            <div class="balance-label">Reste disponible ce mois</div>
+            <div class="balance-value">1 238,40 <small>€</small></div>
+          </div>
+          <div class="balance-meta">
+            <div class="meta-pill">Prévu <strong>1 410 €</strong></div>
+            <div class="meta-pill">Écart <strong>+171,60 €</strong></div>
+          </div>
+        </article>
+        <div class="kpis">
+          <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value">2 650 €</div><div class="kpi-sub">Prévu 2 650 €</div></article>
+          <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value">1 411,60 €</div><div class="kpi-sub">Budget 1 540 €</div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne</div><div class="kpi-value">180 €</div><div class="kpi-sub">Ce mois</div></article>
+          <article class="card kpi"><div class="kpi-label">Budget restant</div><div class="kpi-value">128,40 €</div><div class="kpi-sub">Sur les enveloppes</div></article>
         </div>
-      </article>
-      <div class="kpis">
-        <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value">2 650 €</div><div class="kpi-sub">Prévu 2 650 €</div></article>
-        <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value">1 411,60 €</div><div class="kpi-sub">Budget 1 540 €</div></article>
-        <article class="card kpi"><div class="kpi-label">Épargne</div><div class="kpi-value">180 €</div><div class="kpi-sub">Ce mois</div></article>
-        <article class="card kpi"><div class="kpi-label">Budget restant</div><div class="kpi-value">128,40 €</div><div class="kpi-sub">Sur les enveloppes</div></article>
       </div>
     </div>
   </section>
 
   <section class="section">
-    <div class="grid two">
-      <div>
-        <div class="section-head"><h2>À surveiller</h2></div>
-        <article class="card watch">
-          <div class="watch-row"><div><div class="watch-title">Loyer & charges</div><div class="watch-meta">640,00 € / 640,00 €</div></div><div class="watch-pill ok">Il reste 0,00 €</div></div>
-          <div class="watch-row"><div><div class="watch-title">Courses</div><div class="watch-meta">232,40 € / 250,00 €</div></div><div class="watch-pill">Il reste 17,60 €</div></div>
-          <div class="watch-row"><div><div class="watch-title">Transport</div><div class="watch-meta">86,20 € / 100,00 €</div></div><div class="watch-pill">Il reste 13,80 €</div></div>
-        </article>
-      </div>
-      <div>
-        <div class="section-head"><h2>Derniers mouvements</h2></div>
-        <article class="card sample-list">
-          <div class="sample-row"><div><div class="sample-title">Remboursement</div><div class="sample-sub">Aujourd’hui · Personnel</div></div><div class="sample-amount pos">+50,00 €</div></div>
-          <div class="sample-row"><div><div class="sample-title">Courses</div><div class="sample-sub">Hier · À deux</div></div><div class="sample-amount neg">−42,80 €</div></div>
-          <div class="sample-row"><div><div class="sample-title">Abonnement</div><div class="sample-sub">28 sept. · Personnel</div></div><div class="sample-amount neg">−12,99 €</div></div>
-        </article>
-      </div>
+    <div class="section-head"><h2>À surveiller</h2></div>
+    <div class="compare-block">
+      <div class="compare-label before">Avant · V2.4 actuelle</div>
+      <article class="card watch before-watch compare-panel">
+        <div class="watch-row"><div><div class="watch-title">Loyer & charges</div><div class="watch-meta">640,00 € / 640,00 €</div></div><div class="watch-pill ok">Il reste 0,00 €</div></div>
+        <div class="watch-row"><div><div class="watch-title">Courses</div><div class="watch-meta">232,40 € / 250,00 €</div></div><div class="watch-pill">Il reste 17,60 €</div></div>
+        <div class="watch-row"><div><div class="watch-title">Transport</div><div class="watch-meta">86,20 € / 100,00 €</div></div><div class="watch-pill">Il reste 13,80 €</div></div>
+      </article>
+      <div class="compare-separator"></div>
+      <div class="compare-label after">Après · proposition V2.4.test</div>
+      <article class="card watch compare-panel">
+        <div class="watch-row"><div><div class="watch-title">Loyer & charges</div><div class="watch-meta">640,00 € / 640,00 €</div></div><div class="watch-pill ok">Il reste 0,00 €</div></div>
+        <div class="watch-row"><div><div class="watch-title">Courses</div><div class="watch-meta">232,40 € / 250,00 €</div></div><div class="watch-pill">Il reste 17,60 €</div></div>
+        <div class="watch-row"><div><div class="watch-title">Transport</div><div class="watch-meta">86,20 € / 100,00 €</div></div><div class="watch-pill">Il reste 13,80 €</div></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Derniers mouvements</h2></div>
+    <div class="compare-block">
+      <div class="compare-label before">Avant · V2.4 actuelle</div>
+      <article class="card sample-list before-list compare-panel">
+        <div class="sample-row"><div><div class="sample-title">Remboursement</div><div class="sample-sub">Aujourd’hui · Personnel</div></div><div class="sample-amount pos">+50,00 €</div></div>
+        <div class="sample-row"><div><div class="sample-title">Courses</div><div class="sample-sub">Hier · À deux</div></div><div class="sample-amount neg">−42,80 €</div></div>
+        <div class="sample-row"><div><div class="sample-title">Abonnement</div><div class="sample-sub">28 sept. · Personnel</div></div><div class="sample-amount neg">−12,99 €</div></div>
+      </article>
+      <div class="compare-separator"></div>
+      <div class="compare-label after">Après · proposition V2.4.test</div>
+      <article class="card sample-list compare-panel">
+        <div class="sample-row"><div><div class="sample-title">Remboursement</div><div class="sample-sub">Aujourd’hui · Personnel</div></div><div class="sample-amount pos">+50,00 €</div></div>
+        <div class="sample-row"><div><div class="sample-title">Courses</div><div class="sample-sub">Hier · À deux</div></div><div class="sample-amount neg">−42,80 €</div></div>
+        <div class="sample-row"><div><div class="sample-title">Abonnement</div><div class="sample-sub">28 sept. · Personnel</div></div><div class="sample-amount neg">−12,99 €</div></div>
+      </article>
     </div>
   </section>
 
   <section class="section">
     <div class="section-head"><h2>Historique</h2></div>
-    <article class="card history-card">
-      <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Rentrée exceptionnelle</div><div class="history-date">01 octobre 2026 · Personnel</div></div><div class="history-amount pos">+50,00 €</div></div>
-      <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Courses</div><div class="history-date">01 octobre 2026 · À deux</div></div><div class="history-amount neg">−42,80 €</div></div>
-      <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Entretien du logement</div><div class="history-date">30 septembre 2026 · À deux</div></div><div class="history-amount neg">−25,00 €</div></div>
-      <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Remboursement</div><div class="history-date">28 septembre 2026 · Personnel</div></div><div class="history-amount pos">+18,50 €</div></div>
-    </article>
+    <div class="compare-block">
+      <div class="compare-label before">Avant · V2.4 actuelle</div>
+      <article class="card history-card before-history compare-panel">
+        <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Rentrée exceptionnelle</div><div class="history-date">01 octobre 2026 · Personnel</div></div><div class="history-amount pos">+50,00 €</div></div>
+        <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Courses</div><div class="history-date">01 octobre 2026 · À deux</div></div><div class="history-amount neg">−42,80 €</div></div>
+        <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Entretien du logement</div><div class="history-date">30 septembre 2026 · À deux</div></div><div class="history-amount neg">−25,00 €</div></div>
+        <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Remboursement</div><div class="history-date">28 septembre 2026 · Personnel</div></div><div class="history-amount pos">+18,50 €</div></div>
+      </article>
+      <div class="compare-separator"></div>
+      <div class="compare-label after">Après · proposition V2.4.test</div>
+      <article class="card history-card compare-panel">
+        <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Rentrée exceptionnelle</div><div class="history-date">01 octobre 2026 · Personnel</div></div><div class="history-amount pos">+50,00 €</div></div>
+        <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Courses</div><div class="history-date">01 octobre 2026 · À deux</div></div><div class="history-amount neg">−42,80 €</div></div>
+        <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Entretien du logement</div><div class="history-date">30 septembre 2026 · À deux</div></div><div class="history-amount neg">−25,00 €</div></div>
+        <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Remboursement</div><div class="history-date">28 septembre 2026 · Personnel</div></div><div class="history-amount pos">+18,50 €</div></div>
+      </article>
+    </div>
   </section>
 
   <section class="section">
