@@ -21,6 +21,8 @@
 ### Interface
 - État « Conflit de synchronisation » conservé pendant les événements Realtime.
 - Carte de résolution des conflits dans Paramètres & données.
+- Correctifs mobile : Paramètres défilables et haut de page réorganisé sur petits écrans.
+- Installation PWA : manifest, icônes, mode standalone, service worker et guide d'ajout à l'écran d'accueil sur mobile.
 
 ### Supabase
 - Migration `20260930104500_v2_5_sync_deduplication.sql` appliquée.

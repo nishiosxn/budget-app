@@ -81,6 +81,17 @@ Index uniques ajoutés sur `(household_id, legacy_id)` pour :
 
 But : empêcher les doublons lors de retries, doubles onglets ou écritures concurrentes portant le même identifiant local.
 
+## Installation PWA
+
+- Manifest `manifest.webmanifest` avec affichage `standalone`.
+- Icône PNG 192 px pour iOS + icône SVG responsive/maskable.
+- Balises iOS pour l'ajout à l'écran d'accueil et l'ouverture sans interface Safari.
+- Service worker `sw.js` pour l'installation et le repli local des ressources statiques.
+- Module `js/pwa.js` : proposition d'installation uniquement sur mobile, après accès à l'application.
+- Sur iPhone/iPad, le panneau explique « Partager → Sur l'écran d'accueil → Ajouter ».
+- Sur Android, le bouton d'installation natif est utilisé lorsqu'il est disponible.
+- Le panneau n'apparaît jamais en mode standalone et un refus est mémorisé pendant 7 jours.
+
 ## Cache V2.5
 
 - Cache principal : `budget-foyer-v2.5`
