@@ -1,4 +1,4 @@
-// V2.4 — foyer partagé et état de session cloud
+// V2.5 — foyer partagé, session cloud et reprise de synchronisation
 let activeHouseholdId=null;
 let activeMembership=null;
 let cloudMemberships=[];
@@ -51,11 +51,15 @@ function requestCloudBootstrap(){
  return cloudBootstrapPromise;
 }
 function selectActiveMembership(){
- const saved=localStorage.getItem("budget-foyer-v2.4-active-household");
+ let saved=localStorage.getItem(ACTIVE_HOUSEHOLD_KEY);
+ if(!saved)for(const key of PREVIOUS_ACTIVE_HOUSEHOLD_KEYS||[]){
+  saved=localStorage.getItem(key);
+  if(saved){localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,saved);break}
+ }
  activeMembership=cloudMemberships.find(m=>m.household_id===saved)||cloudMemberships[0]||null;
  activeHouseholdId=activeMembership?.household_id||null;
  if(activeHouseholdId){
-  localStorage.setItem("budget-foyer-v2.4-active-household",activeHouseholdId);
+  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,activeHouseholdId);
   switchHouseholdCache(activeHouseholdId);
  }
  updateCloudHouseholdUi();
@@ -70,7 +74,7 @@ async function provisionPersonalHousehold(){
   p_display_name:displayName
  });
  if(error)throw error;
- localStorage.setItem("budget-foyer-v2.4-active-household",data);
+ localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
  await loadCloudMemberships();
  selectActiveMembership();
  state=seedState();
@@ -108,6 +112,12 @@ async function cloudBootstrap(){
   hideCloudGate();
  }catch(error){
   console.error("Cloud bootstrap",error);
+  if(error?.code==="CLOUD_SYNC_CONFLICT"){
+   hideCloudGate();
+   setCloudStatus("Conflit de synchronisation · action requise","error");
+   if(typeof cloudRenderConflictUi==="function")cloudRenderConflictUi();
+   return;
+  }
   if(state.onboardingComplete){
    hideCloudGate();
    setCloudStatus("Hors ligne · cache local","offline");
@@ -132,7 +142,7 @@ async function acceptCloudInvite(){
   if(error)throw error;
   clearPendingInvite();
   clearPendingPersonalProfile();
-  localStorage.setItem("budget-foyer-v2.4-active-household",data);
+  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
   await loadCloudMemberships();
   selectActiveMembership();
   await cloudLoadState();
