@@ -1,17 +1,17 @@
-# Workstate — Budget foyer V2.5
+# Workstate — Budget foyer V2.5.1
 
 > Source de vérité pour reprendre le développement sans rescanner le dépôt.
 
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Branche active : `v2.5`
+- Branche active : `v2.5.1`
 - Tronc V2 : `develop`
 - Production : `main` → V1
 - Base de départ : merge V2.4.1 dans `develop` (`70f627a4ab93c066323c81993bb1613fbbd92906`)
-- Preview cible : `https://nishiosxn.github.io/budget-app/v2.5/`
+- Preview cible : `https://nishiosxn.github.io/budget-app/v2.5.1/`
 - Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, `eu-west-1`)
-- Objectif V2.5 : synchronisation multi-appareils robuste, fusion automatique des changements indépendants et conflits explicites lorsque deux appareils modifient la même donnée.
+- Objectif V2.5.1 : améliorer la hiérarchie et l'utilisation du header desktop/mobile sans modifier la logique métier ou la synchronisation V2.5.
 
 ## Socle conservé
 
@@ -22,6 +22,17 @@
 - Realtime Supabase, cache hors ligne et archivage logique des suppressions.
 - UI responsive V2.4.1.
 - SMTP personnalisé Brevo déjà opérationnel dans Supabase. Aucun secret SMTP n'est versionné.
+
+## Interface V2.5.1
+
+- Desktop ligne 1 : identité du foyer à gauche, état de synchronisation et Paramètres à droite.
+- Desktop ligne 2 : navigation principale à gauche, mois + boutons Rentrée d'argent / Dépense à droite.
+- Mobile ligne 1 : logo + nom du foyer à gauche, synchronisation + Paramètres à droite.
+- Mobile ligne 2 : sélecteur de mois pleine largeur.
+- Mobile ligne 3 : navigation ; quatre colonnes sur mobile large, grille 2×2 sur écran étroit.
+- Sur les iPhone très étroits, le badge de synchronisation se réduit à son voyant pour préserver le nom du foyer.
+- Les boutons de création restent dans la barre d'actions fixe en bas sur mobile.
+- Aucun changement Supabase, schéma V5, règles RLS ou moteur de synchronisation.
 
 ## Synchronisation V2.5
 
