@@ -1,5 +1,23 @@
 # Changelog
 
+## V2.4.1 — amélioration UX/UI responsive
+
+### Interface
+- Typographie allégée : réduction des poids extrêmes sur les contenus courants.
+- Renforcement du contraste des textes secondaires et métadonnées.
+- Tailles fluides via `rem` et `clamp()` pour mieux couvrir mobile, tablette, desktop et écrans très étroits.
+- Espacements, cartes et grilles rendus plus adaptatifs.
+- KPI et historique renforcés pour les formats étroits de type Fold.
+- Zones interactives agrandies sur les contrôles principaux.
+- Chiffres financiers affichés avec des chiffres tabulaires sur les listes importantes.
+- Respect de `prefers-reduced-motion`.
+
+### Technique
+- Aucun changement métier, formule, Supabase, RLS ou synchronisation.
+- Cache et backend V2.4 conservés volontairement.
+- Branche dédiée `v2.4.1` et preview séparée `/v2.4.1/`.
+
+
 ## V2.4 — synchronisation cloud (branche active)
 
 ### Ajouté
