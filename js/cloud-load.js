@@ -1,12 +1,12 @@
-// V2.4 — chargement Supabase vers le cache local V5
+// V2.5 — chargement Supabase vers le cache local V5 + baseline de synchronisation
 async function cloudLoadState(){
  if(!activeHouseholdId)throw new Error("Aucun foyer actif.");
  setCloudStatus("Chargement du cloud…","syncing");
  const householdRequest=cloudClient.from("households").select("*").eq("id",activeHouseholdId).single();
  const categoriesRequest=cloudClient.from("categories").select("*").eq("household_id",activeHouseholdId).order("sort_order");
- const budgetsRequest=cloudClient.from("budgets").select("*").eq("household_id",activeHouseholdId).is("archived_at",null).order("month");
- const transactionsRequest=cloudClient.from("transactions").select("*").eq("household_id",activeHouseholdId).is("archived_at",null).order("transaction_date");
- const recurrencesRequest=cloudClient.from("recurrences").select("*").eq("household_id",activeHouseholdId).is("archived_at",null).order("start_month");
+ const budgetsRequest=cloudClient.from("budgets").select("*").eq("household_id",activeHouseholdId).order("month");
+ const transactionsRequest=cloudClient.from("transactions").select("*").eq("household_id",activeHouseholdId).order("transaction_date");
+ const recurrencesRequest=cloudClient.from("recurrences").select("*").eq("household_id",activeHouseholdId).order("start_month");
  const [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes]=await Promise.all([
   householdRequest,categoriesRequest,budgetsRequest,transactionsRequest,recurrencesRequest
  ]);
@@ -26,10 +26,13 @@ async function cloudLoadState(){
  const createdMonths=categoryRows.map(row=>String(row.created_from||"").slice(0,7)).filter(key=>/^\d{4}-\d{2}$/.test(key)).sort();
  next.createdMonth=createdMonths[0]||monthKey(selectedMonth);
  const idMap=cloudCategoriesToLocal(categoryRows,next);
- applyCloudBudgets(budgetsRes.data||[],idMap,next);
+ const allBudgetRows=budgetsRes.data||[];
+ const allTransactionRows=transactionsRes.data||[];
+ const allRecurrenceRows=recurrencesRes.data||[];
+ applyCloudBudgets(allBudgetRows.filter(row=>!row.archived_at),idMap,next);
  next.transactions=[
-  ...cloudTransactionsToLocal(transactionsRes.data||[],idMap),
-  ...cloudRecurrencesToLocal(recurrencesRes.data||[],idMap)
+  ...cloudTransactionsToLocal(allTransactionRows.filter(row=>!row.archived_at),idMap),
+  ...cloudRecurrencesToLocal(allRecurrenceRows.filter(row=>!row.archived_at),idMap)
  ];
 
  cloudApplyingRemote=true;
@@ -41,7 +44,15 @@ async function cloudLoadState(){
  const index=cloudHouseholds.findIndex(item=>item.id===household.id);
  if(index>=0)cloudHouseholds[index]=household;else cloudHouseholds.push(household);
  updateCloudHouseholdUi();
+ if(typeof cloudCaptureRemoteBaseline==="function")cloudCaptureRemoteBaseline({
+  household,
+  categories:categoryRows,
+  budgets:allBudgetRows,
+  transactions:allTransactionRows,
+  recurrences:allRecurrenceRows
+ });
  if(typeof setCloudSyncedBaseline==="function")setCloudSyncedBaseline();
+ if(typeof cloudClearConflict==="function")cloudClearConflict();
  setCloudStatus("Synchronisé","ok");
  return state;
 }
