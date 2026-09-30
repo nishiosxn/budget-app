@@ -192,15 +192,50 @@ if(modular&&exists("js/cloud-save.js")){
   }
 }
 
+if(modular&&exists("js/cloud-sync-v25.js")){
+  try{
+    const context=vm.createContext({
+      cloneData:value=>value===undefined?undefined:JSON.parse(JSON.stringify(value)),
+      console
+    });
+    vm.runInContext(read("js/cloud-sync-v25.js"),context,{filename:"js/cloud-sync-v25.js"});
+    const base={amount:10,label:"Base",metadata:{note:"A"}};
+    const local={amount:20,label:"Base",metadata:{note:"A"}};
+    const remote={amount:10,label:"Cloud",metadata:{note:"A"}};
+    const merged=context.cloudMergeKnownPayload(base,local,remote,null,"transactions","tx-1");
+    const conflict=context.cloudMergeKnownPayload(
+      {amount:10,label:"Base"},
+      {amount:20,label:"Base"},
+      {amount:30,label:"Base"},
+      null,"transactions","tx-1"
+    );
+    const resolved=context.cloudMergeKnownPayload(
+      {amount:10,label:"Base"},
+      {amount:20,label:"Base"},
+      {amount:30,label:"Base"},
+      "local","transactions","tx-1"
+    );
+    const valid=merged.conflicts.length===0
+      &&merged.value.amount===20
+      &&merged.value.label==="Cloud"
+      &&conflict.conflicts.length===1
+      &&resolved.value.amount===20;
+    if(!valid)fail("Fusion optimiste V2.5 invalide");
+    else ok("Fusion V2.5 : changements indépendants fusionnés et conflits détectés");
+  }catch(error){
+    fail("Test du moteur de synchronisation V2.5 impossible: "+error.message);
+  }
+}
+
 if(modular){
-  const cloudModules=["supabase-config.js","supabase-client.js","auth.js","cloud-household.js","cloud-state-core.js","cloud-load.js","cloud-save.js","cloud-realtime.js"];
+  const cloudModules=["supabase-config.js","supabase-client.js","auth.js","cloud-household.js","cloud-state-core.js","cloud-load.js","cloud-save.js","cloud-sync-v25.js","cloud-realtime.js"];
   const missingCloud=cloudModules.filter(file=>!exists(path.join("js",file))||!scripts.includes(file));
   if(missingCloud.length)fail("Modules cloud manquants ou non chargés: "+missingCloud.join(", "));
-  else ok("Modules cloud V2.4 chargés");
+  else ok("Modules cloud V2.5 chargés");
   if(!/@supabase\/supabase-js@2\.117\.2/.test(html))fail("SDK Supabase non épinglé à la version validée");
   else ok("SDK Supabase épinglé");
-  if(!allJs.includes('budget-foyer-v2.4'))fail("Clé de cache V2.4 absente");
-  else ok("Cache local V2.4 isolé");
+  if(!allJs.includes('budget-foyer-v2.5'))fail("Clé de cache V2.5 absente");
+  else ok("Cache local V2.5 isolé");
   const migrations=[
     "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
     "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
@@ -208,11 +243,12 @@ if(modular){
     "supabase/migrations/20260930011901_v2_4_multi_user_security_and_admin.sql",
     "supabase/migrations/20260930012443_v2_4_admin_service_permissions.sql",
     "supabase/migrations/20260930012820_v2_4_admin_advisor_hardening.sql",
-    "supabase/migrations/20260930012844_v2_4_retire_legacy_household_rpc.sql"
+    "supabase/migrations/20260930012844_v2_4_retire_legacy_household_rpc.sql",
+    "supabase/migrations/20260930104500_v2_5_sync_deduplication.sql"
   ];
   const missingMigrations=migrations.filter(file=>!exists(file));
   if(missingMigrations.length)fail("Migrations Supabase non versionnées: "+missingMigrations.join(", "));
-  else ok("Migrations Supabase V2.4 versionnées");
+  else ok("Migrations Supabase V2.4/V2.5 versionnées");
 
   const auth=read("js/auth.js");
   const authMarkers=["signUp(","signInWithPassword(","resetPasswordForEmail(","updateUser({password","signInWithOtp(","PASSWORD_RECOVERY"];
