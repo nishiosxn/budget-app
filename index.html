@@ -186,6 +186,7 @@
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
         <div><span>COMPTE</span><strong id="cloudAccountEmail">Non connecté</strong></div>
         <button id="cloudCreateInviteBtn" class="btn btn-income" type="button">Copier un lien d’invitation</button>
+        <a class="btn btn-ghost cloud-admin-link" href="admin/">Administration</a>
         <button id="cloudSignOutBtn" class="btn btn-ghost" type="button">Se déconnecter</button>
       </div>
       <div class="settings-household">
@@ -238,30 +239,41 @@
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
     <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.4</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
-      <h3>Se connecter</h3>
-      <p>Entre ton adresse email. Tu recevras un lien de connexion sans mot de passe.</p>
+      <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
+        <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
+        <button id="cloudSignupModeBtn" class="cloud-auth-tab" type="button" role="tab" aria-selected="false">Inscription</button>
+      </div>
+      <h3 id="cloudAuthHeading">Se connecter</h3>
+      <p id="cloudAuthIntro">Connecte-toi avec ton email et ton mot de passe.</p>
       <div class="field"><label for="cloudEmailInput">ADRESSE EMAIL</label><input id="cloudEmailInput" class="category-form-input" type="email" inputmode="email" autocomplete="email" placeholder="nom@exemple.fr"></div>
-      <button id="cloudSendMagicLinkBtn" class="btn btn-income cloud-primary" type="button">Recevoir le lien magique</button>
+      <div id="cloudSignupFields" hidden>
+        <div class="field"><label for="cloudDisplayNameInput">TON NOM</label><input id="cloudDisplayNameInput" class="category-form-input" type="text" maxlength="60" autocomplete="name" placeholder="Personne 1"></div>
+        <div class="field"><label for="cloudHouseholdNameInput">NOM DU FOYER</label><input id="cloudHouseholdNameInput" class="category-form-input" type="text" maxlength="80" placeholder="Mon foyer"></div>
+      </div>
+      <div class="field"><label for="cloudPasswordInput">MOT DE PASSE</label><input id="cloudPasswordInput" class="category-form-input" type="password" minlength="8" autocomplete="current-password" placeholder="8 caractères minimum"></div>
+      <button id="cloudAuthSubmitBtn" class="btn btn-income cloud-primary" type="button">Se connecter</button>
+      <button id="cloudForgotPasswordBtn" class="cloud-text-button" type="button">Mot de passe oublié ?</button>
+      <details class="cloud-magic-link">
+        <summary>Utiliser plutôt un lien magique</summary>
+        <p>Un lien de connexion à usage unique sera envoyé à cette adresse.</p>
+        <button id="cloudSendMagicLinkBtn" class="btn btn-ghost cloud-primary" type="button">Recevoir le lien magique</button>
+      </details>
     </div>
     <div id="cloudLoadingView" class="cloud-gate-view">
       <div class="cloud-loader" aria-hidden="true"></div><h3>Connexion au foyer…</h3><p>Le cache local reste intact pendant le chargement.</p>
-    </div>
-    <div id="cloudCreateView" class="cloud-gate-view" hidden>
-      <h3>Créer le foyer partagé</h3>
-      <p>Ce compte deviendra propriétaire du foyer et pourra inviter la deuxième personne.</p>
-      <div class="field"><label for="cloudCreateHouseholdName">NOM DU FOYER</label><input id="cloudCreateHouseholdName" class="category-form-input" type="text" maxlength="60" placeholder="Mon foyer"></div>
-      <div class="settings-name-grid">
-        <div class="field"><label for="cloudCreateDisplayName">TON NOM</label><input id="cloudCreateDisplayName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 1"></div>
-        <div class="field"><label for="cloudCreateOtherName">DEUXIÈME PERSONNE</label><input id="cloudCreateOtherName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 2"></div>
-      </div>
-      <label class="cloud-import-choice"><input id="cloudCreateImportLocal" type="checkbox"><span><strong>Importer les données de ce navigateur</strong><small>Catégories, budgets, transactions et récurrences seront envoyés dans le foyer partagé.</small></span></label>
-      <button id="cloudCreateHouseholdBtn" class="btn btn-income cloud-primary" type="button">Créer et synchroniser</button>
     </div>
     <div id="cloudInviteView" class="cloud-gate-view" hidden>
       <h3>Rejoindre le foyer</h3>
       <p>Ton compte a reçu une invitation. Indique le nom affiché dans le budget partagé.</p>
       <div class="field"><label for="cloudInviteName">TON NOM</label><input id="cloudInviteName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 2"></div>
       <button id="cloudAcceptInviteBtn" class="btn btn-income cloud-primary" type="button">Accepter l’invitation</button>
+    </div>
+    <div id="cloudResetView" class="cloud-gate-view" hidden>
+      <h3>Nouveau mot de passe</h3>
+      <p>Choisis un nouveau mot de passe pour sécuriser ton compte.</p>
+      <div class="field"><label for="cloudNewPasswordInput">NOUVEAU MOT DE PASSE</label><input id="cloudNewPasswordInput" class="category-form-input" type="password" minlength="8" autocomplete="new-password"></div>
+      <div class="field"><label for="cloudNewPasswordConfirm">CONFIRMER</label><input id="cloudNewPasswordConfirm" class="category-form-input" type="password" minlength="8" autocomplete="new-password"></div>
+      <button id="cloudResetPasswordBtn" class="btn btn-income cloud-primary" type="button">Enregistrer le mot de passe</button>
     </div>
     <div id="cloudGateStatus" class="cloud-gate-status" role="status" aria-live="polite"></div>
   </section>

@@ -204,11 +204,67 @@ if(modular){
   const migrations=[
     "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
     "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
-    "supabase/migrations/20260930002728_v2_4_archive_sync_rows.sql"
+    "supabase/migrations/20260930002728_v2_4_archive_sync_rows.sql",
+    "supabase/migrations/20260930011901_v2_4_multi_user_security_and_admin.sql",
+    "supabase/migrations/20260930012443_v2_4_admin_service_permissions.sql",
+    "supabase/migrations/20260930012820_v2_4_admin_advisor_hardening.sql",
+    "supabase/migrations/20260930012844_v2_4_retire_legacy_household_rpc.sql"
   ];
   const missingMigrations=migrations.filter(file=>!exists(file));
   if(missingMigrations.length)fail("Migrations Supabase non versionnées: "+missingMigrations.join(", "));
   else ok("Migrations Supabase V2.4 versionnées");
+
+  const auth=read("js/auth.js");
+  const authMarkers=["signUp(","signInWithPassword(","resetPasswordForEmail(","updateUser({password","signInWithOtp(","PASSWORD_RECOVERY"];
+  const missingAuth=authMarkers.filter(marker=>!auth.includes(marker));
+  if(missingAuth.length)fail("Parcours d'authentification incomplet: "+missingAuth.join(", "));
+  else ok("Inscription, connexion, récupération et Magic Link présents");
+
+  const household=read("js/cloud-household.js");
+  const storage=read("js/storage.js");
+  if(!household.includes('rpc("ensure_personal_household"')||!storage.includes(":household:${householdId}"))fail("Provisionnement ou cache isolé par foyer absent");
+  else ok("Foyer personnel automatique et cache isolé par foyer");
+
+  const securityMigration=read("supabase/migrations/20260930011901_v2_4_multi_user_security_and_admin.sql");
+  const securityMarkers=["token_hash","extensions.digest","app_admins","admin_audit_log","revoke insert, update, delete on table public.household_members","Household already has two members"];
+  const missingSecurity=securityMarkers.filter(marker=>!securityMigration.includes(marker));
+  if(missingSecurity.length)fail("Durcissement multi-utilisateur incomplet: "+missingSecurity.join(", "));
+  else ok("Invitations hachées, limite à deux et rôle admin en base");
+
+  const adminFiles=["admin/index.html","admin/admin.css","admin/admin.js","supabase/functions/admin-api/index.ts","supabase/functions/admin-api/deno.json"];
+  const missingAdmin=adminFiles.filter(file=>!exists(file));
+  if(missingAdmin.length)fail("Interface ou fonction admin manquante: "+missingAdmin.join(", "));
+  else{
+    try{execFileSync(process.execPath,["--check",path.join("admin","admin.js")],{stdio:"pipe"});ok("Syntaxe de l'interface admin valide")}catch{fail("Syntaxe invalide: admin/admin.js")}
+    const edgeTemp=path.join(os.tmpdir(),"budget-admin-edge-check.mjs");
+    try{
+      fs.writeFileSync(edgeTemp,read("supabase/functions/admin-api/index.ts"),"utf8");
+      execFileSync(process.execPath,["--check",edgeTemp],{stdio:"pipe"});
+      ok("Syntaxe de la fonction serveur admin valide");
+    }catch{fail("Syntaxe invalide: supabase/functions/admin-api/index.ts")}
+    finally{try{fs.unlinkSync(edgeTemp)}catch{}}
+    const adminSource=read("admin/admin.js")+read("supabase/functions/admin-api/index.ts");
+    if(!adminSource.includes('from("app_admins")')||!adminSource.includes("auth.admin.listUsers")||!adminSource.includes("auth.admin.deleteUser"))fail("Contrôles serveur admin incomplets");
+    else ok("Accès admin vérifié en base et opérations privilégiées côté serveur");
+  }
+
+  const sourceFiles=[];
+  const collect=dir=>{
+    for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){
+      const relative=path.join(dir,entry.name);
+      if(entry.name===".git")continue;
+      if(entry.isDirectory())collect(relative);
+      else if(/\.(?:js|mjs|ts|html|css|md|sql|json|ya?ml)$/i.test(entry.name))sourceFiles.push(relative);
+    }
+  };
+  collect(".");
+  const secretFindings=[];
+  for(const file of sourceFiles){
+    const content=read(file);
+    if(/sb_secret_[A-Za-z0-9_-]+/.test(content)||/postgres(?:ql)?:\/\/[^\s]+:[^\s]+@/i.test(content)||/service_role\s*[:=]\s*["'][^"']+["']/i.test(content))secretFindings.push(file);
+  }
+  if(secretFindings.length)fail("Secret serveur potentiel détecté: "+secretFindings.join(", "));
+  else ok("Aucun secret Supabase serveur dans le dépôt");
 }
 
 if(exists("workstate.md")){

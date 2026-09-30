@@ -54,8 +54,31 @@ function selectActiveMembership(){
  const saved=localStorage.getItem("budget-foyer-v2.4-active-household");
  activeMembership=cloudMemberships.find(m=>m.household_id===saved)||cloudMemberships[0]||null;
  activeHouseholdId=activeMembership?.household_id||null;
- if(activeHouseholdId)localStorage.setItem("budget-foyer-v2.4-active-household",activeHouseholdId);
+ if(activeHouseholdId){
+  localStorage.setItem("budget-foyer-v2.4-active-household",activeHouseholdId);
+  switchHouseholdCache(activeHouseholdId);
+ }
  updateCloudHouseholdUi();
+}
+async function provisionPersonalHousehold(){
+ const profile=pendingPersonalProfile();
+ const householdName=String(profile.householdName||"Mon foyer").trim()||"Mon foyer";
+ const displayName=String(profile.displayName||cloudSession?.user?.user_metadata?.display_name||"Personne 1").trim()||"Personne 1";
+ setCloudGateStatus("Création de ton foyer personnel…");
+ const {data,error}=await cloudClient.rpc("ensure_personal_household",{
+  p_household_name:householdName,
+  p_display_name:displayName
+ });
+ if(error)throw error;
+ localStorage.setItem("budget-foyer-v2.4-active-household",data);
+ await loadCloudMemberships();
+ selectActiveMembership();
+ state=seedState();
+ state.onboardingComplete=true;
+ state.household=normalizeHousehold({name:householdName,personB:displayName,personA:"Personne 2"});
+ cloudApplyingRemote=true;saveState();cloudApplyingRemote=false;
+ await cloudPushLocalState({force:true});
+ clearPendingPersonalProfile();
 }
 async function cloudBootstrap(){
  if(!cloudSession)return;
@@ -70,18 +93,10 @@ async function cloudBootstrap(){
   }
   await loadCloudMemberships();
   if(!cloudMemberships.length){
-   const h=normalizeHousehold(state.household);
-   document.getElementById("cloudCreateHouseholdName").value=state.onboardingComplete?h.name:"";
-   document.getElementById("cloudCreateDisplayName").value=state.onboardingComplete?h.personB:"";
-   document.getElementById("cloudCreateOtherName").value=state.onboardingComplete?h.personA:"";
-   const importBox=document.getElementById("cloudCreateImportLocal");
-   importBox.checked=!!state.onboardingComplete;
-   importBox.disabled=!state.onboardingComplete;
-   setCloudGateView("create");
-   setCloudGateStatus(state.onboardingComplete?"Des données locales sont disponibles sur ce navigateur.":"Crée ton premier foyer partagé.");
-   return;
+   await provisionPersonalHousehold();
+  }else{
+   selectActiveMembership();
   }
-  selectActiveMembership();
   if(state.onboardingComplete&&localStorage.getItem(cloudPendingKey())==="1"){
    setCloudGateStatus("Envoi des modifications conservées hors ligne…");
    await cloudPushLocalState({force:true});
@@ -103,45 +118,6 @@ async function cloudBootstrap(){
   }
  }
 }
-async function createCloudHousehold(){
- const name=document.getElementById("cloudCreateHouseholdName").value.trim();
- const displayName=document.getElementById("cloudCreateDisplayName").value.trim();
- const otherName=document.getElementById("cloudCreateOtherName").value.trim()||"Personne 2";
- const importLocal=document.getElementById("cloudCreateImportLocal").checked&&state.onboardingComplete;
- const button=document.getElementById("cloudCreateHouseholdBtn");
- if(!name||!displayName){
-  setCloudGateStatus("Renseigne le nom du foyer et ton nom.","error");
-  return;
- }
- button.disabled=true;
- setCloudGateStatus("Création du foyer…");
- try{
-  const {data,error}=await cloudClient.rpc("create_household",{p_name:name,p_display_name:displayName});
-  if(error)throw error;
-  activeHouseholdId=data;
-  const update=await cloudClient.from("households").update({person_b_label:displayName,person_a_label:otherName}).eq("id",data);
-  if(update.error)throw update.error;
-  await loadCloudMemberships();
-  selectActiveMembership();
-  if(importLocal){
-   state.household=normalizeHousehold({...state.household,name,personB:displayName,personA:otherName});
-  }else{
-   state=seedState();
-   state.onboardingComplete=true;
-   state.household=normalizeHousehold({name,personB:displayName,personA:otherName});
-  }
-  cloudApplyingRemote=true;saveState();cloudApplyingRemote=false;
-  await cloudPushLocalState({force:true});
-  await cloudLoadState();
-  startCloudRealtime();
-  cloudSyncReady=true;
-  setCloudStatus("Synchronisé","ok");
-  hideCloudGate();
- }catch(error){
-  console.error("Create household",error);
-  setCloudGateStatus(error?.message||"Impossible de créer le foyer.","error");
- }finally{button.disabled=false}
-}
 async function acceptCloudInvite(){
  const name=cloudInviteName.value.trim();
  const button=document.getElementById("cloudAcceptInviteBtn");
@@ -155,6 +131,7 @@ async function acceptCloudInvite(){
   const {data,error}=await cloudClient.rpc("accept_household_invite",{p_token:pendingInviteToken,p_display_name:name});
   if(error)throw error;
   clearPendingInvite();
+  clearPendingPersonalProfile();
   localStorage.setItem("budget-foyer-v2.4-active-household",data);
   await loadCloudMemberships();
   selectActiveMembership();
@@ -188,6 +165,5 @@ async function createCloudInvite(){
  }finally{button.disabled=false}
 }
 
-document.getElementById("cloudCreateHouseholdBtn")?.addEventListener("click",createCloudHousehold);
 document.getElementById("cloudAcceptInviteBtn")?.addEventListener("click",acceptCloudInvite);
 document.getElementById("cloudCreateInviteBtn")?.addEventListener("click",createCloudInvite);

@@ -205,6 +205,7 @@
 .cloud-account-card span{display:block;color:var(--muted);font-size:8px;font-weight:850;letter-spacing:.07em;margin-bottom:4px}
 .cloud-account-card strong{display:block;overflow:hidden;text-overflow:ellipsis;font-size:11px;white-space:nowrap}
 .cloud-account-card .btn{min-height:38px;font-size:10px}
+.cloud-admin-link{display:flex;align-items:center;justify-content:center;text-decoration:none}
 
 .cloud-gate{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;overflow:auto;padding:24px 14px;background:rgba(236,240,235,.97);backdrop-filter:blur(12px)}
 .cloud-gate.open{display:flex}
@@ -221,6 +222,14 @@
 .cloud-import-choice{display:flex;align-items:flex-start;gap:10px;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);cursor:pointer}
 .cloud-import-choice input{margin-top:2px;accent-color:var(--accent)}
 .cloud-import-choice span{display:block}.cloud-import-choice strong{display:block;font-size:10px}.cloud-import-choice small{display:block;margin-top:3px;color:var(--muted);font-size:9px;line-height:1.45}
+.cloud-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 18px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--panel-2)}
+.cloud-auth-tab{min-height:36px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:10px;font-weight:850;cursor:pointer}
+.cloud-auth-tab.active{background:var(--panel);color:var(--ink);box-shadow:0 2px 8px rgba(25,37,30,.08)}
+.cloud-text-button{display:block;margin:11px auto 0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:10px;font-weight:800;cursor:pointer}
+.cloud-text-button:disabled{opacity:.55;cursor:wait}
+.cloud-magic-link{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.cloud-magic-link summary{color:var(--muted);font-size:10px;font-weight:800;text-align:center;cursor:pointer}
+.cloud-magic-link p{margin:10px 0 0;color:var(--muted);font-size:9px;line-height:1.45;text-align:center}
 
 @media(max-width:680px){
  .cloud-sync-status{max-width:124px;overflow:hidden;text-overflow:ellipsis}
