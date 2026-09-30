@@ -129,7 +129,7 @@
     backdrop.innerHTML=
       '<section class="pwa-install-panel" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle">'+
         '<div class="pwa-install-head">'+
-          '<div class="pwa-install-brand"><div class="logo">B</div><div><h2 id="pwaInstallTitle" class="pwa-install-title">Installer Budget</h2><p class="pwa-install-subtitle">Accès rapide · ouverture plein écran</p></div></div>'+
+          '<div class="pwa-install-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><h2 id="pwaInstallTitle" class="pwa-install-title">Installer Budget</h2><p class="pwa-install-subtitle">Accès rapide · ouverture plein écran</p></div></div>'+
           '<button class="pwa-install-close" type="button" data-pwa-close aria-label="Fermer">×</button>'+
         '</div>'+
         '<p class="pwa-install-copy">'+copy.intro+'</p>'+
