@@ -13,7 +13,7 @@
 - Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, `eu-west-1`)
 - V2.4 reste le socle cloud/sécurité. V2.4.1 est une évolution UX/UI uniquement, sans modification métier ni Supabase.
 - Les changements V2.4.1 portent sur la typographie, le contraste, les tailles fluides, les espacements, les grilles et les très petits écrans.
-- Le test manuel visuel V2.4.1 reste à effectuer avant toute fusion.
+- Validation utilisateur terminée : UX/UI desktop/mobile, inscription, confirmation email, mot de passe oublié, isolation des foyers, invitation, synchronisation et accès admin testés avec succès.
 
 ## Invariants
 
@@ -61,7 +61,7 @@
 
 ## Administration globale
 
-- Interface séparée : `admin/index.html` (`/v2.4/admin/` sur la preview).
+- Interface séparée : `admin/index.html` (`/v2.4.1/admin/` sur la preview V2.4.1).
 - Rôle global : `public.app_admins`, RLS actif, aucun grant `anon` ou `authenticated`.
 - Journal : `public.admin_audit_log`, également inaccessible aux clients.
 - Edge Function : `admin-api`, SDK épinglé, `verify_jwt=true`, origine GitHub Pages/localhost contrôlée.
@@ -115,27 +115,32 @@ scripts/validate.mjs
 - Security Advisor : un réglage Auth hébergé reste manuel, **Leaked Password Protection**. Il n'est pas pilotable par migration SQL.
 - Performance Advisor : uniquement des index encore inutilisés sur ce faible volume ; les foreign keys sont toutes indexées.
 
-## Réglages Supabase manuels avant le test email
+## Réglages Supabase / email
 
 Dans le Dashboard Supabase :
 
-1. `Authentication → URL Configuration` : conserver `https://nishiosxn.github.io/budget-app/v2.4/**` et autoriser aussi `https://nishiosxn.github.io/budget-app/v2.4.1/**` pour les confirmations, Magic Links et récupérations ;
-2. `Authentication → Sign In / Password Security` : activer **Leaked Password Protection** et fixer la longueur minimale à 8 caractères si le plan le permet.
+1. `Authentication → URL Configuration` autorise les previews V2.4 et V2.4.1 pour les confirmations, Magic Links et récupérations ;
+2. le SMTP personnalisé est activé avec Brevo ; l'expéditeur applicatif est configuré sous le nom **Smart Budget** ;
+3. inscription, confirmation d'email et récupération de mot de passe ont été testées avec succès sur V2.4.1 ;
+4. **Leaked Password Protection** reste un réglage Auth hébergé optionnel à activer manuellement si le plan le permet.
 
-Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmation d'email est requise.
+Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmation d'email reste requise. Aucun secret SMTP n'est versionné dans le dépôt.
 
-## Checklist de test manuel
+## Validation manuelle
 
-1. Ouvrir la preview en navigation privée, créer un compte email/mot de passe et confirmer l'email.
-2. Vérifier qu'un foyer neuf apparaît, sans donnée du foyer propriétaire.
-3. Créer un second compte depuis l'URL publique seule et vérifier qu'il reçoit un autre foyer neuf.
-4. Depuis le foyer propriétaire, copier une invitation et l'accepter avec le compte du deuxième membre.
-5. Modifier une opération sur deux sessions, tester Realtime puis hors-ligne/reconnexion.
-6. Vérifier qu’un compte normal reçoit « Accès refusé » sur `/v2.4.1/admin/` et que le compte propriétaire voit les écrans admin.
-7. Tester mot de passe oublié puis définir le nouveau mot de passe.
+Validation utilisateur terminée sur V2.4.1 :
+
+- création de compte email/mot de passe et confirmation email ;
+- récupération et changement du mot de passe ;
+- création de foyers indépendants entre comptes ;
+- invitation d'un second membre dans un foyer ;
+- synchronisation des opérations et comportement multi-session ;
+- contrôle d'accès à l'administration ;
+- validation visuelle desktop/mobile de la couche UX/UI V2.4.1.
 
 ## Workflow Git
 
-- Rester sur `v2.4.1` jusqu’à validation utilisateur de la couche UX/UI.
-- Ne pas fusionner dans `develop` ou `main` avant validation visuelle.
-- Publier V2.4.1 dans `gh-pages/v2.4.1/` sans modifier `/v2.4/` ni les previews historiques.
+- V2.4.1 est validée côté utilisateur et prête pour Pull Request vers `develop`.
+- Ne pas fusionner directement dans `main`.
+- Laisser **App integrity** valider la PR avant merge vers `develop`.
+- La preview reste publiée dans `gh-pages/v2.4.1/` sans modifier `/v2.4/` ni les previews historiques.
