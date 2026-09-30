@@ -10,14 +10,16 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 - **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
+- **Preview V2.4.1 UX/UI** : https://nishiosxn.github.io/budget-app/v2.4.1/
+- **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
 Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.4
-- **Branche active** : `v2.4`
+- **Développement actif** : V2.4.1 (amélioration UX/UI de V2.4)
+- **Branche active** : `v2.4.1`
 - **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
 - **PR V2.1** : #2, jalon précédent
 - **V2.2** : jalon validé et figé
@@ -98,6 +100,21 @@ Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 
 Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
 
+
+
+## V2.4.1 — UX/UI responsive
+
+La V2.4.1 conserve intégralement le socle métier, cloud et sécurité de la V2.4. Elle se concentre sur l'interface :
+- typographie moins lourde et hiérarchie plus lisible ;
+- textes secondaires renforcés en contraste et en poids ;
+- tailles fluides avec `rem` et `clamp()` plutôt que des réductions fixes sur mobile ;
+- espacements et cartes adaptatifs ;
+- grilles renforcées avec `minmax(0,1fr)` ;
+- comportement dédié aux écrans très étroits de type Fold ;
+- zones interactives plus confortables ;
+- prise en compte de `prefers-reduced-motion`.
+
+La V2.4.1 réutilise volontairement le cache et le backend V2.4 : aucune migration de données ou modification Supabase n'est nécessaire pour cette évolution visuelle.
 
 ## V2.4 — Cloud partagé
 
