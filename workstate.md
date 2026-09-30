@@ -1,17 +1,19 @@
-# Workstate — Budget foyer V2.4
+# Workstate — Budget foyer V2.4.1
 
 > Source de vérité pour reprendre le développement sans rescanner le dépôt.
 
 ## État final
 
 - Dépôt : `nishiosxn/budget-app`
-- Branche active : `v2.4`
+- Branche active : `v2.4.1`
 - Production : `main` → V1
 - Tronc V2 : `develop`
 - Preview V2.4 : `https://nishiosxn.github.io/budget-app/v2.4/`
+- Preview V2.4.1 : `https://nishiosxn.github.io/budget-app/v2.4.1/`
 - Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, `eu-west-1`)
-- V2.4 est implémentée côté code, base et Edge Function. La validation automatique passe.
-- Le test manuel final avec deux vraies adresses reste à effectuer par le propriétaire.
+- V2.4 reste le socle cloud/sécurité. V2.4.1 est une évolution UX/UI uniquement, sans modification métier ni Supabase.
+- Les changements V2.4.1 portent sur la typographie, le contraste, les tailles fluides, les espacements, les grilles et les très petits écrans.
+- Le test manuel visuel V2.4.1 reste à effectuer avant toute fusion.
 
 ## Invariants
 
@@ -22,6 +24,19 @@
 - Les suppressions métier synchronisées restent des archives `archived_at`.
 - La stratégie de synchronisation reste dernier écrivain gagnant, avec Realtime, file d'attente locale et reprise après reconnexion.
 - Seule la clé publishable Supabase est présente dans le navigateur. Aucun secret serveur n'est versionné.
+
+
+## Couche UX/UI V2.4.1
+
+- Palette : texte principal adouci `#26342d`, texte secondaire renforcé `#56635b`, vert `#23704d`, rouge `#ad5046`.
+- Hiérarchie typographique allégée : titres de ligne autour de 650, montants autour de 700, métadonnées autour de 550.
+- Les informations secondaires importantes utilisent des tailles fluides avec un plancher proche de 12 px équivalent.
+- Les tailles, espacements et montants critiques utilisent `rem` + `clamp()`.
+- Les grilles principales utilisent des colonnes flexibles et `minmax(0,1fr)` lorsque nécessaire.
+- Un breakpoint très étroit (22 rem) adapte KPI, historique et blocs de surveillance aux formats Fold.
+- Les contrôles principaux disposent de cibles tactiles renforcées.
+- `prefers-reduced-motion` est respecté.
+- Le cache `budget-foyer-v2.4` et le backend V2.4 sont conservés : V2.4.1 ne crée pas un nouveau silo de données.
 
 ## Authentification
 
@@ -104,7 +119,7 @@ scripts/validate.mjs
 
 Dans le Dashboard Supabase :
 
-1. `Authentication → URL Configuration` : autoriser `https://nishiosxn.github.io/budget-app/v2.4/**` pour les confirmations, Magic Links et récupérations ;
+1. `Authentication → URL Configuration` : conserver `https://nishiosxn.github.io/budget-app/v2.4/**` et autoriser aussi `https://nishiosxn.github.io/budget-app/v2.4.1/**` pour les confirmations, Magic Links et récupérations ;
 2. `Authentication → Sign In / Password Security` : activer **Leaked Password Protection** et fixer la longueur minimale à 8 caractères si le plan le permet.
 
 Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmation d'email est requise.
@@ -116,11 +131,11 @@ Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmatio
 3. Créer un second compte depuis l'URL publique seule et vérifier qu'il reçoit un autre foyer neuf.
 4. Depuis le foyer propriétaire, copier une invitation et l'accepter avec le compte du deuxième membre.
 5. Modifier une opération sur deux sessions, tester Realtime puis hors-ligne/reconnexion.
-6. Vérifier qu'un compte normal reçoit « Accès refusé » sur `/v2.4/admin/` et que le compte propriétaire voit les écrans admin.
+6. Vérifier qu’un compte normal reçoit « Accès refusé » sur `/v2.4.1/admin/` et que le compte propriétaire voit les écrans admin.
 7. Tester mot de passe oublié puis définir le nouveau mot de passe.
 
 ## Workflow Git
 
-- Rester sur `v2.4` jusqu'à validation utilisateur.
-- Ne pas fusionner dans `develop` ou `main` pendant ce chantier.
-- `gh-pages` ne reçoit que le sous-dossier `v2.4/`; les previews V2.0 à V2.3 restent inchangées.
+- Rester sur `v2.4.1` jusqu’à validation utilisateur de la couche UX/UI.
+- Ne pas fusionner dans `develop` ou `main` avant validation visuelle.
+- Publier V2.4.1 dans `gh-pages/v2.4.1/` sans modifier `/v2.4/` ni les previews historiques.
