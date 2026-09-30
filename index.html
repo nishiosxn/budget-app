@@ -19,8 +19,21 @@
 <div class="app">
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
-      <div class="top-actions">
+      <div class="brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div class="brand-copy"><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
+      <div class="nav-cloud-tools topbar-cloud-tools">
+        <span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span>
+        <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
+      </div>
+    </header>
+
+    <div class="nav-row">
+      <div class="tabs">
+        <button class="tab active" data-tab="overview">Vue d'ensemble</button>
+        <button class="tab" data-tab="categories">Catégories</button>
+        <button class="tab" data-tab="history">Historique</button>
+        <button class="tab" data-tab="tracking">Suivi</button>
+      </div>
+      <div class="top-actions nav-primary-actions">
         <div class="month-nav" aria-label="Navigation entre les mois">
           <button id="prevMonth" class="month-arrow" type="button" aria-label="Mois précédent" title="Mois précédent">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -33,16 +46,6 @@
         <button class="btn btn-income" data-add="income">＋ Rentrée d'argent</button>
         <button class="btn btn-expense" data-add="expense">＋ Dépense</button>
       </div>
-    </header>
-
-    <div class="nav-row">
-      <div class="tabs">
-        <button class="tab active" data-tab="overview">Vue d'ensemble</button>
-        <button class="tab" data-tab="categories">Catégories</button>
-        <button class="tab" data-tab="history">Historique</button>
-        <button class="tab" data-tab="tracking">Suivi</button>
-      </div>
-      <div class="nav-cloud-tools"><span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span><button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button></div>
     </div>
 
     <section id="overview" class="view active">
@@ -188,7 +191,7 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.5</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.5.1</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -224,14 +227,14 @@
       </div>
       <div class="settings-copy-note">La migration conserve les données existantes, puis les synchronise avec le foyer partagé.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.5 · synchronisation robuste · cloud partagé Supabase</div>
+      <div class="settings-version">V2.5.1 · interface responsive · cloud partagé Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5.1</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
     <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
     <div class="onboarding-card">
       <h3>Nouveau budget</h3>
@@ -255,7 +258,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5.1</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
