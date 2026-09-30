@@ -257,4 +257,3 @@ grant execute on function public.accept_household_invite(text, text) to authenti
 -- unnecessary and would allow bypassing invitation checks.
 revoke insert, update, delete on table public.household_members from authenticated;
 revoke insert on table public.households from authenticated;
-

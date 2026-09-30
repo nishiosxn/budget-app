@@ -1,201 +1,126 @@
-# Workstate — Budget foyer
+# Workstate — Budget foyer V2.4
 
 > Source de vérité pour reprendre le développement sans rescanner le dépôt.
 
-## 1. État actuel
+## État final
 
 - Dépôt : `nishiosxn/budget-app`
+- Branche active : `v2.4`
 - Production : `main` → V1
 - Tronc V2 : `develop`
-- Branche active : `v2.4`
-- Dernier jalon publié : V2.3
-- Objectif V2.4 : authentification Magic Link, foyer partagé Supabase, synchronisation Realtime et cache local hors ligne.
-- Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, région `eu-west-1`)
-- État au 30 septembre 2026 : implémentation V2.4 terminée et audit statique/visuel réussi ; test bout en bout avec deux vrais comptes encore à faire.
+- Preview V2.4 : `https://nishiosxn.github.io/budget-app/v2.4/`
+- Projet Supabase : `budget-foyer` (`bqbemjxwdctyovtlpxpm`, `eu-west-1`)
+- V2.4 est implémentée côté code, base et Edge Function. La validation automatique passe.
+- Le test manuel final avec deux vraies adresses reste à effectuer par le propriétaire.
 
-## 2. Invariants à préserver
+## Invariants
 
-- Le schéma local V5 reste le format métier de l’application et le cache hors ligne.
-- Aucune transaction, aucun budget réel, aucun prénom personnel et aucun secret serveur ne sont stockés dans Git.
-- La clé Supabase du navigateur est une clé publique publishable ; ne jamais ajouter de clé `service_role`.
-- Chaque donnée cloud appartient à un foyer et toutes les tables exposées utilisent RLS.
-- Les suppressions synchronisées sont des archives (`archived_at`) afin de ne pas ressusciter des lignes sur un autre appareil.
-- La V2.4 applique une stratégie dernier écrivain gagnant. La détection/résolution fine des conflits reste prévue pour V2.5.
-- Les anciennes clés V2.3 sont copiées vers V2.4 sans être effacées.
+- Le schéma local V5 reste le format métier et le cache hors ligne.
+- Les anciennes clés V2.3 sont migrables sans effacement.
+- Les caches V2.4 sont désormais séparés par identifiant de foyer.
+- Toutes les données synchronisées portent un `household_id` et sont filtrées par RLS.
+- Les suppressions métier synchronisées restent des archives `archived_at`.
+- La stratégie de synchronisation reste dernier écrivain gagnant, avec Realtime, file d'attente locale et reprise après reconnexion.
+- Seule la clé publishable Supabase est présente dans le navigateur. Aucun secret serveur n'est versionné.
 
-## 3. Architecture V2.4
+## Authentification
+
+- Email + mot de passe : `signUp` et `signInWithPassword`.
+- Confirmation d'email active côté projet (`mailer_autoconfirm=false`).
+- Mot de passe oublié : `resetPasswordForEmail`, retour `mode=recovery`, puis `updateUser`.
+- Magic Link conservé comme méthode secondaire.
+- Une inscription normale sans invitation appelle l'RPC idempotente `ensure_personal_household` et crée un foyer personnel vide.
+- Une inscription ouverte depuis une invitation ne crée pas de foyer personnel avant l'acceptation : elle rejoint uniquement le foyer explicitement invité.
+- Après déconnexion, l'autorisation de cache hors ligne est retirée.
+
+## Isolation et invitations
+
+- Tables métier : `households`, `household_members`, `categories`, `budgets`, `transactions`, `recurrences`, `household_invites`.
+- RLS actif sur toutes les tables publiques.
+- Aucun grant direct `anon`.
+- Les mutations directes `INSERT/UPDATE/DELETE` de `household_members` sont révoquées pour `authenticated`.
+- Le foyer est limité à deux membres par les RPC et par le trigger `household_members_limit_two`.
+- Les invitations expirent après sept jours, sont limitées au foyer/slot demandé et consommées atomiquement.
+- Le jeton brut n'est jamais stocké : seule sa valeur SHA-256 (`token_hash`) est conservée.
+- Les appels sensibles disponibles à `authenticated` contrôlent `auth.uid()`, le rôle propriétaire, le foyer, le slot, l'expiration et la limite de membres.
+
+## Administration globale
+
+- Interface séparée : `admin/index.html` (`/v2.4/admin/` sur la preview).
+- Rôle global : `public.app_admins`, RLS actif, aucun grant `anon` ou `authenticated`.
+- Journal : `public.admin_audit_log`, également inaccessible aux clients.
+- Edge Function : `admin-api`, SDK épinglé, `verify_jwt=true`, origine GitHub Pages/localhost contrôlée.
+- Chaque appel valide le JWT côté serveur puis vérifie `app_admins` en base.
+- Fonctions : liste des utilisateurs/foyers/membres/dates/états, désactivation/réactivation, suppression d'utilisateur, suppression de foyer.
+- `SUPABASE_SERVICE_ROLE_KEY` est lue uniquement depuis l'environnement natif de l'Edge Function.
+- L'unique compte existant lors de ce chantier a été désigné premier administrateur côté base ; les inscriptions futures ne deviennent jamais administratrices automatiquement.
+- Pour ajouter volontairement un autre admin depuis le SQL Editor : `select private.grant_app_admin_by_email('adresse@example.com');`.
+
+## Architecture utile
 
 ```text
 index.html
 css/style.css
 js/
-  config.js
-  data.js
-  storage.js
-  calculations.js
-  ui.js
-  categories.js
-  transactions.js
-  settings.js
-  tracking.js
-  onboarding.js
-  supabase-config.js
-  supabase-client.js
-  auth.js
-  cloud-household.js
+  storage.js              cache V5 isolé par foyer
+  auth.js                 password, confirmation, recovery, Magic Link
+  cloud-household.js      provisionnement, adhésions, invitations
   cloud-state-core.js
   cloud-load.js
   cloud-save.js
   cloud-realtime.js
-  app.js
-supabase/migrations/
+admin/
+  index.html
+  admin.css
+  admin.js
+supabase/
+  functions/admin-api/
+  migrations/
 scripts/validate.mjs
 ```
 
-Ordre de chargement : moteur local V5, SDK Supabase épinglé, modules cloud, puis `app.js`.
-
-## 4. Stockage et synchronisation
-
-- Cache actif : `budget-foyer-v2.4`.
-- Sources locales reprises automatiquement : `budget-foyer-v2.3`, puis `budget-foyer-v2.3-preview`.
-- L’écran de connexion protège le cloud, mais un cache V5 existant reste utilisable si le SDK ou le réseau est indisponible.
-- Toute sauvegarde locale déclenche une synchronisation différée de 650 ms.
-- Une écriture cloud utilise un snapshot immuable de l’état local ; une modification arrivée pendant l’envoi reste marquée en attente.
-- Les catégories, budgets, transactions et récurrences sont insérés ou mis à jour avec les seules colonnes autorisées par les grants Supabase.
-- Les catégories et lignes absentes du snapshot sont archivées.
-- Realtime recharge l’état du foyer lorsqu’aucune modification locale n’est en attente ; sinon la modification locale est envoyée en priorité.
-- `selectedMonth` reste une préférence locale et n’est pas synchronisé.
-
-## 5. Authentification et foyer
-
-- Connexion par Magic Link Supabase, sans mot de passe dans l’application.
-- Création d’un foyer avec attribution du propriétaire au slot `B`.
-- Import facultatif de l’état V5 local lors de la création du premier foyer.
-- Invitation UUID valable sept jours pour le deuxième slot du foyer.
-- Acceptation atomique via RPC avec verrou de ligne et contrôle du slot.
-- Déconnexion, affichage du compte actif et copie du lien d’invitation depuis les paramètres.
-- Le callback `onAuthStateChange` reste synchrone ; le bootstrap asynchrone est planifié hors du callback pour éviter les blocages du client Supabase.
-
-## 6. Supabase actuel
-
-Tables publiques :
-
-- `households`
-- `household_members`
-- `categories`
-- `budgets`
-- `transactions`
-- `recurrences`
-- `household_invites`
-
-État vérifié :
-
-- RLS actif sur les sept tables ;
-- aucune ligne de données au moment de l’audit ;
-- Realtime actif sur les six tables synchronisées (invitations exclues) ;
-- accès `anon` direct refusé ;
-- policies limitées aux membres/propriétaires du foyer ;
-- fonctions RPC avec `search_path` vide et vérification explicite de `auth.uid()` ;
-- migrations V2.4 versionnées dans `supabase/migrations/`.
-
-Les trois alertes Security Advisor restantes concernent volontairement les RPC `SECURITY DEFINER` accessibles aux utilisateurs authentifiés : `create_household`, `create_household_invite` et `accept_household_invite`. Elles constituent l’API publique prévue et vérifient authentification, rôle, foyer et slot. Les alertes Performance Advisor sont uniquement des index encore inutilisés car la base est vide.
-
-## 7. Plan V2.4
-
-### Phase A — base et sécurité
-
-- [x] Configurer le projet et la clé publishable navigateur.
-- [x] Activer RLS et les policies par foyer.
-- [x] Ajouter slots, invitations et RPC sécurisées.
-- [x] Ajouter les champs de synchronisation V5 et les archives.
-- [x] Activer Realtime sur les tables synchronisées.
-- [x] Versionner les trois migrations V2.4 appliquées.
-
-### Phase B — authentification et foyer
-
-- [x] Ajouter le client Supabase épinglé.
-- [x] Ajouter le Magic Link.
-- [x] Ajouter création du foyer et import local facultatif.
-- [x] Ajouter invitation et acceptation du deuxième membre.
-- [x] Ajouter le panneau compte/foyer et la déconnexion.
-- [x] Préserver l’usage local si le cloud est indisponible et qu’un cache existe.
-
-### Phase C — synchronisation
-
-- [x] Convertir Supabase vers l’état local V5.
-- [x] Convertir l’état local V5 vers Supabase.
-- [x] Synchroniser catégories, budgets, transactions et récurrences.
-- [x] Archiver les suppressions.
-- [x] Gérer les modifications survenues pendant un envoi.
-- [x] Ajouter Realtime et la reprise après reconnexion.
-
-### Phase D — validation et publication
-
-- [x] Vérifier la syntaxe des 19 modules JavaScript.
-- [x] Vérifier IDs, références DOM et ordre des scripts.
-- [x] Tester automatiquement la conversion cloud → V5.
-- [x] Vérifier le SDK épinglé, la clé V2.4 et les migrations présentes.
-- [x] Vérifier l’écran de connexion en mobile et en bureau.
-- [x] Vérifier l’absence d’erreurs navigateur au chargement.
-- [x] Refaire les audits Security et Performance Advisor.
-- [ ] Tester le parcours réel avec deux adresses : Magic Link, création/import, invitation, modification sur deux sessions et reconnexion hors ligne.
-- [ ] Créer la Pull Request `v2.4 → develop` après ce test utilisateur.
-- [ ] Publier la preview V2.4 sur `gh-pages` après validation.
-
-## 8. Validation effectuée
-
-Commande :
-
-```text
-node scripts/validate.mjs
-```
-
-Résultat : audit automatique réussi, incluant 19 modules, état V5 neutre, formules métier, migration legacy, conversions cloud dans les deux sens, modules cloud, SDK épinglé, cache isolé et migrations Supabase.
-
-Contrôle navigateur local :
-
-- écran Magic Link visible et accessible ;
-- panneau mobile contenu dans 390 px sans débordement horizontal ;
-- panneau bureau calculé à 520 px et centré ;
-- aucun message d’erreur ou avertissement dans la console ;
-- tous les scripts locaux et le SDK Supabase référencés dans le bon ordre.
-
-Limite : aucun email n’a été envoyé pendant l’audit. Le test authentifié exige une adresse contrôlée par l’utilisateur.
-
-## 9. Migrations versionnées
+## Migrations appliquées et versionnées
 
 ```text
 20260930001858_v2_4_household_invites_and_slots.sql
 20260930002106_v2_4_sync_fields_and_security_hardening.sql
 20260930002728_v2_4_archive_sync_rows.sql
+20260930011901_v2_4_multi_user_security_and_admin.sql
+20260930012443_v2_4_admin_service_permissions.sql
+20260930012820_v2_4_admin_advisor_hardening.sql
+20260930012844_v2_4_retire_legacy_household_rpc.sql
 ```
 
-Ces fichiers représentent les deltas V2.4 déjà appliqués au projet Supabase existant. Le schéma de base avait été provisionné avant leur suivi dans le dépôt.
+## Audits
 
-## 10. Reprise de travail
+- `node scripts/validate.mjs` couvre les 19 modules, les deux conversions V5/cloud, l'auth complète, le cache par foyer, les invitations hachées, l'admin, la syntaxe Edge, les migrations et l'absence de secret serveur.
+- Edge Function sans `Authorization` : HTTP 401 vérifié.
+- Test SQL transactionnel avec rôle `authenticated` : foyer propre lisible, foyer/catégorie étrangers invisibles et non modifiables, insertion directe d'un membre refusée ; toutes les données de test ont été annulées par rollback.
+- Security Advisor : trois warnings intentionnels pour les RPC `SECURITY DEFINER` exposées uniquement à `authenticated` (`ensure_personal_household`, `create_household_invite`, `accept_household_invite`). Ils sont nécessaires pour des écritures atomiques malgré les grants clients révoqués et valident explicitement l'identité et le périmètre.
+- Security Advisor : un réglage Auth hébergé reste manuel, **Leaked Password Protection**. Il n'est pas pilotable par migration SQL.
+- Performance Advisor : uniquement des index encore inutilisés sur ce faible volume ; les foreign keys sont toutes indexées.
 
-1. lire ce fichier ;
-2. vérifier `git status` sur `v2.4` ;
-3. lancer `node scripts/validate.mjs` ;
-4. effectuer le test utilisateur Magic Link à deux comptes ;
-5. corriger uniquement si ce test révèle un écart ;
-6. ouvrir la PR `v2.4 → develop`, puis publier la preview après validation.
+## Réglages Supabase manuels avant le test email
 
-## 11. Workflow Git
+Dans le Dashboard Supabase :
 
-```text
-main       → production stable V1
-develop    → tronc V2
-v2.4       → jalon cloud actif
-gh-pages   → publication et previews
-```
+1. `Authentication → URL Configuration` : autoriser `https://nishiosxn.github.io/budget-app/v2.4/**` pour les confirmations, Magic Links et récupérations ;
+2. `Authentication → Sign In / Password Security` : activer **Leaked Password Protection** et fixer la longueur minimale à 8 caractères si le plan le permet.
 
-Le check GitHub Actions **App integrity** s’exécute sur les Pull Requests vers `develop` et `main`.
+Le fournisseur Email est actif, les inscriptions sont ouvertes et la confirmation d'email est requise.
 
-## 12. Maintenance dépôt encore indépendante de V2.4
+## Checklist de test manuel
 
-- [ ] Basculer GitHub Pages de `main /(root)` vers `gh-pages /(root)`.
-- [ ] Après bascule Pages, retirer les dossiers de previews de `main`.
-- [ ] Créer les tags de jalon V2.0 / V2.1 / V2.2 / V2.3.
-- [ ] Supprimer les branches temporaires déjà fusionnées.
-- [ ] Rendre le check `App integrity` obligatoire sur `main` et idéalement `develop`.
+1. Ouvrir la preview en navigation privée, créer un compte email/mot de passe et confirmer l'email.
+2. Vérifier qu'un foyer neuf apparaît, sans donnée du foyer propriétaire.
+3. Créer un second compte depuis l'URL publique seule et vérifier qu'il reçoit un autre foyer neuf.
+4. Depuis le foyer propriétaire, copier une invitation et l'accepter avec le compte du deuxième membre.
+5. Modifier une opération sur deux sessions, tester Realtime puis hors-ligne/reconnexion.
+6. Vérifier qu'un compte normal reçoit « Accès refusé » sur `/v2.4/admin/` et que le compte propriétaire voit les écrans admin.
+7. Tester mot de passe oublié puis définir le nouveau mot de passe.
+
+## Workflow Git
+
+- Rester sur `v2.4` jusqu'à validation utilisateur.
+- Ne pas fusionner dans `develop` ou `main` pendant ce chantier.
+- `gh-pages` ne reçoit que le sous-dossier `v2.4/`; les previews V2.0 à V2.3 restent inchangées.

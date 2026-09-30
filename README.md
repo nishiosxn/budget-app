@@ -9,6 +9,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.1** : https://nishiosxn.github.io/budget-app/v2.1/
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
+- **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
 
 Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
@@ -23,7 +24,7 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
 - **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : implémentée sur la branche V2.4, en attente du test utilisateur Magic Link à deux comptes
+- **Synchronisation multi-appareils** : implémentée sur la branche V2.4 avec isolation par foyer, comptes email/mot de passe et Magic Link facultatif
 
 ## Fonctionnalités principales
 
@@ -60,6 +61,8 @@ js/
   cloud-realtime.js
   app.js
 supabase/migrations/
+supabase/functions/admin-api/
+admin/
 README.md
 workstate.md
 CHANGELOG.md
@@ -99,12 +102,15 @@ Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actio
 ## V2.4 — Cloud partagé
 
 La V2.4 conserve le modèle local V5 de V2.3 comme cache et introduit un backend Supabase pour :
-- authentification par Magic Link ;
-- foyer partagé entre plusieurs comptes ;
+- inscription et connexion par email/mot de passe, confirmation d'email et réinitialisation du mot de passe ;
+- Magic Link comme méthode secondaire ;
+- création automatique d'un foyer personnel vide pour chaque inscription normale ;
+- foyer partagé uniquement au moyen d'une invitation explicite, expirante et stockée sous forme de hash ;
 - catégories, budgets, transactions et récurrences synchronisés ;
 - mises à jour Realtime ;
 - migration contrôlée des données locales V5 vers le cloud ;
-- fonctionnement dégradé local en cas de perte réseau.
+- fonctionnement dégradé local en cas de perte réseau ;
+- interface `/admin/` protégée par un rôle en base et une Edge Function Supabase.
 
 La synchronisation envoie des snapshots cohérents, archive les suppressions et conserve les modifications locales qui surviennent pendant un envoi. La stratégie V2.4 est « dernier écrivain gagnant » ; la résolution fine des conflits est réservée à V2.5.
 
@@ -113,10 +119,18 @@ Configuration publique utilisée côté navigateur :
 - Publishable key Supabase uniquement ; aucun secret serveur n’est stocké dans le dépôt.
 
 Sécurité côté Supabase validée après implémentation :
-- RLS actif sur les 7 tables ;
+- RLS actif sur les 9 tables publiques ;
 - policies RLS limitées aux membres/propriétaires du foyer ;
 - aucun accès direct `anon` aux tables ;
-- RPC de foyer et d'invitation inaccessibles à `anon` ;
+- aucune mutation directe des membres par le navigateur ;
+- RPC de provisionnement et d'invitation inaccessibles à `anon` et contrôlées côté base ;
+- deux membres maximum par foyer, y compris au niveau du trigger SQL ;
+- rôle global `app_admins` inaccessible aux clients et opérations privilégiées dans `admin-api` ;
 - Realtime actif sur les 6 tables ;
 - schéma `private` inaccessible à `anon` ;
-- migrations V2.4 suivies dans `supabase/migrations/`.
+- migrations V2.4 suivies dans `supabase/migrations/` ;
+- aucune clé `service_role`, secret Supabase ou mot de passe de base dans le code navigateur.
+
+Le compte propriétaire déjà présent au moment du déploiement a été désigné comme premier administrateur. Les administrateurs suivants doivent être ajoutés explicitement depuis le SQL Editor avec `select private.grant_app_admin_by_email('adresse@example.com');` ; cette fonction n'est pas exposée à l'API.
+
+Les URLs de confirmation/récupération doivent être autorisées dans **Authentication → URL Configuration** pour `https://nishiosxn.github.io/budget-app/v2.4/**`. La protection contre les mots de passe compromis se règle dans **Authentication → Sign In / Password Security** ; ces réglages Auth hébergés ne sont pas modifiables par les migrations SQL.

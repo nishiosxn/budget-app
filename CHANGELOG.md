@@ -3,13 +3,15 @@
 ## V2.4 — synchronisation cloud (branche active)
 
 ### Ajouté
-- Authentification Supabase par Magic Link.
-- Création d'un foyer partagé et import facultatif du cache local V5.
-- Invitations à durée limitée pour le deuxième membre du foyer.
+- Inscription et connexion Supabase par email/mot de passe, confirmation d'email et réinitialisation du mot de passe.
+- Magic Link conservé comme méthode secondaire.
+- Création automatique d'un foyer personnel vide pour chaque inscription normale.
+- Invitations à durée limitée et à jeton haché pour le deuxième membre du foyer.
 - Synchronisation des catégories, budgets, transactions et récurrences.
 - Mises à jour Realtime entre sessions.
 - Indicateur d'état de synchronisation et informations du compte dans les paramètres.
-- Cache local V2.4 avec reprise non destructive de V2.3.
+- Cache local V2.4 isolé par foyer avec reprise non destructive de V2.3.
+- Interface `/admin/` et Edge Function `admin-api` pour consulter les comptes, foyers et membres, désactiver/réactiver ou supprimer un compte, et supprimer un foyer.
 
 ### Fiabilité
 - Snapshot immuable pendant chaque envoi cloud.
@@ -19,17 +21,22 @@
 - Fonctionnement local conservé si le SDK ou le réseau est indisponible et qu'un cache existe.
 
 ### Sécurité
-- RLS actif sur toutes les tables publiques V2.4.
+- RLS actif sur toutes les tables publiques V2.4, y compris les tables d'administration.
 - Accès limité aux membres du foyer et opérations propriétaire limitées aux owners.
-- RPC sensibles avec contrôle explicite de l'utilisateur, du rôle et du slot.
+- Mutations directes des adhésions révoquées au profit de RPC contrôlées.
+- Limite de deux membres imposée par RPC et trigger SQL.
+- Jetons d'invitation stockés uniquement sous forme SHA-256 et consommés atomiquement.
+- Rôle administrateur stocké en base, sans email codé en dur, et privilèges élevés confinés à une Edge Function avec JWT obligatoire.
 - Écritures séparées entre insertions et mises à jour afin de respecter les grants de colonnes immuables.
 - SDK navigateur épinglé à `@supabase/supabase-js@2.117.2`.
+- Validation automatique empêchant l'ajout d'un secret serveur au dépôt.
 
 ### Validation
-- Audit statique étendu aux 19 modules et aux migrations Supabase.
+- Audit statique étendu aux 19 modules, à l'interface admin, à la fonction serveur et aux migrations Supabase.
 - Test automatique de conversion Supabase vers état local V5.
-- Contrôle visuel mobile et bureau de l'écran de connexion.
-- Security et Performance Advisors relancés après implémentation.
+- Vérification du refus HTTP de la fonction admin sans JWT.
+- Security et Performance Advisors relancés après toutes les migrations.
+- Premier compte existant désigné administrateur global de façon ponctuelle côté base.
 
 ## Maintenance pré-V2.4
 
