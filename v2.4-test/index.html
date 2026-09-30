@@ -50,40 +50,40 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .card{background:var(--panel);border:1px solid rgba(225,230,224,.95);border-radius:var(--radius);box-shadow:var(--shadow)}
 .card-pad{padding:22px}
 .section{margin-top:28px}
-.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:0 3px 12px}
+.section-head{display:flex;align-items:end;justify-content:flex-start;gap:16px;margin:0 3px 12px}
 .section-head h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.018em;color:var(--text-strong)}
-.section-head span{font-size:11px;color:var(--muted);font-weight:500}
+.section-head span{font-size:12px;color:var(--muted);font-weight:500}
 
 .tokens{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .token{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
 .swatch{height:58px}
 .token-copy{padding:10px}
-.token strong{display:block;font-size:11px;font-weight:650;color:var(--text-strong)}
-.token code{display:block;margin-top:3px;font:500 9px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}
+.token strong{display:block;font-size:12px;font-weight:650;color:var(--text-strong)}
+.token code{display:block;margin-top:4px;font:500 10.5px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}
 
 .type-demo{display:grid;gap:18px}
 .type-row{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;padding:15px 0;border-bottom:1px solid var(--line)}
 .type-row:last-child{border-bottom:0}
-.type-meta{font-size:10px;color:var(--muted);line-height:1.5}
+.type-meta{font-size:11.5px;color:var(--muted);line-height:1.5}
 .type-display{font-size:30px;font-weight:720;letter-spacing:-.035em;color:var(--text-strong)}
 .type-heading{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text-strong)}
 .type-title{font-size:13px;font-weight:650;color:var(--text-strong)}
 .type-body{font-size:12px;font-weight:450;color:var(--text)}
-.type-muted{font-size:10px;font-weight:500;color:var(--muted)}
+.type-muted{font-size:11.5px;font-weight:500;color:var(--muted)}
 
 .balance{padding:28px;min-height:220px;background:linear-gradient(145deg,#244b3b 0%,#356b54 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between}
 .balance-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.72)}
 .balance-value{margin-top:8px;font-size:49px;font-weight:720;letter-spacing:-.045em}
 .balance-value small{font-size:23px;font-weight:650}
 .balance-meta{display:flex;gap:9px;flex-wrap:wrap}
-.meta-pill{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);font-size:10px;color:rgba(255,255,255,.72)}
-.meta-pill strong{margin-left:8px;color:#fff;font-size:11px;font-weight:650}
+.meta-pill{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);font-size:11px;color:rgba(255,255,255,.74)}
+.meta-pill strong{margin-left:8px;color:#fff;font-size:12px;font-weight:650}
 
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .kpi{padding:18px}
-.kpi-label{font-size:11px;font-weight:600;color:var(--muted)}
+.kpi-label{font-size:12px;font-weight:600;color:var(--muted)}
 .kpi-value{font-size:25px;font-weight:700;letter-spacing:-.03em;color:var(--text-strong);margin:7px 0 3px}
-.kpi-sub{font-size:10px;font-weight:500;color:var(--muted)}
+.kpi-sub{font-size:11.5px;font-weight:500;color:var(--muted)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
 .dot.in{background:var(--positive)}
 .dot.out{background:var(--negative)}
@@ -92,7 +92,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .sample-row{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;padding:14px 2px;border-bottom:1px solid var(--line)}
 .sample-row:last-child{border-bottom:0}
 .sample-title{font-size:13px;font-weight:650;letter-spacing:-.008em;color:var(--text-strong)}
-.sample-sub{margin-top:4px;font-size:10px;font-weight:500;color:var(--muted)}
+.sample-sub{margin-top:4px;font-size:11px;font-weight:500;color:var(--muted)}
 .sample-amount{font-size:13px;font-weight:700;white-space:nowrap}
 .sample-amount.pos{color:var(--positive)}
 .sample-amount.neg{color:var(--negative)}
@@ -104,7 +104,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .history-icon.plus{background:var(--positive-soft);color:var(--positive)}
 .history-icon.minus{background:var(--negative-soft);color:var(--negative)}
 .history-title{font-size:12.5px;font-weight:650;color:var(--text-strong)}
-.history-date{margin-top:3px;font-size:9.5px;font-weight:500;color:var(--muted)}
+.history-date{margin-top:4px;font-size:11px;font-weight:500;color:var(--muted)}
 .history-amount{font-size:12.5px;font-weight:700}
 .history-amount.pos{color:var(--positive)}
 .history-amount.neg{color:var(--negative)}
@@ -113,11 +113,11 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
 .watch-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:13px 2px;border-bottom:1px solid var(--line)}
 .watch-row:last-child{border-bottom:0}
 .watch-title{font-size:12.5px;font-weight:650;color:var(--text-strong)}
-.watch-meta{font-size:9.5px;color:var(--muted);font-weight:500;margin-top:4px}
-.watch-pill{padding:6px 9px;border-radius:9px;font-size:9.5px;font-weight:650;background:var(--warning-soft);color:var(--warning)}
+.watch-meta{font-size:11px;color:var(--muted);font-weight:500;margin-top:4px}
+.watch-pill{padding:6px 9px;border-radius:9px;font-size:10.5px;font-weight:650;background:var(--warning-soft);color:var(--warning)}
 .watch-pill.ok{background:var(--positive-soft);color:var(--positive)}
 
-.note{padding:16px 18px;background:#f8faf8;border:1px dashed #cfd8d2;border-radius:16px;color:var(--muted);font-size:11px;line-height:1.6}
+.note{padding:16px 18px;background:#f8faf8;border:1px dashed #cfd8d2;border-radius:16px;color:var(--muted);font-size:12px;line-height:1.6}
 .note strong{color:var(--text-strong);font-weight:650}
 
 @media(max-width:800px){
@@ -137,8 +137,8 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   .card-pad{padding:18px}
   .sample-row,.watch-row{gap:10px}
   .history-row{grid-template-columns:34px minmax(0,1fr) auto;gap:9px}
-  .history-title,.sample-title,.watch-title{font-size:12px}
-  .sample-sub,.history-date,.watch-meta{font-size:9px}
+  .history-title,.sample-title,.watch-title{font-size:12.5px}
+  .sample-sub,.history-date,.watch-meta{font-size:10.5px;line-height:1.4}
 }
 </style>
 </head>
@@ -157,7 +157,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   </header>
 
   <section class="section">
-    <div class="section-head"><h2>Couleurs proposées</h2><span>Plus doux, sans perdre le contraste</span></div>
+    <div class="section-head"><h2>Couleurs proposées</h2></div>
     <div class="tokens">
       <div class="token"><div class="swatch" style="background:#26342d"></div><div class="token-copy"><strong>Texte</strong><code>#26342D</code></div></div>
       <div class="token"><div class="swatch" style="background:#6f7b74"></div><div class="token-copy"><strong>Secondaire</strong><code>#6F7B74</code></div></div>
@@ -169,7 +169,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>Hiérarchie typographique</h2><span>Pas de 800/850/900 pour le contenu courant</span></div>
+    <div class="section-head"><h2>Hiérarchie typographique</h2></div>
     <article class="card card-pad type-demo">
       <div class="type-row"><div class="type-meta">30 px · 720<br>Montants principaux</div><div class="type-display">1 238,40 €</div></div>
       <div class="type-row"><div class="type-meta">18 px · 700<br>Titre de section</div><div class="type-heading">Derniers mouvements</div></div>
@@ -180,7 +180,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>Vue d’ensemble</h2><span>Exemple de rendu</span></div>
+    <div class="section-head"><h2>Vue d’ensemble</h2></div>
     <div class="grid two">
       <article class="card balance">
         <div>
@@ -204,7 +204,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   <section class="section">
     <div class="grid two">
       <div>
-        <div class="section-head"><h2>À surveiller</h2><span>Budgets proches ou dépassés</span></div>
+        <div class="section-head"><h2>À surveiller</h2></div>
         <article class="card watch">
           <div class="watch-row"><div><div class="watch-title">Loyer & charges</div><div class="watch-meta">640,00 € / 640,00 €</div></div><div class="watch-pill ok">Il reste 0,00 €</div></div>
           <div class="watch-row"><div><div class="watch-title">Courses</div><div class="watch-meta">232,40 € / 250,00 €</div></div><div class="watch-pill">Il reste 17,60 €</div></div>
@@ -212,7 +212,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
         </article>
       </div>
       <div>
-        <div class="section-head"><h2>Derniers mouvements</h2><span>Exemples</span></div>
+        <div class="section-head"><h2>Derniers mouvements</h2></div>
         <article class="card sample-list">
           <div class="sample-row"><div><div class="sample-title">Remboursement</div><div class="sample-sub">Aujourd’hui · Personnel</div></div><div class="sample-amount pos">+50,00 €</div></div>
           <div class="sample-row"><div><div class="sample-title">Courses</div><div class="sample-sub">Hier · À deux</div></div><div class="sample-amount neg">−42,80 €</div></div>
@@ -223,7 +223,7 @@ h1{margin:3px 0 0;font-size:25px;line-height:1.15;letter-spacing:-.025em;font-we
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>Historique</h2><span>Le point que tu trouvais trop « bulky »</span></div>
+    <div class="section-head"><h2>Historique</h2></div>
     <article class="card history-card">
       <div class="history-row"><div class="history-icon plus">+</div><div><div class="history-title">Rentrée exceptionnelle</div><div class="history-date">01 octobre 2026 · Personnel</div></div><div class="history-amount pos">+50,00 €</div></div>
       <div class="history-row"><div class="history-icon minus">−</div><div><div class="history-title">Courses</div><div class="history-date">01 octobre 2026 · À deux</div></div><div class="history-amount neg">−42,80 €</div></div>
