@@ -669,3 +669,31 @@ body.pwa-install-open{overflow:hidden}
   .pwa-install-actions{grid-template-columns:1fr}
   .pwa-install-later{order:2}
 }
+
+
+/* === V2.5 · comportement mobile natif / standalone === */
+@media(max-width:51.25rem){
+  html,body,.app{background:var(--bg)}
+
+  html.mobile-web body{
+    touch-action:pan-y;
+  }
+
+  html.mobile-web.display-standalone,
+  html.mobile-web.display-standalone body{
+    overscroll-behavior-x:none;
+    overscroll-behavior-y:none;
+  }
+
+  html.mobile-web.display-browser,
+  html.mobile-web.display-browser body{
+    overscroll-behavior-x:none;
+    overscroll-behavior-y:auto;
+  }
+
+  html.mobile-web input,
+  html.mobile-web select,
+  html.mobile-web textarea{
+    font-size:16px;
+  }
+}
