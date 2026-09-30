@@ -1,4 +1,4 @@
-const CACHE_NAME="budget-foyer-v25-pwa-20260930-2";
+const CACHE_NAME="budget-foyer-v25-pwa-20260930-3";
 const APP_SHELL=[
   "./","./index.html","./css/style.css","./manifest.webmanifest",
   "./icons/icon-192.png","./icons/icon.svg",
