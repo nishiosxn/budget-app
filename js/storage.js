@@ -1,4 +1,4 @@
-// V2.3 — état local V5, catalogue autonome et sauvegarde
+// V2.4 — cache local V5, catalogue autonome et sauvegarde
 function neutralBaseCategories(template,createdFrom){
  return template.map(c=>({...cloneData(c),createdFrom:c.createdFrom||createdFrom}));
 }
@@ -77,7 +77,16 @@ function normalizeState(x){
 function loadState(){
  try{
   const raw=localStorage.getItem(STORAGE_KEY);
-  if(!raw)return seedState();
+  if(!raw){
+   for(const key of ["budget-foyer-v2.3","budget-foyer-v2.3-preview"]){
+    const previous=localStorage.getItem(key);
+    if(!previous)continue;
+    const migrated=normalizeState(JSON.parse(previous));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated));
+    return migrated;
+   }
+   return seedState();
+  }
   return normalizeState(JSON.parse(raw));
  }catch{return seedState()}
 }
@@ -101,4 +110,8 @@ function applyCategoryState(){
 }
 let state=loadState();
 applyCategoryState();
-function saveState(){state.schemaVersion=5;localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function saveState(){
+ state.schemaVersion=5;
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+ if(typeof queueCloudSync==="function"&&!(typeof cloudApplyingRemote!=="undefined"&&cloudApplyingRemote))queueCloudSync();
+}

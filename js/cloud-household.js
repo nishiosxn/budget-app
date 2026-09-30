@@ -8,6 +8,7 @@ let cloudApplyingRemote=false;
 let cloudPushInProgress=false;
 let cloudPushTimer=null;
 let cloudIgnoreRealtimeUntil=0;
+let cloudBootstrapPromise=null;
 
 function ownerToSlot(owner){return owner==="A"||owner==="B"?owner:null}
 function slotToOwner(slot){return slot==="A"||slot==="B"?slot:"common"}
@@ -23,6 +24,12 @@ function updateCloudHouseholdUi(){
  if(householdNode)householdNode.textContent=household?.name||"Aucun foyer";
  const inviteBtn=document.getElementById("cloudCreateInviteBtn");
  if(inviteBtn)inviteBtn.disabled=!activeMembership||activeMembership.role!=="owner";
+ const canEditHousehold=!activeMembership||activeMembership.role==="owner";
+ for(const id of ["settingsHouseholdName","settingsPersonB","settingsPersonA","saveHouseholdBtn","migrateLocalBtn","importBtn","resetBtn"]){
+  const control=document.getElementById(id);if(control)control.disabled=!canEditHousehold;
+ }
+ const saveHousehold=document.getElementById("saveHouseholdBtn");
+ if(saveHousehold)saveHousehold.title=canEditHousehold?"":"Seul le propriétaire peut modifier les noms du foyer.";
 }
 async function loadCloudMemberships(){
  const userId=cloudSession?.user?.id;
@@ -37,6 +44,11 @@ async function loadCloudMemberships(){
   cloudHouseholds=res.data||[];
  }else cloudHouseholds=[];
  return cloudMemberships;
+}
+function requestCloudBootstrap(){
+ if(cloudBootstrapPromise)return cloudBootstrapPromise;
+ cloudBootstrapPromise=cloudBootstrap().finally(()=>{cloudBootstrapPromise=null});
+ return cloudBootstrapPromise;
 }
 function selectActiveMembership(){
  const saved=localStorage.getItem("budget-foyer-v2.4-active-household");
@@ -70,6 +82,10 @@ async function cloudBootstrap(){
    return;
   }
   selectActiveMembership();
+  if(state.onboardingComplete&&localStorage.getItem(cloudPendingKey())==="1"){
+   setCloudGateStatus("Envoi des modifications conservées hors ligne…");
+   await cloudPushLocalState({force:true});
+  }
   await cloudLoadState();
   startCloudRealtime();
   cloudSyncReady=true;
@@ -77,9 +93,14 @@ async function cloudBootstrap(){
   hideCloudGate();
  }catch(error){
   console.error("Cloud bootstrap",error);
-  setCloudGateView("loading");
-  setCloudGateStatus(error?.message||"Impossible de charger le foyer.","error");
-  setCloudStatus("Erreur de synchronisation","error");
+  if(state.onboardingComplete){
+   hideCloudGate();
+   setCloudStatus("Hors ligne · cache local","offline");
+  }else{
+   setCloudGateView("loading");
+   setCloudGateStatus(error?.message||"Impossible de charger le foyer.","error");
+   setCloudStatus("Erreur de synchronisation","error");
+  }
  }
 }
 async function createCloudHousehold(){
@@ -167,6 +188,6 @@ async function createCloudInvite(){
  }finally{button.disabled=false}
 }
 
-document.getElementById("cloudCreateHouseholdBtn").addEventListener("click",createCloudHousehold);
-document.getElementById("cloudAcceptInviteBtn").addEventListener("click",acceptCloudInvite);
-document.getElementById("cloudCreateInviteBtn").addEventListener("click",createCloudInvite);
+document.getElementById("cloudCreateHouseholdBtn")?.addEventListener("click",createCloudHousehold);
+document.getElementById("cloudAcceptInviteBtn")?.addEventListener("click",acceptCloudInvite);
+document.getElementById("cloudCreateInviteBtn")?.addEventListener("click",createCloudInvite);

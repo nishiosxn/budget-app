@@ -186,3 +186,50 @@
   .onboarding-brand h2{font-size:22px}
   .onboarding-card{padding:14px}
 }
+
+/* === V2.4 · compte, cloud partagé et état de synchronisation === */
+.nav-cloud-tools{display:flex;align-items:center;gap:8px}
+.cloud-sync-status{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:9px;font-weight:850;white-space:nowrap}
+.cloud-sync-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#9aa49e;box-shadow:0 0 0 3px rgba(154,164,158,.12)}
+.cloud-sync-status[data-state="ok"]{color:#216b4d;border-color:#c9ded1;background:#f2f8f4}
+.cloud-sync-status[data-state="ok"]::before{background:#2f8a62;box-shadow:0 0 0 3px rgba(47,138,98,.12)}
+.cloud-sync-status[data-state="syncing"]::before{background:#c58a29;animation:cloudPulse 1s ease-in-out infinite}
+.cloud-sync-status[data-state="offline"]{color:#7a674a;background:#faf6ee}
+.cloud-sync-status[data-state="offline"]::before{background:#b98a42}
+.cloud-sync-status[data-state="error"]{color:#a23f35;background:#fff5f4;border-color:#eed0cd}
+.cloud-sync-status[data-state="error"]::before{background:#bf5146}
+@keyframes cloudPulse{50%{opacity:.35;transform:scale(.72)}}
+
+.cloud-account-card{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;border:1px solid #c9ded1;border-radius:16px;background:#f2f8f4;margin-bottom:14px}
+.cloud-account-card>div{min-width:0}
+.cloud-account-card span{display:block;color:var(--muted);font-size:8px;font-weight:850;letter-spacing:.07em;margin-bottom:4px}
+.cloud-account-card strong{display:block;overflow:hidden;text-overflow:ellipsis;font-size:11px;white-space:nowrap}
+.cloud-account-card .btn{min-height:38px;font-size:10px}
+
+.cloud-gate{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;overflow:auto;padding:24px 14px;background:rgba(236,240,235,.97);backdrop-filter:blur(12px)}
+.cloud-gate.open{display:flex}
+.cloud-gate-panel{width:min(520px,100%);padding:24px;border:1px solid var(--line);border-radius:24px;background:var(--panel);box-shadow:0 30px 90px rgba(25,37,30,.18)}
+.cloud-gate-view h3{margin:2px 0 7px;font-size:19px}
+.cloud-gate-view>p{margin:0 0 17px;color:var(--muted);font-size:11px;line-height:1.55}
+.cloud-gate-view .field{margin-top:10px}
+.cloud-primary{width:100%;margin-top:12px;min-height:44px}
+.cloud-gate-status{min-height:19px;margin-top:12px;color:var(--muted);font-size:10px;font-weight:750;line-height:1.45}
+.cloud-gate-status.success{color:#216b4d}.cloud-gate-status.error{color:#a23f35}
+.cloud-loader{width:34px;height:34px;margin:8px auto 16px;border:3px solid #dce7df;border-top-color:var(--accent);border-radius:50%;animation:cloudSpin .8s linear infinite}
+.cloud-gate-view#cloudLoadingView{text-align:center;padding:18px 0 6px}
+@keyframes cloudSpin{to{transform:rotate(360deg)}}
+.cloud-import-choice{display:flex;align-items:flex-start;gap:10px;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);cursor:pointer}
+.cloud-import-choice input{margin-top:2px;accent-color:var(--accent)}
+.cloud-import-choice span{display:block}.cloud-import-choice strong{display:block;font-size:10px}.cloud-import-choice small{display:block;margin-top:3px;color:var(--muted);font-size:9px;line-height:1.45}
+
+@media(max-width:680px){
+ .cloud-sync-status{max-width:124px;overflow:hidden;text-overflow:ellipsis}
+ .cloud-account-card{grid-template-columns:1fr}
+ .cloud-gate{align-items:flex-start;padding:12px 8px 80px}
+ .cloud-gate-panel{padding:18px;border-radius:19px}
+}
+@media(max-width:520px){
+ .nav-cloud-tools{grid-column:2;grid-row:1 / span 2;flex-direction:column-reverse;align-items:flex-end}
+ .nav-cloud-tools .settings-trigger{margin-top:0;grid-column:auto;grid-row:auto}
+ .cloud-sync-status{max-width:98px;padding:6px 8px;font-size:8px}
+}

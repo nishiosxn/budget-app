@@ -1,6 +1,7 @@
 // V2.4 — authentification Magic Link Supabase
 let cloudSession=null;
 let pendingInviteToken="";
+let cloudAuthSubscription=null;
 
 const cloudGate=document.getElementById("cloudGate");
 const cloudLoginView=document.getElementById("cloudLoginView");
@@ -29,7 +30,7 @@ function clearPendingInvite(){
  localStorage.removeItem("budget-foyer-v2.4-pending-invite");
 }
 function setCloudGateView(name){
- [cloudLoginView,cloudLoadingView,cloudCreateView,cloudInviteView].forEach(el=>el.hidden=true);
+ [cloudLoginView,cloudLoadingView,cloudCreateView,cloudInviteView].forEach(el=>{if(el)el.hidden=true});
  const map={login:cloudLoginView,loading:cloudLoadingView,create:cloudCreateView,invite:cloudInviteView};
  if(map[name])map[name].hidden=false;
  cloudGate.classList.add("open");
@@ -73,7 +74,7 @@ async function sendMagicLink(){
  }
 }
 async function cloudSignOut(){
- stopCloudRealtime?.();
+ if(typeof stopCloudRealtime==="function")stopCloudRealtime();
  cloudSyncReady=false;
  activeHouseholdId=null;
  activeMembership=null;
@@ -83,22 +84,33 @@ async function initCloudAuth(){
  pendingInviteToken=readPendingInvite();
  setCloudGateView("loading");
  setCloudGateStatus("Vérification de la session…");
+ if(!cloudClient){
+  if(state.onboardingComplete){
+   hideCloudGate();
+   setCloudStatus("Cloud indisponible · cache local","offline");
+  }else{
+   setCloudGateStatus("Le service de synchronisation n’a pas pu être chargé. Vérifie la connexion puis recharge la page.","error");
+   setCloudStatus("Cloud indisponible","error");
+  }
+  return;
+ }
  const {data,error}=await cloudClient.auth.getSession();
  if(error)console.error("Session Supabase",error);
  cloudSession=data?.session||null;
  updateCloudAccountUi();
  if(cloudSession){
-  await cloudBootstrap();
+  await requestCloudBootstrap();
  }else{
   setCloudGateView("login");
   setCloudGateStatus(pendingInviteToken?"Connecte-toi pour rejoindre le foyer partagé.":"Connexion par lien magique, sans mot de passe.");
  }
 
- cloudClient.auth.onAuthStateChange(async(event,session)=>{
+ cloudAuthSubscription?.unsubscribe?.();
+ const {data:listener}=cloudClient.auth.onAuthStateChange((event,session)=>{
   cloudSession=session||null;
   updateCloudAccountUi();
-  if(event==="SIGNED_OUT"||!session){
-   stopCloudRealtime?.();
+  if(event==="SIGNED_OUT"){
+   if(typeof stopCloudRealtime==="function")stopCloudRealtime();
    cloudSyncReady=false;
    activeHouseholdId=null;
    activeMembership=null;
@@ -106,10 +118,12 @@ async function initCloudAuth(){
    setCloudGateStatus("Session fermée.");
    return;
   }
-  if(["SIGNED_IN","TOKEN_REFRESHED","INITIAL_SESSION"].includes(event)){
-   await cloudBootstrap();
+  if(!session)return;
+  if(["SIGNED_IN","INITIAL_SESSION"].includes(event)){
+   setTimeout(()=>{requestCloudBootstrap().catch(error=>console.error("Cloud auth bootstrap",error))},0);
   }
  });
+ cloudAuthSubscription=listener?.subscription||null;
 }
 function updateCloudAccountUi(){
  const email=cloudSession?.user?.email||"Non connecté";
@@ -119,6 +133,6 @@ function updateCloudAccountUi(){
  if(signout)signout.disabled=!cloudSession;
 }
 
-cloudSendMagicLinkBtn.addEventListener("click",sendMagicLink);
-cloudEmailInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMagicLink()});
-document.getElementById("cloudSignOutBtn").addEventListener("click",cloudSignOut);
+cloudSendMagicLinkBtn?.addEventListener("click",sendMagicLink);
+cloudEmailInput?.addEventListener("keydown",e=>{if(e.key==="Enter")sendMagicLink()});
+document.getElementById("cloudSignOutBtn")?.addEventListener("click",cloudSignOut);

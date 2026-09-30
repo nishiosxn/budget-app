@@ -10,7 +10,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 
-Le dépôt est public. Les opérations saisies dans l'application restent dans le `localStorage` du navigateur et ne sont pas envoyées sur GitHub. Les données initiales présentes directement dans le code source restent en revanche visibles dans le dépôt.
+Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
 ## État actuel
 
@@ -23,7 +23,7 @@ Le dépôt est public. Les opérations saisies dans l'application restent dans l
 - **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
 - **PR V2.2 source** : #4, fermée comme jalon
 - **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : en cours d’implémentation avec Supabase dans V2.4
+- **Synchronisation multi-appareils** : implémentée sur la branche V2.4, en attente du test utilisateur Magic Link à deux comptes
 
 ## Fonctionnalités principales
 
@@ -50,7 +50,16 @@ js/
   settings.js
   tracking.js
   onboarding.js
+  supabase-config.js
+  supabase-client.js
+  auth.js
+  cloud-household.js
+  cloud-state-core.js
+  cloud-load.js
+  cloud-save.js
+  cloud-realtime.js
   app.js
+supabase/migrations/
 README.md
 workstate.md
 CHANGELOG.md
@@ -63,9 +72,10 @@ La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés 
 - V1 : `budget-foyer-v1`
 - V2.3 source : `budget-foyer-v2.3`
 - Preview V2.3 : `budget-foyer-v2.3-preview`
+- V2.4 : `budget-foyer-v2.4`
 - Chaque preview publiée utilise une clé dédiée afin de ne pas modifier une autre version.
 
-La V2.3 propose une migration non destructive depuis les versions locales V1/V2.x et les sauvegardes legacy V4.
+La V2.3 propose une migration non destructive depuis les versions locales V1/V2.x et les sauvegardes legacy V4. La V2.4 copie également un cache V2.3 détecté vers sa propre clé sans effacer la source.
 
 ## Méthode de travail GitHub
 
@@ -96,14 +106,17 @@ La V2.4 conserve le modèle local V5 de V2.3 comme cache et introduit un backend
 - migration contrôlée des données locales V5 vers le cloud ;
 - fonctionnement dégradé local en cas de perte réseau.
 
+La synchronisation envoie des snapshots cohérents, archive les suppressions et conserve les modifications locales qui surviennent pendant un envoi. La stratégie V2.4 est « dernier écrivain gagnant » ; la résolution fine des conflits est réservée à V2.5.
+
 Configuration publique utilisée côté navigateur :
 - Project URL : `https://bqbemjxwdctyovtlpxpm.supabase.co`
 - Publishable key Supabase uniquement ; aucun secret serveur n’est stocké dans le dépôt.
 
-Sécurité côté Supabase validée avant développement :
-- RLS actif sur 6 tables ;
-- policies RLS présentes ;
+Sécurité côté Supabase validée après implémentation :
+- RLS actif sur les 7 tables ;
+- policies RLS limitées aux membres/propriétaires du foyer ;
 - aucun accès direct `anon` aux tables ;
-- RPC `create_household` inaccessible à `anon` ;
+- RPC de foyer et d'invitation inaccessibles à `anon` ;
 - Realtime actif sur les 6 tables ;
-- schéma `private` inaccessible à `anon`.
+- schéma `private` inaccessible à `anon` ;
+- migrations V2.4 suivies dans `supabase/migrations/`.

@@ -30,27 +30,31 @@ function applyCloudBudgets(rows,idMap,next){
  }
 }
 function cloudTransactionsToLocal(rows,idMap){
- return (rows||[]).map(row=>({
+ return (rows||[]).map(row=>{
+  const metadata=row.metadata&&typeof row.metadata==="object"&&!Array.isArray(row.metadata)?row.metadata:{};
+  return ({
+  ...metadata,
   id:row.legacy_id||row.id,
-  type:row.metadata?.type||"expense",
+  type:metadata.type||"expense",
   category:idMap.get(row.category_id)||row.category_id,
   owner:slotToOwner(row.owner_slot),
   amount:Number(row.amount)||0,
   date:String(row.transaction_date).slice(0,10),
   ...(row.label?{label:row.label}:{}),
   ...(row.is_adjustment?{adjustment:true}:{}),
-  ...(row.adjustment_label?{adjustmentLabel:row.adjustment_label}:{}),
-  ...(row.metadata&&typeof row.metadata==="object"?row.metadata:{})
- }));
+  ...(row.adjustment_label?{adjustmentLabel:row.adjustment_label}:{})
+ })});
 }
 function cloudRecurrencesToLocal(rows,idMap){
  return (rows||[]).map(row=>{
   const id=row.legacy_id||row.id,key=String(row.start_month).slice(0,7),day=String(Number(row.start_day)||1).padStart(2,"0");
+  const metadata=row.metadata&&typeof row.metadata==="object"&&!Array.isArray(row.metadata)?row.metadata:{};
   return {
-   id,type:row.metadata?.type||"expense",
+   ...metadata,
+   id,type:metadata.type||"expense",
    category:idMap.get(row.category_id)||row.category_id,
    owner:slotToOwner(row.owner_slot),amount:Number(row.amount)||0,
-   date:key+"-"+day,scope:"forward",seriesId:row.metadata?.seriesId||id,
+   date:key+"-"+day,scope:"forward",seriesId:metadata.seriesId||id,
    excludedMonths:Array.isArray(row.excluded_months)?row.excluded_months:[],
    overrides:row.overrides&&typeof row.overrides==="object"?row.overrides:{},
    ...(row.end_month?{endMonth:String(row.end_month).slice(0,7)}:{}),

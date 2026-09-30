@@ -34,7 +34,7 @@
         <button class="tab" data-tab="history">Historique</button>
         <button class="tab" data-tab="tracking">Suivi</button>
       </div>
-      <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
+      <div class="nav-cloud-tools"><span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span><button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button></div>
     </div>
 
     <section id="overview" class="view active">
@@ -180,8 +180,14 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.3</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.4</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
+      <div class="cloud-account-card">
+        <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
+        <div><span>COMPTE</span><strong id="cloudAccountEmail">Non connecté</strong></div>
+        <button id="cloudCreateInviteBtn" class="btn btn-income" type="button">Copier un lien d’invitation</button>
+        <button id="cloudSignOutBtn" class="btn btn-ghost" type="button">Se déconnecter</button>
+      </div>
       <div class="settings-household">
         <div class="field"><label for="settingsHouseholdName">NOM DU FOYER</label><input id="settingsHouseholdName" class="category-form-input" type="text" maxlength="60"></div>
         <div class="settings-name-grid">
@@ -190,23 +196,23 @@
         </div>
         <button id="saveHouseholdBtn" class="btn btn-income" type="button">Enregistrer les noms</button>
       </div>
-      <p class="settings-copy">Les données de cette version restent enregistrées localement dans ce navigateur.</p>
+      <p class="settings-copy">Les données sont synchronisées avec le foyer Supabase. Une copie locale reste disponible si la connexion est interrompue.</p>
       <div class="settings-actions">
         <button id="migrateLocalBtn" class="btn btn-ghost" type="button">Migrer une ancienne version locale</button>
         <button id="exportBtn" class="btn btn-ghost" type="button">Exporter une sauvegarde</button>
         <button id="importBtn" class="btn btn-ghost" type="button">Importer une sauvegarde</button>
         <input id="importFile" type="file" accept="application/json,.json" hidden>
       </div>
-      <div class="settings-copy-note">La migration copie les données vers V2.3 sans modifier l’ancienne version.</div>
+      <div class="settings-copy-note">La migration copie les données vers V2.4 sans modifier l’ancienne version, puis les synchronise avec le foyer partagé.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.3 · données locales autonomes · synchronisation multi-appareils prévue pour V2.4</div>
+      <div class="settings-version">V2.4 · cloud partagé Supabase · cache local hors ligne</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.3</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
+    <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.4</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
     <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
     <div class="onboarding-card">
       <h3>Nouveau budget</h3>
@@ -228,6 +234,39 @@
   </section>
 </div>
 
+<div id="cloudGate" class="cloud-gate open" aria-hidden="false">
+  <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
+    <div class="onboarding-brand"><div class="logo">B</div><div><div class="eyebrow">Budget foyer · V2.4</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div id="cloudLoginView" class="cloud-gate-view" hidden>
+      <h3>Se connecter</h3>
+      <p>Entre ton adresse email. Tu recevras un lien de connexion sans mot de passe.</p>
+      <div class="field"><label for="cloudEmailInput">ADRESSE EMAIL</label><input id="cloudEmailInput" class="category-form-input" type="email" inputmode="email" autocomplete="email" placeholder="nom@exemple.fr"></div>
+      <button id="cloudSendMagicLinkBtn" class="btn btn-income cloud-primary" type="button">Recevoir le lien magique</button>
+    </div>
+    <div id="cloudLoadingView" class="cloud-gate-view">
+      <div class="cloud-loader" aria-hidden="true"></div><h3>Connexion au foyer…</h3><p>Le cache local reste intact pendant le chargement.</p>
+    </div>
+    <div id="cloudCreateView" class="cloud-gate-view" hidden>
+      <h3>Créer le foyer partagé</h3>
+      <p>Ce compte deviendra propriétaire du foyer et pourra inviter la deuxième personne.</p>
+      <div class="field"><label for="cloudCreateHouseholdName">NOM DU FOYER</label><input id="cloudCreateHouseholdName" class="category-form-input" type="text" maxlength="60" placeholder="Mon foyer"></div>
+      <div class="settings-name-grid">
+        <div class="field"><label for="cloudCreateDisplayName">TON NOM</label><input id="cloudCreateDisplayName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 1"></div>
+        <div class="field"><label for="cloudCreateOtherName">DEUXIÈME PERSONNE</label><input id="cloudCreateOtherName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 2"></div>
+      </div>
+      <label class="cloud-import-choice"><input id="cloudCreateImportLocal" type="checkbox"><span><strong>Importer les données de ce navigateur</strong><small>Catégories, budgets, transactions et récurrences seront envoyés dans le foyer partagé.</small></span></label>
+      <button id="cloudCreateHouseholdBtn" class="btn btn-income cloud-primary" type="button">Créer et synchroniser</button>
+    </div>
+    <div id="cloudInviteView" class="cloud-gate-view" hidden>
+      <h3>Rejoindre le foyer</h3>
+      <p>Ton compte a reçu une invitation. Indique le nom affiché dans le budget partagé.</p>
+      <div class="field"><label for="cloudInviteName">TON NOM</label><input id="cloudInviteName" class="category-form-input" type="text" maxlength="40" placeholder="Personne 2"></div>
+      <button id="cloudAcceptInviteBtn" class="btn btn-income cloud-primary" type="button">Accepter l’invitation</button>
+    </div>
+    <div id="cloudGateStatus" class="cloud-gate-status" role="status" aria-live="polite"></div>
+  </section>
+</div>
+
 <script src="js/config.js" defer></script>
 <script src="js/data.js" defer></script>
 <script src="js/storage.js" defer></script>
@@ -238,6 +277,15 @@
 <script src="js/settings.js" defer></script>
 <script src="js/tracking.js" defer></script>
 <script src="js/onboarding.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" defer></script>
+<script src="js/supabase-config.js" defer></script>
+<script src="js/supabase-client.js" defer></script>
+<script src="js/auth.js" defer></script>
+<script src="js/cloud-household.js" defer></script>
+<script src="js/cloud-state-core.js" defer></script>
+<script src="js/cloud-load.js" defer></script>
+<script src="js/cloud-save.js" defer></script>
+<script src="js/cloud-realtime.js" defer></script>
 <script src="js/app.js" defer></script>
 </body>
 </html>

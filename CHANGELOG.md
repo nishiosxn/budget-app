@@ -1,5 +1,36 @@
 # Changelog
 
+## V2.4 — synchronisation cloud (branche active)
+
+### Ajouté
+- Authentification Supabase par Magic Link.
+- Création d'un foyer partagé et import facultatif du cache local V5.
+- Invitations à durée limitée pour le deuxième membre du foyer.
+- Synchronisation des catégories, budgets, transactions et récurrences.
+- Mises à jour Realtime entre sessions.
+- Indicateur d'état de synchronisation et informations du compte dans les paramètres.
+- Cache local V2.4 avec reprise non destructive de V2.3.
+
+### Fiabilité
+- Snapshot immuable pendant chaque envoi cloud.
+- Nouvelle modification conservée en attente lorsqu'elle survient pendant un envoi.
+- Archivage cloud des suppressions pour éviter les résurrections de lignes.
+- Priorité à une modification locale en attente lorsqu'un événement Realtime arrive.
+- Fonctionnement local conservé si le SDK ou le réseau est indisponible et qu'un cache existe.
+
+### Sécurité
+- RLS actif sur toutes les tables publiques V2.4.
+- Accès limité aux membres du foyer et opérations propriétaire limitées aux owners.
+- RPC sensibles avec contrôle explicite de l'utilisateur, du rôle et du slot.
+- Écritures séparées entre insertions et mises à jour afin de respecter les grants de colonnes immuables.
+- SDK navigateur épinglé à `@supabase/supabase-js@2.117.2`.
+
+### Validation
+- Audit statique étendu aux 19 modules et aux migrations Supabase.
+- Test automatique de conversion Supabase vers état local V5.
+- Contrôle visuel mobile et bureau de l'écran de connexion.
+- Security et Performance Advisors relancés après implémentation.
+
 ## Maintenance pré-V2.4
 
 ### Git

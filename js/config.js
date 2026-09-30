@@ -1,8 +1,10 @@
-// V2.3 — configuration, utilitaires et navigation temporelle
+// V2.4 — configuration, utilitaires et navigation temporelle
 const MONTHS=["Septembre 2026","Octobre 2026","Novembre 2026","Décembre 2026","Janvier 2027","Février 2027","Mars 2027","Avril 2027","Mai 2027","Juin 2027","Juillet 2027","Août 2027","Septembre 2027","Octobre 2027","Novembre 2027","Décembre 2027","Janvier 2028","Février 2028","Mars 2028","Avril 2028","Mai 2028","Juin 2028","Juillet 2028","Août 2028","Septembre 2028"];
 
-const STORAGE_KEY="budget-foyer-v2.3";
+const STORAGE_KEY="budget-foyer-v2.4";
 const LEGACY_STORAGE_SOURCES=[
+  {key:"budget-foyer-v2.3",label:"V2.3"},
+  {key:"budget-foyer-v2.3-preview",label:"V2.3 preview"},
   {key:"budget-foyer-v2.2-preview",label:"V2.2"},
   {key:"budget-foyer-v2.1-preview",label:"V2.1"},
   {key:"budget-foyer-v2-preview",label:"V2.0"},

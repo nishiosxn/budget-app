@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import vm from "node:vm";
 
 const root=process.cwd();
 const errors=[];
@@ -118,6 +119,96 @@ if(modular&&exists("js/settings.js")){
   const missing=migrationMarkers.filter(x=>!settings.includes(x));
   if(missing.length) fail("Moteur de migration incomplet: "+missing.join(", "));
   else ok("Moteur de migration V4/V5 présent");
+}
+
+if(modular&&exists("js/cloud-state-core.js")){
+  try{
+    const context=vm.createContext({slotToOwner:slot=>slot==="A"||slot==="B"?slot:"common"});
+    vm.runInContext(read("js/cloud-state-core.js"),context,{filename:"js/cloud-state-core.js"});
+    const next={
+      baseIncomeCategories:[],customIncomeCategories:[],baseExpenseCategories:[],customExpenseCategories:[],
+      deletedIncomeCategoriesGlobal:[],deletedCategoriesGlobal:[],deletedIncomeCategoryMonths:{},deletedCategoryMonths:{},
+      incomePlanChanges:{},expensePlanChanges:{}
+    };
+    const categoryRows=[
+      {id:"cloud-income",legacy_id:"income-1",name:"Salaire",type:"income",is_custom:false,owner_slot:"B",created_from:"2026-09-01",excluded_months:[],archived_at:null},
+      {id:"cloud-expense",legacy_id:"expense-1",name:"Logement",type:"expense",group_name:"Obligatoires",is_custom:true,is_saving:false,owner_slot:null,created_from:"2026-09-01",excluded_months:["2026-10"],archived_at:"2026-09-30T00:00:00Z"}
+    ];
+    const idMap=context.cloudCategoriesToLocal(categoryRows,next);
+    context.applyCloudBudgets([{category_id:"cloud-income",month:"2026-09-01",planned_amount:"1200.50",scope:"forward",owner_slot:"B"}],idMap,next);
+    const transactions=context.cloudTransactionsToLocal([{id:"cloud-tx",legacy_id:"tx-1",category_id:"cloud-expense",amount:"42.25",transaction_date:"2026-09-15",owner_slot:null,metadata:{category:"invalid",amount:999,type:"expense",note:"conservée"}}],idMap);
+    const recurrences=context.cloudRecurrencesToLocal([{id:"cloud-rec",legacy_id:"rec-1",category_id:"cloud-expense",amount:"10",start_month:"2026-09-01",start_day:31,end_month:null,owner_slot:"A",excluded_months:[],overrides:{},metadata:{id:"invalid",type:"expense",seriesId:"series-1"}}],idMap);
+    const valid=next.baseIncomeCategories[0]?.id==="income-1"
+      &&next.customExpenseCategories[0]?.id==="expense-1"
+      &&next.deletedCategoriesGlobal.includes("expense-1")
+      &&next.deletedCategoryMonths["2026-10"]?.includes("expense-1")
+      &&next.incomePlanChanges["income-1"]?.forward?.["2026-09"]?.budget===1200.5
+      &&transactions[0]?.id==="tx-1"&&transactions[0]?.category==="expense-1"&&transactions[0]?.amount===42.25&&transactions[0]?.note==="conservée"
+      &&recurrences[0]?.id==="rec-1"&&recurrences[0]?.date==="2026-09-31"&&recurrences[0]?.owner==="A";
+    if(!valid)fail("Conversion cloud vers état V5 invalide");
+    else ok("Conversion cloud vers état V5 vérifiée");
+  }catch(error){
+    fail("Test de conversion cloud impossible: "+error.message);
+  }
+}
+
+if(modular&&exists("js/cloud-save.js")){
+  try{
+    const localState={
+      schemaVersion:5,onboardingComplete:true,selectedMonth:"Septembre 2026",createdMonth:"2026-09",
+      household:{name:"Foyer test",personB:"Personne 1",personA:"Personne 2"},
+      baseIncomeCategories:[{id:"income-1",name:"Salaire",budget:0,owner:"B",createdFrom:"2026-09"}],customIncomeCategories:[],
+      baseExpenseCategories:[{id:"expense-1",name:"Logement",budget:0,owner:"common",section:"Obligatoires",createdFrom:"2026-09"}],customExpenseCategories:[],
+      incomeCategoryNames:{},categoryNames:{},incomeCategoryOwners:{},categoryOwners:{},
+      deletedIncomeCategoryMonths:{},deletedCategoryMonths:{"2026-10":["expense-1"]},deletedIncomeCategoriesGlobal:[],deletedCategoriesGlobal:["expense-1"],
+      incomeBudgets:{"income-1":1000},categoryBudgets:{"expense-1":500},
+      incomePlanChanges:{"income-1":{forward:{"2026-11":{budget:1200,owner:"B"}},month:{}}},expensePlanChanges:{},transactions:[]
+    };
+    const context=vm.createContext({
+      state:localState,activeHouseholdId:"household-1",cloudSession:null,cloudSyncReady:false,
+      cloneData:value=>JSON.parse(JSON.stringify(value)),ownerToSlot:owner=>owner==="A"||owner==="B"?owner:null,
+      cloudMonthDate:key=>/^\d{4}-\d{2}$/.test(String(key||""))?key+"-01":null,
+      monthKey:label=>label==="Septembre 2026"?"2026-09":String(label||""),
+      localStorage:{getItem:()=>null,setItem:()=>{},removeItem:()=>{}},navigator:{onLine:true},
+      window:{addEventListener:()=>{}},setTimeout:()=>0,clearTimeout:()=>{},console,
+      setCloudStatus:()=>{},cloudPushTimer:null,cloudPushInProgress:false,cloudIgnoreRealtimeUntil:0,
+      normalizeHousehold:value=>value,requestCloudBootstrap:async()=>{}
+    });
+    vm.runInContext(read("js/cloud-save.js"),context,{filename:"js/cloud-save.js"});
+    const categories=context.cloudLocalCategories(localState);
+    const budgets=context.cloudBudgetRows(new Map([["income-1","cloud-income"],["expense-1","cloud-expense"]]),localState);
+    const digestA=context.cloudSyncDigest(localState);
+    const changedMonth={...localState,selectedMonth:"Octobre 2026"};
+    const valid=categories.length===2
+      &&categories.find(row=>row.local_id==="expense-1")?.archived===true
+      &&categories.find(row=>row.local_id==="expense-1")?.excluded_months?.[0]==="2026-10"
+      &&budgets.some(row=>row.category_id==="cloud-income"&&row.month==="2026-09-01"&&row.planned_amount===1000)
+      &&budgets.some(row=>row.category_id==="cloud-income"&&row.month==="2026-11-01"&&row.planned_amount===1200)
+      &&digestA===context.cloudSyncDigest(changedMonth);
+    if(!valid)fail("Conversion état V5 vers cloud invalide");
+    else ok("Conversion état V5 vers cloud vérifiée");
+  }catch(error){
+    fail("Test de conversion vers le cloud impossible: "+error.message);
+  }
+}
+
+if(modular){
+  const cloudModules=["supabase-config.js","supabase-client.js","auth.js","cloud-household.js","cloud-state-core.js","cloud-load.js","cloud-save.js","cloud-realtime.js"];
+  const missingCloud=cloudModules.filter(file=>!exists(path.join("js",file))||!scripts.includes(file));
+  if(missingCloud.length)fail("Modules cloud manquants ou non chargés: "+missingCloud.join(", "));
+  else ok("Modules cloud V2.4 chargés");
+  if(!/@supabase\/supabase-js@2\.117\.2/.test(html))fail("SDK Supabase non épinglé à la version validée");
+  else ok("SDK Supabase épinglé");
+  if(!allJs.includes('budget-foyer-v2.4'))fail("Clé de cache V2.4 absente");
+  else ok("Cache local V2.4 isolé");
+  const migrations=[
+    "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
+    "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
+    "supabase/migrations/20260930002728_v2_4_archive_sync_rows.sql"
+  ];
+  const missingMigrations=migrations.filter(file=>!exists(file));
+  if(missingMigrations.length)fail("Migrations Supabase non versionnées: "+missingMigrations.join(", "));
+  else ok("Migrations Supabase V2.4 versionnées");
 }
 
 if(exists("workstate.md")){

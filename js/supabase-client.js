@@ -1,7 +1,7 @@
 // V2.4 — client Supabase navigateur
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_u3OphiLKRZuzrDYBu899iw_5Xckr-nv";
 
-const cloudClient=window.supabase.createClient(
+const cloudClient=window.supabase?.createClient?window.supabase.createClient(
   SUPABASE_PROJECT_URL,
   SUPABASE_PUBLISHABLE_KEY,
   {
@@ -11,4 +11,4 @@ const cloudClient=window.supabase.createClient(
       detectSessionInUrl:true
     }
   }
-);
+):null;
