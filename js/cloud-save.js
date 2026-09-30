@@ -7,7 +7,14 @@ function cloudSyncDigest(source=state){
  delete snapshot.selectedMonth;
  return JSON.stringify(snapshot);
 }
-function cloudPendingKey(){return "budget-foyer-v2.5-cloud-pending:"+(activeHouseholdId||"none")}
+function cloudPendingKey(){
+ const key="budget-foyer-v2.5-cloud-pending:"+(activeHouseholdId||"none");
+ if(activeHouseholdId&&!localStorage.getItem(key)){
+  const previous="budget-foyer-v2.4-cloud-pending:"+activeHouseholdId;
+  if(localStorage.getItem(previous)==="1")localStorage.setItem(key,"1");
+ }
+ return key;
+}
 function setCloudSyncedBaseline(digest=cloudSyncDigest()){
  cloudLastSyncedDigest=digest;
  if(!activeHouseholdId)return;
