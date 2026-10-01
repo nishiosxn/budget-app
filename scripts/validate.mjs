@@ -30,12 +30,14 @@ else{
   }
   const ico=fs.readFileSync(path.join(root,"icons","favicon.ico"));
   if(ico.readUInt16LE(0)!==0||ico.readUInt16LE(2)!==1||ico.readUInt16LE(4)!==3)fail("favicon.ico doit contenir trois tailles");
-  if(!iconFiles.every(file=>read("sw.js").includes(`./icons/${file}`)))fail("Icônes absentes du précache PWA");
+  const serviceWorker=read("sw.js");
+  if(/addEventListener\(["']fetch["']/.test(serviceWorker))fail("Le service worker contient encore un fallback de cache hors ligne");
+  else ok("Service worker PWA sans mode hors ligne");
   if(!["icons/icon.svg","icons/favicon.ico","icons/apple-touch-icon.png"].every(file=>html.includes(file)))fail("Favicon ou icône Apple absents de index.html");
   if(/class="logo">B</.test(html)||/class=\\"logo\\">B</.test(read("js/pwa.js")))fail("Ancien logo B encore affiché");
   const manifest=JSON.parse(read("manifest.webmanifest"));
   if(!["icons/icon.svg","icons/icon-192.png","icons/icon-512.png"].every(file=>manifest.icons.some(icon=>icon.src===file)))fail("Manifest PWA incomplet");
-  if(!errors.some(error=>/Icônes|Logo SVG|Dimensions|favicon|précache|Ancien logo|Manifest PWA/.test(error)))ok("Identité Smart Budget et icônes PWA cohérentes");
+  if(!errors.some(error=>/Icônes|Logo SVG|Dimensions|favicon|hors ligne|Ancien logo|Manifest PWA/.test(error)))ok("Identité Smart Budget et icônes PWA cohérentes");
 }
 const jsDir=path.join(root,"js");
 const jsFiles=fs.existsSync(jsDir)
@@ -255,8 +257,11 @@ if(modular){
   else ok("Modules cloud V2.5 chargés");
   if(!/@supabase\/supabase-js@2\.117\.2/.test(html))fail("SDK Supabase non épinglé à la version validée");
   else ok("SDK Supabase épinglé");
-  if(!allJs.includes('budget-foyer-v2.5'))fail("Clé de cache V2.5 absente");
-  else ok("Cache local V2.5 isolé");
+  const storageCloudOnly=read("js/storage.js");
+  if(/localStorage\.setItem\(currentStorageKey\(\),JSON\.stringify\(state\)\)/.test(storageCloudOnly))fail("Le cache financier local est encore actif");
+  else ok("Données financières sans cache local actif");
+  if(!html.includes('id="cloudForceSyncBtn"')||!read("js/cloud-save.js").includes("cloudForcePushSessionState"))fail("Relance manuelle de synchronisation absente");
+  else ok("Relance manuelle de session présente");
   const migrations=[
     "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
     "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
@@ -279,8 +284,10 @@ if(modular){
 
   const household=read("js/cloud-household.js");
   const storage=read("js/storage.js");
-  if(!household.includes('rpc("ensure_personal_household"')||!storage.includes(":household:${householdId}"))fail("Provisionnement ou cache isolé par foyer absent");
-  else ok("Foyer personnel automatique et cache isolé par foyer");
+  if(!household.includes('rpc("ensure_personal_household"'))fail("Provisionnement automatique du foyer absent");
+  else ok("Foyer personnel automatique présent");
+  if(!storage.includes("function loadState(){\n return seedState();")||!storage.includes("function clearCurrentCloudDataCache()"))fail("Mode cloud-only non appliqué au stockage");
+  else ok("État de travail conservé uniquement en mémoire");
 
   const securityMigration=read("supabase/migrations/20260930011901_v2_4_multi_user_security_and_admin.sql");
   const securityMarkers=["token_hash","extensions.digest","app_admins","admin_audit_log","revoke insert, update, delete on table public.household_members","Household already has two members"];
