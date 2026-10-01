@@ -22,6 +22,9 @@
       <div class="brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div class="brand-copy"><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
       <div class="nav-cloud-tools topbar-cloud-tools">
         <span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span>
+        <button id="cloudForceSyncBtn" class="cloud-force-sync" type="button" aria-label="Forcer l’envoi de cette session" title="Forcer l’envoi de toutes les données de cette session" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg>
+        </button>
         <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
       </div>
     </header>
@@ -208,7 +211,7 @@
         </div>
         <button id="saveHouseholdBtn" class="btn btn-income" type="button">Enregistrer les noms</button>
       </div>
-      <p class="settings-copy">Les données sont synchronisées avec le foyer Supabase. Une copie locale reste disponible si la connexion est interrompue.</p>
+      <p class="settings-copy">Les données actives sont chargées depuis Supabase et synchronisées en continu. Aucun mode hors ligne n’est utilisé. Si un envoi échoue, le bouton de relance près de l’état de synchronisation renvoie toute la session vers le cloud.</p>
       <div id="cloudConflictCard" class="cloud-conflict-card" hidden>
         <div>
           <strong>Conflit de synchronisation</strong>
@@ -225,9 +228,9 @@
         <button id="importBtn" class="btn btn-ghost" type="button">Importer une sauvegarde</button>
         <input id="importFile" type="file" accept="application/json,.json" hidden>
       </div>
-      <div class="settings-copy-note">La migration conserve les données existantes, puis les synchronise avec le foyer partagé.</div>
+      <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.5.1 · interface responsive · cloud partagé Supabase</div>
+      <div class="settings-version">V2.5.1 · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
@@ -281,7 +284,7 @@
       </details>
     </div>
     <div id="cloudLoadingView" class="cloud-gate-view">
-      <div class="cloud-loader" aria-hidden="true"></div><h3>Connexion au foyer…</h3><p>Le cache local reste intact pendant le chargement.</p>
+      <div class="cloud-loader" aria-hidden="true"></div><h3>Connexion au foyer…</h3><p>Chargement des données depuis Supabase. Une connexion internet est requise.</p>
     </div>
     <div id="cloudInviteView" class="cloud-gate-view" hidden>
       <h3>Rejoindre le foyer</h3>
