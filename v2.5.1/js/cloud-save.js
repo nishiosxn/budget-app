@@ -1,43 +1,35 @@
-// V2.5 — sauvegarde locale et délégation au moteur de fusion optimiste
+// V2.5.1 — synchronisation cloud continue, sans file d'attente persistante
 let cloudLastSyncedDigest="";
 let cloudPushRequested=false;
+let cloudUnsyncedSession=false;
 
 function cloudSyncDigest(source=state){
  const snapshot=cloneData(source);
  delete snapshot.selectedMonth;
  return JSON.stringify(snapshot);
 }
-function cloudPendingKey(){
- const key="budget-foyer-v2.5-cloud-pending:"+(activeHouseholdId||"none");
- if(activeHouseholdId&&!localStorage.getItem(key)){
-  const previous="budget-foyer-v2.4-cloud-pending:"+activeHouseholdId;
-  if(localStorage.getItem(previous)==="1"){
-   localStorage.setItem(key,"1");
-   localStorage.removeItem(previous);
-  }
- }
- return key;
-}
 function setCloudSyncedBaseline(digest=cloudSyncDigest()){
  cloudLastSyncedDigest=digest;
- if(!activeHouseholdId)return;
- if(cloudSyncDigest()===digest)localStorage.removeItem(cloudPendingKey());
- else localStorage.setItem(cloudPendingKey(),"1");
+ cloudUnsyncedSession=cloudSyncDigest()!==digest;
 }
 function queueCloudSync(){
  if(!cloudSession||!activeHouseholdId||!cloudSyncReady)return;
  const digest=cloudSyncDigest();
- if(digest===cloudLastSyncedDigest)return;
- localStorage.setItem(cloudPendingKey(),"1");
+ if(digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return;
+ cloudUnsyncedSession=true;
  clearTimeout(cloudPushTimer);
  if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict){
-  setCloudStatus("Conflit de synchronisation · action requise","error");
+  setCloudStatus("Conflit de synchronisation","error");
   return;
  }
- setCloudStatus(navigator.onLine?"Modification en attente…":"Hors ligne · modification conservée","offline");
+ if(!navigator.onLine){
+  setCloudStatus("Connexion perdue · réessayer","error");
+  return;
+ }
+ setCloudStatus("Synchronisation…","syncing");
  cloudPushTimer=setTimeout(()=>cloudPushLocalState().catch(error=>{
   if(error?.code!=="CLOUD_SYNC_CONFLICT")console.error("Cloud push",error);
- }),650);
+ }),80);
 }
 function cloudLocalCategories(source=state){
  const rows=[];
@@ -199,8 +191,8 @@ async function cloudPushLocalState({force=false}={}){
  if(!cloudSession||!activeHouseholdId)return;
  if(cloudPushInProgress){cloudPushRequested=true;return}
  const snapshot=cloneData(state),digest=cloudSyncDigest(snapshot);
- if(!force&&digest===cloudLastSyncedDigest){localStorage.removeItem(cloudPendingKey());return}
- if(!navigator.onLine){setCloudStatus("Hors ligne · modification conservée","offline");return}
+ if(!force&&digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return
+ if(!navigator.onLine){cloudUnsyncedSession=true;setCloudStatus("Connexion perdue · réessayer","error");return}
  cloudPushInProgress=true;cloudPushRequested=false;setCloudStatus("Synchronisation…","syncing");
  try{
   cloudIgnoreRealtimeUntil=Date.now()+5000;
@@ -214,11 +206,17 @@ async function cloudPushLocalState({force=false}={}){
   await cloudSyncRecurrences(idMap,snapshot);
   await cloudSyncTransactions(idMap,snapshot);
   setCloudSyncedBaseline(digest);
-  if(cloudSyncDigest()===digest)setCloudStatus("Synchronisé","ok");
-  else{cloudPushRequested=true;setCloudStatus("Modification en attente…","offline")}
+  if(cloudSyncDigest()===digest){
+   cloudUnsyncedSession=false;
+   setCloudStatus("Synchronisé","ok");
+  }else{
+   cloudPushRequested=true;
+   cloudUnsyncedSession=true;
+   setCloudStatus("Synchronisation…","syncing");
+  }
  }catch(error){
-  localStorage.setItem(cloudPendingKey(),"1");
-  setCloudStatus("Échec · données gardées localement","error");
+  cloudUnsyncedSession=true;
+  setCloudStatus("Échec de synchronisation · réessayer","error");
   throw error;
  }finally{
   cloudPushInProgress=false;
@@ -226,8 +224,69 @@ async function cloudPushLocalState({force=false}={}){
  }
 }
 
+async function cloudForcePushSessionState(){
+ const button=typeof document!=="undefined"?document.getElementById("cloudForceSyncBtn"):null;
+ if(!cloudSession||!activeHouseholdId){
+  setCloudStatus("Session cloud indisponible","error");
+  return;
+ }
+ if(!navigator.onLine){
+  setCloudStatus("Connexion requise","error");
+  return;
+ }
+ if(cloudPushInProgress){
+  cloudPushRequested=true;
+  return;
+ }
+ const snapshot=cloneData(state);
+ const digest=cloudSyncDigest(snapshot);
+ cloudPushInProgress=true;
+ cloudPushRequested=false;
+ cloudUnsyncedSession=true;
+ if(button)button.disabled=true;
+ setCloudStatus("Envoi complet…","syncing");
+ try{
+  cloudIgnoreRealtimeUntil=Date.now()+5000;
+  if(activeMembership?.role==="owner"){
+   const household=normalizeHousehold(snapshot.household);
+   const householdRes=await cloudClient.from("households")
+    .update({name:household.name,person_b_label:household.personB,person_a_label:household.personA})
+    .eq("id",activeHouseholdId);
+   if(householdRes.error)throw householdRes.error;
+  }
+  const idMap=await cloudSyncCategories(snapshot);
+  await cloudSyncBudgets(idMap,snapshot);
+  await cloudSyncRecurrences(idMap,snapshot);
+  await cloudSyncTransactions(idMap,snapshot);
+  cloudClearConflict?.();
+  await cloudLoadState();
+  cloudUnsyncedSession=false;
+  setCloudStatus("Synchronisé","ok");
+  showUndoToast?.("Session renvoyée au cloud");
+ }catch(error){
+  console.error("Force cloud sync",error);
+  cloudUnsyncedSession=true;
+  setCloudStatus("Échec de synchronisation · réessayer","error");
+ }finally{
+  cloudPushInProgress=false;
+  if(button)button.disabled=false;
+ }
+}
+
+if(typeof document!=="undefined"){
+ document.getElementById("cloudForceSyncBtn")?.addEventListener("click",cloudForcePushSessionState);
+}
+
 window.addEventListener("online",()=>{
- if(cloudSession&&!cloudSyncReady){requestCloudBootstrap().catch(error=>console.error("Cloud reconnect bootstrap",error));return}
- if(cloudSyncReady){setCloudStatus("Reconnexion…","syncing");cloudPushLocalState().catch(error=>console.error("Cloud reconnect",error))}
+ if(cloudSession&&!cloudSyncReady){
+  requestCloudBootstrap().catch(error=>console.error("Cloud reconnect bootstrap",error));
+  return;
+ }
+ if(cloudSyncReady&&cloudUnsyncedSession){
+  setCloudStatus("Reconnexion…","syncing");
+  cloudPushLocalState({force:true}).catch(error=>console.error("Cloud reconnect",error));
+ }
 });
-window.addEventListener("offline",()=>setCloudStatus("Hors ligne · cache local","offline"));
+window.addEventListener("offline",()=>{
+ if(cloudSession)setCloudStatus("Connexion perdue · réessayer","error");
+});

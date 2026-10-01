@@ -1,11 +1,9 @@
-// V2.5 — fusion optimiste par entité et détection de conflits
+// V2.5.1 — fusion optimiste en mémoire, sans cache local persistant
 const CLOUD_SYNC_BASELINE_VERSION=1;
 const CLOUD_SYNC_TABLES=["households","categories","budgets","transactions","recurrences"];
 let cloudSyncConflict=null;
+let cloudSyncBaselineMemory=null;
 
-function cloudV25BaselineKey(){
- return "budget-foyer-v2.5-sync-baseline:"+(activeHouseholdId||"none");
-}
 function cloudStableValue(value){
  if(Array.isArray(value))return value.map(cloudStableValue);
  if(value&&typeof value==="object"){
@@ -246,16 +244,13 @@ function cloudBaselineFromRemote(remote){
  return {version:CLOUD_SYNC_BASELINE_VERSION,householdId:activeHouseholdId,capturedAt:new Date().toISOString(),tables};
 }
 function cloudReadSyncBaseline(){
- if(!activeHouseholdId)return null;
- try{
-  const parsed=JSON.parse(localStorage.getItem(cloudV25BaselineKey())||"null");
-  if(!parsed||parsed.version!==CLOUD_SYNC_BASELINE_VERSION||parsed.householdId!==activeHouseholdId)return null;
-  return parsed;
- }catch{return null}
+ if(!activeHouseholdId||!cloudSyncBaselineMemory)return null;
+ if(cloudSyncBaselineMemory.version!==CLOUD_SYNC_BASELINE_VERSION||cloudSyncBaselineMemory.householdId!==activeHouseholdId)return null;
+ return cloudSyncBaselineMemory;
 }
 function cloudWriteSyncBaseline(remote){
  if(!activeHouseholdId)return;
- localStorage.setItem(cloudV25BaselineKey(),JSON.stringify(cloudBaselineFromRemote(remote)));
+ cloudSyncBaselineMemory=cloudBaselineFromRemote(remote);
 }
 function cloudCaptureRemoteBaseline(rowsOrSnapshot){
  const remote=rowsOrSnapshot?.tables?rowsOrSnapshot:cloudBuildRemoteSnapshot(rowsOrSnapshot);
@@ -360,8 +355,8 @@ function cloudRaceError(table,key){
 }
 function cloudSetConflict(conflicts){
  cloudSyncConflict={conflicts:conflicts||[],at:new Date().toISOString()};
- localStorage.setItem(cloudPendingKey(),"1");
- setCloudStatus("Conflit de synchronisation · action requise","error");
+ cloudUnsyncedSession=true;
+ setCloudStatus("Conflit de synchronisation","error");
  cloudRenderConflictUi();
 }
 function cloudClearConflict(){
@@ -524,13 +519,10 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
  if(!cloudSession||!activeHouseholdId)return;
  if(cloudPushInProgress){cloudPushRequested=true;return}
  const source=cloneData(state),digest=cloudSyncDigest(source);
- if(!force&&!conflictPreference&&digest===cloudLastSyncedDigest){
-  localStorage.removeItem(cloudPendingKey());
-  return;
- }
+ if(!force&&!conflictPreference&&digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return;
  if(!navigator.onLine){
-  localStorage.setItem(cloudPendingKey(),"1");
-  setCloudStatus("Hors ligne · modification conservée","offline");
+  cloudUnsyncedSession=true;
+  setCloudStatus("Connexion perdue · réessayer","error");
   return;
  }
 
@@ -556,7 +548,7 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
    }else if(conflictPreference==="remote"){
     cloudClearConflict();
     await cloudLoadState();
-    localStorage.removeItem(cloudPendingKey());
+    cloudUnsyncedSession=false;
     return;
    }else{
     const conflicts=[{table:"bootstrap",key:"baseline",field:null,bootstrap:true}];
@@ -574,10 +566,10 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
   await cloudApplySyncPlan(plan);
   cloudClearConflict();
   await cloudLoadState();
-  localStorage.removeItem(cloudPendingKey());
+  cloudUnsyncedSession=false;
   setCloudStatus("Synchronisé","ok");
  }catch(error){
-  localStorage.setItem(cloudPendingKey(),"1");
+  cloudUnsyncedSession=true;
   if(error?.code==="CLOUD_SYNC_RACE"){
    const conflicts=[{table:error.table||"sync",key:error.key||"race",field:null}];
    cloudSetConflict(conflicts);
@@ -585,7 +577,7 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
    wrapped.cause=error;
    throw wrapped;
   }
-  if(error?.code!=="CLOUD_SYNC_CONFLICT")setCloudStatus("Échec · données gardées localement","error");
+  if(error?.code!=="CLOUD_SYNC_CONFLICT")setCloudStatus("Échec de synchronisation · réessayer","error");
   throw error;
  }finally{
   cloudPushInProgress=false;

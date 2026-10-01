@@ -1,4 +1,4 @@
-// V2.5 — chargement Supabase vers le cache local V5 + baseline de synchronisation
+// V2.5.1 — chargement Supabase vers l'état de session + baseline en mémoire
 async function cloudLoadState(){
  if(!activeHouseholdId)throw new Error("Aucun foyer actif.");
  setCloudStatus("Chargement du cloud…","syncing");
@@ -52,6 +52,7 @@ async function cloudLoadState(){
   recurrences:allRecurrenceRows
  });
  if(typeof setCloudSyncedBaseline==="function")setCloudSyncedBaseline();
+ if(typeof clearCurrentCloudDataCache==="function")clearCurrentCloudDataCache();
  if(typeof cloudClearConflict==="function")cloudClearConflict();
  setCloudStatus("Synchronisé","ok");
  return state;
