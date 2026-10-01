@@ -1,6 +1,6 @@
 # Changelog
 
-## V2.5.1 — réorganisation du header
+## V2.5.1 — interface et synchronisation cloud directe
 
 ### Interface
 - Header desktop réorganisé : identité + synchronisation/paramètres sur la première ligne.
@@ -9,11 +9,22 @@
 - Sélecteur du mois déplacé sur sa propre ligne mobile, navigation placée en dessous.
 - Badge de synchronisation réduit au voyant seul sur les écrans très étroits.
 - Nom du foyer tronqué proprement lorsqu'il manque de place.
+- Bouton de relance manuelle affiché à côté de l’état de synchronisation lorsqu’un envoi échoue.
+
+### Synchronisation
+- Suppression du mode hors ligne et de la persistance du budget courant dans `localStorage`.
+- Supabase devient la source de vérité à chaque ouverture.
+- État courant conservé uniquement en mémoire pendant la session.
+- Baseline de fusion V2.5 conservée en mémoire au lieu d’être persistée.
+- Synchronisation déclenchée presque immédiatement après chaque modification.
+- En cas d’échec, la relance manuelle renvoie l’état complet de la session vers Supabase.
+- Reprise automatique au retour de la connexion lorsqu’une session contient des changements non envoyés.
+- Rafraîchissement cloud au retour au premier plan lorsque la session est déjà synchronisée.
+- Service worker conservé pour l’installation PWA, sans fallback de données ou ressources hors ligne.
 
 ### Technique
-- Aucun changement de logique métier, Supabase, RLS ou synchronisation.
+- Schéma V5, Supabase et règles RLS inchangés.
 - Branche dédiée `v2.5.1` et preview séparée `/v2.5.1/`.
-
 
 ## V2.5 — synchronisation robuste
 
