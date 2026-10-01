@@ -12,5 +12,10 @@ self.addEventListener("activate",event=>{
  );
 });
 
-// V2.5.1 est volontairement cloud-only : aucun fetch n'est servi depuis
-// un cache applicatif. Le service worker reste uniquement pour l'installation PWA.
+self.addEventListener("fetch",event=>{
+ if(event.request.method!=="GET")return;
+ event.respondWith(fetch(event.request));
+});
+
+// V2.5.1 est volontairement cloud-only : le service worker ne lit ni n'écrit
+// aucun cache applicatif. Les requêtes réseau échouent donc réellement hors ligne.
