@@ -20,7 +20,7 @@ function setCloudStatus(message,stateName="idle"){
  const retry=document.getElementById("cloudForceSyncBtn");
  if(retry){
   retry.hidden=!["error","offline"].includes(stateName);
-  retry.disabled=!cloudSession||!activeHouseholdId||cloudPushInProgress;
+  retry.disabled=!cloudSession||!activeHouseholdId;
  }
 }
 function updateCloudHouseholdUi(){
