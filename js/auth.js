@@ -242,7 +242,6 @@ async function initCloudAuth(){
    cloudSyncReady=false;
    activeHouseholdId=null;
    activeMembership=null;
-   localStorage.removeItem("budget-foyer-v2.5-offline-user");
    setCloudGateView("login");
    setCloudAuthMode("login");
    setCloudGateStatus("Session fermée.");
