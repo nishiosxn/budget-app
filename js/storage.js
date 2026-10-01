@@ -1,4 +1,4 @@
-// V2.5 — cache local V5 isolé et reprise non destructive
+// V2.5.1 — état de session en mémoire, Supabase comme source de vérité
 function neutralBaseCategories(template,createdFrom){
  return template.map(c=>({...cloneData(c),createdFrom:c.createdFrom||createdFrom}));
 }
@@ -97,48 +97,27 @@ function currentStorageKey(){
 function previousHouseholdStorageKeys(householdId){
  return (PREVIOUS_STORAGE_KEYS||[]).map(key=>householdId?key+":household:"+householdId:key);
 }
-function loadState(){
+function clearCurrentCloudDataCache(){
  try{
-  const targetKey=currentStorageKey();
-  let raw=localStorage.getItem(targetKey);
-  if(!raw){
-   const householdId=preferredHouseholdId();
-   for(const key of previousHouseholdStorageKeys(householdId)){
-    const previous=localStorage.getItem(key);
-    if(!previous)continue;
-    raw=previous;
-    localStorage.setItem(targetKey,previous);
-    break;
-   }
+  const prefixes=[
+   STORAGE_KEY+":household:",
+   "budget-foyer-v2.5-cloud-pending:",
+   "budget-foyer-v2.5-sync-baseline:"
+  ];
+  for(let i=localStorage.length-1;i>=0;i--){
+   const key=localStorage.key(i);
+   if(!key)continue;
+   if(key===STORAGE_KEY||key==="budget-foyer-v2.5-offline-user"||prefixes.some(prefix=>key.startsWith(prefix)))localStorage.removeItem(key);
   }
-  if(!raw){
-   for(const key of ["budget-foyer-v2.3","budget-foyer-v2.3-preview"]){
-    const previous=localStorage.getItem(key);
-    if(!previous)continue;
-    const migrated=normalizeState(JSON.parse(previous));
-    localStorage.setItem(targetKey,JSON.stringify(migrated));
-    return migrated;
-   }
-   return seedState();
-  }
-  return normalizeState(JSON.parse(raw));
- }catch{return seedState()}
+ }catch{}
 }
-function switchHouseholdCache(householdId){
- const key=householdStorageKey(householdId);
- let raw=localStorage.getItem(key);
- if(!raw){
-  for(const previousKey of previousHouseholdStorageKeys(householdId)){
-   const previous=localStorage.getItem(previousKey);
-   if(!previous)continue;
-   raw=previous;
-   localStorage.setItem(key,previous);
-   break;
-  }
- }
- state=raw?normalizeState(JSON.parse(raw)):seedState();
+function loadState(){
+ return seedState();
+}
+function switchHouseholdCache(){
+ state=seedState();
  applyCategoryState();
- return !!raw;
+ return false;
 }
 function applyCategoryState(){
  const baseIncome=Array.isArray(state.baseIncomeCategories)?state.baseIncomeCategories:[];
@@ -162,6 +141,5 @@ let state=loadState();
 applyCategoryState();
 function saveState(){
  state.schemaVersion=5;
- localStorage.setItem(currentStorageKey(),JSON.stringify(state));
  if(typeof queueCloudSync==="function"&&!(typeof cloudApplyingRemote!=="undefined"&&cloudApplyingRemote))queueCloudSync();
 }
