@@ -853,3 +853,44 @@ body.pwa-install-open{overflow:hidden}
     margin:0;
   }
 }
+
+
+/* === V2.5.1 · relance manuelle de synchronisation === */
+.cloud-force-sync{
+  width:2.625rem;
+  height:2.625rem;
+  flex:0 0 2.625rem;
+  border:1px solid #eed0cd;
+  background:#fff5f4;
+  border-radius:.875rem;
+  display:grid;
+  place-items:center;
+  color:#a23f35;
+  box-shadow:0 4px 14px rgba(24,36,29,.035);
+  padding:0;
+}
+.cloud-force-sync[hidden]{display:none!important}
+.cloud-force-sync:hover:not(:disabled){
+  background:#fcebea;
+  border-color:#e6bbb7;
+  color:#8e3028;
+  transform:translateY(-1px);
+}
+.cloud-force-sync:disabled{opacity:.55;cursor:wait}
+.cloud-force-sync svg{
+  width:1.05rem;
+  height:1.05rem;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+@media(max-width:42.5rem){
+  .topbar-cloud-tools .cloud-force-sync{
+    width:2.75rem;
+    height:2.75rem;
+    flex-basis:2.75rem;
+  }
+}
