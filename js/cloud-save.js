@@ -260,7 +260,6 @@ async function cloudForcePushSessionState(){
   await cloudSyncTransactions(idMap,snapshot);
   cloudClearConflict?.();
   await cloudLoadState();
-  setCloudSyncedBaseline(digest);
   cloudUnsyncedSession=false;
   setCloudStatus("Synchronisé","ok");
   showUndoToast?.("Session renvoyée au cloud");
