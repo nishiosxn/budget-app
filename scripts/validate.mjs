@@ -31,8 +31,8 @@ else{
   const ico=fs.readFileSync(path.join(root,"icons","favicon.ico"));
   if(ico.readUInt16LE(0)!==0||ico.readUInt16LE(2)!==1||ico.readUInt16LE(4)!==3)fail("favicon.ico doit contenir trois tailles");
   const serviceWorker=read("sw.js");
-  if(/addEventListener\(["']fetch["']/.test(serviceWorker))fail("Le service worker contient encore un fallback de cache hors ligne");
-  else ok("Service worker PWA sans mode hors ligne");
+  if(/caches\.match|cache\.put|cache\.add|cache\.addAll/.test(serviceWorker))fail("Le service worker contient encore un fallback de cache hors ligne");
+  else ok("Service worker PWA en réseau direct, sans mode hors ligne");
   if(!["icons/icon.svg","icons/favicon.ico","icons/apple-touch-icon.png"].every(file=>html.includes(file)))fail("Favicon ou icône Apple absents de index.html");
   if(/class="logo">B</.test(html)||/class=\\"logo\\">B</.test(read("js/pwa.js")))fail("Ancien logo B encore affiché");
   const manifest=JSON.parse(read("manifest.webmanifest"));
