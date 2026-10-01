@@ -1,4 +1,4 @@
-// V2.5 — authentification Supabase email/mot de passe et Magic Link
+// V2.5.1 — authentification Supabase requise pour accéder aux données cloud
 let cloudSession=null;
 let pendingInviteToken="";
 let cloudAuthSubscription=null;
@@ -202,7 +202,6 @@ async function cloudSignOut(){
  cloudSyncReady=false;
  activeHouseholdId=null;
  activeMembership=null;
- localStorage.removeItem("budget-foyer-v2.5-offline-user");
  await cloudClient.auth.signOut();
 }
 async function initCloudAuth(){
@@ -210,19 +209,13 @@ async function initCloudAuth(){
  setCloudGateView("loading");
  setCloudGateStatus("Vérification de la session…");
  if(!cloudClient){
-  if(state.onboardingComplete&&localStorage.getItem("budget-foyer-v2.5-offline-user")){
-   hideCloudGate();
-   setCloudStatus("Cloud indisponible · cache local","offline");
-  }else{
-   setCloudGateStatus("Le service de synchronisation n’a pas pu être chargé. Vérifie la connexion puis recharge la page.","error");
-   setCloudStatus("Cloud indisponible","error");
-  }
+  setCloudGateStatus("Le service de synchronisation n’a pas pu être chargé. Une connexion cloud est requise pour ouvrir le budget.","error");
+  setCloudStatus("Cloud indisponible","error");
   return;
  }
  const {data,error}=await cloudClient.auth.getSession();
  if(error)console.error("Session Supabase",error);
  cloudSession=data?.session||null;
- if(cloudSession)localStorage.setItem("budget-foyer-v2.5-offline-user",cloudSession.user.id);
  updateCloudAccountUi();
  if(cloudSession&&isPasswordRecoveryReturn()){
   setCloudGateView("reset");
@@ -238,7 +231,6 @@ async function initCloudAuth(){
  cloudAuthSubscription?.unsubscribe?.();
  const {data:listener}=cloudClient.auth.onAuthStateChange((event,session)=>{
   cloudSession=session||null;
-  if(session)localStorage.setItem("budget-foyer-v2.5-offline-user",session.user.id);
   updateCloudAccountUi();
   if(event==="PASSWORD_RECOVERY"){
    setCloudGateView("reset");
