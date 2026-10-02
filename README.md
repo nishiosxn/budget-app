@@ -18,11 +18,11 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 
 ## État actuel
 
-- **Production** : V1 jusqu'à la promotion de V2.5.1 dans `main`.
+- **Production du code** : V2.5.1 sur `main`.
 - Version du code : `V2.5.1`
 - **Branche de développement de référence** : `develop`.
 - **Version de travail validée/publée** : V2.5.1, actuellement disponible sur `/v2.5.1/`.
-- **Lot de promotion** : réconciliation de V2.5.1 avec le workflow hybride, puis intégration dans `develop` et promotion vers `main`.
+- **État de release** : V2.5.1 constitue la base stable ; `develop` reste le tronc des prochains lots.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
