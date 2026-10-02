@@ -36,7 +36,7 @@ function categoryRow(c,actual,type){
    ?`<span class="cat-match-status" role="img" aria-label="Réel conforme au prévu" title="Réel conforme au prévu">✓</span>`
    :"";
  const alignMenu=hasPlanned&&!isMatched
-  ?`<button type="button" data-fill-category="${escapeHtml(c.id)}" data-category-type="${type}">Mettre le réel à ${euro(planned)}</button>`
+  ?`<button type="button" role="menuitem" data-fill-category="${escapeHtml(c.id)}" data-category-type="${type}">Mettre le réel à ${euro(planned)}</button>`
   :"";
  return `<div class="cat-item ${stateClass}" data-category-row="${escapeHtml(c.id)}">
   <div class="cat-line">
@@ -48,7 +48,7 @@ function categoryRow(c,actual,type){
   </div>
   <div class="cat-meta">
    <button class="cat-planned cat-planned-button" type="button" data-edit-planned="${escapeHtml(c.id)}" data-category-type="${type}" aria-label="Modifier le budget prévu de ${escapeHtml(c.name)}" title="Modifier le prévu">Prévu ${euro(planned)}</button>
-   <span class="cat-meta-side"><span class="cat-owner">${ownerLabel(c.owner)}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
+   <span class="cat-meta-side"><span class="cat-owner">${escapeHtml(ownerLabel(c.owner))}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
   </div>
   <div class="category-menu" data-category-menu role="menu" hidden>
    <button type="button" role="menuitem" data-edit-actual="${escapeHtml(c.id)}" data-category-type="${type}">Modifier le réel</button>
