@@ -18,16 +18,13 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 
 ## État actuel
 
-- **Production** : V1
-- **Développement actif** : V2.5 (synchronisation robuste et gestion des conflits)
-- **Branche active** : `v2.5`
-- **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
-- **PR V2.1** : #2, jalon précédent
-- **V2.2** : jalon validé et figé
-- **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
-- **PR V2.2 source** : #4, fermée comme jalon
-- **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : V2.5 ajoute une fusion optimiste par entité et évite les écrasements silencieux en cas de conflit
+- **Production** : V1 jusqu'à la promotion de V2.5.1 dans `main`.
+- Version du code : `V2.5.1`
+- **Branche de développement de référence** : `develop`.
+- **Version de travail validée/publée** : V2.5.1, actuellement disponible sur `/v2.5.1/`.
+- **Lot de promotion** : réconciliation de V2.5.1 avec le workflow hybride, puis intégration dans `develop` et promotion vers `main`.
+- **Lot courant et prochaine action** : [workstate.md](workstate.md).
+- **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
 ## Fonctionnalités principales
 
@@ -87,23 +84,20 @@ La V2.3 propose une migration non destructive depuis les versions locales V1/V2.
 
 ## Méthode de travail GitHub
 
-Le fichier **[workstate.md](workstate.md)** est la source de continuité du projet. Avant une nouvelle session de développement, il faut le lire avant de rescanner le dépôt.
+Lire **[AGENTS.md](AGENTS.md)** et **[workstate.md](workstate.md)** pour reprendre un lot, puis vérifier la branche réelle et les PR. La méthode complète se trouve dans **[docs/ASSISTANT_WORKFLOW.md](docs/ASSISTANT_WORKFLOW.md)**.
 
-Les versions déjà publiées ou utilisées comme jalons ne sont pas écrasées. Une évolution significative crée une nouvelle branche/version (`v2.1`, `v2.2`, etc.) et une nouvelle URL de preview. Les anciens snapshots restent disponibles.
+Chaque nouveau lot utilise une branche temporaire `work/vX.Y-<lot>` depuis `develop`, une Draft PR vers `develop`, des validations et un merge avant nettoyage de sa branche. Les tags Git identifient les jalons immuables après décision explicite. Les previews et snapshots restent sur `gh-pages`.
 
-Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
+### Branches permanentes
 
+- `main` : version stable de production.
+- `develop` : tronc de développement.
+- `gh-pages` : publication du site et archives de previews.
+- `work/vX.Y-<lot>` ou `work/vX.Y.Z-<lot>` : branche temporaire d'un lot.
 
-## Branches de travail
+Les Pull Requests vers `develop` et `main` passent par **App integrity**. Depuis la racine : `node scripts/validate.mjs`. Les tests du contrôle documentaire sont aussi exécutés par la CI avec `node --test scripts/validate-docs.test.mjs`.
 
-- `main` : version stable actuellement en production.
-- `develop` : tronc de développement de la future V2.
-- `v2.x` : branche de version créée depuis `develop`, puis fusionnée vers `develop` après validation.
-- `gh-pages` : branche réservée à la publication GitHub Pages et aux anciennes previews.
-
-Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
-
-
+La promotion `develop` → `main` utilise une PR de release distincte. La publication à la racine de `gh-pages` est une opération séparée.
 
 ## V2.5 — Synchronisation robuste
 
