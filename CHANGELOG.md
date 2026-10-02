@@ -1,5 +1,14 @@
 # Changelog
 
+## Maintenance — workflow hybride
+
+- Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop` et nettoyage après merge.
+- Tags immuables pour les jalons validés, après décision explicite ; aucune création ni modification de tag pendant cette migration.
+- Guide Codex/Work, méthode dédiée et audit des branches historiques conservées pour revue future.
+- Workstate simplifié, ancienne référence V2.4.1 conservée et README aligné sur le socle de `develop`.
+- Contrôle de présence documentaire, liens locaux et version ajouté à App integrity, avec tests de régression.
+- Version applicative V2.4.1, code métier, workflow Actions et publications Pages conservés.
+
 ## V2.4.1 — amélioration UX/UI responsive
 
 ### Interface
@@ -18,7 +27,7 @@
 - Branche dédiée `v2.4.1` et preview séparée `/v2.4.1/`.
 
 
-## V2.4 — synchronisation cloud (branche active)
+## V2.4 — synchronisation cloud
 
 ### Ajouté
 - Inscription et connexion Supabase par email/mot de passe, confirmation d'email et réinitialisation du mot de passe.
