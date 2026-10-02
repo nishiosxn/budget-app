@@ -6,7 +6,7 @@
 - Montants réels directement cliquables, sans crayon dédié.
 - Montants prévus directement cliquables.
 - Action individuelle en un clic pour renseigner un réel vide avec le montant prévu.
-- État discret quand le réel correspond exactement au prévu.
+- Le bouton rapide « réel = prévu » disparaît une fois le montant renseigné, sans ajouter de coche persistante.
 - Actions secondaires regroupées derrière un menu `⋯` par catégorie.
 - Suppression conservée avec la confirmation existante, mais retirée du premier niveau visuel.
 - Totaux de groupe rendus plus explicites avec les libellés « réel » et « prévu ».
