@@ -25,4 +25,6 @@ jobs:
           node-version: "22"
 
       - name: Run application audit
-        run: node scripts/validate.mjs
+        run: |
+          node --test scripts/validate-docs.test.mjs
+          node scripts/validate.mjs

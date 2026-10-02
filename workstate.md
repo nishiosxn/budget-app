@@ -5,17 +5,16 @@
 - Dépôt : `nishiosxn/budget-app`
 - Version du code : `V2.4.1`
 - Branche de développement de référence : `develop`
-- Branche du lot : `work/v2.4.1-workflow-hybride` (temporaire ; après merge, reprendre depuis `develop`).
 - Production : `main` → V1 ; publication : `gh-pages`.
 - Preview du socle : https://nishiosxn.github.io/budget-app/v2.4.1/
-- Lot : adoption du workflow hybride ; aucun changement de version applicative.
-- État du lot : implémentation terminée ; Draft PR vers `develop`, revue avant merge.
+- Le lot de maintenance / PR #19 introduit le workflow hybride ; aucun changement de version applicative.
+- Pour l'état courant de la revue et du merge du lot, consulter la PR #19 et ses checks GitHub.
 
 ## Périmètre et décisions
 
-Guide [AGENTS.md](AGENTS.md), [méthode Git/assistant](docs/ASSISTANT_WORKFLOW.md), README actualisé, contrôle documentaire intégré à **App integrity**. Conserver les trois branches permanentes ; nouveaux lots sur `work/vX.Y-<lot>`, tags immuables après décision explicite.
+Guide [AGENTS.md](AGENTS.md), [méthode Git/assistant](docs/ASSISTANT_WORKFLOW.md), README actualisé, contrôle documentaire intégré à **App integrity** et tests documentaires exécutés par la CI. Les branches permanentes sont `main`, `develop` et `gh-pages` ; les prochains lots utilisent des branches temporaires `work/vX.Y-<lot>`. Les tags sont des jalons immuables après décision explicite.
 
-Les branches historiques, tags et publications restent conservés. [L'audit initial](docs/WORKFLOW_AUDIT.md) indique leurs SHA, les PR ouvertes et les conditions de nettoyage futur. V2.5 (Draft PR #18) et V2.5.1 ne sont pas intégrées dans ce lot. La promotion vers `main` et une publication Pages sont des étapes distinctes.
+Les branches historiques, tags et publications restent conservés. [L'audit initial](docs/WORKFLOW_AUDIT.md) indique leurs SHA, les PR ouvertes et les conditions de nettoyage futur. V2.5 (PR #18) et V2.5.1 restent des travaux séparés à réconcilier avec ce workflow avant leur intégration. La promotion vers `main` et une publication Pages sont des étapes distinctes.
 
 ## Invariants du socle
 
@@ -33,4 +32,4 @@ La validation utilisateur V2.4.1 était déjà terminée avant ce lot. Les déta
 
 ## Prochaine action
 
-Revoir la Draft PR du lot et vérifier son dernier check **App integrity**, puis fusionner vers `develop` lorsque la livraison est validée. Après merge, clôturer le lot dans ce fichier et nettoyer uniquement sa branche temporaire. Pour reprendre V2.5/V2.5.1, relire leurs PR/différences et intégrer la méthode avec des champs de version adaptés.
+Vérifier si le workflow hybride de la PR #19 est désormais présent dans `develop`. Puis reprendre et réconcilier les travaux V2.5 (PR #18) et V2.5.1 avec ce socle avant leur intégration, en actualisant les champs de version qui les concernent.
