@@ -10,7 +10,7 @@ function openCategoryEditor(id=null,section=null,mode="planned",type="expense",o
  closeCustomSelects();categoryEditId=id;categoryEditSection=section;categoryEditMode=id?mode:"add";categoryEditType=type;categoryEditOrigin=origin;const ownerEditable=categoryEditMode==="add"||categoryEditMode==="planned";categoryOwnerField.style.display=ownerEditable?"block":"none";categoryPlanScopeField.style.display=categoryEditMode==="planned"?"block":"none";categorySectionField.style.display=categoryEditMode==="add"&&type==="expense"&&origin==="transaction"?"block":"none";categoryOwnerLabel.textContent=type==="income"?"ATTRIBUTION DU REVENU":"ATTRIBUTION DE LA DÉPENSE";
  if(id){const base=categoriesForType(type).find(x=>x.id===id);if(!base)return;const c=categoryView(base,type);categoryEditKind.textContent=c.name;categoryNameField.style.display=mode==="planned"?"block":"none";categoryNameInput.value=c.name;if(ownerEditable)setCategoryEditOwner(c.owner||"common");if(mode==="actual"){const m=metrics(),a=(type==="income"?m.incMap:m.expMap)[c.id]||0,isSaving=type==="expense"&&!!base.saving;categoryEditTitle.textContent=isSaving?"Modifier l’épargne":type==="income"?"Modifier le revenu réel":"Modifier le réel";categoryAmountLabel.textContent=isSaving?"MONTANT RÉEL ÉPARGNÉ":type==="income"?"MONTANT RÉEL REÇU":"MONTANT RÉEL DÉPENSÉ";categoryBudgetInput.value=Number(a).toFixed(2);saveCategoryEdit.textContent=isSaving?"Enregistrer l’épargne":"Enregistrer le réel";saveCategoryEdit.className=type==="income"||isSaving?"btn btn-income save":"btn btn-ghost save"}else{setCategoryPlanScope("forward");categoryEditTitle.textContent=base.saving?"Modifier l’épargne prévue":"Modifier le prévu";categoryAmountLabel.textContent=base.saving?"MONTANT D’ÉPARGNE PRÉVU":"MONTANT PRÉVU";categoryBudgetInput.value=Number(c.budget||0).toFixed(2);saveCategoryEdit.textContent="Enregistrer le prévu";saveCategoryEdit.className="btn btn-income save"}}
  else{setCategoryEditOwner("common");if(type==="expense")setCategoryEditSection(section||"Vie courante");categoryPlanScopeField.style.display="none";categoryEditTitle.textContent=type==="income"?"Créer un revenu":"Créer une dépense";categoryEditKind.textContent=origin==="transaction"?"Nouveau champ pour cette opération":section||"Catégorie";categoryNameField.style.display="block";categoryNameInput.value="";categoryAmountLabel.textContent="MONTANT PRÉVU";categoryBudgetInput.value="";saveCategoryEdit.textContent="Créer le champ";saveCategoryEdit.className="btn btn-income save"}
- categoryEditBackdrop.classList.add("open");categoryEditBackdrop.setAttribute("aria-hidden","false");setTimeout(()=>{(id?categoryBudgetInput:categoryNameInput).focus()},70);
+ categoryEditBackdrop.classList.add("open");categoryEditBackdrop.setAttribute("aria-hidden","false");setTimeout(()=>{const target=id?categoryBudgetInput:categoryNameInput;target.focus();if(id&&typeof target.select==="function")target.select()},70);
 }
 function closeCategoryEditor(){categoryEditBackdrop.classList.remove("open");categoryEditBackdrop.setAttribute("aria-hidden","true")}
 function setCategoryActual(id,amount,type="expense",label="Ajustement manuel",meta={}){
@@ -68,7 +68,11 @@ function resetBulkClearButtons(scope=categoryGrid){
  });
 }
 function closeCategoryMenus(except=null){
- categoryGrid.querySelectorAll("[data-category-menu],[data-section-menu]").forEach(menu=>{if(menu!==except)setCategoryMenuOpen(menu,false)});
+ categoryGrid.querySelectorAll("[data-category-menu],[data-section-menu]").forEach(menu=>{
+  if(menu===except)return;
+  setCategoryMenuOpen(menu,false);
+  resetBulkClearButtons(menu);
+ });
  if(!except)resetBulkClearButtons();
 }
 function toggleCategoryMenu(menu){
