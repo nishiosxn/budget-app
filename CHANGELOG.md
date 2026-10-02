@@ -1,5 +1,12 @@
 # Changelog
 
+## Maintenance — workflow hybride
+
+- Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop`.
+- Tags immuables pour les jalons validés ; les branches de version historiques deviennent supprimables après archivage.
+- Guide Codex/Work, méthode dédiée et contrôle documentaire intégrés à **App integrity**.
+- La promotion V2.5.1 conserve le code métier, la synchronisation cloud-only, la PWA et les migrations existantes.
+
 ## V2.5.1 — interface et synchronisation cloud directe
 
 ### Interface
