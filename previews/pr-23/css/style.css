@@ -943,7 +943,6 @@ body.pwa-install-open{overflow:hidden}
   min-width:0;
 }
 .cat-quick-fill,
-.cat-match-status,
 .category-menu-trigger,
 .cat-section-menu-trigger{
   width:1.9rem;
@@ -974,13 +973,6 @@ body.pwa-install-open{overflow:hidden}
   stroke-width:2.3;
   stroke-linecap:round;
   stroke-linejoin:round;
-}
-.cat-match-status{
-  border:1px solid #d5e5dc;
-  background:#f2f8f4;
-  color:var(--accent);
-  font-size:.78rem;
-  font-weight:800;
 }
 .cat-meta-side{
   min-width:0;
@@ -1111,7 +1103,6 @@ body.pwa-install-open{overflow:hidden}
     margin:-.45rem -.25rem -.45rem -.5rem;
   }
   .cat-quick-fill,
-  .cat-match-status,
   .category-menu-trigger{
     width:2.5rem;
     height:2.5rem;
