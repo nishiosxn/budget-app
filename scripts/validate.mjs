@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import vm from "node:vm";
+import { readDocumentationFiles, validateDocumentation } from "./validate-docs.mjs";
 
 const root=process.cwd();
 const errors=[];
@@ -267,11 +268,9 @@ if(modular){
   else ok("Aucun secret Supabase serveur dans le dépôt");
 }
 
-if(exists("workstate.md")){
-  const ws=read("workstate.md");
-  if(!/(Branche active|Branche de développement de référence)/i.test(ws)) fail("workstate.md ne précise pas la branche de travail");
-  else ok("workstate.md présent");
-}
+const documentationErrors=validateDocumentation(readDocumentationFiles(root),{modular});
+for(const error of documentationErrors) fail(error);
+if(!documentationErrors.length) ok("Documentation, liens locaux et version du code cohérents");
 
 if(!modular) info("Les contrôles V2.2+ (template V5, calculs, migration) sont ignorés sur l'architecture V1 legacy.");
 

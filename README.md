@@ -11,6 +11,8 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 - **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
 - **Preview V2.4.1 UX/UI** : https://nishiosxn.github.io/budget-app/v2.4.1/
+- **Preview V2.5 Sync (en validation)** : https://nishiosxn.github.io/budget-app/v2.5/
+- **Preview V2.5.1 (travaux séparés)** : https://nishiosxn.github.io/budget-app/v2.5.1/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
 Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
@@ -18,15 +20,11 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 ## État actuel
 
 - **Production** : V1
-- **Développement actif** : V2.4.1 (amélioration UX/UI de V2.4)
-- **Branche active** : `v2.4.1`
-- **PR V2.0 historique** : #1, fermée sans fusion et conservée comme jalon
-- **PR V2.1** : #2, jalon précédent
-- **V2.2** : jalon validé et figé
-- **V2.3** : données personnelles hors du code actif + onboarding + migration V1/V2.x
-- **PR V2.2 source** : #4, fermée comme jalon
-- **PR V2.3 source** : #7, brouillon
-- **Synchronisation multi-appareils** : implémentée sur la branche V2.4 avec isolation par foyer, comptes email/mot de passe et Magic Link facultatif
+- Version du code : `V2.4.1`
+- **Branche de développement de référence** : `develop`, socle V2.4.1 intégré.
+- **Travaux parallèles** : V2.5, [Draft PR #18](https://github.com/nishiosxn/budget-app/pull/18) ; V2.5.1 contient des évolutions supplémentaires non intégrées à `develop`.
+- **Lot courant et prochaine action** : [workstate.md](workstate.md).
+- **Historique** : [CHANGELOG.md](CHANGELOG.md) ; [audit de migration](docs/WORKFLOW_AUDIT.md) pour les branches et PR existantes.
 
 ## Fonctionnalités principales
 
@@ -66,8 +64,11 @@ supabase/migrations/
 supabase/functions/admin-api/
 admin/
 README.md
+AGENTS.md
 workstate.md
 CHANGELOG.md
+docs/
+scripts/validate.mjs
 ```
 
 La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés sans modifier volontairement la logique métier. `app.js` ne contient plus que l'initialisation finale.
@@ -84,9 +85,9 @@ La V2.3 propose une migration non destructive depuis les versions locales V1/V2.
 
 ## Méthode de travail GitHub
 
-Le fichier **[workstate.md](workstate.md)** est la source de continuité du projet. Avant une nouvelle session de développement, il faut le lire avant de rescanner le dépôt.
+Lire **[AGENTS.md](AGENTS.md)** et **[workstate.md](workstate.md)** pour reprendre un lot, puis vérifier la branche réelle et les PR. La méthode complète se trouve dans **[docs/ASSISTANT_WORKFLOW.md](docs/ASSISTANT_WORKFLOW.md)**.
 
-Les versions déjà publiées ou utilisées comme jalons ne sont pas écrasées. Une évolution significative crée une nouvelle branche/version (`v2.1`, `v2.2`, etc.) et une nouvelle URL de preview. Les anciens snapshots restent disponibles.
+Chaque nouveau lot utilise une branche temporaire `work/vX.Y-<lot>` depuis `develop`, une Draft PR vers `develop`, des validations et un merge avant nettoyage de sa branche. Les tags Git identifient les jalons immuables après décision explicite. Les previews et snapshots existants restent disponibles.
 
 Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 
@@ -95,10 +96,14 @@ Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
 
 - `main` : version stable actuellement en production.
 - `develop` : tronc de développement de la future V2.
-- `v2.x` : branche de version créée depuis `develop`, puis fusionnée vers `develop` après validation.
+- `work/vX.Y-<lot>` (ou `work/vX.Y.Z-<lot>`) : branche temporaire d'un lot ; Draft PR vers `develop`, nettoyage après merge.
 - `gh-pages` : branche réservée à la publication GitHub Pages et aux anciennes previews.
 
 Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
+
+Depuis la racine : `node scripts/validate.mjs`. L'audit vérifie l'application et la cohérence documentaire/version. Pour modifier ce dernier contrôle : `node --test scripts/validate-docs.test.mjs`.
+
+La promotion `develop` → `main` utilise une PR de release distincte. Le contrôle CI ne publie pas le site : la publication sur `gh-pages` suit la checklist dédiée, avec conservation de la racine de production et des previews. Les anciennes branches `v2.x` sont recensées pour une revue de nettoyage future dans [l'audit](docs/WORKFLOW_AUDIT.md) ; cette migration les conserve.
 
 
 
