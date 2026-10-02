@@ -1,0 +1,10 @@
+grant select on table public.app_admins to service_role;
+grant select, insert on table public.admin_audit_log to service_role;
+grant usage, select on sequence public.admin_audit_log_id_seq to service_role;
+grant select, delete on table public.households to service_role;
+grant select on table public.household_members to service_role;
+grant select on table public.categories to service_role;
+grant select on table public.budgets to service_role;
+grant select on table public.transactions to service_role;
+grant select on table public.recurrences to service_role;
+grant select on table public.household_invites to service_role;
