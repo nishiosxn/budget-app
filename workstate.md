@@ -52,4 +52,4 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 
 ## Prochaine action
 
-Conserver la PR #23 en brouillon, vérifier les validations sur le dernier commit puis faire valider visuellement le nouveau rendu Catégories avant toute sortie du Draft ou publication de preview.
+Conserver la PR #23 en brouillon et poursuivre la validation visuelle sur `/previews/pr-23/` avant toute sortie du Draft.
