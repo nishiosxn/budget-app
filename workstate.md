@@ -45,7 +45,10 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
   - synchronisation et historique des ajustements inchangés.
 - Exclusions : aucune modification de la logique de calcul, de la page Historique, de la page Suivi, de la Vue d’ensemble, des migrations ou des règles Supabase.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
-- État : implémentation terminée sur la branche ; **App integrity** doit rester vert sur le dernier commit. Aucune preview V2.6 publiée à ce stade.
+- État : implémentation terminée sur la branche.
+- Validation automatique : **App integrity** réussi sur le commit applicatif `145286ed58e51ef35e774117ca815eb6878a9e4b` (workflow GitHub : tests documentaires + audit applicatif). Cette mise à jour documentaire déclenche un dernier contrôle CI.
+- Validation navigateur/visuelle : non réalisée dans cette session ; elle reste requise avant sortie du Draft.
+- Publication : aucune preview V2.6 publiée à ce stade.
 
 ## Prochaine action
 
