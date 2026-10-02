@@ -1008,7 +1008,7 @@ body.pwa-install-open{overflow:hidden}
 .category-menu-trigger:focus-visible,
 .cat-section-menu-trigger:hover,
 .cat-section-menu-trigger:focus-visible,
-.menu-open>.category-menu-trigger,
+.cat-item.menu-open .category-menu-trigger,
 .cat-section-menu-wrap.menu-open>.cat-section-menu-trigger{
   border-color:var(--line);
   background:var(--panel-2);
