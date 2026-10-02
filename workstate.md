@@ -28,18 +28,6 @@ Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots
 
 La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
-## Validation du lot
-
-Avant intégration de V2.5.1 dans `develop` :
-
-- `node --test scripts/validate-docs.test.mjs`
-- `node scripts/validate.mjs`
-- **App integrity** sur le dernier commit de la PR
-- vérifier que les fichiers applicatifs V2.5.1 n'ont pas régressé pendant la réconciliation du workflow
-- vérifier la preview V2.5.1 déjà publiée comme référence fonctionnelle
-
-La publication actuelle `gh-pages/v2.5.1/` reste intacte pendant cette réconciliation.
-
 ## Lot courant — V2.6 Catégories
 
 - Branche : `work/v2.6-categories`
@@ -57,7 +45,8 @@ La publication actuelle `gh-pages/v2.5.1/` reste intacte pendant cette réconcil
   - synchronisation et historique des ajustements inchangés.
 - Exclusions : aucune modification de la logique de calcul, de la page Historique, de la page Suivi, de la Vue d’ensemble, des migrations ou des règles Supabase.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
+- État : implémentation terminée sur la branche ; **App integrity** doit rester vert sur le dernier commit. Aucune preview V2.6 publiée à ce stade.
 
 ## Prochaine action
 
-Implémenter le lot Catégories sur `work/v2.6-categories`, garder la PR en brouillon pendant les tests et la validation visuelle, puis décider séparément d’une éventuelle preview `gh-pages`.
+Conserver la PR #23 en brouillon, vérifier les validations sur le dernier commit puis faire valider visuellement le nouveau rendu Catégories avant toute sortie du Draft ou publication de preview.
