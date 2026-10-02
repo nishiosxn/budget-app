@@ -145,6 +145,26 @@ if(modular&&exists("js/settings.js")){
   else ok("Moteur de migration V4/V5 présent");
 }
 
+if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
+  const categories=read("js/categories.js");
+  const ui=read("js/ui.js");
+  const categoryUxMarkers=[
+    'data-fill-category',
+    'data-category-menu-trigger',
+    'data-bulk-action="fill-empty"',
+    'data-bulk-clear'
+  ];
+  const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
+  if(missingCategoryUx.length)fail("UX Catégories V2.6 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V2.6 présente");
+  if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
+  else ok("Remplissage des vides préserve les montants déjà saisis");
+  if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
+  else ok("Tout vider est masqué derrière le menu secondaire");
+  if(!categories.includes("showUndoToast")||!categories.includes("restoreCategoryTransactions"))fail("Annulation des actions rapides Catégories absente");
+  else ok("Actions rapides Catégories annulables");
+}
+
 if(modular&&exists("js/cloud-state-core.js")){
   try{
     const context=vm.createContext({slotToOwner:slot=>slot==="A"||slot==="B"?slot:"common"});
