@@ -40,6 +40,24 @@ Avant intégration de V2.5.1 dans `develop` :
 
 La publication actuelle `gh-pages/v2.5.1/` reste intacte pendant cette réconciliation.
 
+## Lot courant — V2.6 Catégories
+
+- Branche : `work/v2.6-categories`
+- Base : `develop`
+- Objectif : simplifier fortement la page **Catégories** sans modifier Historique, Suivi, Vue d’ensemble, le schéma de données ou Supabase.
+- Critères d’acceptation :
+  - montant réel directement cliquable ;
+  - montant prévu directement cliquable ;
+  - action individuelle « réel = prévu » en un clic quand elle est pertinente ;
+  - actions secondaires regroupées derrière un menu `⋯` ;
+  - suppression toujours confirmée ;
+  - « Tout remplir » remplacé par un comportement sûr qui ne remplace pas un réel déjà saisi ;
+  - « Tout vider » retiré du premier niveau visuel ;
+  - lisibilité desktop/mobile améliorée, avec zones tactiles confortables ;
+  - synchronisation et historique des ajustements inchangés.
+- Exclusions : aucune modification de la logique de calcul, de la page Historique, de la page Suivi, de la Vue d’ensemble, des migrations ou des règles Supabase.
+- Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
+
 ## Prochaine action
 
-Pour tout nouveau changement, repartir de `develop` à jour sur une branche temporaire `work/vX.Y-<lot>`. La publication GitHub Pages reste gérée séparément sur `gh-pages`; vérifier son état réel avant toute modification. Le nettoyage des branches historiques peut être effectué après vérification des tags/jalons correspondants.
+Implémenter le lot Catégories sur `work/v2.6-categories`, garder la PR en brouillon pendant les tests et la validation visuelle, puis décider séparément d’une éventuelle preview `gh-pages`.
