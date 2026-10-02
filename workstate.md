@@ -5,10 +5,10 @@
 - Dépôt : `nishiosxn/budget-app`
 - Version du code : `V2.5.1`
 - Branche de développement de référence : `develop`
-- Production au début de ce lot : `main` → V1.
+- Production du code : `main` → V2.5.1.
 - Publication : `gh-pages`.
 - Preview V2.5.1 actuellement publiée : https://nishiosxn.github.io/budget-app/v2.5.1/
-- Le lot de promotion V2.5.1 réconcilie la version publiée avec le workflow hybride introduit par la PR #19.
+- V2.5.1 est la base stable de production du code ; le workflow hybride de la PR #19 est actif.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -42,4 +42,4 @@ La publication actuelle `gh-pages/v2.5.1/` reste intacte pendant cette réconcil
 
 ## Prochaine action
 
-Si V2.5.1 n'est pas encore intégrée dans `develop`, terminer la PR de promotion V2.5.1 et ses checks. Une fois `develop` sur V2.5.1, créer le jalon/tag `v2.5.1`, puis ouvrir la PR de release `develop` → `main`. Après validation de production, aligner la racine de `gh-pages` sur V2.5.1 et seulement ensuite nettoyer les anciennes branches.
+Pour tout nouveau changement, repartir de `develop` à jour sur une branche temporaire `work/vX.Y-<lot>`. La publication GitHub Pages reste gérée séparément sur `gh-pages`; vérifier son état réel avant toute modification. Le nettoyage des branches historiques peut être effectué après vérification des tags/jalons correspondants.
