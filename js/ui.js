@@ -32,9 +32,7 @@ function categoryRow(c,actual,type){
  const stateClass=isMatched?"is-matched":isEmpty?"is-empty":"is-different";
  const quickAction=isEmpty&&hasPlanned
   ?`<button class="cat-quick-fill" type="button" data-fill-category="${escapeHtml(c.id)}" data-category-type="${type}" aria-label="Renseigner ${escapeHtml(c.name)} à ${euro(planned)}" title="Mettre le réel au prévu : ${euro(planned)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4L19 6.5"/></svg></button>`
-  :isMatched
-   ?`<span class="cat-match-status" role="img" aria-label="Réel conforme au prévu" title="Réel conforme au prévu">✓</span>`
-   :"";
+  :"";
  const alignMenu=hasPlanned&&!isMatched
   ?`<button type="button" role="menuitem" data-fill-category="${escapeHtml(c.id)}" data-category-type="${type}">Mettre le réel à ${euro(planned)}</button>`
   :"";
