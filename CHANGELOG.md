@@ -1,5 +1,28 @@
 # Changelog
 
+## V2.6 — catégories simplifiées
+
+### Interface
+- Montants réels directement cliquables, sans crayon dédié.
+- Montants prévus directement cliquables.
+- Action individuelle en un clic pour renseigner un réel vide avec le montant prévu.
+- État discret quand le réel correspond exactement au prévu.
+- Actions secondaires regroupées derrière un menu `⋯` par catégorie.
+- Suppression conservée avec la confirmation existante, mais retirée du premier niveau visuel.
+- Totaux de groupe rendus plus explicites avec les libellés « réel » et « prévu ».
+- Menus adaptés au mobile avec des zones tactiles plus confortables.
+
+### Actions groupées
+- « Tout remplir » devient « Remplir les vides » et ne remplace plus les montants réels déjà saisis.
+- « Tout vider » est déplacé dans un menu secondaire et nécessite un second clic de confirmation.
+- Les remplissages groupés et individuels créent toujours des ajustements visibles dans l’historique.
+- Les actions rapides peuvent être annulées depuis le toast existant.
+
+### Technique
+- Aucun changement des formules financières, du schéma V5, des migrations ou des règles Supabase.
+- Historique, Suivi et Vue d’ensemble laissés hors périmètre.
+
+
 ## Maintenance — workflow hybride
 
 - Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop`.
