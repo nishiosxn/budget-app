@@ -2,12 +2,65 @@
 
 ## Maintenance — workflow hybride
 
-- Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop` et nettoyage après merge.
-- Tags immuables pour les jalons validés, après décision explicite ; aucune création ni modification de tag pendant cette migration.
-- Guide Codex/Work, méthode dédiée et audit des branches historiques conservées pour revue future.
-- Workstate simplifié, ancienne référence V2.4.1 conservée et README aligné sur le socle de `develop`.
-- Contrôle de présence documentaire, liens locaux et version ajouté à App integrity, avec tests de régression.
-- Version applicative V2.4.1, code métier, workflow Actions et publications Pages conservés.
+- Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop`.
+- Tags immuables pour les jalons validés ; les branches de version historiques deviennent supprimables après archivage.
+- Guide Codex/Work, méthode dédiée et contrôle documentaire intégrés à **App integrity**.
+- La promotion V2.5.1 conserve le code métier, la synchronisation cloud-only, la PWA et les migrations existantes.
+
+## V2.5.1 — interface et synchronisation cloud directe
+
+### Interface
+- Header desktop réorganisé : identité + synchronisation/paramètres sur la première ligne.
+- Navigation + mois + actions de transaction regroupés sur la seconde ligne.
+- Header mobile compact : identité à gauche et synchronisation/paramètres à droite.
+- Sélecteur du mois déplacé sur sa propre ligne mobile, navigation placée en dessous.
+- Badge de synchronisation réduit au voyant seul sur les écrans très étroits.
+- Nom du foyer tronqué proprement lorsqu'il manque de place.
+- Bouton de relance manuelle affiché à côté de l’état de synchronisation lorsqu’un envoi échoue.
+
+### Synchronisation
+- Suppression du mode hors ligne et de la persistance du budget courant dans `localStorage`.
+- Supabase devient la source de vérité à chaque ouverture.
+- État courant conservé uniquement en mémoire pendant la session.
+- Baseline de fusion V2.5 conservée en mémoire au lieu d’être persistée.
+- Synchronisation déclenchée presque immédiatement après chaque modification.
+- En cas d’échec, la relance manuelle renvoie l’état complet de la session vers Supabase.
+- Reprise automatique au retour de la connexion lorsqu’une session contient des changements non envoyés.
+- Rafraîchissement cloud au retour au premier plan lorsque la session est déjà synchronisée.
+- Service worker conservé pour l’installation PWA, sans fallback de données ou ressources hors ligne.
+
+### Technique
+- Schéma V5, Supabase et règles RLS inchangés.
+- Branche dédiée `v2.5.1` et preview séparée `/v2.5.1/`.
+
+## V2.5 — synchronisation robuste
+
+### Synchronisation
+- Ajout d'une baseline locale par foyer avec les payloads normalisés et les `updated_at` distants.
+- Fusion à trois versions : baseline, état local et état Supabase.
+- Fusion automatique des changements indépendants sur une même ligne.
+- Détection explicite lorsque le même champ est modifié différemment sur plusieurs appareils.
+- Détection des conflits suppression / modification.
+- Résolution manuelle depuis les paramètres avec priorité locale ou priorité cloud.
+- Les changements non conflictuels sont conservés quelle que soit la préférence choisie pour le conflit.
+
+### Fiabilité
+- Écritures optimistes protégées par `updated_at`.
+- Une modification distante survenant pendant l'envoi stoppe l'écriture au lieu d'être écrasée.
+- Reprise non destructive des caches V2.4/V2.4.1 vers un cache V2.5 séparé.
+- Reprise de l'ancien indicateur de modifications hors ligne.
+- Index uniques `(household_id, legacy_id)` sur catégories, transactions et récurrences pour limiter les doublons liés aux retries et doubles onglets.
+
+### Interface
+- État « Conflit de synchronisation » conservé pendant les événements Realtime.
+- Carte de résolution des conflits dans Paramètres & données.
+- Correctifs mobile : Paramètres défilables et haut de page réorganisé sur petits écrans.
+- Installation PWA : manifest, icônes, mode standalone, service worker et guide d'ajout à l'écran d'accueil sur mobile.
+- Identité Smart Budget validée : ancien B remplacé dans l'application et les icônes SVG, ICO, Android et Apple ; précache PWA renouvelé.
+
+### Supabase
+- Migration `20260930104500_v2_5_sync_deduplication.sql` appliquée.
+
 
 ## V2.4.1 — amélioration UX/UI responsive
 
@@ -27,7 +80,7 @@
 - Branche dédiée `v2.4.1` et preview séparée `/v2.4.1/`.
 
 
-## V2.4 — synchronisation cloud
+## V2.4 — synchronisation cloud (branche active)
 
 ### Ajouté
 - Inscription et connexion Supabase par email/mot de passe, confirmation d'email et réinitialisation du mot de passe.

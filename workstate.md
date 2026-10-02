@@ -3,33 +3,43 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.4.1`
+- Version du code : `V2.5.1`
 - Branche de développement de référence : `develop`
-- Production : `main` → V1 ; publication : `gh-pages`.
-- Preview du socle : https://nishiosxn.github.io/budget-app/v2.4.1/
-- Le lot de maintenance / PR #19 introduit le workflow hybride ; aucun changement de version applicative.
-- Pour l'état courant de la revue et du merge du lot, consulter la PR #19 et ses checks GitHub.
+- Production au début de ce lot : `main` → V1.
+- Publication : `gh-pages`.
+- Preview V2.5.1 actuellement publiée : https://nishiosxn.github.io/budget-app/v2.5.1/
+- Le lot de promotion V2.5.1 réconcilie la version publiée avec le workflow hybride introduit par la PR #19.
+- Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
-## Périmètre et décisions
+## Socle V2.5.1 à préserver
 
-Guide [AGENTS.md](AGENTS.md), [méthode Git/assistant](docs/ASSISTANT_WORKFLOW.md), README actualisé, contrôle documentaire intégré à **App integrity** et tests documentaires exécutés par la CI. Les branches permanentes sont `main`, `develop` et `gh-pages` ; les prochains lots utilisent des branches temporaires `work/vX.Y-<lot>`. Les tags sont des jalons immuables après décision explicite.
+- Synchronisation cloud directe Supabase ; aucun cache financier persistant utilisé comme mode de travail.
+- Baseline de session uniquement en mémoire.
+- Fusion optimiste locale/cloud et conflits explicites sur les mêmes champs.
+- Protection par `updated_at` et déduplication via les index `(household_id, legacy_id)`.
+- Realtime, relance manuelle de synchronisation, authentification, invitations, RLS et administration existantes.
+- PWA installable sans fallback financier hors ligne.
+- Logo/icônes Smart Budget et interface V2.5.1 conservés.
+- Les migrations V2.4/V2.5 déjà versionnées et appliquées restent inchangées.
 
-Les branches historiques, tags et publications restent conservés. [L'audit initial](docs/WORKFLOW_AUDIT.md) indique leurs SHA, les PR ouvertes et les conditions de nettoyage futur. V2.5 (PR #18) et V2.5.1 restent des travaux séparés à réconcilier avec ce workflow avant leur intégration. La promotion vers `main` et une publication Pages sont des étapes distinctes.
+## Workflow
 
-## Invariants du socle
+Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots partent de `develop` sur une branche temporaire `work/vX.Y-<lot>` ou `work/vX.Y.Z-<lot>`, avec Draft PR, **App integrity**, validation puis nettoyage après merge. Les versions validées sont conservées par tags immuables plutôt que par branches permanentes.
 
-V2.4.1 conserve le schéma V5 et le cache V2.4 isolé par foyer, la synchronisation dernier écrivain gagnant, les archives des suppressions, les invitations explicites, RLS et l'administration côté serveur. Les données financières et secrets serveur restent hors du dépôt.
-
-La validation utilisateur V2.4.1 était déjà terminée avant ce lot. Les détails techniques et audits antérieurs sont conservés dans [la référence V2.4.1](docs/V2_4_1_REFERENCE.md) ; ils ne constituent pas de nouveaux tests réalisés aujourd'hui. Les changements cloud-only de V2.5.1 sont propres à cette branche.
+La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
 ## Validation du lot
 
-- Audit initial : `node scripts/validate.mjs` réussi.
-- Validation finale locale réussie : `node scripts/validate.mjs` et `node --test scripts/validate-docs.test.mjs` (9 tests, 0 échec), le 2 octobre 2026.
-- Contrôles : documents requis, liens locaux, alignement README/workstate/interface/changelog ; cas négatifs et compatibilité V1.
-- CI : **App integrity** doit réussir sur le dernier commit de la PR.
-- Fichiers applicatifs et workflow Actions conservés ; aucun déploiement Pages ni changement hébergé effectué.
+Avant intégration de V2.5.1 dans `develop` :
+
+- `node --test scripts/validate-docs.test.mjs`
+- `node scripts/validate.mjs`
+- **App integrity** sur le dernier commit de la PR
+- vérifier que les fichiers applicatifs V2.5.1 n'ont pas régressé pendant la réconciliation du workflow
+- vérifier la preview V2.5.1 déjà publiée comme référence fonctionnelle
+
+La publication actuelle `gh-pages/v2.5.1/` reste intacte pendant cette réconciliation.
 
 ## Prochaine action
 
-Vérifier si le workflow hybride de la PR #19 est désormais présent dans `develop`. Puis reprendre et réconcilier les travaux V2.5 (PR #18) et V2.5.1 avec ce socle avant leur intégration, en actualisant les champs de version qui les concernent.
+Si V2.5.1 n'est pas encore intégrée dans `develop`, terminer la PR de promotion V2.5.1 et ses checks. Une fois `develop` sur V2.5.1, créer le jalon/tag `v2.5.1`, puis ouvrir la PR de release `develop` → `main`. Après validation de production, aligner la racine de `gh-pages` sur V2.5.1 et seulement ensuite nettoyer les anciennes branches.

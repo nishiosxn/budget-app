@@ -1,4 +1,4 @@
-// V2.4 — cache local V5, catalogue autonome et sauvegarde
+// V2.5.1 — état de session en mémoire, Supabase comme source de vérité
 function neutralBaseCategories(template,createdFrom){
  return template.map(c=>({...cloneData(c),createdFrom:c.createdFrom||createdFrom}));
 }
@@ -77,41 +77,47 @@ function normalizeState(x){
 function householdStorageKey(householdId){
  return householdId?`${STORAGE_KEY}:household:${householdId}`:STORAGE_KEY;
 }
-function currentStorageKey(){
+function preferredHouseholdId(){
  const runtimeId=typeof activeHouseholdId!=="undefined"?activeHouseholdId:null;
- const householdId=runtimeId||localStorage.getItem("budget-foyer-v2.4-active-household");
- return householdStorageKey(householdId);
+ if(runtimeId)return runtimeId;
+ const current=localStorage.getItem(ACTIVE_HOUSEHOLD_KEY);
+ if(current)return current;
+ for(const key of PREVIOUS_ACTIVE_HOUSEHOLD_KEYS||[]){
+  const previous=localStorage.getItem(key);
+  if(previous){
+   localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,previous);
+   return previous;
+  }
+ }
+ return null;
+}
+function currentStorageKey(){
+ return householdStorageKey(preferredHouseholdId());
+}
+function previousHouseholdStorageKeys(householdId){
+ return (PREVIOUS_STORAGE_KEYS||[]).map(key=>householdId?key+":household:"+householdId:key);
+}
+function clearCurrentCloudDataCache(){
+ try{
+  const prefixes=[
+   STORAGE_KEY+":household:",
+   "budget-foyer-v2.5-cloud-pending:",
+   "budget-foyer-v2.5-sync-baseline:"
+  ];
+  for(let i=localStorage.length-1;i>=0;i--){
+   const key=localStorage.key(i);
+   if(!key)continue;
+   if(key===STORAGE_KEY||key==="budget-foyer-v2.5-offline-user"||prefixes.some(prefix=>key.startsWith(prefix)))localStorage.removeItem(key);
+  }
+ }catch{}
 }
 function loadState(){
- try{
-  const targetKey=currentStorageKey();
-  let raw=localStorage.getItem(targetKey);
-  if(!raw&&targetKey!==STORAGE_KEY){
-   const previousV24=localStorage.getItem(STORAGE_KEY);
-   if(previousV24){
-    raw=previousV24;
-    localStorage.setItem(targetKey,previousV24);
-   }
-  }
-  if(!raw){
-   for(const key of ["budget-foyer-v2.3","budget-foyer-v2.3-preview"]){
-    const previous=localStorage.getItem(key);
-    if(!previous)continue;
-    const migrated=normalizeState(JSON.parse(previous));
-    localStorage.setItem(targetKey,JSON.stringify(migrated));
-    return migrated;
-   }
-   return seedState();
-  }
-  return normalizeState(JSON.parse(raw));
- }catch{return seedState()}
+ return seedState();
 }
-function switchHouseholdCache(householdId){
- const key=householdStorageKey(householdId);
- const raw=localStorage.getItem(key);
- state=raw?normalizeState(JSON.parse(raw)):seedState();
+function switchHouseholdCache(){
+ state=seedState();
  applyCategoryState();
- return !!raw;
+ return false;
 }
 function applyCategoryState(){
  const baseIncome=Array.isArray(state.baseIncomeCategories)?state.baseIncomeCategories:[];
@@ -135,6 +141,5 @@ let state=loadState();
 applyCategoryState();
 function saveState(){
  state.schemaVersion=5;
- localStorage.setItem(currentStorageKey(),JSON.stringify(state));
  if(typeof queueCloudSync==="function"&&!(typeof cloudApplyingRemote!=="undefined"&&cloudApplyingRemote))queueCloudSync();
 }

@@ -1,4 +1,4 @@
-// V2.4 — foyer partagé et état de session cloud
+// V2.5.1 — foyer partagé et synchronisation cloud obligatoire
 let activeHouseholdId=null;
 let activeMembership=null;
 let cloudMemberships=[];
@@ -17,6 +17,11 @@ function cloudMonthDate(key){return /^\d{4}-\d{2}$/.test(String(key||""))?key+"-
 function setCloudStatus(message,stateName="idle"){
  const node=document.getElementById("cloudSyncStatus");
  if(node){node.textContent=message;node.dataset.state=stateName}
+ const retry=document.getElementById("cloudForceSyncBtn");
+ if(retry){
+  retry.hidden=!["error","offline"].includes(stateName);
+  retry.disabled=!cloudSession||!activeHouseholdId;
+ }
 }
 function updateCloudHouseholdUi(){
  const household=cloudHouseholds.find(h=>h.id===activeHouseholdId);
@@ -51,11 +56,15 @@ function requestCloudBootstrap(){
  return cloudBootstrapPromise;
 }
 function selectActiveMembership(){
- const saved=localStorage.getItem("budget-foyer-v2.4-active-household");
+ let saved=localStorage.getItem(ACTIVE_HOUSEHOLD_KEY);
+ if(!saved)for(const key of PREVIOUS_ACTIVE_HOUSEHOLD_KEYS||[]){
+  saved=localStorage.getItem(key);
+  if(saved){localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,saved);break}
+ }
  activeMembership=cloudMemberships.find(m=>m.household_id===saved)||cloudMemberships[0]||null;
  activeHouseholdId=activeMembership?.household_id||null;
  if(activeHouseholdId){
-  localStorage.setItem("budget-foyer-v2.4-active-household",activeHouseholdId);
+  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,activeHouseholdId);
   switchHouseholdCache(activeHouseholdId);
  }
  updateCloudHouseholdUi();
@@ -70,7 +79,7 @@ async function provisionPersonalHousehold(){
   p_display_name:displayName
  });
  if(error)throw error;
- localStorage.setItem("budget-foyer-v2.4-active-household",data);
+ localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
  await loadCloudMemberships();
  selectActiveMembership();
  state=seedState();
@@ -97,10 +106,6 @@ async function cloudBootstrap(){
   }else{
    selectActiveMembership();
   }
-  if(state.onboardingComplete&&localStorage.getItem(cloudPendingKey())==="1"){
-   setCloudGateStatus("Envoi des modifications conservées hors ligne…");
-   await cloudPushLocalState({force:true});
-  }
   await cloudLoadState();
   startCloudRealtime();
   cloudSyncReady=true;
@@ -108,14 +113,16 @@ async function cloudBootstrap(){
   hideCloudGate();
  }catch(error){
   console.error("Cloud bootstrap",error);
-  if(state.onboardingComplete){
-   hideCloudGate();
-   setCloudStatus("Hors ligne · cache local","offline");
-  }else{
-   setCloudGateView("loading");
-   setCloudGateStatus(error?.message||"Impossible de charger le foyer.","error");
-   setCloudStatus("Erreur de synchronisation","error");
-  }
+  cloudSyncReady=false;
+  setCloudGateView("loading");
+  setCloudGateStatus(
+   navigator.onLine
+    ?(error?.message||"Impossible de charger le foyer. Réessaie la synchronisation.")
+    :"Connexion internet requise pour ouvrir le budget.",
+   "error"
+  );
+  setCloudStatus(navigator.onLine?"Erreur de synchronisation":"Connexion requise","error");
+  if(typeof cloudRenderConflictUi==="function")cloudRenderConflictUi();
  }
 }
 async function acceptCloudInvite(){
@@ -132,7 +139,7 @@ async function acceptCloudInvite(){
   if(error)throw error;
   clearPendingInvite();
   clearPendingPersonalProfile();
-  localStorage.setItem("budget-foyer-v2.4-active-household",data);
+  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
   await loadCloudMemberships();
   selectActiveMembership();
   await cloudLoadState();

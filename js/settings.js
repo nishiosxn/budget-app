@@ -1,4 +1,4 @@
-// V2.4 — paramètres, import/export V5 et synchronisation cloud
+// V2.5 — paramètres, import/export V5 et synchronisation cloud
 const settingsBackdrop=document.getElementById("settingsBackdrop");
 const settingsHouseholdName=document.getElementById("settingsHouseholdName");
 const settingsPersonB=document.getElementById("settingsPersonB");
@@ -115,13 +115,13 @@ importFile.addEventListener("change",async()=>{
  const file=importFile.files?.[0];if(!file)return;
  try{
   const next=await readStateFile(file);
-  if(!confirm("Importer cette sauvegarde et remplacer les données actuelles du foyer partagé V2.4 ?"))return;
+  if(!confirm("Importer cette sauvegarde et remplacer les données actuelles du foyer partagé V2.5 ?"))return;
   installPreparedState(next);showUndoToast("Sauvegarde importée")
  }catch{alert("Ce fichier n’est pas une sauvegarde compatible de Budget foyer.")}
  finally{importFile.value=""}
 });
 
 document.getElementById("resetBtn").addEventListener("click",()=>{
- if(!confirm("Réinitialiser les données du foyer partagé V2.4 ? Cette modification sera synchronisée sur les autres appareils."))return;
+ if(!confirm("Réinitialiser les données du foyer partagé V2.5 ? Cette modification sera synchronisée sur les autres appareils."))return;
  state=seedState();saveState();reloadUiFromState();closeSettings();openOnboarding(false)
 });

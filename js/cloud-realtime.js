@@ -1,4 +1,4 @@
-// V2.4 — actualisation Realtime du foyer actif
+// V2.5.1 — Realtime cloud continu avec reprise explicite en cas d’erreur
 let cloudRealtimeChannel=null;
 let cloudRealtimeTimer=null;
 
@@ -10,6 +10,10 @@ function stopCloudRealtime(){
 }
 function scheduleCloudRealtimeReload(){
  if(Date.now()<cloudIgnoreRealtimeUntil||cloudPushInProgress)return;
+ if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict){
+  setCloudStatus("Conflit de synchronisation · action requise","error");
+  return;
+ }
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(async()=>{
   if(!cloudSession||!activeHouseholdId||cloudPushInProgress)return;
@@ -23,7 +27,7 @@ function scheduleCloudRealtimeReload(){
    await cloudLoadState();
   }catch(error){
    console.error("Cloud realtime reload",error);
-   setCloudStatus("Mise à jour en attente","error");
+   setCloudStatus("Erreur Realtime · réessayer","error");
   }
  },350);
 }
@@ -40,7 +44,24 @@ function startCloudRealtime(){
   .on("postgres_changes",{event:"*",schema:"public",table:"transactions",filter:memberFilter},scheduleCloudRealtimeReload)
   .on("postgres_changes",{event:"*",schema:"public",table:"recurrences",filter:memberFilter},scheduleCloudRealtimeReload)
   .subscribe(status=>{
-   if(status==="SUBSCRIBED")setCloudStatus("Synchronisé","ok");
-   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setCloudStatus("Realtime indisponible","error");
+   if(status==="SUBSCRIBED"){
+    if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict)setCloudStatus("Conflit de synchronisation · action requise","error");
+    else setCloudStatus("Synchronisé","ok");
+   }else if(["CHANNEL_ERROR","TIMED_OUT","CLOSED"].includes(status)){
+    setCloudStatus("Realtime interrompu · réessayer","error");
+   }
   });
 }
+
+
+window.addEventListener("focus",()=>{
+ if(!cloudSession||!activeHouseholdId||!cloudSyncReady||!navigator.onLine||cloudPushInProgress)return;
+ if(typeof cloudUnsyncedSession!=="undefined"&&cloudUnsyncedSession){
+  queueCloudSync();
+  return;
+ }
+ cloudLoadState().catch(error=>{
+  console.error("Cloud focus refresh",error);
+  setCloudStatus("Erreur de synchronisation · réessayer","error");
+ });
+});

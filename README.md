@@ -11,20 +11,20 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.3** : https://nishiosxn.github.io/budget-app/v2.3/
 - **Preview V2.4** : https://nishiosxn.github.io/budget-app/v2.4/
 - **Preview V2.4.1 UX/UI** : https://nishiosxn.github.io/budget-app/v2.4.1/
-- **Preview V2.5 Sync (en validation)** : https://nishiosxn.github.io/budget-app/v2.5/
-- **Preview V2.5.1 (travaux séparés)** : https://nishiosxn.github.io/budget-app/v2.5.1/
+- **Preview V2.5 Sync** : https://nishiosxn.github.io/budget-app/v2.5/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
 Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
 ## État actuel
 
-- **Production** : V1
-- Version du code : `V2.4.1`
-- **Branche de développement de référence** : `develop`, socle V2.4.1 intégré.
-- **Travaux parallèles** : V2.5, [Draft PR #18](https://github.com/nishiosxn/budget-app/pull/18) ; V2.5.1 contient des évolutions supplémentaires non intégrées à `develop`.
+- **Production** : V1 jusqu'à la promotion de V2.5.1 dans `main`.
+- Version du code : `V2.5.1`
+- **Branche de développement de référence** : `develop`.
+- **Version de travail validée/publée** : V2.5.1, actuellement disponible sur `/v2.5.1/`.
+- **Lot de promotion** : réconciliation de V2.5.1 avec le workflow hybride, puis intégration dans `develop` et promotion vers `main`.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
-- **Historique** : [CHANGELOG.md](CHANGELOG.md) ; [audit de migration](docs/WORKFLOW_AUDIT.md) pour les branches et PR existantes.
+- **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
 ## Fonctionnalités principales
 
@@ -58,17 +58,15 @@ js/
   cloud-state-core.js
   cloud-load.js
   cloud-save.js
+  cloud-sync-v25.js
   cloud-realtime.js
   app.js
 supabase/migrations/
 supabase/functions/admin-api/
 admin/
 README.md
-AGENTS.md
 workstate.md
 CHANGELOG.md
-docs/
-scripts/validate.mjs
 ```
 
 La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés sans modifier volontairement la logique métier. `app.js` ne contient plus que l'initialisation finale.
@@ -79,6 +77,7 @@ La V2.2 a découpé l'ancien `js/app.js` monolithique en fichiers spécialisés 
 - V2.3 source : `budget-foyer-v2.3`
 - Preview V2.3 : `budget-foyer-v2.3-preview`
 - V2.4 : `budget-foyer-v2.4`
+- V2.5 : `budget-foyer-v2.5`
 - Chaque preview publiée utilise une clé dédiée afin de ne pas modifier une autre version.
 
 La V2.3 propose une migration non destructive depuis les versions locales V1/V2.x et les sauvegardes legacy V4. La V2.4 copie également un cache V2.3 détecté vers sa propre clé sans effacer la source.
@@ -87,25 +86,35 @@ La V2.3 propose une migration non destructive depuis les versions locales V1/V2.
 
 Lire **[AGENTS.md](AGENTS.md)** et **[workstate.md](workstate.md)** pour reprendre un lot, puis vérifier la branche réelle et les PR. La méthode complète se trouve dans **[docs/ASSISTANT_WORKFLOW.md](docs/ASSISTANT_WORKFLOW.md)**.
 
-Chaque nouveau lot utilise une branche temporaire `work/vX.Y-<lot>` depuis `develop`, une Draft PR vers `develop`, des validations et un merge avant nettoyage de sa branche. Les tags Git identifient les jalons immuables après décision explicite. Les previews et snapshots existants restent disponibles.
+Chaque nouveau lot utilise une branche temporaire `work/vX.Y-<lot>` depuis `develop`, une Draft PR vers `develop`, des validations et un merge avant nettoyage de sa branche. Les tags Git identifient les jalons immuables après décision explicite. Les previews et snapshots restent sur `gh-pages`.
 
-Voir **[CHANGELOG.md](CHANGELOG.md)** pour l'historique des versions.
+### Branches permanentes
 
+- `main` : version stable de production.
+- `develop` : tronc de développement.
+- `gh-pages` : publication du site et archives de previews.
+- `work/vX.Y-<lot>` ou `work/vX.Y.Z-<lot>` : branche temporaire d'un lot.
 
-## Branches de travail
+Les Pull Requests vers `develop` et `main` passent par **App integrity**. Depuis la racine : `node scripts/validate.mjs`. Les tests du contrôle documentaire sont aussi exécutés par la CI avec `node --test scripts/validate-docs.test.mjs`.
 
-- `main` : version stable actuellement en production.
-- `develop` : tronc de développement de la future V2.
-- `work/vX.Y-<lot>` (ou `work/vX.Y.Z-<lot>`) : branche temporaire d'un lot ; Draft PR vers `develop`, nettoyage après merge.
-- `gh-pages` : branche réservée à la publication GitHub Pages et aux anciennes previews.
+La promotion `develop` → `main` utilise une PR de release distincte. La publication à la racine de `gh-pages` est une opération séparée.
 
-Les Pull Requests vers `develop` et `main` passent par le contrôle GitHub Actions **App integrity**.
+## V2.5 — Synchronisation robuste
 
-Depuis la racine : `node scripts/validate.mjs`. L'audit vérifie l'application et la cohérence documentaire/version. Pour modifier ce dernier contrôle : `node --test scripts/validate-docs.test.mjs`.
+La V2.5 conserve l'architecture cloud de V2.4/V2.4.1 mais remplace la stratégie « dernier écrivain gagnant » par une fusion optimiste basée sur une baseline locale et les `updated_at` Supabase.
 
-La promotion `develop` → `main` utilise une PR de release distincte. Le contrôle CI ne publie pas le site : la publication sur `gh-pages` suit la checklist dédiée, avec conservation de la racine de production et des previews. Les anciennes branches `v2.x` sont recensées pour une revue de nettoyage future dans [l'audit](docs/WORKFLOW_AUDIT.md) ; cette migration les conserve.
+L'identité Smart Budget validée est conservée dans `icons/icon.svg`. Les fichiers `favicon.ico`, `icon-192.png`, `icon-512.png` et `apple-touch-icon.png` du même dossier en sont les déclinaisons. Toute nouvelle version créée depuis `v2.5` doit reprendre le dossier `icons/`, les liens du document HTML, les entrées du manifest et le précache du service worker, puis incrémenter le nom de son cache PWA.
 
+Principes :
+- les changements locaux et distants sur des éléments différents sont conservés ;
+- deux champs différents d'une même ligne peuvent être fusionnés automatiquement ;
+- le même champ modifié différemment sur deux appareils crée un conflit explicite au lieu d'écraser une version ;
+- une suppression concurrente à une modification déclenche aussi un conflit ;
+- l'utilisateur choisit alors entre priorité locale et priorité cloud, sans perdre les changements non conflictuels ;
+- les écritures sont protégées par une vérification optimiste de `updated_at` ;
+- des index uniques sur `(household_id, legacy_id)` empêchent les doublons dus aux retries ou doubles onglets.
 
+La V2.5 utilise un cache local séparé et reprend de manière non destructive les caches V2.4/V2.4.1.
 
 ## V2.4.1 — UX/UI responsive
 
@@ -134,7 +143,7 @@ La V2.4 conserve le modèle local V5 de V2.3 comme cache et introduit un backend
 - fonctionnement dégradé local en cas de perte réseau ;
 - interface `/admin/` protégée par un rôle en base et une Edge Function Supabase.
 
-La synchronisation envoie des snapshots cohérents, archive les suppressions et conserve les modifications locales qui surviennent pendant un envoi. La stratégie V2.4 est « dernier écrivain gagnant » ; la résolution fine des conflits est réservée à V2.5.
+La synchronisation V2.4 envoie des snapshots cohérents et archive les suppressions. La résolution fine des conflits est implémentée à partir de V2.5.
 
 Configuration publique utilisée côté navigateur :
 - Project URL : `https://bqbemjxwdctyovtlpxpm.supabase.co`
