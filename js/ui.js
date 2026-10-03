@@ -10,10 +10,11 @@ function render(){
  document.querySelector("#balanceDelta .meta-value").textContent=`${delta>0.005?"+":""}${euro(delta)}`;
  document.getElementById("incomeTotal").textContent=euro(m.income);document.getElementById("incomePlanned").textContent=`Prévu ${euro(m.plannedIncome)}`;
  document.getElementById("expenseTotal").textContent=euro(m.expense);document.getElementById("expensePlanned").textContent=`Budget ${euro(m.plannedExpense)}`;
- document.getElementById("saveB").textContent=euro(m.savingsB);document.getElementById("saveA").textContent=euro(m.savingsA);document.getElementById("saveBMonth").textContent=euro(m.savingsBMonth);document.getElementById("saveAMonth").textContent=euro(m.savingsAMonth);
- document.getElementById("restB").textContent=euro(m.restB);document.getElementById("restA").textContent=euro(m.restA);
- document.getElementById("personBDetail").textContent=`${euro(m.incomeB)} de revenus · ${euro(m.expenseB)} dépensés · ${euro(m.savingBShare)} épargnés`;
- document.getElementById("personADetail").textContent=`${euro(m.incomeA)} de revenus · ${euro(m.expenseA)} dépensés · ${euro(m.savingAShare)} épargnés`;
+ document.getElementById("saveB").textContent=euro(m.savingsBMonth);document.getElementById("saveA").textContent=euro(m.savingsAMonth);document.getElementById("saveBCumulative").textContent=euro(m.savingsB);document.getElementById("saveACumulative").textContent=euro(m.savingsA);
+ document.getElementById("openingBValue").textContent=m.openingBDefined?euro(m.openingB):"—";document.getElementById("openingAValue").textContent=m.openingADefined?euro(m.openingA):"—";
+ document.getElementById("accountBalanceB").textContent=m.accountBalanceB===null?"—":euro(m.accountBalanceB);document.getElementById("accountBalanceA").textContent=m.accountBalanceA===null?"—":euro(m.accountBalanceA);
+ document.getElementById("personBDetail").textContent=m.openingBDefined?`Départ ${euro(m.openingB)} · +${euro(m.incomeB)} · −${euro(m.expenseB+m.savingBShare)}`:"Renseigne le solde initial pour calculer ce montant.";
+ document.getElementById("personADetail").textContent=m.openingADefined?`Départ ${euro(m.openingA)} · +${euro(m.incomeA)} · −${euro(m.expenseA+m.savingAShare)}`:"Renseigne le solde initial pour calculer ce montant.";
  renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);renderHistory(m);renderTracking();
  document.getElementById("transactionCount").textContent=`${m.tx.length} opération${m.tx.length>1?"s":""}`;
 }
