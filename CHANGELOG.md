@@ -1,5 +1,45 @@
 # Changelog
 
+## V2.6 — catégories simplifiées
+
+### Interface
+- Montants réels directement cliquables, sans crayon dédié.
+- Montants prévus directement cliquables.
+- Action individuelle en un clic pour renseigner un réel vide avec le montant prévu.
+- Le bouton rapide « réel = prévu » disparaît une fois le montant renseigné, sans ajouter de coche persistante.
+- Actions secondaires regroupées derrière un menu `⋯` par catégorie.
+- Suppression conservée avec la confirmation existante, mais retirée du premier niveau visuel.
+- Totaux de groupe rendus plus explicites avec les libellés « réel » et « prévu ».
+- Menus adaptés au mobile avec des zones tactiles plus confortables.
+
+### Actions groupées
+- « Tout remplir » devient « Remplir les vides » et ne remplace plus les montants réels déjà saisis.
+- « Tout vider » est déplacé dans un menu secondaire et nécessite un second clic de confirmation.
+- Les remplissages groupés et individuels créent toujours des ajustements visibles dans l’historique.
+- Les actions rapides peuvent être annulées depuis le toast existant.
+
+### Vue d’ensemble
+- La grande carte « Reste disponible ce mois » est désormais scindée visuellement entre le reste réel du foyer et les restes réels Baptiste/Anaëlle, sans ajouter de nouvelles données métier.
+- Le résumé du foyer reste minimal : revenus réels et sorties réelles ; le détail prévu/écart est retiré de cette carte.
+- « Reste disponible ce mois » conserve la formule réelle du foyer : revenus réels − dépenses réelles − épargne réelle.
+- Les cartes Épargne affichent désormais en valeur principale l’épargne réelle du mois ; le cumul passe en information secondaire.
+- « Répartition du mois » affiche un solde par personne seulement lorsqu’un solde d’ouverture est renseigné pour le mois.
+- Une seule attribution est utilisée partout : **Baptiste / Anaëlle / À deux**.
+- Cette attribution sert à la fois à la répartition mensuelle et au calcul du solde personnel : Baptiste = 100 % Baptiste, Anaëlle = 100 % Anaëlle, À deux = 50/50.
+- Le solde affiché est calculé comme : solde d’ouverture + revenus réels attribués − dépenses réelles attribuées − épargne réelle attribuée.
+- Le solde d’ouverture se modifie directement depuis la carte de la personne et n’est jamais compté comme un revenu.
+
+### Technique
+- Correction de synchronisation Supabase : les mises à jour de catégories n’essaient plus de modifier la colonne immuable `type`, qui n’est volontairement pas modifiable par le rôle authentifié.
+- Ajout de la table Supabase `account_opening_balances`, isolée des transactions et des budgets, avec RLS par foyer.
+- Chargement cloud et Realtime des soldes d’ouverture ; aucune persistance financière locale ajoutée.
+- L’essai « compte débité/crédité » a été retiré : aucune seconde attribution n’est conservée.
+- Septembre 2026 a été reconstruit en opérations détaillées à partir du relevé Boursobank de Baptiste : Courses regroupe notamment Aldi/Intermarché via les libellés, et la catégorie Aldi dédiée est archivée.
+- Pour septembre uniquement, **Courses** est attribué à Baptiste ; à partir d’octobre le budget Courses redevient **À deux**.
+- Le solde Baptiste de septembre est vérifié à **130,19 €** avec la seule attribution : 108,18 € d’ouverture + 1 073,64 € de revenus attribués − 1 051,63 € de dépenses attribuées.
+- Historique et Suivi conservent leurs calculs existants.
+
+
 ## Maintenance — workflow hybride
 
 - Branches permanentes `main`, `develop`, `gh-pages` ; nouveaux lots sur `work/vX.Y-<lot>` avec Draft PR vers `develop`.

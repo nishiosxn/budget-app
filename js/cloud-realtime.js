@@ -43,6 +43,7 @@ function startCloudRealtime(){
   .on("postgres_changes",{event:"*",schema:"public",table:"budgets",filter:memberFilter},scheduleCloudRealtimeReload)
   .on("postgres_changes",{event:"*",schema:"public",table:"transactions",filter:memberFilter},scheduleCloudRealtimeReload)
   .on("postgres_changes",{event:"*",schema:"public",table:"recurrences",filter:memberFilter},scheduleCloudRealtimeReload)
+  .on("postgres_changes",{event:"*",schema:"public",table:"account_opening_balances",filter:memberFilter},scheduleCloudRealtimeReload)
   .subscribe(status=>{
    if(status==="SUBSCRIBED"){
     if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict)setCloudStatus("Conflit de synchronisation · action requise","error");

@@ -80,7 +80,7 @@ async function cloudSyncCategories(source=state){
    is_custom:item.is_custom,sort_order:item.sort_order,archived_at:item.archived?(old?.archived_at||now):null
   };
   if(old){
-   const {household_id,legacy_id,created_from,...mutable}=row;
+   const {household_id,legacy_id,created_from,type,...mutable}=row;
    updates.push({id:old.id,values:mutable});
   }else inserts.push(row);
  }

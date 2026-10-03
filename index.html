@@ -54,21 +54,42 @@
     <section id="overview" class="view active">
       <div class="hero-grid">
         <article class="card balance-card">
-          <div><div class="eyebrow">Reste disponible ce mois</div><div class="balance" id="balanceValue">0,00 <small>€</small></div></div>
-          <div class="balance-meta"><div class="balance-stat planned" id="plannedRest"><span class="meta-label">Prévu</span><strong class="meta-value">0 €</strong></div><div class="balance-stat delta neutral" id="balanceDelta"><span class="meta-label">Écart</span><strong class="meta-value">0 €</strong></div></div>
+          <div class="balance-main">
+            <div class="eyebrow">Reste disponible ce mois</div>
+            <div class="balance" id="balanceValue">0,00 <small>€</small></div>
+            <div class="balance-summary" id="balanceSummary">0 € de revenus · 0 € de sorties</div>
+          </div>
+          <div class="balance-people" aria-label="Reste réel par personne">
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="B">Personne 1</span>
+              <strong id="balanceRestB">0 €</strong>
+              <small>reste réel</small>
+            </div>
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="A">Personne 2</span>
+              <strong id="balanceRestA">0 €</strong>
+              <small>reste réel</small>
+            </div>
+          </div>
         </article>
         <div class="kpi-stack">
           <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value" id="incomeTotal">0 €</div><div class="kpi-sub" id="incomePlanned">Prévu 0 €</div></article>
           <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value" id="expenseTotal">0 €</div><div class="kpi-sub" id="expensePlanned">Budget 0 €</div></article>
-          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="B">Personne 1</span></div><div class="kpi-value" id="saveB">0 €</div><div class="kpi-sub savings-sub"><span>Ce mois</span><strong id="saveBMonth">0 €</strong></div></article>
-          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Ce mois</span><strong id="saveAMonth">0 €</strong></div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="B">Personne 1</span></div><div class="kpi-value" id="saveB">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveBCumulative">0 €</strong></div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveACumulative">0 €</strong></div></article>
         </div>
       </div>
 
-      <div class="section-head"><h2>Répartition du mois</h2><span>Calculée comme dans le tableur</span></div>
+      <div class="section-head"><h2>Répartition du mois</h2><span>Solde après répartition des montants réels</span></div>
       <div class="people">
-        <article class="card person"><div class="person-top"><div><div class="person-name" data-person-label="B">Personne 1</div></div><div class="avatar" data-person-avatar="B">1</div></div><div class="person-rest" id="restB">0 €</div><div class="person-caption" id="personBDetail">0 € de revenus · 0 € sortis</div></article>
-        <article class="card person"><div class="person-top"><div><div class="person-name" data-person-label="A">Personne 2</div></div><div class="avatar" data-person-avatar="A">2</div></div><div class="person-rest" id="restA">0 €</div><div class="person-caption" id="personADetail">0 € de revenus · 0 € sortis</div></article>
+        <article class="card person">
+          <div class="person-top"><div><div class="person-name" data-person-label="B">Personne 1</div><button class="person-opening" type="button" data-edit-opening-balance="B">Solde initial <strong id="openingBValue">—</strong></button></div><div class="avatar" data-person-avatar="B">1</div></div>
+          <div class="person-rest" id="accountBalanceB">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personBDetail">Renseigne le solde initial pour calculer ce montant.</div>
+        </article>
+        <article class="card person">
+          <div class="person-top"><div><div class="person-name" data-person-label="A">Personne 2</div><button class="person-opening" type="button" data-edit-opening-balance="A">Solde initial <strong id="openingAValue">—</strong></button></div><div class="avatar" data-person-avatar="A">2</div></div>
+          <div class="person-rest" id="accountBalanceA">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personADetail">Renseigne le solde initial pour calculer ce montant.</div>
+        </article>
       </div>
 
       <div class="section-head"><h2>Budget par groupe</h2><span>Réel / prévu</span></div>
@@ -189,6 +210,15 @@
     <div class="field"><label for="recurrenceCategorySelect">CATÉGORIE</label><div class="select-wrap"><select id="recurrenceCategorySelect" class="category-select"></select><div class="custom-select" data-select="recurrenceCategorySelect"><button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="custom-select-value">Choisir une catégorie</span><span class="custom-select-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></span></button><div class="custom-select-menu" role="listbox"><div class="custom-select-scroll"></div></div></div></div></div>
     <div class="field"><label>APPLIQUER LA MODIFICATION</label><div id="recurrenceEditScope" class="owner-switch recurrence-scope-switch" role="group"><button type="button" class="owner-option active" data-recurrence-edit-scope="month">Ce mois</button><button type="button" class="owner-option" data-recurrence-edit-scope="forward">À partir d’ici</button><button type="button" class="owner-option" data-recurrence-edit-scope="series">Toute la série</button></div><div id="recurrenceEditHint" class="scope-hint">Seule l’occurrence du mois affiché sera modifiée.</div></div>
     <button id="saveRecurrenceEdit" class="btn btn-income save" type="button">Enregistrer</button>
+  </div>
+</div>
+
+<div id="accountBalanceBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal account-balance-modal" role="dialog" aria-modal="true" aria-labelledby="accountBalanceTitle">
+    <div class="modal-head"><div><h3 id="accountBalanceTitle">Solde de départ</h3><div id="accountBalanceKind" class="modal-kind"></div></div><button class="close" id="closeAccountBalance" aria-label="Fermer">×</button></div>
+    <p class="account-balance-copy">Indique l’argent présent sur ce compte au début du mois. Ce montant n’est pas compté comme un revenu.</p>
+    <div class="field"><label for="accountOpeningInput">SOLDE AU DÉBUT DU MOIS</label><div class="budget-input-wrap"><input id="accountOpeningInput" class="category-form-input" type="number" inputmode="decimal" step="0.01" placeholder="0,00"><span class="currency-suffix">€</span></div></div>
+    <div class="account-balance-actions"><button id="cancelAccountBalance" class="btn btn-ghost" type="button">Annuler</button><button id="saveAccountOpening" class="btn btn-income" type="button">Enregistrer</button></div>
   </div>
 </div>
 
@@ -318,6 +348,7 @@
 <script src="js/supabase-client.js" defer></script>
 <script src="js/auth.js" defer></script>
 <script src="js/cloud-household.js" defer></script>
+<script src="js/account-balances.js" defer></script>
 <script src="js/cloud-state-core.js" defer></script>
 <script src="js/cloud-load.js" defer></script>
 <script src="js/cloud-save.js" defer></script>
