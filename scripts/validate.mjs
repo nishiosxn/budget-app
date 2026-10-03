@@ -281,13 +281,18 @@ if(modular&&exists("js/cloud-sync-v25.js")){
       {amount:30,label:"Base"},
       "local","transactions","tx-1"
     );
+    const categoryPayload={name:"Courses",type:"expense",group_name:"Vie courante",owner_slot:"B",is_saving:false,excluded_months:[],is_custom:false,sort_order:1,created_from:"2026-09-01"};
+    const categoryUpdate=context.cloudCategoryValues(categoryPayload,false);
+    const categoryInsert=context.cloudCategoryValues(categoryPayload,true);
     const valid=merged.conflicts.length===0
       &&merged.value.amount===20
       &&merged.value.label==="Cloud"
       &&conflict.conflicts.length===1
-      &&resolved.value.amount===20;
-    if(!valid)fail("Fusion optimiste V2.5 invalide");
-    else ok("Fusion V2.5 : changements indépendants fusionnés et conflits détectés");
+      &&resolved.value.amount===20
+      &&!("type" in categoryUpdate)
+      &&categoryInsert.type==="expense";
+    if(!valid)fail("Fusion optimiste V2.5 ou permissions de mise à jour catégorie invalides");
+    else ok("Fusion V2.5 : changements indépendants fusionnés, conflits détectés et type de catégorie immuable");
   }catch(error){
     fail("Test du moteur de synchronisation V2.5 impossible: "+error.message);
   }
