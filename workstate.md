@@ -51,9 +51,12 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Exclusions : Historique et Suivi restent fonctionnellement inchangés ; les formules de budget prévues/réelles restent inchangées. Une table Supabase dédiée aux soldes d’ouverture a été ajoutée avec RLS par foyer.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
 - État : implémentation terminée sur la branche.
-- Validation automatique : **App integrity** réussi sur le commit applicatif `145286ed58e51ef35e774117ca815eb6878a9e4b` (workflow GitHub : tests documentaires + audit applicatif). Cette mise à jour documentaire déclenche un dernier contrôle CI.
-- Validation navigateur/visuelle : non réalisée dans cette session ; elle reste requise avant sortie du Draft.
-- Publication : aucune preview V2.6 publiée à ce stade.
+- Validation automatique : **App integrity** réussi sur le commit applicatif `1c312ab796e166c0dc206281b39b0228224b50c4`.
+- Migration Supabase `v2_6_account_opening_balances` appliquée, ainsi que son ajout à la publication Realtime.
+- Donnée initiale de test : solde d’ouverture Baptiste pour septembre 2026 = **108,18 €** ; Anaëlle reste non renseignée.
+- Validation navigateur/visuelle : à poursuivre sur la preview publique.
+- Preview : https://nishiosxn.github.io/budget-app/previews/pr-23/
+- Commit `gh-pages` de la preview : `892bf7fd81806cd4243427e4019f5e942bc99032`.
 
 ## Prochaine action
 
