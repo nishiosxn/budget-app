@@ -32,7 +32,7 @@ function totalsByCategory(type){return totalsByCategoryAtKey(type,monthKey(state
 function sum(list){return list.reduce((a,b)=>a+b,0)}
 function shareAmount(owner,amount,person){if(owner==="common")return amount/2;if(owner===person)return amount;return 0}
 function transactionOwner(t){if(t.owner)return t.owner;const c=catById(t.category,t.type);if(!c)return "common";return planForCategoryAtKey(c,String(t.date||"").slice(0,7)||monthKey(state.selectedMonth),t.type).owner||"common"}
-function transactionAccountSlot(t){if(t.accountSlot==="A"||t.accountSlot==="B")return t.accountSlot;const owner=transactionOwner(t);return owner==="A"||owner==="B"?owner:null}
+function transactionAccountSlot(t){if(t.accountSlot==="none")return null;if(t.accountSlot==="A"||t.accountSlot==="B")return t.accountSlot;const owner=transactionOwner(t);return owner==="A"||owner==="B"?owner:null}
 function actualForCategoryAtMonth(id,key,type="expense"){return Math.round(sum(transactionsForMonthKey(key).filter(t=>t.type===type&&t.category===id).map(t=>Number(t.amount)||0))*100)/100}
 function cumulativeCategoryActual(id,type="expense",throughLabel=state.selectedMonth){const through=monthKey(throughLabel);return MONTHS.map(monthKey).filter(key=>key<=through).reduce((total,key)=>total+actualForCategoryAtMonth(id,key,type),0)}
 function metricsForMonth(label=state.selectedMonth){
