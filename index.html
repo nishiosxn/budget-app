@@ -54,8 +54,23 @@
     <section id="overview" class="view active">
       <div class="hero-grid">
         <article class="card balance-card">
-          <div><div class="eyebrow">Reste disponible ce mois</div><div class="balance" id="balanceValue">0,00 <small>€</small></div></div>
-          <div class="balance-meta"><div class="balance-stat planned" id="plannedRest"><span class="meta-label">Prévu</span><strong class="meta-value">0 €</strong></div><div class="balance-stat delta neutral" id="balanceDelta"><span class="meta-label">Écart</span><strong class="meta-value">0 €</strong></div></div>
+          <div class="balance-main">
+            <div class="eyebrow">Reste disponible ce mois</div>
+            <div class="balance" id="balanceValue">0,00 <small>€</small></div>
+            <div class="balance-summary" id="balanceSummary">0 € de revenus · 0 € de sorties</div>
+          </div>
+          <div class="balance-people" aria-label="Reste réel par personne">
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="B">Personne 1</span>
+              <strong id="balanceRestB">0 €</strong>
+              <small>reste réel</small>
+            </div>
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="A">Personne 2</span>
+              <strong id="balanceRestA">0 €</strong>
+              <small>reste réel</small>
+            </div>
+          </div>
         </article>
         <div class="kpi-stack">
           <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value" id="incomeTotal">0 €</div><div class="kpi-sub" id="incomePlanned">Prévu 0 €</div></article>
