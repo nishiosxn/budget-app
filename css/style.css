@@ -1154,3 +1154,59 @@ body.pwa-install-open{overflow:hidden}
     flex-basis:2rem;
   }
 }
+
+
+/* === V2.6 · Vue d’ensemble / soldes de compte === */
+.person-opening{
+  margin-top:.35rem;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:.67rem;
+  font-weight:650;
+  cursor:pointer;
+}
+.person-opening strong{
+  color:var(--text);
+  font-weight:800;
+}
+.person-opening:hover,
+.person-opening:focus-visible{
+  color:var(--accent);
+  outline:none;
+}
+.person-balance-label{
+  margin-top:.1rem;
+  color:var(--muted);
+  font-size:.68rem;
+  font-weight:750;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.account-balance-copy{
+  margin:0 0 1rem;
+  color:var(--muted);
+  font-size:.75rem;
+  line-height:1.5;
+}
+.account-balance-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.6rem;
+  margin-top:1rem;
+}
+.account-balance-actions .btn{
+  min-height:2.7rem;
+}
+@media(max-width:40rem){
+  .person-opening{
+    min-height:2rem;
+    display:inline-flex;
+    align-items:center;
+    gap:.28rem;
+  }
+  .person-caption{
+    line-height:1.45;
+  }
+}
