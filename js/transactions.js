@@ -21,7 +21,7 @@ function populateTransactionCategories(selected=""){
  categorySelect.value=selected&&[...categorySelect.options].some(o=>o.value===selected)?selected:"";
  rebuildCustomSelect(categorySelect);syncCustomSelect(categorySelect)
 }
-function selectCreatedTransactionCategory(id){populateTransactionCategories(id);setModalOwner(categoryDefaultOwner());refreshAmountState();setTimeout(()=>amountInput.focus(),40)}
+function selectCreatedTransactionCategory(id){populateTransactionCategories(id);const owner=categoryDefaultOwner();setModalOwner(owner);if(!editingTransactionId)setModalAccountSlot(defaultTransactionAccountSlot(owner));refreshAmountState();setTimeout(()=>amountInput.focus(),40)}
 function openModal(type,transaction=null){
  modalType=type;editingTransactionId=transaction?.id||null;const isSaving=type==="saving",editing=!!transaction;
  document.getElementById("modalTitle").textContent=editing?(isSaving?"Modifier l’épargne":type==="expense"?"Modifier la dépense":"Modifier la rentrée"):(isSaving?"Ajouter une épargne":type==="expense"?"Ajouter une dépense":"Ajouter une rentrée");
