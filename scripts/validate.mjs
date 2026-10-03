@@ -131,8 +131,8 @@ if(modular&&exists("js/calculations.js")){
     "plannedBalance:plannedIncome-plannedExpense-plannedSaving",
     "restB=incomeB-expenseB-savingBShare",
     "restA=incomeA-expenseA-savingAShare",
-    "accountBalanceB=openingBDefined?openingB+restB:null",
-    "accountBalanceA=openingADefined?openingA+restA:null"
+    "accountBalanceB=openingBDefined?openingB+accountIncomeB-accountExpenseB-accountSavingB:null",
+    "accountBalanceA=openingADefined?openingA+accountIncomeA-accountExpenseA-accountSavingA:null"
   ];
   const missing=required.filter(x=>!calc.includes(x));
   if(missing.length) fail("Formules métier critiques absentes: "+missing.join(", "));
@@ -157,6 +157,16 @@ if(modular){
   else ok("Chargement et Realtime des soldes d'ouverture présents");
   if(!exists("supabase/migrations/20261003121500_v2_6_account_opening_balances.sql"))fail("Migration des soldes d'ouverture absente");
   else ok("Migration V2.6 des soldes d'ouverture présente");
+}
+
+if(modular&&exists("js/transactions.js")&&exists("js/calculations.js")){
+  const transactions=read("js/transactions.js");
+  const calc=read("js/calculations.js");
+  const html=read("index.html");
+  const accountMarkers=["data-account-slot","data-recurrence-account","modalAccountSlot","accountSlot","transactionAccountSlot"];
+  const missingAccountMarkers=accountMarkers.filter(marker=>!transactions.includes(marker)&&!calc.includes(marker)&&!html.includes(marker));
+  if(missingAccountMarkers.length)fail("Attribution du compte bancaire incomplète: "+missingAccountMarkers.join(", "));
+  else ok("Compte débité/crédité séparé de la répartition budgétaire");
 }
 
 if(modular&&exists("js/settings.js")){
