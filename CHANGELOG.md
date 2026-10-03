@@ -19,6 +19,8 @@
 - Les actions rapides peuvent être annulées depuis le toast existant.
 
 ### Vue d’ensemble
+- La grande carte « Reste disponible ce mois » est désormais scindée visuellement entre le reste réel du foyer et les restes réels Baptiste/Anaëlle, sans ajouter de nouvelles données métier.
+- Le résumé du foyer reste minimal : revenus réels et sorties réelles ; le détail prévu/écart est retiré de cette carte.
 - « Reste disponible ce mois » conserve la formule réelle du foyer : revenus réels − dépenses réelles − épargne réelle.
 - Les cartes Épargne affichent désormais en valeur principale l’épargne réelle du mois ; le cumul passe en information secondaire.
 - « Répartition du mois » affiche un solde par personne seulement lorsqu’un solde d’ouverture est renseigné pour le mois.
