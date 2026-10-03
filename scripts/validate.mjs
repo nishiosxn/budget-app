@@ -129,12 +129,34 @@ if(modular&&exists("js/calculations.js")){
   const required=[
     "balance:income-expense-saving",
     "plannedBalance:plannedIncome-plannedExpense-plannedSaving",
-    "restB:incomeB-expenseB-savingBShare",
-    "restA:incomeA-expenseA-savingAShare"
+    "restB=incomeB-expenseB-savingBShare",
+    "restA=incomeA-expenseA-savingAShare",
+    "accountBalanceB=openingBDefined?openingB+restB:null",
+    "accountBalanceA=openingADefined?openingA+restA:null"
   ];
   const missing=required.filter(x=>!calc.includes(x));
   if(missing.length) fail("Formules métier critiques absentes: "+missing.join(", "));
   else ok("Formules critiques revenus/dépenses/épargne/restes présentes");
+}
+
+if(modular){
+  if(!exists("js/account-balances.js"))fail("Module de soldes d'ouverture absent");
+  else{
+    const accountBalances=read("js/account-balances.js");
+    const markers=["account_opening_balances","accountOpeningBalanceFor","saveAccountOpeningBalance","data-edit-opening-balance"];
+    const missing=markers.filter(marker=>!accountBalances.includes(marker)&&!read("index.html").includes(marker));
+    if(missing.length)fail("Soldes de compte V2.6 incomplets: "+missing.join(", "));
+    else ok("Soldes d'ouverture mensuels synchronisés présents");
+  }
+  const html=read("index.html");
+  const cloudLoad=read("js/cloud-load.js");
+  const realtime=read("js/cloud-realtime.js");
+  if(!html.includes('id="accountBalanceB"')||!html.includes('id="accountBalanceA"')||!html.includes('id="accountBalanceBackdrop"'))fail("Interface de solde de compte incomplète");
+  else ok("Interface Répartition du mois basée sur les soldes de compte présente");
+  if(!cloudLoad.includes('from("account_opening_balances")')||!realtime.includes('table:"account_opening_balances"'))fail("Synchronisation des soldes d'ouverture incomplète");
+  else ok("Chargement et Realtime des soldes d'ouverture présents");
+  if(!exists("supabase/migrations/20261003121500_v2_6_account_opening_balances.sql"))fail("Migration des soldes d'ouverture absente");
+  else ok("Migration V2.6 des soldes d'ouverture présente");
 }
 
 if(modular&&exists("js/settings.js")){
