@@ -18,9 +18,18 @@
 - Les remplissages groupés et individuels créent toujours des ajustements visibles dans l’historique.
 - Les actions rapides peuvent être annulées depuis le toast existant.
 
+### Vue d’ensemble
+- « Reste disponible ce mois » conserve la formule réelle du foyer : revenus réels − dépenses réelles − épargne réelle.
+- Les cartes Épargne affichent désormais en valeur principale l’épargne réelle du mois ; le cumul passe en information secondaire.
+- « Répartition du mois » affiche un solde par personne seulement lorsqu’un solde d’ouverture est renseigné pour le mois.
+- Le solde affiché est calculé comme : solde d’ouverture + revenus réels attribués − dépenses réelles attribuées − épargne réelle attribuée.
+- Les dépenses « À deux » restent réparties à 50/50, conformément au système d’attribution existant.
+- Le solde d’ouverture se modifie directement depuis la carte de la personne et n’est jamais compté comme un revenu.
+
 ### Technique
-- Aucun changement des formules financières, du schéma V5, des migrations ou des règles Supabase.
-- Historique, Suivi et Vue d’ensemble laissés hors périmètre.
+- Ajout de la table Supabase `account_opening_balances`, isolée des transactions et des budgets, avec RLS par foyer.
+- Chargement cloud et Realtime des soldes d’ouverture ; aucune persistance financière locale ajoutée.
+- Historique et Suivi conservent leurs calculs existants.
 
 
 ## Maintenance — workflow hybride
