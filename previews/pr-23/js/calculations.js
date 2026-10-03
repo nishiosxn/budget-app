@@ -32,6 +32,7 @@ function totalsByCategory(type){return totalsByCategoryAtKey(type,monthKey(state
 function sum(list){return list.reduce((a,b)=>a+b,0)}
 function shareAmount(owner,amount,person){if(owner==="common")return amount/2;if(owner===person)return amount;return 0}
 function transactionOwner(t){if(t.owner)return t.owner;const c=catById(t.category,t.type);if(!c)return "common";return planForCategoryAtKey(c,String(t.date||"").slice(0,7)||monthKey(state.selectedMonth),t.type).owner||"common"}
+function transactionAccountSlot(t){if(t.accountSlot==="A"||t.accountSlot==="B")return t.accountSlot;const owner=transactionOwner(t);return owner==="A"||owner==="B"?owner:null}
 function actualForCategoryAtMonth(id,key,type="expense"){return Math.round(sum(transactionsForMonthKey(key).filter(t=>t.type===type&&t.category===id).map(t=>Number(t.amount)||0))*100)/100}
 function cumulativeCategoryActual(id,type="expense",throughLabel=state.selectedMonth){const through=monthKey(throughLabel);return MONTHS.map(monthKey).filter(key=>key<=through).reduce((total,key)=>total+actualForCategoryAtMonth(id,key,type),0)}
 function metricsForMonth(label=state.selectedMonth){
@@ -40,13 +41,17 @@ function metricsForMonth(label=state.selectedMonth){
  const expense=sum(tx.filter(t=>t.type==="expense"&&!catById(t.category,"expense")?.saving).map(t=>Number(t.amount)||0));
  const saving=sum(tx.filter(t=>t.type==="expense"&&catById(t.category,"expense")?.saving).map(t=>Number(t.amount)||0));
  const plannedIncome=sum(visibleIncomeCategories(label).map(c=>c.budget)),plannedExpense=sum(visibleExpenseCategories(label).map(c=>c.budget)),plannedSaving=sum(visibleSavingCategories(label).map(c=>c.budget));
- let incomeB=0,incomeA=0,expenseB=0,expenseA=0,savingBShare=0,savingAShare=0;
- tx.forEach(t=>{const owner=transactionOwner(t),amount=Number(t.amount)||0;if(t.type==="income"){incomeB+=shareAmount(owner,amount,"B");incomeA+=shareAmount(owner,amount,"A")}else if(catById(t.category,"expense")?.saving){savingBShare+=shareAmount(owner,amount,"B");savingAShare+=shareAmount(owner,amount,"A")}else{expenseB+=shareAmount(owner,amount,"B");expenseA+=shareAmount(owner,amount,"A")}});
+ let incomeB=0,incomeA=0,expenseB=0,expenseA=0,savingBShare=0,savingAShare=0,accountIncomeB=0,accountIncomeA=0,accountExpenseB=0,accountExpenseA=0,accountSavingB=0,accountSavingA=0,untrackedAccountAmount=0;
+ tx.forEach(t=>{const owner=transactionOwner(t),accountSlot=transactionAccountSlot(t),amount=Number(t.amount)||0,savingTx=t.type==="expense"&&!!catById(t.category,"expense")?.saving;if(t.type==="income"){incomeB+=shareAmount(owner,amount,"B");incomeA+=shareAmount(owner,amount,"A")}else if(savingTx){savingBShare+=shareAmount(owner,amount,"B");savingAShare+=shareAmount(owner,amount,"A")}else{expenseB+=shareAmount(owner,amount,"B");expenseA+=shareAmount(owner,amount,"A")}
+  if(accountSlot==="B"){if(t.type==="income")accountIncomeB+=amount;else if(savingTx)accountSavingB+=amount;else accountExpenseB+=amount}
+  else if(accountSlot==="A"){if(t.type==="income")accountIncomeA+=amount;else if(savingTx)accountSavingA+=amount;else accountExpenseA+=amount}
+  else untrackedAccountAmount+=Math.abs(amount);
+ });
  const savingsBMonth=expMap["saving-b"]||0,savingsAMonth=expMap["saving-a"]||0,savingsB=cumulativeCategoryActual("saving-b","expense",label),savingsA=cumulativeCategoryActual("saving-a","expense",label);
  const restB=incomeB-expenseB-savingBShare,restA=incomeA-expenseA-savingAShare;
  const openingB=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"B"):0,openingA=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"A"):0;
  const openingBDefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"B"),openingADefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"A");
- const accountBalanceB=openingBDefined?openingB+restB:null,accountBalanceA=openingADefined?openingA+restA:null;
- return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB,restA,openingB,openingA,openingBDefined,openingADefined,accountBalanceB,accountBalanceA,savingsB,savingsA,savingsBMonth,savingsAMonth};
+ const accountBalanceB=openingBDefined?openingB+accountIncomeB-accountExpenseB-accountSavingB:null,accountBalanceA=openingADefined?openingA+accountIncomeA-accountExpenseA-accountSavingA:null;
+ return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB,restA,openingB,openingA,openingBDefined,openingADefined,accountIncomeB,accountIncomeA,accountExpenseB,accountExpenseA,accountSavingB,accountSavingA,untrackedAccountAmount,accountBalanceB,accountBalanceA,savingsB,savingsA,savingsBMonth,savingsAMonth};
 }
 function metrics(){return metricsForMonth(state.selectedMonth)}
