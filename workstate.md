@@ -44,16 +44,19 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
   - lisibilité desktop/mobile améliorée, avec zones tactiles confortables ;
   - synchronisation et historique des ajustements inchangés ;
   - « Reste disponible ce mois » reste basé sur les montants réels du foyer ;
-  - Répartition du mois affiche un solde personnel calculé à partir d’un solde d’ouverture mensuel ;
+  - Répartition du mois affiche un solde personnel calculé à partir d’un solde d’ouverture mensuel et du compte réellement débité/crédité ;
   - solde d’ouverture éditable par personne sans être compté dans les revenus ;
-  - dépenses « À deux » toujours réparties 50/50 ;
+  - chaque mouvement sépare « Pour qui ? » du compte bancaire utilisé ;
+  - dépenses « À deux » toujours réparties 50/50 dans le budget, même si un seul compte les paie ;
   - épargne principale affichée sur le mois, avec cumul en secondaire.
 - Exclusions : Historique et Suivi restent fonctionnellement inchangés ; les formules de budget prévues/réelles restent inchangées. Une table Supabase dédiée aux soldes d’ouverture a été ajoutée avec RLS par foyer.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
 - État : implémentation terminée sur la branche.
-- Validation automatique : **App integrity** réussi sur le commit applicatif `1c312ab796e166c0dc206281b39b0228224b50c4`.
+- Validation automatique : à relancer/valider sur le dernier commit après l’ajout du compte débité/crédité.
 - Migration Supabase `v2_6_account_opening_balances` appliquée, ainsi que son ajout à la publication Realtime.
-- Donnée initiale de test : solde d’ouverture Baptiste pour septembre 2026 = **108,18 €** ; Anaëlle reste non renseignée.
+- Donnée initiale : solde d’ouverture Baptiste pour septembre 2026 = **108,18 €** ; Anaëlle reste non renseignée.
+- Septembre Baptiste reconstruit depuis le relevé Boursobank en opérations détaillées : **1 073,64 € crédités**, **1 051,63 € débités**, solde final vérifié **130,19 €**.
+- Catégorie `Aldi` archivée ; l’opération Aldi de 7,96 € est rangée dans `Courses` avec son libellé. Catégorie `Dons` créée pour Fondation de France.
 - Validation navigateur/visuelle : à poursuivre sur la preview publique.
 - Preview : https://nishiosxn.github.io/budget-app/previews/pr-23/
 - Commit `gh-pages` de la preview : `892bf7fd81806cd4243427e4019f5e942bc99032`.
