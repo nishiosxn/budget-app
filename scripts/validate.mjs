@@ -124,6 +124,16 @@ if(modular&&exists("js/storage.js")){
   else ok("État neuf sans transactions");
 }
 
+if(modular&&exists("js/ui.js")){
+  const overviewHtml=read("index.html");
+  const overviewUi=read("js/ui.js");
+  const remainderMarkers=['id="balanceSummary"','id="balanceRestB"','id="balanceRestA"'];
+  const missingRemainderMarkers=remainderMarkers.filter(marker=>!overviewHtml.includes(marker));
+  if(missingRemainderMarkers.length)fail("Carte Reste disponible incomplète: "+missingRemainderMarkers.join(", "));
+  else if(!overviewUi.includes("m.restB")||!overviewUi.includes("m.restA")||!overviewUi.includes("m.expense+m.saving"))fail("Rendu du reste réel par personne incomplet");
+  else ok("Carte Reste disponible : total foyer et restes réels Baptiste/Anaëlle présents");
+}
+
 if(modular&&exists("js/calculations.js")){
   const calc=read("js/calculations.js").replace(/\s+/g,"");
   const required=[
