@@ -52,7 +52,7 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Exclusions : Historique et Suivi restent fonctionnellement inchangés ; les formules de budget prévues/réelles restent inchangées. Une table Supabase dédiée aux soldes d’ouverture a été ajoutée avec RLS par foyer.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
 - État : implémentation terminée sur la branche.
-- Validation automatique : à confirmer sur le dernier commit après retour à l’attribution unique.
+- Validation automatique : **App integrity** réussi sur le modèle d’attribution unique.
 - Migration Supabase `v2_6_account_opening_balances` appliquée, ainsi que son ajout à la publication Realtime.
 - Donnée initiale : solde d’ouverture Baptiste pour septembre 2026 = **108,18 €** ; Anaëlle reste non renseignée.
 - Septembre Baptiste reconstruit depuis le relevé Boursobank en opérations détaillées : **1 073,64 € attribués en revenus**, **1 051,63 € attribués en dépenses**, solde final vérifié **130,19 €**.
@@ -60,8 +60,8 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - `Courses` : attribution **Baptiste** uniquement en septembre 2026, puis retour **À deux** à partir d’octobre.
 - Validation navigateur/visuelle : à poursuivre sur la preview publique.
 - Preview : https://nishiosxn.github.io/budget-app/previews/pr-23/
-- Source applicative publiée : `4da62ec9cdbdba494913e5bad70acf544fdf3840`.
-- Commit `gh-pages` de la preview : `30990456c39f4a5d74acc8e9f2038b8fed0fcd16`.
+- Source applicative publiée : `9d5321b3c4c862595ed859adeb306c9ddfb269c7`.
+- Commit `gh-pages` de la preview : `cbb607d95fd8a6d0fb4c2d0d97d1ee50eaf0f7be`.
 
 ## Prochaine action
 
