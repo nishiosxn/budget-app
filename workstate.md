@@ -28,11 +28,11 @@ Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots
 
 La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
-## Lot courant — V2.6 Catégories
+## Lot courant — V2.6 Catégories & Vue d’ensemble
 
 - Branche : `work/v2.6-categories`
 - Base : `develop`
-- Objectif : simplifier fortement la page **Catégories** sans modifier Historique, Suivi, Vue d’ensemble, le schéma de données ou Supabase.
+- Objectif : simplifier fortement **Catégories** puis clarifier la **Vue d’ensemble**, en séparant le reste réel du mois du solde de compte personnel.
 - Critères d’acceptation :
   - montant réel directement cliquable ;
   - montant prévu directement cliquable ;
@@ -42,8 +42,13 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
   - « Tout remplir » remplacé par un comportement sûr qui ne remplace pas un réel déjà saisi ;
   - « Tout vider » retiré du premier niveau visuel ;
   - lisibilité desktop/mobile améliorée, avec zones tactiles confortables ;
-  - synchronisation et historique des ajustements inchangés.
-- Exclusions : aucune modification de la logique de calcul, de la page Historique, de la page Suivi, de la Vue d’ensemble, des migrations ou des règles Supabase.
+  - synchronisation et historique des ajustements inchangés ;
+  - « Reste disponible ce mois » reste basé sur les montants réels du foyer ;
+  - Répartition du mois affiche un solde personnel calculé à partir d’un solde d’ouverture mensuel ;
+  - solde d’ouverture éditable par personne sans être compté dans les revenus ;
+  - dépenses « À deux » toujours réparties 50/50 ;
+  - épargne principale affichée sur le mois, avec cumul en secondaire.
+- Exclusions : Historique et Suivi restent fonctionnellement inchangés ; les formules de budget prévues/réelles restent inchangées. Une table Supabase dédiée aux soldes d’ouverture a été ajoutée avec RLS par foyer.
 - Validation prévue : `node --test scripts/validate-docs.test.mjs`, `node scripts/validate.mjs`, **App integrity**, puis validation visuelle utilisateur avant sortie du Draft.
 - État : implémentation terminée sur la branche.
 - Validation automatique : **App integrity** réussi sur le commit applicatif `145286ed58e51ef35e774117ca815eb6878a9e4b` (workflow GitHub : tests documentaires + audit applicatif). Cette mise à jour documentaire déclenche un dernier contrôle CI.
