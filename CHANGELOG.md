@@ -22,18 +22,18 @@
 - « Reste disponible ce mois » conserve la formule réelle du foyer : revenus réels − dépenses réelles − épargne réelle.
 - Les cartes Épargne affichent désormais en valeur principale l’épargne réelle du mois ; le cumul passe en information secondaire.
 - « Répartition du mois » affiche un solde par personne seulement lorsqu’un solde d’ouverture est renseigné pour le mois.
-- Chaque mouvement peut désormais distinguer « Pour qui ? » (répartition du budget) du **compte débité/crédité** (flux bancaire réel).
-- Le solde affiché est calculé comme : solde d’ouverture + entrées réellement créditées sur le compte − sorties réellement débitées de ce compte.
-- Les dépenses « À deux » restent réparties à 50/50 dans le budget, même lorsqu’un seul compte bancaire a payé 100 % du mouvement.
+- Une seule attribution est utilisée partout : **Baptiste / Anaëlle / À deux**.
+- Cette attribution sert à la fois à la répartition mensuelle et au calcul du solde personnel : Baptiste = 100 % Baptiste, Anaëlle = 100 % Anaëlle, À deux = 50/50.
+- Le solde affiché est calculé comme : solde d’ouverture + revenus réels attribués − dépenses réelles attribuées − épargne réelle attribuée.
 - Le solde d’ouverture se modifie directement depuis la carte de la personne et n’est jamais compté comme un revenu.
-- L’historique affiche aussi le compte suivi pour les mouvements détaillés.
 
 ### Technique
 - Ajout de la table Supabase `account_opening_balances`, isolée des transactions et des budgets, avec RLS par foyer.
 - Chargement cloud et Realtime des soldes d’ouverture ; aucune persistance financière locale ajoutée.
-- L’attribution bancaire est stockée dans les métadonnées des transactions/récurrences, sans nouvelle colonne financière.
+- L’essai « compte débité/crédité » a été retiré : aucune seconde attribution n’est conservée.
 - Septembre 2026 a été reconstruit en opérations détaillées à partir du relevé Boursobank de Baptiste : Courses regroupe notamment Aldi/Intermarché via les libellés, et la catégorie Aldi dédiée est archivée.
-- Le solde Baptiste de septembre est vérifié à **130,19 €** : 108,18 € d’ouverture + 1 073,64 € crédités − 1 051,63 € débités.
+- Pour septembre uniquement, **Courses** est attribué à Baptiste ; à partir d’octobre le budget Courses redevient **À deux**.
+- Le solde Baptiste de septembre est vérifié à **130,19 €** avec la seule attribution : 108,18 € d’ouverture + 1 073,64 € de revenus attribués − 1 051,63 € de dépenses attribuées.
 - Historique et Suivi conservent leurs calculs existants.
 
 
