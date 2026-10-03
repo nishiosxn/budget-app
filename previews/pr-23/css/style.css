@@ -1210,3 +1210,85 @@ body.pwa-install-open{overflow:hidden}
     line-height:1.45;
   }
 }
+
+
+/* === V2.6 · Reste disponible compact === */
+.balance-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(180px,.58fr);
+  align-items:stretch;
+  gap:24px;
+}
+.balance-main,
+.balance-people{position:relative;z-index:1}
+.balance-main{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.balance-summary{
+  margin-top:10px;
+  color:rgba(255,255,255,.64);
+  font-size:11px;
+  font-weight:650;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.balance-people{
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:9px;
+}
+.balance-person{
+  min-width:0;
+  padding:13px 14px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:15px;
+  background:rgba(10,28,20,.18);
+  backdrop-filter:blur(5px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.balance-person-name{
+  color:rgba(255,255,255,.65);
+  font-size:10px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.balance-person strong{
+  margin-top:3px;
+  color:#fff;
+  font-size:19px;
+  line-height:1.08;
+  font-weight:850;
+  letter-spacing:-.6px;
+  white-space:nowrap;
+}
+.balance-person small{
+  margin-top:3px;
+  color:rgba(255,255,255,.48);
+  font-size:9px;
+  font-weight:700;
+}
+@media(max-width:640px){
+  .balance-card{
+    min-height:0;
+    grid-template-columns:1fr;
+    gap:18px;
+  }
+  .balance-main{min-height:116px}
+  .balance-card .balance{font-size:43px}
+  .balance-summary{
+    margin-top:7px;
+    font-size:10px;
+    white-space:normal;
+  }
+  .balance-people{
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:none;
+    gap:8px;
+  }
+  .balance-person{padding:11px 12px}
+  .balance-person strong{font-size:17px}
+  .balance-person small{display:none}
+}

@@ -3,11 +3,9 @@ function render(){
  syncHouseholdUi();
  const m=metrics();
  document.getElementById("balanceValue").innerHTML=`${euro(m.balance).replace("€","")}<small>€</small>`;
- document.querySelector("#plannedRest .meta-value").textContent=euro(m.plannedBalance);
- const delta=m.balance-m.plannedBalance,deltaEl=document.getElementById("balanceDelta");
- deltaEl.classList.remove("positive","negative","neutral");
- deltaEl.classList.add(delta>0.005?"positive":delta<-0.005?"negative":"neutral");
- document.querySelector("#balanceDelta .meta-value").textContent=`${delta>0.005?"+":""}${euro(delta)}`;
+ document.getElementById("balanceSummary").textContent=`${euro(m.income)} de revenus · ${euro(m.expense+m.saving)} de sorties`;
+ document.getElementById("balanceRestB").textContent=euro(m.restB);
+ document.getElementById("balanceRestA").textContent=euro(m.restA);
  document.getElementById("incomeTotal").textContent=euro(m.income);document.getElementById("incomePlanned").textContent=`Prévu ${euro(m.plannedIncome)}`;
  document.getElementById("expenseTotal").textContent=euro(m.expense);document.getElementById("expensePlanned").textContent=`Budget ${euro(m.plannedExpense)}`;
  document.getElementById("saveB").textContent=euro(m.savingsBMonth);document.getElementById("saveA").textContent=euro(m.savingsAMonth);document.getElementById("saveBCumulative").textContent=euro(m.savingsB);document.getElementById("saveACumulative").textContent=euro(m.savingsA);
