@@ -30,6 +30,7 @@
 - Le solde d’ouverture se modifie directement depuis la carte de la personne et n’est jamais compté comme un revenu.
 
 ### Technique
+- La touche Entrée valide désormais les champs de saisie principaux sur clavier et mobile (opérations, catégories, récurrences, solde initial, paramètres et authentification).
 - Correction de synchronisation Supabase : les mises à jour de catégories n’essaient plus de modifier la colonne immuable `type`, qui n’est volontairement pas modifiable par le rôle authentifié.
 - Ajout de la table Supabase `account_opening_balances`, isolée des transactions et des budgets, avec RLS par foyer.
 - Chargement cloud et Realtime des soldes d’ouverture ; aucune persistance financière locale ajoutée.
