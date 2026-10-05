@@ -288,6 +288,7 @@ async function cloudSignOut(){
  activeHouseholdId=null;
  activeMembership=null;
  await cloudClient.auth.signOut();
+ if(typeof resetUserAppearance==="function")resetUserAppearance();
 }
 async function initCloudAuth(){
  pendingInviteToken=readPendingInvite();
@@ -301,6 +302,7 @@ async function initCloudAuth(){
  const {data,error}=await cloudClient.auth.getSession();
  if(error)console.error("Session Supabase",error);
  cloudSession=data?.session||null;
+ if(typeof loadUserAppearanceFromSession==="function")loadUserAppearanceFromSession(cloudSession);
  updateCloudAccountUi();
  if(cloudSession&&isPasswordRecoveryReturn()){
   setCloudGateView("reset");
@@ -319,6 +321,10 @@ async function initCloudAuth(){
  cloudAuthSubscription?.unsubscribe?.();
  const {data:listener}=cloudClient.auth.onAuthStateChange((event,session)=>{
   cloudSession=session||null;
+  if(typeof loadUserAppearanceFromSession==="function"){
+   if(cloudSession)loadUserAppearanceFromSession(cloudSession);
+   else if(typeof resetUserAppearance==="function")resetUserAppearance();
+  }
   updateCloudAccountUi();
   if(event==="PASSWORD_RECOVERY"){
    setCloudGateView("reset");
