@@ -3,6 +3,9 @@ let cloudSession=null;
 let pendingInviteToken="";
 let cloudAuthSubscription=null;
 let cloudAuthMode="login";
+let cloudIdentityMode="email";
+let cloudIdentityEmailValue="";
+let cloudIdentityUsernameValue="";
 
 const cloudGate=document.getElementById("cloudGate");
 const cloudLoginView=document.getElementById("cloudLoginView");
@@ -20,6 +23,11 @@ const cloudAuthIntro=document.getElementById("cloudAuthIntro");
 const cloudAuthSubmitBtn=document.getElementById("cloudAuthSubmitBtn");
 const cloudSendMagicLinkBtn=document.getElementById("cloudSendMagicLinkBtn");
 const cloudInviteName=document.getElementById("cloudInviteName");
+const cloudIdentityLabel=document.getElementById("cloudIdentityLabel");
+const cloudIdentityReminder=document.getElementById("cloudIdentityReminder");
+const cloudMagicLink=document.getElementById("cloudMagicLink");
+const CLOUD_LAST_IDENTIFIER_KEY="budget-foyer-v2.6-last-identifier";
+const CLOUD_IDENTITY_MODE_KEY="budget-foyer-v2.6-identity-mode";
 
 function cloudBaseUrl(){
  return location.origin+location.pathname;
@@ -79,28 +87,75 @@ function setCloudGateStatus(message,type=""){
  cloudGateStatus.textContent=message||"";
  cloudGateStatus.className=("cloud-gate-status "+type).trim();
 }
+function lastCloudIdentifier(){try{return localStorage.getItem(CLOUD_LAST_IDENTIFIER_KEY)||""}catch{return""}}
+function rememberCloudIdentifier(identifier){
+ const value=String(identifier||"").trim().toLowerCase();
+ if(!value)return;
+ cloudIdentityUsernameValue=value;
+ try{localStorage.setItem(CLOUD_LAST_IDENTIFIER_KEY,value)}catch{}
+}
+function cloudSyntheticEmail(identifier){return `${String(identifier||"").trim().toLowerCase()}@id.budget-foyer.example.com`}
+function setCloudIdentityMode(mode,{initial=false}={}){
+ const next=mode==="username"?"username":"email";
+ if(!initial){
+  if(cloudIdentityMode==="email")cloudIdentityEmailValue=String(cloudEmailInput.value||"").trim();
+  else cloudIdentityUsernameValue=String(cloudEmailInput.value||"").trim().toLowerCase();
+ }
+ cloudIdentityMode=next;
+ try{localStorage.setItem(CLOUD_IDENTITY_MODE_KEY,next)}catch{}
+ const username=next==="username";
+ cloudEmailInput.type=username?"text":"email";
+ cloudEmailInput.inputMode=username?"text":"email";
+ cloudEmailInput.autocomplete=username?"username":"email";
+ cloudEmailInput.placeholder=username?"ex. baptiste-test":"nom@exemple.fr";
+ cloudIdentityLabel.textContent=username?"IDENTIFIANT":"ADRESSE EMAIL";
+ if(username){
+  cloudIdentityUsernameValue=cloudIdentityUsernameValue||lastCloudIdentifier();
+  cloudEmailInput.value=cloudIdentityUsernameValue;
+ }else cloudEmailInput.value=cloudIdentityEmailValue;
+ const last=lastCloudIdentifier();
+ cloudIdentityReminder.textContent=username
+  ?(last?`Dernier identifiant utilisé : ${last}`:"3 à 24 caractères · lettres, chiffres, point, tiret ou underscore.")
+  :"";
+ for(const [id,active] of [["cloudIdentityEmailBtn",!username],["cloudIdentityUsernameBtn",username]]){
+  const button=document.getElementById(id);
+  if(!button)continue;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-selected",String(active));
+ }
+ const forgot=document.getElementById("cloudForgotPasswordBtn");
+ if(forgot)forgot.hidden=cloudAuthMode==="signup"||username;
+ if(cloudMagicLink)cloudMagicLink.hidden=username;
+ cloudAuthIntro.textContent=cloudAuthMode==="signup"
+  ?(username?"Crée un compte de test avec un identifiant et un mot de passe. Aucun email n’est nécessaire.":"Crée ton compte. Un foyer personnel sera préparé après confirmation de ton email.")
+  :(username?"Connecte-toi avec ton identifiant et ton mot de passe.":"Connecte-toi avec ton email et ton mot de passe.");
+}
 function setCloudAuthMode(mode){
  cloudAuthMode=mode==="signup"?"signup":"login";
  const signup=cloudAuthMode==="signup";
  cloudSignupFields.hidden=!signup;
  cloudAuthHeading.textContent=signup?"Créer un compte":"Se connecter";
- cloudAuthIntro.textContent=signup
-  ?"Crée ton compte. Un foyer personnel et vide sera préparé après confirmation de ton email."
-  :"Connecte-toi avec ton email et ton mot de passe.";
  cloudAuthSubmitBtn.textContent=signup?"Créer mon compte":"Se connecter";
  cloudPasswordInput.autocomplete=signup?"new-password":"current-password";
- document.getElementById("cloudForgotPasswordBtn").hidden=signup;
  for(const [id,active] of [["cloudLoginModeBtn",!signup],["cloudSignupModeBtn",signup]]){
   const button=document.getElementById(id);
   button.classList.toggle("active",active);
   button.setAttribute("aria-selected",String(active));
  }
+ setCloudIdentityMode(cloudIdentityMode,{initial:true});
  setCloudGateStatus("");
 }
 function validCloudEmail(){
  const email=String(cloudEmailInput.value||"").trim();
- if(/^\S+@\S+\.\S+$/.test(email))return email;
+ if(/^\S+@\S+\.\S+$/.test(email)){cloudIdentityEmailValue=email;return email}
  setCloudGateStatus("Entre une adresse email valide.","error");
+ cloudEmailInput.focus();
+ return "";
+}
+function validCloudIdentifier(){
+ const identifier=String(cloudEmailInput.value||"").trim().toLowerCase();
+ if(/^[a-z0-9][a-z0-9._-]{2,23}$/.test(identifier)){cloudIdentityUsernameValue=identifier;return identifier}
+ setCloudGateStatus("Identifiant invalide : 3 à 24 caractères, lettres, chiffres, point, tiret ou underscore.","error");
  cloudEmailInput.focus();
  return "";
 }
@@ -111,39 +166,69 @@ function validCloudPassword(){
  cloudPasswordInput.focus();
  return "";
 }
+async function createUsernameCloudAccount(identifier,password,displayName){
+ const response=await fetch(SUPABASE_PROJECT_URL+"/functions/v1/username-signup",{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   "apikey":SUPABASE_PUBLISHABLE_KEY,
+   "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
+  },
+  body:JSON.stringify({identifier,password,displayName})
+ });
+ const payload=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(payload?.error||"Impossible de créer ce compte.");
+ return payload;
+}
 async function submitCloudAuth(){
- const email=validCloudEmail();
  const password=validCloudPassword();
- if(!email||!password)return;
+ if(!password)return;
+ const usernameMode=cloudIdentityMode==="username";
+ const identifier=usernameMode?validCloudIdentifier():"";
+ const email=usernameMode?(identifier?cloudSyntheticEmail(identifier):""):validCloudEmail();
+ if(!email)return;
  cloudAuthSubmitBtn.disabled=true;
  setCloudGateStatus(cloudAuthMode==="signup"?"Création du compte…":"Connexion…");
  try{
   if(cloudAuthMode==="signup"){
    const displayName=String(cloudDisplayNameInput.value||"").trim()||"Personne 1";
    const householdName=String(cloudHouseholdNameInput.value||"").trim()||"Mon foyer";
-   setPendingPersonalProfile({displayName,householdName});
-   const {data,error}=await cloudClient.auth.signUp({
-    email,password,
-    options:{emailRedirectTo:cloudAuthRedirectUrl(),data:{display_name:displayName}}
-   });
-   if(error)throw error;
-   if(data?.session){
-    cloudSession=data.session;
+   setPendingPersonalProfile({displayName,householdName,...(usernameMode?{identifier}:{})});
+   if(usernameMode){
+    await createUsernameCloudAccount(identifier,password,displayName);
+    rememberCloudIdentifier(identifier);
+    const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    cloudSession=data?.session||null;
     updateCloudAccountUi();
-    await requestCloudBootstrap();
+    setCloudGateStatus(`Compte créé. Ton identifiant est « ${identifier} ».`,"success");
+    if(cloudSession)await requestCloudBootstrap();
    }else{
-    setCloudGateStatus("Compte créé. Confirme ton adresse depuis l’email reçu, puis reviens ici.","success");
+    const {data,error}=await cloudClient.auth.signUp({
+     email,password,
+     options:{emailRedirectTo:cloudAuthRedirectUrl(),data:{display_name:displayName,login_mode:"email"}}
+    });
+    if(error)throw error;
+    if(data?.session){
+     cloudSession=data.session;
+     updateCloudAccountUi();
+     await requestCloudBootstrap();
+    }else{
+     setCloudGateStatus("Compte créé. Confirme ton adresse depuis l’email reçu, puis reviens ici.","success");
+    }
    }
   }else{
    const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
    if(error)throw error;
+   if(usernameMode)rememberCloudIdentifier(identifier);
    cloudSession=data?.session||null;
    updateCloudAccountUi();
    if(cloudSession)await requestCloudBootstrap();
   }
  }catch(error){
-  console.error("Email auth",error);
-  setCloudGateStatus(error?.message||"Authentification impossible.","error");
+  console.error("Cloud auth",error);
+  const message=usernameMode&&cloudAuthMode==="login"?"Identifiant ou mot de passe incorrect.":error?.message||"Authentification impossible.";
+  setCloudGateStatus(message,"error");
  }finally{cloudAuthSubmitBtn.disabled=false}
 }
 async function sendPasswordReset(){
@@ -224,7 +309,10 @@ async function initCloudAuth(){
   await requestCloudBootstrap();
  }else{
   setCloudGateView("login");
+  try{cloudIdentityMode=localStorage.getItem(CLOUD_IDENTITY_MODE_KEY)==="username"?"username":"email"}catch{cloudIdentityMode="email"}
+  cloudIdentityUsernameValue=lastCloudIdentifier();
   setCloudAuthMode("login");
+  setCloudIdentityMode(cloudIdentityMode,{initial:true});
   setCloudGateStatus(pendingInviteToken?"Connecte-toi ou crée un compte pour accepter cette invitation.":"");
  }
 
@@ -243,7 +331,10 @@ async function initCloudAuth(){
    activeHouseholdId=null;
    activeMembership=null;
    setCloudGateView("login");
+   try{cloudIdentityMode=localStorage.getItem(CLOUD_IDENTITY_MODE_KEY)==="username"?"username":"email"}catch{cloudIdentityMode="email"}
+   cloudIdentityUsernameValue=lastCloudIdentifier();
    setCloudAuthMode("login");
+   setCloudIdentityMode(cloudIdentityMode,{initial:true});
    setCloudGateStatus("Session fermée.");
    return;
   }
@@ -255,15 +346,20 @@ async function initCloudAuth(){
  cloudAuthSubscription=listener?.subscription||null;
 }
 function updateCloudAccountUi(){
- const email=cloudSession?.user?.email||"Non connecté";
+ const user=cloudSession?.user||null;
+ const username=String(user?.user_metadata?.username||"").trim();
+ if(username)rememberCloudIdentifier(username);
+ const accountLabel=username?`Identifiant · ${username}`:(user?.email||"Non connecté");
  const emailNode=document.getElementById("cloudAccountEmail");
- if(emailNode)emailNode.textContent=email;
+ if(emailNode){emailNode.textContent=accountLabel;emailNode.title=accountLabel}
  const signout=document.getElementById("cloudSignOutBtn");
  if(signout)signout.disabled=!cloudSession;
 }
 
 document.getElementById("cloudLoginModeBtn")?.addEventListener("click",()=>setCloudAuthMode("login"));
 document.getElementById("cloudSignupModeBtn")?.addEventListener("click",()=>setCloudAuthMode("signup"));
+document.getElementById("cloudIdentityEmailBtn")?.addEventListener("click",()=>setCloudIdentityMode("email"));
+document.getElementById("cloudIdentityUsernameBtn")?.addEventListener("click",()=>setCloudIdentityMode("username"));
 cloudAuthSubmitBtn?.addEventListener("click",submitCloudAuth);
 cloudSendMagicLinkBtn?.addEventListener("click",sendMagicLink);
 document.getElementById("cloudForgotPasswordBtn")?.addEventListener("click",sendPasswordReset);
