@@ -39,16 +39,32 @@ function fillAppearanceSettings(){
  settingsAppearanceSaved=true;
  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
 }
-function previewSettingsAppearance(next){
+function previewSettingsAppearance(next,{render=true}={}){
  settingsAppearanceDraft=normalizeUserAppearance(next);
  settingsAppearanceSaved=false;
  applyUserAppearance(settingsAppearanceDraft);
- if(settingsAppearancePicker)settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+ if(render&&settingsAppearancePicker)settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
 }
 settingsAppearancePicker?.addEventListener("click",event=>{
  const button=event.target.closest("[data-appearance-color],[data-appearance-font]");
  if(!button||!settingsAppearanceDraft)return;
  previewSettingsAppearance(appearanceFromPickerEvent(button,settingsAppearanceDraft));
+});
+settingsAppearancePicker?.addEventListener("input",event=>{
+ const input=event.target.closest("[data-appearance-custom-color]");
+ if(!input||!settingsAppearanceDraft)return;
+ previewSettingsAppearance(appearanceFromPickerEvent(input,settingsAppearanceDraft),{render:false});
+ const tile=input.closest(".appearance-color-custom");
+ if(tile){
+  tile.classList.add("active");
+  tile.style.setProperty("--swatch",input.value);
+ }
+ settingsAppearancePicker.querySelectorAll("[data-appearance-color]").forEach(button=>button.classList.remove("active"));
+});
+settingsAppearancePicker?.addEventListener("change",event=>{
+ const input=event.target.closest("[data-appearance-custom-color]");
+ if(!input||!settingsAppearanceDraft)return;
+ previewSettingsAppearance(appearanceFromPickerEvent(input,settingsAppearanceDraft));
 });
 saveAppearanceBtn?.addEventListener("click",async()=>{
  if(!settingsAppearanceDraft)return;
