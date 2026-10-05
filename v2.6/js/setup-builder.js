@@ -5,7 +5,7 @@ const SETUP_BUILDER_UPDATED="2026-10-05";
 const SETUP_BUILDER_INCOMES=[
  {id:"salary-b",name:"Salaire personne 1",selected:true,owner:"B",kind:"salary"},
  {id:"salary-a",name:"Salaire personne 2",selected:true,owner:"A",kind:"salary"},
- {id:"benefits",name:"Aides / allocations",selected:false,owner:"common",kind:"benefits"}
+ {id:"benefits",name:"Aides / allocations",selected:false,owner:"common",kind:"benefits",removable:true}
 ];
 
 const SETUP_BUILDER_EXPENSES=[
@@ -35,6 +35,7 @@ const SETUP_SUBSCRIPTIONS=[
 let setupBuilderStep=0;
 let setupBuilderDraft=null;
 let setupBuilderEditingName="";
+let setupBuilderOriginalAppearance=null;
 
 function setupBuilderKey(householdId=activeHouseholdId){return SETUP_BUILDER_PREFIX+String(householdId||"unknown")}
 function markSetupBuilderPending(householdId){if(householdId)try{localStorage.setItem(setupBuilderKey(householdId),"pending")}catch{}}
@@ -61,7 +62,7 @@ function setupBuilderInitialDraft(){
  const income={};
  SETUP_BUILDER_INCOMES.forEach(item=>{
   const name=item.id==="salary-b"?`Salaire ${household.personB}`:item.id==="salary-a"?`Salaire ${household.personA}`:item.name;
-  income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,renamed:false};
+  income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,renamed:false,removable:!!item.removable,hidden:false};
  });
  const expense={};
  SETUP_BUILDER_EXPENSES.forEach(item=>{
@@ -74,7 +75,7 @@ function setupBuilderInitialDraft(){
  });
  const subscriptions={};
  SETUP_SUBSCRIPTIONS.forEach(item=>{const plan=item.plans[0];subscriptions[item.id]={selected:false,plan:0,amount:plan.price==null?"":String(plan.price),owner:mode==="solo"?"B":item.owner,name:item.name}});
- return {household:{name:household.name,personB:household.personB,personA:household.personA,mode},income,expense,subscriptions,customIncome:[],customExpense:[],customSubscriptions:[]};
+ return {household:{name:household.name,personB:household.personB,personA:household.personA,mode},appearance:typeof currentUserAppearance==="function"?currentUserAppearance():{color:"green",font:"current"},income,expense,subscriptions,customIncome:[],customExpense:[],customSubscriptions:[]};
 }
 function ensureSetupBuilder(){
  let root=document.getElementById("setupBuilderBackdrop");
@@ -86,7 +87,7 @@ function ensureSetupBuilder(){
  root.innerHTML=`
   <section class="setup-builder-panel" role="dialog" aria-modal="true" aria-labelledby="setupBuilderTitle">
    <header class="setup-builder-head">
-    <div class="setup-builder-brand"><img src="icons/icon.svg" alt=""><div><span>Budget foyer · V2.6</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div></div>
+    <div class="setup-builder-brand">${typeof themeLogoMarkup==="function"?themeLogoMarkup("theme-logo setup-builder-logo"):""}<div><span>Budget foyer · V2.6</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div></div>
     <div id="setupBuilderProgress" class="setup-builder-progress" aria-label="Progression"></div>
    </header>
    <main id="setupBuilderContent" class="setup-builder-content"></main>
@@ -116,12 +117,18 @@ function ensureSetupBuilder(){
 function setupBuilderSetStatus(message="",type=""){const node=document.getElementById("setupBuilderStatus");if(node){node.textContent=message;node.className=("setup-builder-status "+type).trim()}}
 function openSetupBuilder(){
  if(!activeHouseholdId)return;
+ setupBuilderOriginalAppearance=typeof currentUserAppearance==="function"?currentUserAppearance():null;
  setupBuilderDraft=setupBuilderInitialDraft();
  setupBuilderStep=0;setupBuilderEditingName="";
  const root=ensureSetupBuilder();root.classList.add("open");root.setAttribute("aria-hidden","false");document.documentElement.classList.add("setup-builder-open");setupBuilderRender();
 }
 function closeSetupBuilder(){const root=document.getElementById("setupBuilderBackdrop");if(root){root.classList.remove("open");root.setAttribute("aria-hidden","true")}document.documentElement.classList.remove("setup-builder-open")}
-function skipSetupBuilder(){markSetupBuilderComplete();closeSetupBuilder();showUndoToast?.("Configuration de départ ignorée")}
+function skipSetupBuilder(){
+ if(setupBuilderOriginalAppearance&&typeof applyUserAppearance==="function")applyUserAppearance(setupBuilderOriginalAppearance);
+ markSetupBuilderComplete();
+ closeSetupBuilder();
+ showUndoToast?.("Configuration de départ ignorée")
+}
 function setupBuilderProgress(){
  const labels=["Foyer","Revenus","Dépenses","Abonnements","Résumé"];
  return labels.map((label,index)=>`<span class="${index===setupBuilderStep?"active":index<setupBuilderStep?"done":""}"><b>${index+1}</b><em>${label}</em></span>`).join("");
@@ -133,9 +140,10 @@ function setupBuilderNameMarkup(key,name){
 }
 function setupBuilderDomId(key){return "setup-builder-"+String(key).replace(/[^a-z0-9_-]+/gi,"-")}
 function setupBuilderRowActions(key,data){
+ const canDelete=!!data.custom||!!data.removable;
  return `<div class="setup-builder-row-actions">
   <button class="setup-builder-rename" type="button" data-builder-rename="${escapeHtml(key)}">${setupBuilderEditingName===key?"OK":"Renommer"}</button>
-  ${data.custom?`<button class="setup-builder-delete" type="button" data-builder-delete="${escapeHtml(key)}" aria-label="Supprimer cette catégorie">Supprimer</button>`:""}
+  ${canDelete?`<button class="setup-builder-delete" type="button" data-builder-delete="${escapeHtml(key)}" aria-label="Supprimer cette catégorie">Supprimer</button>`:""}
  </div>`;
 }
 function setupBuilderItemRow(item,data,type,keyOverride=""){
@@ -153,7 +161,7 @@ function setupBuilderItemRow(item,data,type,keyOverride=""){
    </div>
    <div class="setup-builder-item-fields">
     <label><span>Montant</span><div class="setup-builder-money"><input type="number" min="0" step="0.01" inputmode="decimal" data-builder-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" ${disabled}><b>€</b></div></label>
-    <label><span>${ownerLabel}</span><select data-builder-owner="${escapeHtml(key)}" ${disabled}>${setupBuilderOwnerOptions(data.owner)}</select></label>
+    ${setupBuilderIsSolo()?"":`<label><span>${ownerLabel}</span><select data-builder-owner="${escapeHtml(key)}" ${disabled}>${setupBuilderOwnerOptions(data.owner)}</select></label>`}
     ${type==="expense"&&data.custom?`<label><span>Groupe</span><select data-builder-section="${escapeHtml(key)}" ${disabled}><option ${data.section==="Obligatoires"?"selected":""}>Obligatoires</option><option ${data.section==="Abonnements"?"selected":""}>Abonnements</option><option ${data.section==="Vie courante"?"selected":""}>Vie courante</option></select></label>`:""}
    </div>
   </div>`;
@@ -174,7 +182,7 @@ function setupBuilderSubscriptionRow(item,data,keyOverride=""){
    <div class="setup-builder-item-fields">
     ${custom?"":`<label><span>Formule</span><select data-builder-plan="${item.id}" ${data.selected?"":"disabled"}>${item.plans.map((plan,index)=>`<option value="${index}" ${index===data.plan?"selected":""}>${escapeHtml(plan.name)}</option>`).join("")}</select></label>`}
     <label><span>Montant</span><div class="setup-builder-money"><input type="number" min="0" step="0.01" inputmode="decimal" data-builder-sub-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" placeholder="${selectedPlan?.price==null&&!custom?"À saisir":""}" ${data.selected?"":"disabled"}><b>€</b></div></label>
-    <label><span>Payé par</span><select data-builder-sub-owner="${escapeHtml(key)}" ${data.selected?"":"disabled"}>${setupBuilderOwnerOptions(data.owner)}</select></label>
+    ${setupBuilderIsSolo()?"":`<label><span>Payé par</span><select data-builder-sub-owner="${escapeHtml(key)}" ${data.selected?"":"disabled"}>${setupBuilderOwnerOptions(data.owner)}</select></label>`}
    </div>
    ${!custom&&item.sourceUrl?`<a class="setup-builder-source" href="${item.sourceUrl}" target="_blank" rel="noopener">Source : ${escapeHtml(item.source)}</a>`:""}
   </div>`;
@@ -182,7 +190,7 @@ function setupBuilderSubscriptionRow(item,data,keyOverride=""){
 function setupBuilderAddCard(type,label){
  return `<button class="setup-builder-add" type="button" data-builder-add="${type}"><span>＋</span><strong>${escapeHtml(label)}</strong><small>Créer rapidement une catégorie supplémentaire</small></button>`;
 }
-function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
+function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>!setupBuilderDraft.income[item.id]?.hidden&&(!setupBuilderIsSolo()||item.owner!=="A"))}
 function setupBuilderVisibleExpenses(){return SETUP_BUILDER_EXPENSES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
 function setupBuilderRender(){
  if(!setupBuilderDraft)return;
@@ -201,6 +209,10 @@ function setupBuilderRender(){
     <label><span>Nom du foyer</span><input type="text" maxlength="80" data-builder-household="name" value="${escapeHtml(setupBuilderDraft.household.name)}"></label>
     <label><span>${solo?"Votre nom":"Personne 1"}</span><input type="text" maxlength="40" data-builder-household="personB" value="${escapeHtml(setupBuilderDraft.household.personB)}"></label>
     ${solo?"":`<label><span>Personne 2</span><input type="text" maxlength="40" data-builder-household="personA" value="${escapeHtml(setupBuilderDraft.household.personA)}"></label>`}
+   </div>
+   <div class="setup-builder-appearance-card">
+    <div class="setup-builder-appearance-copy"><span>APPARENCE</span><strong>Personnaliser votre interface</strong><p>Choisissez une couleur principale et une police. Ce réglage sera personnel à votre compte.</p></div>
+    ${typeof appearancePickerMarkup==="function"?appearancePickerMarkup("builder",setupBuilderDraft.appearance):""}
    </div>`;
  }else if(setupBuilderStep===1){
   content.innerHTML=`
@@ -292,6 +304,13 @@ function setupBuilderHandleInput(event){
  if(target.dataset.builderSubOwner){const data=setupBuilderDataForKey(target.dataset.builderSubOwner);if(data)data.owner=target.value}
 }
 function setupBuilderHandleClick(event){
+ const appearanceButton=event.target.closest("[data-appearance-color],[data-appearance-font]");
+ if(appearanceButton&&setupBuilderDraft?.appearance){
+  setupBuilderDraft.appearance=appearanceFromPickerEvent(appearanceButton,setupBuilderDraft.appearance);
+  applyUserAppearance(setupBuilderDraft.appearance);
+  setupBuilderRender();
+  return;
+ }
  const mode=event.target.closest("[data-builder-mode]");if(mode){setupBuilderSetMode(mode.dataset.builderMode);return}
  const rename=event.target.closest("[data-builder-rename]");if(rename){const key=rename.dataset.builderRename;setupBuilderEditingName=setupBuilderEditingName===key?"":key;setupBuilderRender();return}
  const remove=event.target.closest("[data-builder-delete]");if(remove){setupBuilderDeleteCustom(remove.dataset.builderDelete);return}
@@ -323,10 +342,16 @@ function setupBuilderAddCustom(type){
 function setupBuilderDeleteCustom(key){
  const [type,id]=String(key||"").split(":");
  const list=setupBuilderCustomArray(type);
- if(!list)return;
- const index=list.findIndex(item=>item.id===id);
- if(index<0)return;
- list.splice(index,1);
+ if(list){
+  const index=list.findIndex(item=>item.id===id);
+  if(index<0)return;
+  list.splice(index,1);
+ }else{
+  const data=setupBuilderCollection(type)?.[id];
+  if(!data?.removable)return;
+  data.selected=false;
+  data.hidden=true;
+ }
  if(setupBuilderEditingName===key)setupBuilderEditingName="";
  setupBuilderRender();
 }
@@ -393,7 +418,9 @@ async function finishSetupBuilder(){
   const selectedExpense=new Set(SETUP_BUILDER_EXPENSES.filter(item=>setupBuilderDraft.expense[item.id]?.selected&&(!setupBuilderIsSolo()||item.owner!=="A")).map(item=>item.id));
   state.deletedIncomeCategoriesGlobal=[...new Set((state.baseIncomeCategories||[]).map(item=>item.id).filter(id=>!selectedIncome.has(id)))];
   state.deletedCategoriesGlobal=[...new Set((state.baseExpenseCategories||[]).map(item=>item.id).filter(id=>!selectedExpense.has(id)))];
-  state.onboardingComplete=true;applyCategoryState();syncHouseholdUi();render();saveState();await cloudPushLocalState({force:true});markSetupBuilderComplete();setupBuilderSetStatus("Budget créé.","success");
+  state.onboardingComplete=true;applyCategoryState();syncHouseholdUi();render();saveState();
+  if(setupBuilderDraft.appearance&&typeof saveUserAppearance==="function")await saveUserAppearance(setupBuilderDraft.appearance);
+  await cloudPushLocalState({force:true});markSetupBuilderComplete();setupBuilderOriginalAppearance=null;setupBuilderSetStatus("Budget créé.","success");
   setTimeout(()=>{closeSetupBuilder();showUndoToast?.("Budget de départ créé")},350);
  }catch(error){console.error("Setup builder",error);setupBuilderSetStatus(error?.message||"Impossible de créer le budget. Réessaie.","error")}finally{next.disabled=false}
 }
