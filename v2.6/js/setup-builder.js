@@ -190,8 +190,9 @@ function setupBuilderAddCard(type,label){
 function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>!setupBuilderDraft.income[item.id]?.hidden&&(!setupBuilderIsSolo()||item.owner!=="A"))}
 function setupBuilderVisibleExpenses(){return SETUP_BUILDER_EXPENSES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
 function setupBuilderEventTarget(event){
- const target=event.target;
- return target instanceof Element?target:null;
+ const target=event?.target;
+ if(target instanceof Element)return target;
+ return target?.parentElement instanceof Element?target.parentElement:null;
 }
 function installSetupBuilderEventBridge(){
  if(globalThis.__budgetSetupBuilderBridgeInstalled)return;
@@ -207,7 +208,7 @@ function installSetupBuilderEventBridge(){
 
   event.preventDefault();
   event.stopPropagation();
-  setupBuilderHandleClick({...event,target:button});
+  setupBuilderHandleClick({target:button});
  },true);
 
  document.addEventListener("change",event=>{
