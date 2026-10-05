@@ -80,6 +80,7 @@ async function provisionPersonalHousehold(){
  });
  if(error)throw error;
  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
+ if(typeof markSetupBuilderPending==="function")markSetupBuilderPending(data);
  await loadCloudMemberships();
  selectActiveMembership();
  state=seedState();
@@ -111,6 +112,7 @@ async function cloudBootstrap(){
   cloudSyncReady=true;
   setCloudStatus("Synchronisé","ok");
   hideCloudGate();
+  if(typeof setupBuilderNeedsRun==="function"&&setupBuilderNeedsRun(activeHouseholdId)&&typeof openSetupBuilder==="function")openSetupBuilder();
  }catch(error){
   console.error("Cloud bootstrap",error);
   cloudSyncReady=false;
