@@ -32,39 +32,36 @@ function fillHouseholdSettings(){
  settingsPersonA.value=household.personA;
  setSettingsHouseholdMode(household.mode);
 }
+function bindSettingsCustomPicker(){
+ if(!settingsAppearancePicker||typeof bindAppearanceCustomPicker!=="function")return;
+ delete settingsAppearancePicker.dataset.customPickerBound;
+ bindAppearanceCustomPicker(
+  settingsAppearancePicker,
+  ()=>settingsAppearanceDraft||currentUserAppearance(),
+  (next,options={})=>previewSettingsAppearance(next,options)
+ );
+}
 function fillAppearanceSettings(){
  if(typeof currentUserAppearance!=="function"||!settingsAppearancePicker)return;
  settingsAppearanceDraft=currentUserAppearance();
  settingsAppearanceOriginal={...settingsAppearanceDraft};
  settingsAppearanceSaved=true;
  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+ bindSettingsCustomPicker();
 }
 function previewSettingsAppearance(next,{render=true}={}){
  settingsAppearanceDraft=normalizeUserAppearance(next);
  settingsAppearanceSaved=false;
  applyUserAppearance(settingsAppearanceDraft);
- if(render&&settingsAppearancePicker)settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+ if(render&&settingsAppearancePicker){
+  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+  bindSettingsCustomPicker();
+ }
 }
 settingsAppearancePicker?.addEventListener("click",event=>{
- const button=event.target.closest("[data-appearance-color],[data-appearance-font]");
+ const button=event.target.closest("[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]");
  if(!button||!settingsAppearanceDraft)return;
  previewSettingsAppearance(appearanceFromPickerEvent(button,settingsAppearanceDraft));
-});
-settingsAppearancePicker?.addEventListener("input",event=>{
- const input=event.target.closest("[data-appearance-custom-color]");
- if(!input||!settingsAppearanceDraft)return;
- previewSettingsAppearance(appearanceFromPickerEvent(input,settingsAppearanceDraft),{render:false});
- const tile=input.closest(".appearance-color-custom");
- if(tile){
-  tile.classList.add("active");
-  tile.style.setProperty("--swatch",input.value);
- }
- settingsAppearancePicker.querySelectorAll("[data-appearance-color]").forEach(button=>button.classList.remove("active"));
-});
-settingsAppearancePicker?.addEventListener("change",event=>{
- const input=event.target.closest("[data-appearance-custom-color]");
- if(!input||!settingsAppearanceDraft)return;
- previewSettingsAppearance(appearanceFromPickerEvent(input,settingsAppearanceDraft));
 });
 saveAppearanceBtn?.addEventListener("click",async()=>{
  if(!settingsAppearanceDraft)return;
@@ -74,6 +71,7 @@ saveAppearanceBtn?.addEventListener("click",async()=>{
   settingsAppearanceOriginal={...settingsAppearanceDraft};
   settingsAppearanceSaved=true;
   settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+  bindSettingsCustomPicker();
   showUndoToast("Apparence enregistrée");
  }catch(error){
   console.error("Appearance save",error);
