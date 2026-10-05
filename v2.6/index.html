@@ -65,7 +65,7 @@
               <strong id="balanceRestB">0 €</strong>
               <small>reste réel</small>
             </div>
-            <div class="balance-person">
+            <div class="balance-person" data-household-person="A">
               <span class="balance-person-name" data-person-label="A">Personne 2</span>
               <strong id="balanceRestA">0 €</strong>
               <small>reste réel</small>
@@ -76,7 +76,7 @@
           <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value" id="incomeTotal">0 €</div><div class="kpi-sub" id="incomePlanned">Prévu 0 €</div></article>
           <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value" id="expenseTotal">0 €</div><div class="kpi-sub" id="expensePlanned">Budget 0 €</div></article>
           <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="B">Personne 1</span></div><div class="kpi-value" id="saveB">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveBCumulative">0 €</strong></div></article>
-          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveACumulative">0 €</strong></div></article>
+          <article class="card kpi" data-household-person="A"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveACumulative">0 €</strong></div></article>
         </div>
       </div>
 
@@ -86,7 +86,7 @@
           <div class="person-top"><div><div class="person-name" data-person-label="B">Personne 1</div><button class="person-opening" type="button" data-edit-opening-balance="B">Solde initial <strong id="openingBValue">—</strong></button></div><div class="avatar" data-person-avatar="B">1</div></div>
           <div class="person-rest" id="accountBalanceB">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personBDetail">Renseigne le solde initial pour calculer ce montant.</div>
         </article>
-        <article class="card person">
+        <article class="card person" data-household-person="A">
           <div class="person-top"><div><div class="person-name" data-person-label="A">Personne 2</div><button class="person-opening" type="button" data-edit-opening-balance="A">Solde initial <strong id="openingAValue">—</strong></button></div><div class="avatar" data-person-avatar="A">2</div></div>
           <div class="person-rest" id="accountBalanceA">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personADetail">Renseigne le solde initial pour calculer ce montant.</div>
         </article>
@@ -234,12 +234,19 @@
         <button id="cloudSignOutBtn" class="btn btn-ghost" type="button">Se déconnecter</button>
       </div>
       <div class="settings-household">
+        <div class="field">
+          <label>MODE DU FOYER</label>
+          <div class="household-mode-switch" role="group" aria-label="Choisir le mode du foyer">
+            <button id="settingsModeSolo" type="button" data-household-mode="solo">Seul</button>
+            <button id="settingsModeCouple" type="button" data-household-mode="couple">À deux</button>
+          </div>
+        </div>
         <div class="field"><label for="settingsHouseholdName">NOM DU FOYER</label><input id="settingsHouseholdName" class="category-form-input" type="text" maxlength="60"></div>
         <div class="settings-name-grid">
-          <div class="field"><label for="settingsPersonB">PERSONNE 1</label><input id="settingsPersonB" class="category-form-input" type="text" maxlength="40"></div>
-          <div class="field"><label for="settingsPersonA">PERSONNE 2</label><input id="settingsPersonA" class="category-form-input" type="text" maxlength="40"></div>
+          <div class="field"><label id="settingsPersonBLabel" for="settingsPersonB">PERSONNE 1</label><input id="settingsPersonB" class="category-form-input" type="text" maxlength="40"></div>
+          <div class="field" id="settingsPersonAField"><label for="settingsPersonA">PERSONNE 2</label><input id="settingsPersonA" class="category-form-input" type="text" maxlength="40"></div>
         </div>
-        <button id="saveHouseholdBtn" class="btn btn-income" type="button">Enregistrer les noms</button>
+        <button id="saveHouseholdBtn" class="btn btn-income" type="button">Enregistrer le foyer</button>
       </div>
       <p class="settings-copy">Les données actives sont chargées depuis Supabase et synchronisées en continu. Aucun mode hors ligne n’est utilisé. Si un envoi échoue, le bouton de relance près de l’état de synchronisation renvoie toute la session vers le cloud.</p>
       <div id="cloudConflictCard" class="cloud-conflict-card" hidden>
