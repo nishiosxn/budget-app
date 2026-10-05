@@ -52,6 +52,9 @@ function applyUserAppearance(value,{persistLocal=false,userId=appearanceUserId()
  root.style.setProperty("--app-font",font.stack);
  root.dataset.appearanceColor=appearance.color;
  root.dataset.appearanceFont=appearance.font;
+ const svgIcon=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="16" fill="${palette.accent}"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>`;
+ const favicon=document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+ if(favicon)favicon.href="data:image/svg+xml,"+encodeURIComponent(svgIcon);
  if(persistLocal&&userId){
   try{localStorage.setItem(appearanceStorageKey(userId),JSON.stringify(appearance))}catch{}
  }
