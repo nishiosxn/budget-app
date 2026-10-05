@@ -1215,17 +1215,41 @@ body.pwa-install-open{overflow:hidden}
 /* === V2.6 · Reste disponible compact === */
 .balance-card{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(180px,.58fr);
+  grid-template-columns:minmax(0,1.15fr) minmax(220px,.85fr);
   align-items:stretch;
-  gap:24px;
+  gap:28px;
+  padding:28px 30px;
 }
+.balance-card:after{background:rgba(255,255,255,.04)}
 .balance-main,
 .balance-people{position:relative;z-index:1}
-.balance-main{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.balance-main{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+  padding-left:1px;
+}
+.balance-card .eyebrow{
+  font-size:13.5px;
+  font-weight:800;
+  color:rgba(255,255,255,.76);
+}
+.balance-card .balance{
+  margin-top:12px;
+  font-size:54px;
+  line-height:1;
+  letter-spacing:-2.3px;
+}
+.balance-card .balance small{
+  font-size:24px;
+  letter-spacing:-.7px;
+}
 .balance-summary{
-  margin-top:10px;
-  color:rgba(255,255,255,.64);
-  font-size:11px;
+  margin-top:14px;
+  color:rgba(255,255,255,.72);
+  font-size:12.5px;
+  line-height:1.35;
   font-weight:650;
   white-space:nowrap;
   overflow:hidden;
@@ -1234,53 +1258,66 @@ body.pwa-install-open{overflow:hidden}
 .balance-people{
   display:grid;
   grid-template-rows:1fr 1fr;
-  gap:9px;
+  gap:10px;
 }
 .balance-person{
   min-width:0;
-  padding:13px 14px;
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:15px;
-  background:rgba(10,28,20,.18);
-  backdrop-filter:blur(5px);
+  padding:15px 17px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:16px;
+  background:rgba(7,27,19,.24);
+  backdrop-filter:blur(6px);
   display:flex;
   flex-direction:column;
   justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
 }
 .balance-person-name{
-  color:rgba(255,255,255,.65);
-  font-size:10px;
-  font-weight:800;
+  color:rgba(255,255,255,.74);
+  font-size:11.5px;
+  line-height:1.2;
+  font-weight:750;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 .balance-person strong{
-  margin-top:3px;
+  margin-top:5px;
   color:#fff;
-  font-size:19px;
-  line-height:1.08;
+  font-size:24px;
+  line-height:1.05;
   font-weight:850;
-  letter-spacing:-.6px;
+  letter-spacing:-.7px;
   white-space:nowrap;
 }
 .balance-person small{
-  margin-top:3px;
-  color:rgba(255,255,255,.48);
-  font-size:9px;
-  font-weight:700;
+  margin-top:5px;
+  color:rgba(255,255,255,.58);
+  font-size:10.5px;
+  line-height:1.2;
+  font-weight:650;
 }
 @media(max-width:640px){
   .balance-card{
     min-height:0;
     grid-template-columns:1fr;
-    gap:18px;
+    gap:16px;
+    padding:21px;
   }
-  .balance-main{min-height:116px}
-  .balance-card .balance{font-size:43px}
+  .balance-main{
+    min-height:108px;
+    padding-left:0;
+  }
+  .balance-card .eyebrow{font-size:12.5px}
+  .balance-card .balance{
+    margin-top:9px;
+    font-size:42px;
+    letter-spacing:-1.8px;
+  }
+  .balance-card .balance small{font-size:20px}
   .balance-summary{
-    margin-top:7px;
-    font-size:10px;
+    margin-top:9px;
+    font-size:11px;
     white-space:normal;
   }
   .balance-people{
@@ -1288,8 +1325,16 @@ body.pwa-install-open{overflow:hidden}
     grid-template-rows:none;
     gap:8px;
   }
-  .balance-person{padding:11px 12px}
-  .balance-person strong{font-size:17px}
+  .balance-person{
+    padding:11px 12px;
+    border-radius:13px;
+  }
+  .balance-person-name{font-size:10px}
+  .balance-person strong{
+    margin-top:4px;
+    font-size:18px;
+    letter-spacing:-.4px;
+  }
   .balance-person small{display:none}
 }
 
