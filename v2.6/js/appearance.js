@@ -22,7 +22,8 @@ function normalizeUserAppearance(value){
  return {color,font};
 }
 function appearanceUserId(session=null){
- return String(session?.user?.id||globalThis.cloudSession?.user?.id||"").trim();
+ const active=typeof cloudSession!=="undefined"?cloudSession:null;
+ return String(session?.user?.id||active?.user?.id||"").trim();
 }
 function appearanceStorageKey(userId=appearanceUserId()){
  return "budget-foyer-v2.6-appearance:"+(userId||"anonymous");
@@ -65,11 +66,13 @@ function loadUserAppearanceFromSession(session){
 }
 async function saveUserAppearance(value){
  const appearance=applyUserAppearance(value,{persistLocal:true});
- if(!globalThis.cloudClient||!globalThis.cloudSession?.user)return appearance;
- const current=globalThis.cloudSession.user.user_metadata||{};
- const {data,error}=await globalThis.cloudClient.auth.updateUser({data:{...current,budget_appearance:appearance}});
+ const client=typeof cloudClient!=="undefined"?cloudClient:null;
+ const session=typeof cloudSession!=="undefined"?cloudSession:null;
+ if(!client||!session?.user)return appearance;
+ const current=session.user.user_metadata||{};
+ const {data,error}=await client.auth.updateUser({data:{...current,budget_appearance:appearance}});
  if(error)throw error;
- if(data?.user&&globalThis.cloudSession)globalThis.cloudSession.user=data.user;
+ if(data?.user&&session)session.user=data.user;
  return appearance;
 }
 function resetUserAppearance(){return applyUserAppearance(APPEARANCE_DEFAULT)}
