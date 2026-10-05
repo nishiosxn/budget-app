@@ -178,6 +178,19 @@ if(modular&&exists("js/settings.js")){
 }
 
 if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
+  const categoriesUi=read("js/ui.js");
+  const categoriesLogic=read("js/categories.js");
+  const transactions=read("js/transactions.js");
+  const detailsMarkers=["data-category-details-toggle","cat-detail-row","categoryDetailOwner","categoryDetailsMarkup"];
+  const missingDetails=detailsMarkers.filter(marker=>!categoriesUi.includes(marker)&&!categoriesLogic.includes(marker));
+  if(missingDetails.length)fail("Détail des opérations par catégorie incomplet: "+missingDetails.join(", "));
+  else if(!categoriesLogic.includes("toggleCategoryDetails"))fail("Ouverture du détail des catégories absente");
+  else if(!transactions.includes('owner:modalOwner'))fail("Attribution du payeur par opération absente");
+  else if(!transactions.includes('QUI A PAYÉ ?')&&!read("index.html").includes('QUI A PAYÉ ?'))fail("Libellé du payeur par opération absent");
+  else ok("Catégories : détail des opérations et payeur individuel présents");
+}
+
+if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   const categories=read("js/categories.js");
   const ui=read("js/ui.js");
   const categoryUxMarkers=[
