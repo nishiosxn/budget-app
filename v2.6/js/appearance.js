@@ -190,6 +190,17 @@ function appearanceCustomFromPointer(target,event,current=currentUserAppearance(
  appearance.customColor=hsvToHex(hsv.h,hsv.s,hsv.v);
  return appearance;
 }
+function syncAppearanceCustomPanel(root,value,{syncHex=true}={}){
+ const appearance=normalizeUserAppearance(value),panel=root?.querySelector?.("[data-appearance-custom-panel]");
+ if(!panel)return;
+ const hsv=hexToHsv(appearance.customColor);
+ const sv=panel.querySelector("[data-appearance-sv]"),svThumb=panel.querySelector(".appearance-sv-thumb"),hueThumb=panel.querySelector(".appearance-hue-thumb"),hex=panel.querySelector("[data-appearance-hex]"),preview=panel.querySelector(".appearance-custom-preview");
+ if(sv)sv.style.setProperty("--picker-hue",hsv.h.toFixed(2)+"deg");
+ if(svThumb){svThumb.style.left=(hsv.s*100)+"%";svThumb.style.top=((1-hsv.v)*100)+"%"}
+ if(hueThumb)hueThumb.style.left=(hsv.h/360*100)+"%";
+ if(hex&&syncHex&&document.activeElement!==hex){hex.value=appearance.customColor;hex.classList.remove("invalid")}
+ if(preview)preview.style.setProperty("--custom-preview",appearance.customColor);
+}
 function bindAppearanceCustomPicker(root,getAppearance,onChange){
  if(!root||root.dataset.customPickerBound==="1")return;
  root.dataset.customPickerBound="1";
@@ -197,6 +208,7 @@ function bindAppearanceCustomPicker(root,getAppearance,onChange){
  const update=(target,event,commit=false)=>{
   if(!target)return;
   const next=appearanceCustomFromPointer(target,event,getAppearance());
+  syncAppearanceCustomPanel(root,next);
   onChange(next,{render:commit});
  };
  root.addEventListener("pointerdown",event=>{
@@ -227,9 +239,8 @@ function bindAppearanceCustomPicker(root,getAppearance,onChange){
   if(!hex)return;
   const next=normalizeUserAppearance(getAppearance());
   next.color="custom";next.customColor=hex;
+  syncAppearanceCustomPanel(root,next,{syncHex:false});
   onChange(next,{render:false});
-  const preview=input.closest("[data-appearance-custom-panel]")?.querySelector(".appearance-custom-preview");
-  if(preview)preview.style.setProperty("--custom-preview",hex);
  });
  root.addEventListener("change",event=>{
   const input=event.target.closest("[data-appearance-hex]");
