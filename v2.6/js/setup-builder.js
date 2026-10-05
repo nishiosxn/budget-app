@@ -392,7 +392,6 @@ async function finishSetupBuilder(){
   const selectedIncome=new Set(SETUP_BUILDER_INCOMES.filter(item=>setupBuilderDraft.income[item.id]?.selected&&(!setupBuilderIsSolo()||item.owner!=="A")).map(item=>item.id));
   const selectedExpense=new Set(SETUP_BUILDER_EXPENSES.filter(item=>setupBuilderDraft.expense[item.id]?.selected&&(!setupBuilderIsSolo()||item.owner!=="A")).map(item=>item.id));
   state.deletedIncomeCategoriesGlobal=[...new Set((state.baseIncomeCategories||[]).map(item=>item.id).filter(id=>!selectedIncome.has(id)))];
-  state.deletedExpenseCategoriesGlobal=state.deletedExpenseCategoriesGlobal||[];
   state.deletedCategoriesGlobal=[...new Set((state.baseExpenseCategories||[]).map(item=>item.id).filter(id=>!selectedExpense.has(id)))];
   state.onboardingComplete=true;applyCategoryState();syncHouseholdUi();render();saveState();await cloudPushLocalState({force:true});markSetupBuilderComplete();setupBuilderSetStatus("Budget créé.","success");
   setTimeout(()=>{closeSetupBuilder();showUndoToast?.("Budget de départ créé")},350);
