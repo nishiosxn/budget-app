@@ -25,7 +25,65 @@ function transactionContext(t,short=false){const who=ownerLabel(transactionOwner
 function historyEntries(m){const sorted=sortedTransactions(m),seen=new Set(),entries=[];for(const t of sorted){if(t.bulkGroupId){if(seen.has(t.bulkGroupId))continue;const tx=sorted.filter(x=>x.bulkGroupId===t.bulkGroupId);seen.add(t.bulkGroupId);entries.push({group:true,id:t.bulkGroupId,label:t.bulkLabel||t.adjustmentLabel||"Mise à jour groupée",tx,date:t.date})}else entries.push({group:false,tx:t,date:t.date})}return entries}
 function groupPresentation(entry){const amount=sum(entry.tx.map(t=>Number(t.amount)||0)),type=entry.tx.every(t=>t.type==="income")?"income":entry.tx.every(t=>catById(t.category,t.type)?.saving)?"saving":"expense",cls=type==="income"?(amount>=0?"inc":"exp"):type==="saving"?"saving":(amount>=0?"exp":"inc"),prefix=type==="expense"?(amount>=0?"−":"+"):(amount>=0?"+":"−"),icon=type==="income"?"+":type==="saving"?"↗":"−";return {amount,type,cls,prefix,icon}}
 function renderRecent(m){const entries=historyEntries(m).slice(0,6);document.getElementById("recentTransactions").innerHTML=entries.length?entries.map(entry=>{if(entry.group){const p=groupPresentation(entry);return `<div class="row"><div class="row-main"><div class="row-title">${escapeHtml(entry.label)}</div><div class="row-sub">${entry.tx.length} opérations · ${new Date((entry.date||transactionDateForSelectedMonth())+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</div></div><div class="row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div></div>`}const t=entry.tx,p=transactionPresentation(t);return `<div class="row"><div class="row-main"><div class="row-title">${escapeHtml(transactionTitle(t))}</div><div class="row-sub">${transactionContext(t,true)}</div></div><div class="row-value ${p.cls}">${p.prefix}${euro(Math.abs(p.amount))}</div></div>`}).join(""):`<div class="empty">Aucun mouvement pour ce mois.</div>`}
-function categoryRow(c,actual,type){
+const expandedCategoryDetails=new Set();
+function categoryDetailsKey(id,type){return `${type}:${id}`}
+function categoryDetailsOpen(id,type){return expandedCategoryDetails.has(categoryDetailsKey(id,type))}
+function toggleCategoryDetails(id,type){
+ const key=categoryDetailsKey(id,type);
+ if(expandedCategoryDetails.has(key))expandedCategoryDetails.delete(key);else expandedCategoryDetails.add(key);
+ render();
+}
+function categoryDetailDate(t){
+ const raw=String(t.date||transactionDateForSelectedMonth());
+ const date=new Date(raw+"T12:00:00");
+ return Number.isNaN(date.getTime())?"":date.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"});
+}
+function categoryDetailOwner(t,type){
+ const owner=transactionOwner(t),name=ownerLabel(owner);
+ if(owner==="common")return "À deux";
+ if(type==="income")return `Reçu par ${name}`;
+ const category=catById(t.category,type);
+ if(category?.saving)return `Épargné par ${name}`;
+ return `Payé par ${name}`;
+}
+function categoryDetailLabel(t){
+ const label=String(t.label||"").trim();
+ if(label)return label;
+ if(t.adjustment)return t.adjustmentLabel||"Ajustement";
+ if(t.recurringOccurrence||t.scope==="forward")return "Opération récurrente";
+ return "Opération";
+}
+function categoryDetailAmount(t,type){
+ const amount=Number(t.amount)||0;
+ if(amount<0)return `−${euro(Math.abs(amount))}`;
+ return euro(amount);
+}
+function categoryDetailsMarkup(c,type,m){
+ const all=(m?.tx||[]).filter(t=>t.type===type&&t.category===c.id);
+ const transactions=all.filter(t=>!t.adjustment).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||String(b.id).localeCompare(String(a.id)));
+ const adjustments=all.filter(t=>t.adjustment),adjustmentTotal=Math.round(sum(adjustments.map(t=>Number(t.amount)||0))*100)/100;
+ if(!transactions.length&&Math.abs(adjustmentTotal)<.005)return {count:0,html:""};
+ const open=categoryDetailsOpen(c.id,type);
+ let rows=transactions.map(t=>`<div class="cat-detail-row">
+   <div class="cat-detail-main">
+    <div class="cat-detail-label">${escapeHtml(categoryDetailLabel(t))}</div>
+    <div class="cat-detail-meta">${escapeHtml(categoryDetailDate(t))} · ${escapeHtml(categoryDetailOwner(t,type))}</div>
+   </div>
+   <strong class="cat-detail-amount">${categoryDetailAmount(t,type)}</strong>
+  </div>`).join("");
+ if(Math.abs(adjustmentTotal)>=.005){
+  rows+=`<div class="cat-detail-row cat-detail-adjustment">
+   <div class="cat-detail-main">
+    <div class="cat-detail-label">Ajustement du total</div>
+    <div class="cat-detail-meta">Correction manuelle · non liée à un achat précis</div>
+   </div>
+   <strong class="cat-detail-amount">${adjustmentTotal<0?"−":""}${euro(Math.abs(adjustmentTotal))}</strong>
+  </div>`;
+ }
+ const count=transactions.length+(Math.abs(adjustmentTotal)>=.005?1:0);
+ return {count,open,html:`<div class="cat-details" data-category-details="${escapeHtml(c.id)}" ${open?"":"hidden"}>${rows}</div>`};
+}
+function categoryRow(c,actual,type,m){
  const isSaving=type==="expense"&&!!c.saving,current=Number(actual)||0,planned=Number(c.budget)||0,hasPlanned=planned>.005,isEmpty=Math.abs(current)<.005,isMatched=hasPlanned&&Math.abs(current-planned)<.005;
  const actualLabel=type==="income"?"Modifier le montant réel reçu":isSaving?"Modifier le montant réellement épargné":"Modifier le montant réel dépensé";
  const stateClass=isMatched?"is-matched":isEmpty?"is-empty":"is-different";
@@ -35,9 +93,13 @@ function categoryRow(c,actual,type){
  const alignMenu=hasPlanned&&!isMatched
   ?`<button type="button" role="menuitem" data-fill-category="${escapeHtml(c.id)}" data-category-type="${type}">Mettre le réel à ${euro(planned)}</button>`
   :"";
- return `<div class="cat-item ${stateClass}" data-category-row="${escapeHtml(c.id)}">
+ const details=categoryDetailsMarkup(c,type,m),open=!!details.open;
+ const nameMarkup=details.count
+  ?`<button class="cat-name-toggle" type="button" data-category-details-toggle="${escapeHtml(c.id)}" data-category-type="${type}" aria-expanded="${open?"true":"false"}" aria-label="${open?"Masquer":"Afficher"} les ${details.count} opération${details.count>1?"s":""} de ${escapeHtml(c.name)}"><span class="cat-name">${escapeHtml(c.name)}</span><svg class="cat-detail-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4"/></svg></button>`
+  :`<div class="cat-name">${escapeHtml(c.name)}</div>`;
+ return `<div class="cat-item ${stateClass} ${open?"details-open":""}" data-category-row="${escapeHtml(c.id)}">
   <div class="cat-line">
-   <div class="cat-name">${escapeHtml(c.name)}</div>
+   ${nameMarkup}
    <div class="cat-side">
     <button class="cat-amount cat-value-button ${stateClass}" type="button" data-edit-actual="${escapeHtml(c.id)}" data-category-type="${type}" aria-label="${actualLabel} pour ${escapeHtml(c.name)}" title="Modifier le réel">${euro(current)}</button>
     ${quickAction}
@@ -45,8 +107,9 @@ function categoryRow(c,actual,type){
   </div>
   <div class="cat-meta">
    <button class="cat-planned cat-planned-button" type="button" data-edit-planned="${escapeHtml(c.id)}" data-category-type="${type}" aria-label="Modifier le budget prévu de ${escapeHtml(c.name)}" title="Modifier le prévu">Prévu ${euro(planned)}</button>
-   <span class="cat-meta-side"><span class="cat-owner">${escapeHtml(ownerLabel(c.owner))}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
+   <span class="cat-meta-side"><span class="cat-owner">Prévu · ${escapeHtml(ownerLabel(c.owner))}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
   </div>
+  ${details.html}
   <div class="category-menu" data-category-menu role="menu" hidden>
    <button type="button" role="menuitem" data-edit-actual="${escapeHtml(c.id)}" data-category-type="${type}">Modifier le réel</button>
    <button type="button" role="menuitem" data-edit-planned="${escapeHtml(c.id)}" data-category-type="${type}">Modifier le prévu et les détails</button>
@@ -71,11 +134,11 @@ function categoryBulkButtons(type,section,label){
 }
 function renderCategories(m){
  const incomeCats=visibleIncomeCategories(),incomeActual=m.income,incomePlanned=sum(incomeCats.map(c=>c.budget));
- const incomeArchived=archivedCategoriesFor("income","",m),incomeCard=`<article class="card cat-section income-card"><div class="cat-section-head"><div class="cat-section-title">Revenus<div class="cat-section-total">${euro(incomeActual)} réel · ${euro(incomePlanned)} prévu</div></div>${categoryBulkButtons("income","","Revenus")}</div><div class="income-list">${incomeCats.map(c=>categoryRow(c,m.incMap[c.id]||0,"income")).join("")}</div>${archivedBlock(incomeArchived,m.incMap,"income")}<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un champ</button></article>`;
+ const incomeArchived=archivedCategoriesFor("income","",m),incomeCard=`<article class="card cat-section income-card"><div class="cat-section-head"><div class="cat-section-title">Revenus<div class="cat-section-total">${euro(incomeActual)} réel · ${euro(incomePlanned)} prévu</div></div>${categoryBulkButtons("income","","Revenus")}</div><div class="income-list">${incomeCats.map(c=>categoryRow(c,m.incMap[c.id]||0,"income",m)).join("")}</div>${archivedBlock(incomeArchived,m.incMap,"income")}<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un champ</button></article>`;
  const sections=["Obligatoires","Abonnements","Vie courante"];
- const expenseCards=sections.map(section=>{const cats=visibleExpenseCategories().filter(c=>c.section===section),archived=archivedCategoriesFor("expense",section,m),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===section).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===section).map(c=>m.expMap[c.id]||0)),planned=sum(cats.map(c=>c.budget));return `<article class="card cat-section"><div class="cat-section-head"><div class="cat-section-title">${section}<div class="cat-section-total">${euro(actual)} réel · ${euro(planned)} prévu</div></div>${categoryBulkButtons("expense",section,section)}</div>${cats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense")).join("")}${archivedBlock(archived,m.expMap,"expense")}<button class="add-category" type="button" data-add-category="${section}" data-category-type="expense">＋ Ajouter un champ</button></article>`}).join("");
+ const expenseCards=sections.map(section=>{const cats=visibleExpenseCategories().filter(c=>c.section===section),archived=archivedCategoriesFor("expense",section,m),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===section).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===section).map(c=>m.expMap[c.id]||0)),planned=sum(cats.map(c=>c.budget));return `<article class="card cat-section"><div class="cat-section-head"><div class="cat-section-title">${section}<div class="cat-section-total">${euro(actual)} réel · ${euro(planned)} prévu</div></div>${categoryBulkButtons("expense",section,section)}</div>${cats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")}${archivedBlock(archived,m.expMap,"expense")}<button class="add-category" type="button" data-add-category="${section}" data-category-type="expense">＋ Ajouter un champ</button></article>`}).join("");
  const savingCats=visibleSavingCategories(),savingArchived=archivedCategoriesFor("expense","__savings__",m),savingActual=m.saving,savingPlanned=sum(savingCats.map(c=>c.budget));
- const savingCard=`<article class="card cat-section saving-card"><div class="cat-section-head"><div class="cat-section-title">Épargne<div class="cat-section-total">${euro(savingActual)} réel · ${euro(savingPlanned)} prévu</div></div>${categoryBulkButtons("expense","__savings__","Épargne")}</div><div class="income-list">${savingCats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense")).join("")}</div>${archivedBlock(savingArchived,m.expMap,"expense")}<button class="add-category saving-add" type="button" data-add-saving="1">＋ Ajouter une épargne</button></article>`;
+ const savingCard=`<article class="card cat-section saving-card"><div class="cat-section-head"><div class="cat-section-title">Épargne<div class="cat-section-total">${euro(savingActual)} réel · ${euro(savingPlanned)} prévu</div></div>${categoryBulkButtons("expense","__savings__","Épargne")}</div><div class="income-list">${savingCats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")}</div>${archivedBlock(savingArchived,m.expMap,"expense")}<button class="add-category saving-add" type="button" data-add-saving="1">＋ Ajouter une épargne</button></article>`;
  document.getElementById("categoryGrid").innerHTML=`<section class="category-group"><div class="category-group-head"><h2>Revenus</h2><span>Entrées d’argent · réel / prévu</span></div><div class="category-cards income-cards">${incomeCard}</div></section><section class="category-group"><div class="category-group-head"><h2>Dépenses</h2><span>Argent réellement consommé · hors épargne</span></div><div class="category-cards">${expenseCards}</div></section><section class="category-group saving-group"><div class="category-group-head"><h2>Épargne</h2><span>Argent mis de côté · déduit du disponible</span></div><div class="category-cards income-cards">${savingCard}</div></section>`;
 }
 function personName(owner){return owner==="B"?(state.household?.personB||"Personne 1"):owner==="A"?(state.household?.personA||"Personne 2"):"À deux"}
