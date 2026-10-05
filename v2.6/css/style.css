@@ -2469,3 +2469,222 @@ input:focus-visible{
   transform:translateY(-1px);
 }
 .appearance-color-custom i{display:none!important}
+
+
+/* === V2.6 · Paramètres desktop/mobile + sélecteur couleur custom === */
+/* Paramètres : vraie fenêtre desktop, vraie page mobile */
+#settingsBackdrop{
+  z-index:1100;
+}
+#settingsBackdrop>.modal{
+  width:min(960px,calc(100vw - 56px));
+  max-height:min(880px,calc(100dvh - 48px));
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+#settingsBackdrop>.modal>.modal-head{
+  flex:0 0 auto;
+}
+#settingsBackdrop .settings-modal-body{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding-top:12px;
+  padding-right:5px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:16px 18px;
+}
+#settingsBackdrop .cloud-account-card,
+#settingsBackdrop .settings-copy,
+#settingsBackdrop .cloud-conflict-card,
+#settingsBackdrop .settings-actions,
+#settingsBackdrop .settings-copy-note,
+#settingsBackdrop .settings-danger,
+#settingsBackdrop .settings-version{
+  grid-column:1/-1;
+}
+#settingsBackdrop .cloud-account-card,
+#settingsBackdrop .settings-household,
+#settingsBackdrop .settings-appearance{
+  margin:0;
+}
+#settingsBackdrop .settings-household,
+#settingsBackdrop .settings-appearance{
+  height:max-content;
+}
+#settingsBackdrop .cloud-account-card{
+  grid-template-columns:repeat(2,minmax(0,1fr)) auto auto auto;
+  align-items:center;
+}
+#settingsBackdrop .cloud-account-card .btn{
+  white-space:nowrap;
+}
+
+/* Sélecteur couleur HTML/CSS/JS */
+.appearance-color-custom{
+  position:relative;
+  overflow:visible;
+}
+.appearance-custom-panel{
+  width:min(330px,100%);
+  margin-top:10px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(24,36,29,.08);
+}
+.appearance-sv{
+  position:relative;
+  width:100%;
+  aspect-ratio:1.28/1;
+  overflow:hidden;
+  border-radius:11px;
+  cursor:crosshair;
+  touch-action:none;
+  background:
+    linear-gradient(to top,#000 0%,rgba(0,0,0,0) 100%),
+    linear-gradient(to right,#fff 0%,hsl(var(--picker-hue),100%,50%) 100%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+}
+.appearance-sv-thumb{
+  position:absolute;
+  width:15px;
+  height:15px;
+  border:2px solid #fff;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.35),0 1px 5px rgba(0,0,0,.32);
+  pointer-events:none;
+}
+.appearance-hue{
+  position:relative;
+  height:12px;
+  margin-top:12px;
+  border-radius:999px;
+  cursor:pointer;
+  touch-action:none;
+  background:linear-gradient(90deg,#f00 0%,#ff0 16.67%,#0f0 33.33%,#0ff 50%,#00f 66.67%,#f0f 83.33%,#f00 100%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);
+}
+.appearance-hue-thumb{
+  position:absolute;
+  top:50%;
+  width:14px;
+  height:18px;
+  border:2px solid #fff;
+  border-radius:6px;
+  transform:translate(-50%,-50%);
+  background:transparent;
+  box-shadow:0 0 0 1px rgba(0,0,0,.32),0 1px 4px rgba(0,0,0,.22);
+  pointer-events:none;
+}
+.appearance-hex-row{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) 32px;
+  align-items:center;
+  gap:9px;
+  margin-top:11px;
+}
+.appearance-hex-row>span:first-child{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.05em;
+}
+.appearance-hex-row input{
+  width:100%;
+  height:38px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  color:var(--text);
+  padding:0 10px;
+  text-align:center;
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+  text-transform:uppercase;
+}
+.appearance-hex-row input:focus{
+  outline:none;
+  border-color:var(--accent-border);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(var(--accent-rgb),.09);
+}
+.appearance-hex-row input.invalid{
+  border-color:#d79189;
+  box-shadow:0 0 0 3px rgba(169,72,61,.08);
+}
+.appearance-custom-preview{
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  background:var(--custom-preview);
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);
+}
+.appearance-color-custom input[type="color"]{display:none!important}
+
+@media(max-width:760px){
+  #settingsBackdrop{
+    padding:0!important;
+    align-items:stretch!important;
+    justify-content:stretch!important;
+    background:var(--panel);
+    backdrop-filter:none;
+  }
+  #settingsBackdrop>.modal{
+    width:100%;
+    max-width:none;
+    height:100dvh;
+    max-height:100dvh;
+    margin:0;
+    padding:0;
+    border-radius:0;
+    box-shadow:none;
+    background:var(--panel);
+  }
+  #settingsBackdrop>.modal>.modal-head{
+    min-height:68px;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.97);
+    backdrop-filter:blur(12px);
+    z-index:2;
+  }
+  #settingsBackdrop .settings-modal-body{
+    display:block;
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding:16px 14px calc(30px + env(safe-area-inset-bottom));
+    scrollbar-gutter:auto;
+  }
+  #settingsBackdrop .cloud-account-card,
+  #settingsBackdrop .settings-household,
+  #settingsBackdrop .settings-appearance{
+    margin-bottom:14px;
+  }
+  #settingsBackdrop .cloud-account-card{
+    grid-template-columns:1fr;
+  }
+  #settingsBackdrop .settings-copy{
+    margin:14px 2px;
+  }
+  #settingsBackdrop .settings-actions{
+    grid-template-columns:1fr;
+  }
+  #settingsBackdrop .settings-actions .btn{
+    width:100%;
+  }
+  .appearance-custom-panel{
+    width:100%;
+    max-width:none;
+  }
+}
