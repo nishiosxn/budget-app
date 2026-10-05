@@ -177,6 +177,14 @@ if(modular&&exists("js/settings.js")){
   else ok("Moteur de migration V4/V5 présent");
 }
 
+if(modular&&exists("js/app.js")){
+  const app=read("js/app.js");
+  const enterMarkers=["enterPrimaryActionFor","e.key!==\"Enter\"","enterkeyhint","saveTransaction","saveCategoryEdit","saveRecurrenceEdit","saveAccountOpening","saveHouseholdBtn","cloudAuthSubmitBtn","cloudAcceptInviteBtn","cloudResetPasswordBtn"];
+  const missingEnter=enterMarkers.filter(marker=>!app.includes(marker));
+  if(missingEnter.length)fail("Validation clavier/mobile avec Entrée incomplète: "+missingEnter.join(", "));
+  else ok("Entrée valide les champs principaux sur clavier et mobile");
+}
+
 if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   const categoriesUi=read("js/ui.js");
   const categoriesLogic=read("js/categories.js");
