@@ -1,5 +1,5 @@
 // V2.3 — template neutre. Aucune donnée financière personnelle n'est codée ici.
-const DEFAULT_HOUSEHOLD={name:"Mon foyer",personB:"Personne 1",personA:"Personne 2"};
+const DEFAULT_HOUSEHOLD={name:"Mon foyer",personB:"Personne 1",personA:"Personne 2",mode:"couple"};
 
 const NEUTRAL_INCOME_TEMPLATE=[
   {id:"salary-b",name:"Salaire personne 1",budget:0,owner:"B"},
