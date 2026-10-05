@@ -228,7 +228,7 @@
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
-        <div><span>COMPTE</span><strong id="cloudAccountEmail">Non connecté</strong></div>
+        <div><span>ACCÈS</span><strong id="cloudAccountEmail">Non connecté</strong></div>
         <button id="cloudCreateInviteBtn" class="btn btn-income" type="button">Copier un lien d’invitation</button>
         <a class="btn btn-ghost cloud-admin-link" href="admin/">Administration</a>
         <button id="cloudSignOutBtn" class="btn btn-ghost" type="button">Se déconnecter</button>
@@ -305,8 +305,12 @@
         <button id="cloudSignupModeBtn" class="cloud-auth-tab" type="button" role="tab" aria-selected="false">Inscription</button>
       </div>
       <h3 id="cloudAuthHeading">Se connecter</h3>
-      <p id="cloudAuthIntro">Connecte-toi avec ton email et ton mot de passe.</p>
-      <div class="field"><label for="cloudEmailInput">ADRESSE EMAIL</label><input id="cloudEmailInput" class="category-form-input" type="email" inputmode="email" autocomplete="email" placeholder="nom@exemple.fr"></div>
+      <p id="cloudAuthIntro">Connecte-toi avec ton email ou un identifiant de test.</p>
+      <div class="cloud-identity-tabs" role="tablist" aria-label="Méthode de connexion">
+        <button id="cloudIdentityEmailBtn" class="cloud-identity-tab active" type="button" role="tab" aria-selected="true">Adresse mail</button>
+        <button id="cloudIdentityUsernameBtn" class="cloud-identity-tab" type="button" role="tab" aria-selected="false">Identifiant</button>
+      </div>
+      <div class="field"><label id="cloudIdentityLabel" for="cloudEmailInput">ADRESSE EMAIL</label><input id="cloudEmailInput" class="category-form-input" type="email" inputmode="email" autocomplete="email" placeholder="nom@exemple.fr"><div id="cloudIdentityReminder" class="cloud-identity-reminder"></div></div>
       <div id="cloudSignupFields" hidden>
         <div class="field"><label for="cloudDisplayNameInput">TON NOM</label><input id="cloudDisplayNameInput" class="category-form-input" type="text" maxlength="60" autocomplete="name" placeholder="Personne 1"></div>
         <div class="field"><label for="cloudHouseholdNameInput">NOM DU FOYER</label><input id="cloudHouseholdNameInput" class="category-form-input" type="text" maxlength="80" placeholder="Mon foyer"></div>
@@ -314,7 +318,7 @@
       <div class="field"><label for="cloudPasswordInput">MOT DE PASSE</label><input id="cloudPasswordInput" class="category-form-input" type="password" minlength="8" autocomplete="current-password" placeholder="8 caractères minimum"></div>
       <button id="cloudAuthSubmitBtn" class="btn btn-income cloud-primary" type="button">Se connecter</button>
       <button id="cloudForgotPasswordBtn" class="cloud-text-button" type="button">Mot de passe oublié ?</button>
-      <details class="cloud-magic-link">
+      <details id="cloudMagicLink" class="cloud-magic-link">
         <summary>Utiliser plutôt un lien magique</summary>
         <p>Un lien de connexion à usage unique sera envoyé à cette adresse.</p>
         <button id="cloudSendMagicLinkBtn" class="btn btn-ghost cloud-primary" type="button">Recevoir le lien magique</button>
