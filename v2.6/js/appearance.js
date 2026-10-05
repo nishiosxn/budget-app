@@ -1,5 +1,5 @@
 // V2.6 — apparence personnelle (par compte, sans modifier le foyer partagé)
-const APPEARANCE_DEFAULT={color:"green",font:"current"};
+const APPEARANCE_DEFAULT={color:"green",font:"current",customColor:"#7c73d8"};
 const APPEARANCE_COLORS={
  green:{label:"Vert",accent:"#2f6b51",deep:"#173c2d",soft:"#e9f2ed",border:"#bfd2c6"},
  blue:{label:"Bleu",accent:"#3f6fa6",deep:"#243f60",soft:"#e9eff6",border:"#c4d2e2"},
@@ -16,10 +16,44 @@ const APPEARANCE_FONTS={
 };
 let activeUserAppearance={...APPEARANCE_DEFAULT};
 
+function validAppearanceHex(value){
+ const raw=String(value||"").trim();
+ return /^#[0-9a-f]{6}$/i.test(raw)?raw.toUpperCase():"";
+}
+function mixAppearanceHex(from,to,amount){
+ const a=hexToRgb(from),b=hexToRgb(to),t=Math.max(0,Math.min(1,Number(amount)||0));
+ const channel=(x,y)=>Math.round(x+(y-x)*t).toString(16).padStart(2,"0");
+ return ("#"+channel(a.r,b.r)+channel(a.g,b.g)+channel(a.b,b.b)).toUpperCase();
+}
+function appearanceLuminance(hex){
+ const {r,g,b}=hexToRgb(hex);
+ const linear=value=>{const c=value/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};
+ return .2126*linear(r)+.7152*linear(g)+.0722*linear(b);
+}
 function normalizeUserAppearance(value){
- const color=APPEARANCE_COLORS[value?.color]?value.color:APPEARANCE_DEFAULT.color;
+ const color=value?.color==="custom"?"custom":APPEARANCE_COLORS[value?.color]?value.color:APPEARANCE_DEFAULT.color;
  const font=APPEARANCE_FONTS[value?.font]?value.font:APPEARANCE_DEFAULT.font;
- return {color,font};
+ const customColor=validAppearanceHex(value?.customColor)||APPEARANCE_DEFAULT.customColor;
+ return {color,font,customColor};
+}
+function appearancePalette(value){
+ const appearance=normalizeUserAppearance(value);
+ if(appearance.color!=="custom"){
+  const preset=APPEARANCE_COLORS[appearance.color];
+  return {...preset,base:preset.accent,surface:preset.accent};
+ }
+ const base=appearance.customColor,luminance=appearanceLuminance(base);
+ const accent=luminance>.52?mixAppearanceHex(base,"#000000",.38):base;
+ const surface=luminance>.62?mixAppearanceHex(base,"#000000",.22):base;
+ return {
+  label:"Personnalisé",
+  base,
+  accent,
+  surface,
+  deep:mixAppearanceHex(base,"#000000",.58),
+  soft:mixAppearanceHex(base,"#FFFFFF",.88),
+  border:mixAppearanceHex(base,"#FFFFFF",.60)
+ };
 }
 function appearanceUserId(session=null){
  const active=typeof cloudSession!=="undefined"?cloudSession:null;
@@ -41,9 +75,11 @@ function themeLogoMarkup(className="theme-logo"){
  return `<svg class="${className}" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>`;
 }
 function applyUserAppearance(value,{persistLocal=false,userId=appearanceUserId()}={}){
- const appearance=normalizeUserAppearance(value),palette=APPEARANCE_COLORS[appearance.color],font=APPEARANCE_FONTS[appearance.font],rgb=hexToRgb(palette.accent),root=document.documentElement;
+ const appearance=normalizeUserAppearance(value),palette=appearancePalette(appearance),font=APPEARANCE_FONTS[appearance.font],rgb=hexToRgb(palette.accent),root=document.documentElement;
  activeUserAppearance=appearance;
+ root.style.setProperty("--theme-color",palette.base);
  root.style.setProperty("--accent",palette.accent);
+ root.style.setProperty("--accent-surface",palette.surface);
  root.style.setProperty("--accent-deep",palette.deep);
  root.style.setProperty("--accent-soft",palette.soft);
  root.style.setProperty("--accent-border",palette.border);
@@ -52,7 +88,7 @@ function applyUserAppearance(value,{persistLocal=false,userId=appearanceUserId()
  root.style.setProperty("--app-font",font.stack);
  root.dataset.appearanceColor=appearance.color;
  root.dataset.appearanceFont=appearance.font;
- const svgIcon=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="16" fill="${palette.accent}"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>`;
+ const svgIcon=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="16" fill="${palette.base}"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>`;
  const favicon=document.querySelector('link[rel="icon"][type="image/svg+xml"]');
  if(favicon)favicon.href="data:image/svg+xml,"+encodeURIComponent(svgIcon);
  if(persistLocal&&userId){
@@ -81,11 +117,16 @@ async function saveUserAppearance(value){
 function resetUserAppearance(){return applyUserAppearance(APPEARANCE_DEFAULT)}
 function appearancePickerMarkup(context,value=currentUserAppearance()){
  const appearance=normalizeUserAppearance(value);
+ const customSwatch=appearance.color==="custom"?appearance.customColor:(APPEARANCE_COLORS[appearance.color]?.accent||appearance.customColor);
  return `<div class="appearance-picker" data-appearance-picker="${escapeHtml(context)}">
   <div class="appearance-picker-group">
    <span class="appearance-picker-label">Couleur principale</span>
    <div class="appearance-colors">
     ${Object.entries(APPEARANCE_COLORS).map(([id,item])=>`<button type="button" class="appearance-color ${appearance.color===id?"active":""}" data-appearance-color="${id}" style="--swatch:${item.accent}" aria-label="${escapeHtml(item.label)}" title="${escapeHtml(item.label)}"><i></i><span>${escapeHtml(item.label)}</span></button>`).join("")}
+    <label class="appearance-color appearance-color-custom ${appearance.color==="custom"?"active":""}" style="--swatch:${customSwatch}" title="Personnalisé">
+     <input type="color" data-appearance-custom-color value="${appearance.customColor}" aria-label="Choisir une couleur personnalisée">
+     <i></i><span>Personnalisé</span>
+    </label>
    </div>
   </div>
   <div class="appearance-picker-group">
@@ -98,8 +139,13 @@ function appearancePickerMarkup(context,value=currentUserAppearance()){
 }
 function appearanceFromPickerEvent(target,current=currentUserAppearance()){
  const next=normalizeUserAppearance(current);
+ const customInput=target.closest?.("[data-appearance-custom-color]");
  const color=target.closest?.("[data-appearance-color]")?.dataset.appearanceColor;
  const font=target.closest?.("[data-appearance-font]")?.dataset.appearanceFont;
+ if(customInput){
+  const customColor=validAppearanceHex(customInput.value);
+  if(customColor){next.color="custom";next.customColor=customColor}
+ }
  if(color&&APPEARANCE_COLORS[color])next.color=color;
  if(font&&APPEARANCE_FONTS[font])next.font=font;
  return next;
