@@ -3,12 +3,29 @@ const settingsBackdrop=document.getElementById("settingsBackdrop");
 const settingsHouseholdName=document.getElementById("settingsHouseholdName");
 const settingsPersonB=document.getElementById("settingsPersonB");
 const settingsPersonA=document.getElementById("settingsPersonA");
+const settingsPersonAField=document.getElementById("settingsPersonAField");
+const settingsPersonBLabel=document.getElementById("settingsPersonBLabel");
+const settingsModeButtons=[...document.querySelectorAll("[data-household-mode]")];
+let settingsHouseholdMode="couple";
+
+function setSettingsHouseholdMode(mode){
+ settingsHouseholdMode=mode==="solo"?"solo":"couple";
+ settingsModeButtons.forEach(button=>{
+  const active=button.dataset.householdMode===settingsHouseholdMode;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-pressed",String(active));
+ });
+ if(settingsPersonAField)settingsPersonAField.hidden=settingsHouseholdMode==="solo";
+ if(settingsPersonBLabel)settingsPersonBLabel.textContent=settingsHouseholdMode==="solo"?"VOTRE NOM":"PERSONNE 1";
+}
+settingsModeButtons.forEach(button=>button.addEventListener("click",()=>setSettingsHouseholdMode(button.dataset.householdMode)));
 
 function fillHouseholdSettings(){
  const household=normalizeHousehold(state.household);
  settingsHouseholdName.value=household.name;
  settingsPersonB.value=household.personB;
  settingsPersonA.value=household.personA;
+ setSettingsHouseholdMode(household.mode);
 }
 function openSettings(){fillHouseholdSettings();if(typeof updateCloudAccountUi==="function")updateCloudAccountUi();if(typeof updateCloudHouseholdUi==="function")updateCloudHouseholdUi();settingsBackdrop.classList.add("open");settingsBackdrop.setAttribute("aria-hidden","false")}
 function closeSettings(){settingsBackdrop.classList.remove("open");settingsBackdrop.setAttribute("aria-hidden","true")}
@@ -99,8 +116,15 @@ function availableLegacySources(){
 }
 
 document.getElementById("saveHouseholdBtn").addEventListener("click",()=>{
- state.household=normalizeHousehold({name:settingsHouseholdName.value,personB:settingsPersonB.value,personA:settingsPersonA.value});
- saveState();syncHouseholdUi();render();fillHouseholdSettings();showUndoToast("Noms du foyer enregistrés")
+ const previousMode=normalizeHousehold(state.household).mode;
+ state.household=normalizeHousehold({
+  name:settingsHouseholdName.value,
+  personB:settingsPersonB.value,
+  personA:settingsPersonA.value,
+  mode:settingsHouseholdMode
+ });
+ saveState();syncHouseholdUi();render();fillHouseholdSettings();
+ showUndoToast(previousMode===state.household.mode?"Foyer enregistré":state.household.mode==="solo"?"Mode seul activé":"Mode à deux activé")
 });
 document.getElementById("migrateLocalBtn").addEventListener("click",()=>{closeSettings();openOnboarding(true)});
 
