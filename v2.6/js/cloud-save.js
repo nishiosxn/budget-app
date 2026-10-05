@@ -198,7 +198,7 @@ async function cloudPushLocalState({force=false}={}){
   cloudIgnoreRealtimeUntil=Date.now()+5000;
   if(activeMembership?.role==="owner"){
    const household=normalizeHousehold(snapshot.household);
-   const householdRes=await cloudClient.from("households").update({name:household.name,person_b_label:household.personB,person_a_label:household.personA}).eq("id",activeHouseholdId);
+   const householdRes=await cloudClient.from("households").update({name:household.name,person_b_label:household.personB,person_a_label:household.personA,household_mode:household.mode}).eq("id",activeHouseholdId);
    if(householdRes.error)throw householdRes.error;
   }
   const idMap=await cloudSyncCategories(snapshot);
