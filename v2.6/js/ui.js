@@ -145,6 +145,7 @@ function personName(owner){return owner==="B"?(state.household?.personB||"Person
 function ownerLabel(o){return o==="common"?"À deux":personName(o)}
 function syncHouseholdUi(){
  const household=normalizeHousehold(state.household);state.household=household;
+ document.documentElement.classList.toggle("household-solo",household.mode==="solo");
  document.querySelectorAll("[data-person-label]").forEach(el=>{const owner=el.dataset.personLabel;el.textContent=personName(owner)});
  document.querySelectorAll("[data-person-avatar]").forEach(el=>{const name=personName(el.dataset.personAvatar);el.textContent=(name.trim()[0]||"?").toUpperCase()});
  const title=document.getElementById("householdTitle");if(title)title.textContent=household.name||"Budget foyer";
