@@ -117,15 +117,15 @@ async function saveUserAppearance(value){
 function resetUserAppearance(){return applyUserAppearance(APPEARANCE_DEFAULT)}
 function appearancePickerMarkup(context,value=currentUserAppearance()){
  const appearance=normalizeUserAppearance(value);
- const customSwatch=appearance.color==="custom"?appearance.customColor:(APPEARANCE_COLORS[appearance.color]?.accent||appearance.customColor);
  return `<div class="appearance-picker" data-appearance-picker="${escapeHtml(context)}">
   <div class="appearance-picker-group">
    <span class="appearance-picker-label">Couleur principale</span>
    <div class="appearance-colors">
     ${Object.entries(APPEARANCE_COLORS).map(([id,item])=>`<button type="button" class="appearance-color ${appearance.color===id?"active":""}" data-appearance-color="${id}" style="--swatch:${item.accent}" aria-label="${escapeHtml(item.label)}" title="${escapeHtml(item.label)}"><i></i><span>${escapeHtml(item.label)}</span></button>`).join("")}
-    <label class="appearance-color appearance-color-custom ${appearance.color==="custom"?"active":""}" style="--swatch:${customSwatch}" title="Personnalisé">
+    <label class="appearance-color appearance-color-custom ${appearance.color==="custom"?"active":""}" title="Choisir une couleur personnalisée">
      <input type="color" data-appearance-custom-color value="${appearance.customColor}" aria-label="Choisir une couleur personnalisée">
-     <i></i><span>Personnalisé</span>
+     <svg class="appearance-custom-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0 0-3L17.8 5a2.1 2.1 0 0 0-3 0L4 15.8V20Z"/><path d="m13.6 6.2 4.2 4.2"/><path d="M4 15.8 8.2 20"/></svg>
+     <span>Personnalisé</span>
     </label>
    </div>
   </div>
