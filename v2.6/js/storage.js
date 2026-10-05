@@ -32,6 +32,7 @@ function normalizeHousehold(value){
   mode:v.mode==="solo"?"solo":"couple"
  };
 }
+function householdIsSolo(){return normalizeHousehold(state?.household).mode==="solo"}
 function normalizeState(x){
  if(!x||typeof x!=="object")return seedState();
  const fallback=seedState();
