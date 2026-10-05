@@ -67,6 +67,29 @@ function hexToRgb(hex){
  if(!/^[0-9a-f]{6}$/i.test(value))return {r:47,g:107,b:81};
  return {r:parseInt(value.slice(0,2),16),g:parseInt(value.slice(2,4),16),b:parseInt(value.slice(4,6),16)};
 }
+function rgbToHex(r,g,b){
+ const channel=value=>Math.max(0,Math.min(255,Math.round(value))).toString(16).padStart(2,"0");
+ return ("#"+channel(r)+channel(g)+channel(b)).toUpperCase();
+}
+function hexToHsv(hex){
+ const {r,g,b}=hexToRgb(hex),rr=r/255,gg=g/255,bb=b/255;
+ const max=Math.max(rr,gg,bb),min=Math.min(rr,gg,bb),delta=max-min;
+ let h=0;
+ if(delta){
+  if(max===rr)h=60*(((gg-bb)/delta)%6);
+  else if(max===gg)h=60*((bb-rr)/delta+2);
+  else h=60*((rr-gg)/delta+4);
+ }
+ if(h<0)h+=360;
+ return {h,s:max===0?0:delta/max,v:max};
+}
+function hsvToHex(h,s,v){
+ h=((Number(h)||0)%360+360)%360;s=Math.max(0,Math.min(1,Number(s)||0));v=Math.max(0,Math.min(1,Number(v)||0));
+ const c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c;
+ let r=0,g=0,b=0;
+ if(h<60){r=c;g=x}else if(h<120){r=x;g=c}else if(h<180){g=c;b=x}else if(h<240){g=x;b=c}else if(h<300){r=x;b=c}else{r=c;b=x}
+ return rgbToHex((r+m)*255,(g+m)*255,(b+m)*255);
+}
 function currentUserAppearance(){return {...activeUserAppearance}}
 function appearanceFromLocal(userId=appearanceUserId()){
  try{return normalizeUserAppearance(JSON.parse(localStorage.getItem(appearanceStorageKey(userId))||"null"))}catch{return {...APPEARANCE_DEFAULT}}
@@ -115,6 +138,22 @@ async function saveUserAppearance(value){
  return appearance;
 }
 function resetUserAppearance(){return applyUserAppearance(APPEARANCE_DEFAULT)}
+function appearanceCustomPanelMarkup(appearance){
+ const hsv=hexToHsv(appearance.customColor),left=(hsv.s*100).toFixed(2),top=((1-hsv.v)*100).toFixed(2),hue=(hsv.h/360*100).toFixed(2);
+ return `<div class="appearance-custom-panel" data-appearance-custom-panel>
+   <div class="appearance-sv" data-appearance-sv style="--picker-hue:${hsv.h.toFixed(2)}deg">
+    <span class="appearance-sv-thumb" style="left:${left}%;top:${top}%"></span>
+   </div>
+   <div class="appearance-hue" data-appearance-hue>
+    <span class="appearance-hue-thumb" style="left:${hue}%"></span>
+   </div>
+   <div class="appearance-hex-row">
+    <span>HEX</span>
+    <input type="text" inputmode="text" maxlength="7" autocomplete="off" spellcheck="false" data-appearance-hex value="${appearance.customColor}">
+    <span class="appearance-custom-preview" style="--custom-preview:${appearance.customColor}"></span>
+   </div>
+  </div>`;
+}
 function appearancePickerMarkup(context,value=currentUserAppearance()){
  const appearance=normalizeUserAppearance(value);
  return `<div class="appearance-picker" data-appearance-picker="${escapeHtml(context)}">
@@ -122,12 +161,12 @@ function appearancePickerMarkup(context,value=currentUserAppearance()){
    <span class="appearance-picker-label">Couleur principale</span>
    <div class="appearance-colors">
     ${Object.entries(APPEARANCE_COLORS).map(([id,item])=>`<button type="button" class="appearance-color ${appearance.color===id?"active":""}" data-appearance-color="${id}" style="--swatch:${item.accent}" aria-label="${escapeHtml(item.label)}" title="${escapeHtml(item.label)}"><i></i><span>${escapeHtml(item.label)}</span></button>`).join("")}
-    <label class="appearance-color appearance-color-custom ${appearance.color==="custom"?"active":""}" title="Choisir une couleur personnalisée">
-     <input type="color" data-appearance-custom-color value="${appearance.customColor}" aria-label="Choisir une couleur personnalisée">
+    <button type="button" class="appearance-color appearance-color-custom ${appearance.color==="custom"?"active":""}" data-appearance-custom-toggle aria-expanded="${appearance.color==="custom"?"true":"false"}" title="Choisir une couleur personnalisée">
      <svg class="appearance-custom-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0 0-3L17.8 5a2.1 2.1 0 0 0-3 0L4 15.8V20Z"/><path d="m13.6 6.2 4.2 4.2"/><path d="M4 15.8 8.2 20"/></svg>
      <span>Personnalisé</span>
-    </label>
+    </button>
    </div>
+   ${appearance.color==="custom"?appearanceCustomPanelMarkup(appearance):""}
   </div>
   <div class="appearance-picker-group">
    <span class="appearance-picker-label">Police</span>
@@ -137,15 +176,75 @@ function appearancePickerMarkup(context,value=currentUserAppearance()){
   </div>
  </div>`;
 }
+function appearanceCustomFromPointer(target,event,current=currentUserAppearance()){
+ const appearance=normalizeUserAppearance(current),rect=target.getBoundingClientRect();
+ const x=Math.max(0,Math.min(rect.width,event.clientX-rect.left)),y=Math.max(0,Math.min(rect.height,event.clientY-rect.top));
+ const hsv=hexToHsv(appearance.customColor);
+ if(target.matches("[data-appearance-sv]")){
+  hsv.s=rect.width?x/rect.width:0;
+  hsv.v=rect.height?1-y/rect.height:0;
+ }else if(target.matches("[data-appearance-hue]")){
+  hsv.h=rect.width?x/rect.width*360:0;
+ }
+ appearance.color="custom";
+ appearance.customColor=hsvToHex(hsv.h,hsv.s,hsv.v);
+ return appearance;
+}
+function bindAppearanceCustomPicker(root,getAppearance,onChange){
+ if(!root||root.dataset.customPickerBound==="1")return;
+ root.dataset.customPickerBound="1";
+ let activeTarget=null;
+ const update=(target,event,commit=false)=>{
+  if(!target)return;
+  const next=appearanceCustomFromPointer(target,event,getAppearance());
+  onChange(next,{render:commit});
+ };
+ root.addEventListener("pointerdown",event=>{
+  const target=event.target.closest("[data-appearance-sv],[data-appearance-hue]");
+  if(!target)return;
+  activeTarget=target;
+  target.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+  update(target,event,false);
+ });
+ root.addEventListener("pointermove",event=>{
+  if(!activeTarget)return;
+  event.preventDefault();
+  update(activeTarget,event,false);
+ });
+ const end=event=>{
+  if(!activeTarget)return;
+  update(activeTarget,event,true);
+  activeTarget=null;
+ };
+ root.addEventListener("pointerup",end);
+ root.addEventListener("pointercancel",()=>{activeTarget=null});
+ root.addEventListener("input",event=>{
+  const input=event.target.closest("[data-appearance-hex]");
+  if(!input)return;
+  const hex=validAppearanceHex(input.value);
+  input.classList.toggle("invalid",!hex);
+  if(!hex)return;
+  const next=normalizeUserAppearance(getAppearance());
+  next.color="custom";next.customColor=hex;
+  onChange(next,{render:false});
+  const preview=input.closest("[data-appearance-custom-panel]")?.querySelector(".appearance-custom-preview");
+  if(preview)preview.style.setProperty("--custom-preview",hex);
+ });
+ root.addEventListener("change",event=>{
+  const input=event.target.closest("[data-appearance-hex]");
+  if(!input)return;
+  const hex=validAppearanceHex(input.value);
+  if(!hex){input.value=normalizeUserAppearance(getAppearance()).customColor;input.classList.remove("invalid");return}
+  const next=normalizeUserAppearance(getAppearance());next.color="custom";next.customColor=hex;onChange(next,{render:true});
+ });
+}
 function appearanceFromPickerEvent(target,current=currentUserAppearance()){
  const next=normalizeUserAppearance(current);
- const customInput=target.closest?.("[data-appearance-custom-color]");
+ const customToggle=target.closest?.("[data-appearance-custom-toggle]");
  const color=target.closest?.("[data-appearance-color]")?.dataset.appearanceColor;
  const font=target.closest?.("[data-appearance-font]")?.dataset.appearanceFont;
- if(customInput){
-  const customColor=validAppearanceHex(customInput.value);
-  if(customColor){next.color="custom";next.customColor=customColor}
- }
+ if(customToggle)next.color="custom";
  if(color&&APPEARANCE_COLORS[color])next.color=color;
  if(font&&APPEARANCE_FONTS[font])next.font=font;
  return next;
