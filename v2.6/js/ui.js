@@ -142,7 +142,7 @@ function renderCategories(m){
  document.getElementById("categoryGrid").innerHTML=`<section class="category-group"><div class="category-group-head"><h2>Revenus</h2><span>Entrées d’argent · réel / prévu</span></div><div class="category-cards income-cards">${incomeCard}</div></section><section class="category-group"><div class="category-group-head"><h2>Dépenses</h2><span>Argent réellement consommé · hors épargne</span></div><div class="category-cards">${expenseCards}</div></section><section class="category-group saving-group"><div class="category-group-head"><h2>Épargne</h2><span>Argent mis de côté · déduit du disponible</span></div><div class="category-cards income-cards">${savingCard}</div></section>`;
 }
 function personName(owner){return owner==="B"?(state.household?.personB||"Personne 1"):owner==="A"?(state.household?.personA||"Personne 2"):"À deux"}
-function ownerLabel(o){return o==="common"?"À deux":personName(o)}
+function ownerLabel(o){return o==="common"?(householdIsSolo()?personName("B"):"À deux"):personName(o)}
 function syncHouseholdUi(){
  const household=normalizeHousehold(state.household);state.household=household;
  document.documentElement.classList.toggle("household-solo",household.mode==="solo");
