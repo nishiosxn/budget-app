@@ -99,9 +99,6 @@ function ensureSetupBuilder(){
    </footer>
   </section>`;
  document.body.appendChild(root);
- root.addEventListener("input",setupBuilderHandleInput);
- root.addEventListener("change",setupBuilderHandleInput);
- root.addEventListener("click",setupBuilderHandleClick);
  root.addEventListener("keydown",event=>{
   if(event.key==="Enter"&&event.target.matches("[data-builder-name-input]")){
    event.preventDefault();
@@ -192,6 +189,34 @@ function setupBuilderAddCard(type,label){
 }
 function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>!setupBuilderDraft.income[item.id]?.hidden&&(!setupBuilderIsSolo()||item.owner!=="A"))}
 function setupBuilderVisibleExpenses(){return SETUP_BUILDER_EXPENSES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
+function bindSetupBuilderControls(content){
+ if(!content)return;
+ content.querySelectorAll("[data-builder-household],[data-builder-name-input],[data-builder-amount],[data-builder-sub-amount]").forEach(input=>{
+  input.oninput=setupBuilderHandleInput;
+ });
+ content.querySelectorAll("[data-builder-select],[data-builder-owner],[data-builder-section],[data-builder-plan],[data-builder-sub-owner]").forEach(control=>{
+  control.onchange=setupBuilderHandleInput;
+ });
+ content.querySelectorAll("[data-builder-mode],[data-builder-rename],[data-builder-delete],[data-builder-add],[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]").forEach(button=>{
+  button.onclick=event=>{
+   event.preventDefault();
+   setupBuilderHandleClick(event);
+  };
+ });
+ const appearanceRoot=content.querySelector("[data-appearance-picker]");
+ if(appearanceRoot&&typeof bindAppearanceCustomPicker==="function"){
+  delete appearanceRoot.dataset.customPickerBound;
+  bindAppearanceCustomPicker(
+   appearanceRoot,
+   ()=>setupBuilderDraft?.appearance||currentUserAppearance(),
+   (next,options={})=>{
+    setupBuilderDraft.appearance=normalizeUserAppearance(next);
+    applyUserAppearance(setupBuilderDraft.appearance);
+    if(options.render)setupBuilderRender();
+   }
+  );
+ }
+}
 function setupBuilderRender(){
  if(!setupBuilderDraft)return;
  const root=document.getElementById("setupBuilderBackdrop"),content=document.getElementById("setupBuilderContent"),progress=document.getElementById("setupBuilderProgress"),back=document.getElementById("setupBuilderBack"),next=document.getElementById("setupBuilderNext");
@@ -239,26 +264,7 @@ function setupBuilderRender(){
    <div class="setup-builder-recap"><strong>${totals.count} catégorie${totals.count>1?"s":""} configurée${totals.count>1?"s":""}</strong><span>Mode ${setupBuilderIsSolo()?"seul":"à deux"} · historique réel vide · tout reste modifiable ensuite.</span></div>`;
  }
  if(root)root.dataset.builderStep=String(setupBuilderStep);
- content.querySelectorAll("[data-builder-mode]").forEach(button=>{
-  button.onclick=event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   setupBuilderSetMode(button.dataset.builderMode);
-  };
- });
- const appearanceRoot=content.querySelector("[data-appearance-picker]");
- if(appearanceRoot&&typeof bindAppearanceCustomPicker==="function"){
-  delete appearanceRoot.dataset.customPickerBound;
-  bindAppearanceCustomPicker(
-   appearanceRoot,
-   ()=>setupBuilderDraft?.appearance||currentUserAppearance(),
-   (next,options={})=>{
-    setupBuilderDraft.appearance=normalizeUserAppearance(next);
-    applyUserAppearance(setupBuilderDraft.appearance);
-    if(options.render)setupBuilderRender();
-   }
-  );
- }
+ bindSetupBuilderControls(content);
  requestAnimationFrame(()=>{
   if(root&&sameStep)root.scrollTop=previousScroll;
   const field=document.querySelector("[data-builder-name-input]");
