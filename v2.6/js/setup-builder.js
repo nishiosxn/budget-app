@@ -94,12 +94,14 @@ function setupBuilderNeedsRun(householdId=activeHouseholdId){
  try{return localStorage.getItem(setupBuilderKey(householdId))==="pending"}catch{return false}
 }
 function setupBuilderPersonName(owner){
- if(owner==="B")return state.household.personB||"Personne 1";
- if(owner==="A")return state.household.personA||"Personne 2";
+ const household=setupBuilderDraft?.household||state.household;
+ if(owner==="B")return household.personB||"Personne 1";
+ if(owner==="A")return household.personA||"Personne 2";
  return "À deux";
 }
 function setupBuilderOwnerOptions(selected){
- return [["common","À deux"],["B",state.household.personB||"Personne 1"],["A",state.household.personA||"Personne 2"]]
+ const household=setupBuilderDraft?.household||state.household;
+ return [["common","À deux"],["B",household.personB||"Personne 1"],["A",household.personA||"Personne 2"]]
   .map(([value,label])=>`<option value="${value}" ${selected===value?"selected":""}>${escapeHtml(label)}</option>`).join("");
 }
 function setupBuilderInitialDraft(){
@@ -320,6 +322,25 @@ function setupBuilderSetBaseBudget(type,id,amount,owner){
  budgetMap[id]=amount;
  ownerMap[id]=owner||"common";
 }
+function setupBuilderPersonalizeCategoryNames(){
+ const b=state.household.personB||"Personne 1",a=state.household.personA||"Personne 2";
+ state.incomeCategoryNames={
+  ...(state.incomeCategoryNames||{}),
+  "salary-b":`Salaire ${b}`,
+  "salary-a":`Salaire ${a}`,
+  "extra-b":`Autre revenu ${b}`,
+  "extra-a":`Autre revenu ${a}`
+ };
+ state.categoryNames={
+  ...(state.categoryNames||{}),
+  "phone-b":`Téléphone ${b}`,
+  "phone-a":`Téléphone ${a}`,
+  "saving-b":`Épargne ${b}`,
+  "saving-a":`Épargne ${a}`,
+  "leisure-b":`Loisirs ${b}`,
+  "leisure-a":`Loisirs ${a}`
+ };
+}
 function setupBuilderApplySubscriptions(){
  const setupIds=new Set(SETUP_SUBSCRIPTIONS.map(item=>"setup-sub-"+item.id));
  state.customExpenseCategories=(state.customExpenseCategories||[]).filter(item=>!setupIds.has(item.id));
@@ -364,6 +385,7 @@ async function finishSetupBuilder(){
    setupBuilderSetBaseBudget("expense",item.id,data.selected?setupBuilderNumber(data.amount):0,data.owner);
   }
   setupBuilderApplySubscriptions();
+  setupBuilderPersonalizeCategoryNames();
   state.onboardingComplete=true;
   applyCategoryState();
   syncHouseholdUi();
