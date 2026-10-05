@@ -122,7 +122,7 @@ async function cloudBootstrap(){
   if(!provisionedNow)await cloudLoadState();
   startCloudRealtime();
   cloudSyncReady=true;
-  setCloudStatus("Synchronisé","ok");
+  setCloudStatus(provisionedNow?"Configuration du budget…":"Synchronisé",provisionedNow?"syncing":"ok");
   hideCloudGate();
   if(typeof setupBuilderNeedsRun==="function"&&setupBuilderNeedsRun(activeHouseholdId)&&typeof openSetupBuilder==="function")openSetupBuilder();
  }catch(error){
