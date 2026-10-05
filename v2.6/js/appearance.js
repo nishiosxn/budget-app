@@ -138,9 +138,9 @@ async function saveUserAppearance(value){
  return appearance;
 }
 function resetUserAppearance(){return applyUserAppearance(APPEARANCE_DEFAULT)}
-function appearanceCustomPanelMarkup(appearance){
+function appearanceCustomPanelMarkup(appearance,hidden=false){
  const hsv=hexToHsv(appearance.customColor),left=(hsv.s*100).toFixed(2),top=((1-hsv.v)*100).toFixed(2),hue=(hsv.h/360*100).toFixed(2);
- return `<div class="appearance-custom-panel" data-appearance-custom-panel>
+ return `<div class="appearance-custom-panel" data-appearance-custom-panel ${hidden?"hidden":""}>
    <div class="appearance-sv" data-appearance-sv style="--picker-hue:${hsv.h.toFixed(2)}deg">
     <span class="appearance-sv-thumb" style="left:${left}%;top:${top}%"></span>
    </div>
@@ -166,7 +166,7 @@ function appearancePickerMarkup(context,value=currentUserAppearance()){
      <span>Personnalisé</span>
     </button>
    </div>
-   ${appearance.color==="custom"?appearanceCustomPanelMarkup(appearance):""}
+   ${appearanceCustomPanelMarkup(appearance,appearance.color!=="custom")}
   </div>
   <div class="appearance-picker-group">
    <span class="appearance-picker-label">Police</span>
@@ -175,6 +175,23 @@ function appearancePickerMarkup(context,value=currentUserAppearance()){
    </div>
   </div>
  </div>`;
+}
+function setAppearanceCustomPanelOpen(root,open){
+ const panel=root?.querySelector?.("[data-appearance-custom-panel]");
+ const button=root?.querySelector?.("[data-appearance-custom-toggle]");
+ if(panel)panel.hidden=!open;
+ if(button){
+  button.setAttribute("aria-expanded",String(!!open));
+  button.classList.toggle("active",!!open);
+ }
+}
+function syncAppearancePickerUi(root,value,{customOpen=null}={}){
+ const appearance=normalizeUserAppearance(value);
+ root?.querySelectorAll?.("[data-appearance-color]").forEach(button=>button.classList.toggle("active",button.dataset.appearanceColor===appearance.color));
+ root?.querySelectorAll?.("[data-appearance-font]").forEach(button=>button.classList.toggle("active",button.dataset.appearanceFont===appearance.font));
+ const open=customOpen==null?appearance.color==="custom":!!customOpen;
+ setAppearanceCustomPanelOpen(root,open);
+ syncAppearanceCustomPanel(root,appearance);
 }
 function appearanceCustomFromPointer(target,event,current=currentUserAppearance()){
  const appearance=normalizeUserAppearance(current),rect=target.getBoundingClientRect();
