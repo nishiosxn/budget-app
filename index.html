@@ -54,21 +54,42 @@
     <section id="overview" class="view active">
       <div class="hero-grid">
         <article class="card balance-card">
-          <div><div class="eyebrow">Reste disponible ce mois</div><div class="balance" id="balanceValue">0,00 <small>€</small></div></div>
-          <div class="balance-meta"><div class="balance-stat planned" id="plannedRest"><span class="meta-label">Prévu</span><strong class="meta-value">0 €</strong></div><div class="balance-stat delta neutral" id="balanceDelta"><span class="meta-label">Écart</span><strong class="meta-value">0 €</strong></div></div>
+          <div class="balance-main">
+            <div class="eyebrow">Reste disponible ce mois</div>
+            <div class="balance" id="balanceValue">0,00 <small>€</small></div>
+            <div class="balance-summary" id="balanceSummary">0 € de revenus · 0 € de sorties</div>
+          </div>
+          <div class="balance-people" aria-label="Reste réel par personne">
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="B">Personne 1</span>
+              <strong id="balanceRestB">0 €</strong>
+              <small>reste réel</small>
+            </div>
+            <div class="balance-person">
+              <span class="balance-person-name" data-person-label="A">Personne 2</span>
+              <strong id="balanceRestA">0 €</strong>
+              <small>reste réel</small>
+            </div>
+          </div>
         </article>
         <div class="kpi-stack">
           <article class="card kpi"><div class="kpi-label"><span class="dot in"></span>Revenus</div><div class="kpi-value" id="incomeTotal">0 €</div><div class="kpi-sub" id="incomePlanned">Prévu 0 €</div></article>
           <article class="card kpi"><div class="kpi-label"><span class="dot out"></span>Dépenses</div><div class="kpi-value" id="expenseTotal">0 €</div><div class="kpi-sub" id="expensePlanned">Budget 0 €</div></article>
-          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="B">Personne 1</span></div><div class="kpi-value" id="saveB">0 €</div><div class="kpi-sub savings-sub"><span>Ce mois</span><strong id="saveBMonth">0 €</strong></div></article>
-          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Ce mois</span><strong id="saveAMonth">0 €</strong></div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="B">Personne 1</span></div><div class="kpi-value" id="saveB">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveBCumulative">0 €</strong></div></article>
+          <article class="card kpi"><div class="kpi-label">Épargne <span data-person-label="A">Personne 2</span></div><div class="kpi-value" id="saveA">0 €</div><div class="kpi-sub savings-sub"><span>Cumul</span><strong id="saveACumulative">0 €</strong></div></article>
         </div>
       </div>
 
-      <div class="section-head"><h2>Répartition du mois</h2><span>Calculée comme dans le tableur</span></div>
+      <div class="section-head"><h2>Répartition du mois</h2><span>Solde après répartition des montants réels</span></div>
       <div class="people">
-        <article class="card person"><div class="person-top"><div><div class="person-name" data-person-label="B">Personne 1</div></div><div class="avatar" data-person-avatar="B">1</div></div><div class="person-rest" id="restB">0 €</div><div class="person-caption" id="personBDetail">0 € de revenus · 0 € sortis</div></article>
-        <article class="card person"><div class="person-top"><div><div class="person-name" data-person-label="A">Personne 2</div></div><div class="avatar" data-person-avatar="A">2</div></div><div class="person-rest" id="restA">0 €</div><div class="person-caption" id="personADetail">0 € de revenus · 0 € sortis</div></article>
+        <article class="card person">
+          <div class="person-top"><div><div class="person-name" data-person-label="B">Personne 1</div><button class="person-opening" type="button" data-edit-opening-balance="B">Solde initial <strong id="openingBValue">—</strong></button></div><div class="avatar" data-person-avatar="B">1</div></div>
+          <div class="person-rest" id="accountBalanceB">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personBDetail">Renseigne le solde initial pour calculer ce montant.</div>
+        </article>
+        <article class="card person">
+          <div class="person-top"><div><div class="person-name" data-person-label="A">Personne 2</div><button class="person-opening" type="button" data-edit-opening-balance="A">Solde initial <strong id="openingAValue">—</strong></button></div><div class="avatar" data-person-avatar="A">2</div></div>
+          <div class="person-rest" id="accountBalanceA">—</div><div class="person-balance-label">Solde du compte</div><div class="person-caption" id="personADetail">Renseigne le solde initial pour calculer ce montant.</div>
+        </article>
       </div>
 
       <div class="section-head"><h2>Budget par groupe</h2><span>Réel / prévu</span></div>
@@ -136,7 +157,7 @@
       <span class="euro">€</span>
     </div>
     <div class="field"><label for="transactionLabel">LIBELLÉ <span style="font-weight:600">(FACULTATIF)</span></label><input id="transactionLabel" class="category-form-input transaction-label" type="text" maxlength="70" placeholder="Ex. Courses Lidl, salaire, restaurant…"></div>
-    <div class="field"><label>POUR QUI ?</label><div id="ownerSwitch" class="owner-switch" role="group" aria-label="Attribuer l'opération"><button type="button" class="owner-option active" data-owner="common">À deux</button><button type="button" class="owner-option" data-owner="B" data-person-label="B">Personne 1</button><button type="button" class="owner-option" data-owner="A" data-person-label="A">Personne 2</button></div></div>
+    <div class="field"><label id="ownerSwitchLabel">QUI A PAYÉ ?</label><div id="ownerSwitch" class="owner-switch" role="group" aria-label="Attribuer l'opération"><button type="button" class="owner-option active" data-owner="common">À deux</button><button type="button" class="owner-option" data-owner="B" data-person-label="B">Personne 1</button><button type="button" class="owner-option" data-owner="A" data-person-label="A">Personne 2</button></div></div>
     <div class="field"><label for="categorySelect">CATÉGORIE</label><div class="select-wrap"><select id="categorySelect" class="category-select"></select><div class="custom-select" data-select="categorySelect"><button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="custom-select-value">Choisir une catégorie</span><span class="custom-select-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></span></button><div class="custom-select-menu" role="listbox"><div class="custom-select-scroll"></div></div></div></div></div>
     <div class="field" id="transactionScopeField"><label>PÉRIODE</label><div class="owner-switch plan-scope-switch" role="group" aria-label="Période de l’opération"><button type="button" class="owner-option active" data-transaction-scope="month">Ce mois seulement</button><button type="button" class="owner-option" data-transaction-scope="forward">À partir de ce mois</button></div><div class="scope-hint" id="transactionScopeHint">Cette opération sera comptée uniquement sur le mois affiché.</div></div>
     <button id="saveTransaction" class="btn btn-expense save" disabled>Ajouter</button>
@@ -192,9 +213,18 @@
   </div>
 </div>
 
+<div id="accountBalanceBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal account-balance-modal" role="dialog" aria-modal="true" aria-labelledby="accountBalanceTitle">
+    <div class="modal-head"><div><h3 id="accountBalanceTitle">Solde de départ</h3><div id="accountBalanceKind" class="modal-kind"></div></div><button class="close" id="closeAccountBalance" aria-label="Fermer">×</button></div>
+    <p class="account-balance-copy">Indique l’argent présent sur ce compte au début du mois. Ce montant n’est pas compté comme un revenu.</p>
+    <div class="field"><label for="accountOpeningInput">SOLDE AU DÉBUT DU MOIS</label><div class="budget-input-wrap"><input id="accountOpeningInput" class="category-form-input" type="number" inputmode="decimal" step="0.01" placeholder="0,00"><span class="currency-suffix">€</span></div></div>
+    <div class="account-balance-actions"><button id="cancelAccountBalance" class="btn btn-ghost" type="button">Annuler</button><button id="saveAccountOpening" class="btn btn-income" type="button">Enregistrer</button></div>
+  </div>
+</div>
+
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.5.1</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.6</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -230,14 +260,14 @@
       </div>
       <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.5.1 · synchronisation cloud directe · Supabase</div>
+      <div class="settings-version">V2.6 · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5.1</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
     <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
     <div class="onboarding-card">
       <h3>Nouveau budget</h3>
@@ -261,7 +291,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.5.1</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
@@ -318,6 +348,7 @@
 <script src="js/supabase-client.js" defer></script>
 <script src="js/auth.js" defer></script>
 <script src="js/cloud-household.js" defer></script>
+<script src="js/account-balances.js" defer></script>
 <script src="js/cloud-state-core.js" defer></script>
 <script src="js/cloud-load.js" defer></script>
 <script src="js/cloud-save.js" defer></script>

@@ -406,12 +406,15 @@ function cloudRequireUuid(categoryMap,localId){
 
 function cloudCategoryValues(payload,insert=false){
  const values={
-  name:payload.name,type:payload.type,group_name:payload.group_name||null,
+  name:payload.name,group_name:payload.group_name||null,
   owner_user_id:null,owner_slot:payload.owner_slot||null,is_saving:!!payload.is_saving,
   excluded_months:payload.excluded_months||[],is_custom:!!payload.is_custom,
   sort_order:Number(payload.sort_order)||0,archived_at:null
  };
- if(insert)values.created_from=payload.created_from;
+ if(insert){
+  values.type=payload.type;
+  values.created_from=payload.created_from;
+ }
  return values;
 }
 function cloudBudgetValues(payload,categoryMap,insert=false){
