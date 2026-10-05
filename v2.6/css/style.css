@@ -2404,3 +2404,40 @@ input:focus-visible{
     font-size:7.5px;
   }
 }
+
+
+/* === V2.6 · Couleur personnalisée === */
+:root{
+  --theme-color:#2f6b51;
+  --accent-surface:#2f6b51;
+}
+.theme-logo{color:var(--theme-color,var(--accent))}
+.balance-card{background:linear-gradient(145deg,var(--accent-deep) 0%,var(--accent-surface,var(--accent)) 100%)}
+.appearance-colors{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.appearance-color-custom{
+  position:relative;
+  display:block;
+  overflow:hidden;
+  text-align:center;
+}
+.appearance-color-custom input[type="color"]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+  border:0;
+  padding:0;
+}
+.appearance-color-custom i,
+.appearance-color-custom span{
+  pointer-events:none;
+}
+@media(max-width:700px){
+  .appearance-colors{
+    grid-template-columns:repeat(3,1fr);
+  }
+}
