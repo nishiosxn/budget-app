@@ -128,19 +128,28 @@ function setupBuilderProgress(){
 }
 function setupBuilderDisplayName(item,data){return data.name||item?.name||"Catégorie"}
 function setupBuilderNameMarkup(key,name){
- if(setupBuilderEditingName===key)return `<input class="setup-builder-inline-name" type="text" maxlength="60" data-builder-name-input="${key}" value="${escapeHtml(name)}" autofocus>`;
+ if(setupBuilderEditingName===key)return `<input class="setup-builder-inline-name" type="text" maxlength="60" data-builder-name-input="${escapeHtml(key)}" value="${escapeHtml(name)}" autofocus>`;
  return `<strong>${escapeHtml(name)}</strong>`;
 }
+function setupBuilderDomId(key){return "setup-builder-"+String(key).replace(/[^a-z0-9_-]+/gi,"-")}
+function setupBuilderRowActions(key,data){
+ return `<div class="setup-builder-row-actions">
+  <button class="setup-builder-rename" type="button" data-builder-rename="${escapeHtml(key)}">${setupBuilderEditingName===key?"OK":"Renommer"}</button>
+  ${data.custom?`<button class="setup-builder-delete" type="button" data-builder-delete="${escapeHtml(key)}" aria-label="Supprimer cette catégorie">Supprimer</button>`:""}
+ </div>`;
+}
 function setupBuilderItemRow(item,data,type,keyOverride=""){
- const key=keyOverride||`${type}:${item.id}`,checked=data.selected?"checked":"",disabled=data.selected?"":"disabled",name=setupBuilderDisplayName(item,data);
+ const key=keyOverride||`${type}:${item.id}`,checked=data.selected?"checked":"",disabled=data.selected?"":"disabled",name=setupBuilderDisplayName(item,data),checkId=setupBuilderDomId(key);
  const ownerLabel=type==="income"?"Attribué à":"Payé par";
  return `<div class="setup-builder-item ${data.selected?"selected":""}" data-builder-row="${escapeHtml(key)}">
    <div class="setup-builder-item-head">
-    <label class="setup-builder-check">
-     <input type="checkbox" data-builder-select="${escapeHtml(key)}" ${checked}>
-     <span>${setupBuilderNameMarkup(key,name)}<small>${item.saving?"Objectif mensuel":"Budget mensuel prévu"}</small></span>
-    </label>
-    <button class="setup-builder-rename" type="button" data-builder-rename="${escapeHtml(key)}">${setupBuilderEditingName===key?"OK":"Renommer"}</button>
+    <div class="setup-builder-check">
+     <input id="${checkId}" type="checkbox" data-builder-select="${escapeHtml(key)}" ${checked}>
+     <div class="setup-builder-name-wrap">
+      ${setupBuilderEditingName===key?setupBuilderNameMarkup(key,name):`<label for="${checkId}">${setupBuilderNameMarkup(key,name)}<small>${item.saving?"Objectif mensuel":"Budget mensuel prévu"}</small></label>`}
+     </div>
+    </div>
+    ${setupBuilderRowActions(key,data)}
    </div>
    <div class="setup-builder-item-fields">
     <label><span>Montant</span><div class="setup-builder-money"><input type="number" min="0" step="0.01" inputmode="decimal" data-builder-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" ${disabled}><b>€</b></div></label>
@@ -150,15 +159,17 @@ function setupBuilderItemRow(item,data,type,keyOverride=""){
   </div>`;
 }
 function setupBuilderSubscriptionRow(item,data,keyOverride=""){
- const key=keyOverride||`subscription:${item.id}`,selectedPlan=item.plans?.[data.plan]||item.plans?.[0],name=data.name||item.name;
+ const key=keyOverride||`subscription:${item.id}`,selectedPlan=item.plans?.[data.plan]||item.plans?.[0],name=data.name||item.name,checkId=setupBuilderDomId(key);
  const custom=!!data.custom;
  return `<div class="setup-builder-item setup-builder-sub ${data.selected?"selected":""}" data-builder-row="${escapeHtml(key)}">
    <div class="setup-builder-item-head">
-    <label class="setup-builder-check">
-     <input type="checkbox" data-builder-select="${escapeHtml(key)}" ${data.selected?"checked":""}>
-     <span>${setupBuilderNameMarkup(key,name)}<small>${custom?"Abonnement personnalisé":`Tarif vérifié le ${SETUP_BUILDER_UPDATED.split("-").reverse().join("/")}`}</small></span>
-    </label>
-    <button class="setup-builder-rename" type="button" data-builder-rename="${escapeHtml(key)}">${setupBuilderEditingName===key?"OK":"Renommer"}</button>
+    <div class="setup-builder-check">
+     <input id="${checkId}" type="checkbox" data-builder-select="${escapeHtml(key)}" ${data.selected?"checked":""}>
+     <div class="setup-builder-name-wrap">
+      ${setupBuilderEditingName===key?setupBuilderNameMarkup(key,name):`<label for="${checkId}">${setupBuilderNameMarkup(key,name)}<small>${custom?"Abonnement personnalisé":`Tarif vérifié le ${SETUP_BUILDER_UPDATED.split("-").reverse().join("/")}`}</small></label>`}
+     </div>
+    </div>
+    ${setupBuilderRowActions(key,data)}
    </div>
    <div class="setup-builder-item-fields">
     ${custom?"":`<label><span>Formule</span><select data-builder-plan="${item.id}" ${data.selected?"":"disabled"}>${item.plans.map((plan,index)=>`<option value="${index}" ${index===data.plan?"selected":""}>${escapeHtml(plan.name)}</option>`).join("")}</select></label>`}
@@ -175,7 +186,8 @@ function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>
 function setupBuilderVisibleExpenses(){return SETUP_BUILDER_EXPENSES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
 function setupBuilderRender(){
  if(!setupBuilderDraft)return;
- const content=document.getElementById("setupBuilderContent"),progress=document.getElementById("setupBuilderProgress"),back=document.getElementById("setupBuilderBack"),next=document.getElementById("setupBuilderNext");
+ const root=document.getElementById("setupBuilderBackdrop"),content=document.getElementById("setupBuilderContent"),progress=document.getElementById("setupBuilderProgress"),back=document.getElementById("setupBuilderBack"),next=document.getElementById("setupBuilderNext");
+ const sameStep=root?.dataset.builderStep===String(setupBuilderStep),previousScroll=sameStep?(root?.scrollTop||0):0;
  progress.innerHTML=setupBuilderProgress();back.hidden=setupBuilderStep===0;next.textContent=setupBuilderStep===4?"Créer mon budget":"Continuer";setupBuilderSetStatus("");
  if(setupBuilderStep===0){
   const solo=setupBuilderIsSolo();
@@ -214,7 +226,12 @@ function setupBuilderRender(){
    </div>
    <div class="setup-builder-recap"><strong>${totals.count} catégorie${totals.count>1?"s":""} configurée${totals.count>1?"s":""}</strong><span>Mode ${setupBuilderIsSolo()?"seul":"à deux"} · historique réel vide · tout reste modifiable ensuite.</span></div>`;
  }
- requestAnimationFrame(()=>document.querySelector("[data-builder-name-input]")?.focus());
+ if(root)root.dataset.builderStep=String(setupBuilderStep);
+ requestAnimationFrame(()=>{
+  if(root&&sameStep)root.scrollTop=previousScroll;
+  const field=document.querySelector("[data-builder-name-input]");
+  if(field){field.focus({preventScroll:true});field.select?.()}
+ });
 }
 function setupBuilderCollection(type){
  if(type==="income")return setupBuilderDraft.income;
@@ -261,7 +278,15 @@ function setupBuilderHandleInput(event){
  if(target.dataset.builderSection){const data=setupBuilderDataForKey(target.dataset.builderSection);if(data)data.section=target.value;return}
  if(target.dataset.builderPlan){
   const id=target.dataset.builderPlan,index=Math.max(0,Number(target.value)||0),data=setupBuilderDraft.subscriptions[id],item=SETUP_SUBSCRIPTIONS.find(x=>x.id===id);
-  if(data&&item){data.plan=index;const price=item.plans[index]?.price;data.amount=price==null?"":String(price);setupBuilderRender()}return;
+  if(data&&item){
+   data.plan=index;
+   const price=item.plans[index]?.price;
+   data.amount=price==null?"":String(price);
+   const row=target.closest("[data-builder-row]");
+   const amountInput=row?.querySelector("[data-builder-sub-amount]");
+   if(amountInput)amountInput.value=data.amount;
+  }
+  return;
  }
  if(target.dataset.builderSubAmount){const data=setupBuilderDataForKey(target.dataset.builderSubAmount);if(data)data.amount=target.value;return}
  if(target.dataset.builderSubOwner){const data=setupBuilderDataForKey(target.dataset.builderSubOwner);if(data)data.owner=target.value}
@@ -269,6 +294,7 @@ function setupBuilderHandleInput(event){
 function setupBuilderHandleClick(event){
  const mode=event.target.closest("[data-builder-mode]");if(mode){setupBuilderSetMode(mode.dataset.builderMode);return}
  const rename=event.target.closest("[data-builder-rename]");if(rename){const key=rename.dataset.builderRename;setupBuilderEditingName=setupBuilderEditingName===key?"":key;setupBuilderRender();return}
+ const remove=event.target.closest("[data-builder-delete]");if(remove){setupBuilderDeleteCustom(remove.dataset.builderDelete);return}
  const add=event.target.closest("[data-builder-add]");if(add){setupBuilderAddCustom(add.dataset.builderAdd);return}
 }
 function setupBuilderSetMode(mode){
@@ -292,6 +318,16 @@ function setupBuilderAddCustom(type){
  else if(type==="expense")setupBuilderDraft.customExpense.push({id,name:"Nouvelle dépense",selected:true,amount:"",owner,section:"Obligatoires",custom:true});
  else setupBuilderDraft.customSubscriptions.push({id,name:"Nouvel abonnement",selected:true,amount:"",owner,custom:true});
  setupBuilderEditingName=(type==="income"?"customIncome":type==="expense"?"customExpense":"customSubscription")+":"+id;
+ setupBuilderRender();
+}
+function setupBuilderDeleteCustom(key){
+ const [type,id]=String(key||"").split(":");
+ const list=setupBuilderCustomArray(type);
+ if(!list)return;
+ const index=list.findIndex(item=>item.id===id);
+ if(index<0)return;
+ list.splice(index,1);
+ if(setupBuilderEditingName===key)setupBuilderEditingName="";
  setupBuilderRender();
 }
 function setupBuilderNumber(value){return Math.max(0,Math.round((Number(String(value).replace(",","."))||0)*100)/100)}
@@ -353,7 +389,11 @@ async function finishSetupBuilder(){
   for(const item of SETUP_BUILDER_INCOMES){const data=setupBuilderDraft.income[item.id];setupBuilderSetBaseBudget("income",item.id,data.selected?setupBuilderNumber(data.amount):0,data.owner)}
   for(const item of SETUP_BUILDER_EXPENSES){const data=setupBuilderDraft.expense[item.id];setupBuilderSetBaseBudget("expense",item.id,data.selected?setupBuilderNumber(data.amount):0,data.owner)}
   setupBuilderApplyCustomCategories();setupBuilderPersonalizeCategoryNames();
-  state.deletedIncomeCategoriesGlobal=[...new Set([...(state.deletedIncomeCategoriesGlobal||[]),"extra-b","extra-a"])];
+  const selectedIncome=new Set(SETUP_BUILDER_INCOMES.filter(item=>setupBuilderDraft.income[item.id]?.selected&&(!setupBuilderIsSolo()||item.owner!=="A")).map(item=>item.id));
+  const selectedExpense=new Set(SETUP_BUILDER_EXPENSES.filter(item=>setupBuilderDraft.expense[item.id]?.selected&&(!setupBuilderIsSolo()||item.owner!=="A")).map(item=>item.id));
+  state.deletedIncomeCategoriesGlobal=[...new Set((state.baseIncomeCategories||[]).map(item=>item.id).filter(id=>!selectedIncome.has(id)))];
+  state.deletedExpenseCategoriesGlobal=state.deletedExpenseCategoriesGlobal||[];
+  state.deletedCategoriesGlobal=[...new Set((state.baseExpenseCategories||[]).map(item=>item.id).filter(id=>!selectedExpense.has(id)))];
   state.onboardingComplete=true;applyCategoryState();syncHouseholdUi();render();saveState();await cloudPushLocalState({force:true});markSetupBuilderComplete();setupBuilderSetStatus("Budget créé.","success");
   setTimeout(()=>{closeSetupBuilder();showUndoToast?.("Budget de départ créé")},350);
  }catch(error){console.error("Setup builder",error);setupBuilderSetStatus(error?.message||"Impossible de créer le budget. Réessaie.","error")}finally{next.disabled=false}
