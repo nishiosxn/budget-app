@@ -86,5 +86,5 @@ if(typeof document!=="undefined"){
  document.getElementById("cancelAccountBalance")?.addEventListener("click",closeAccountBalanceEditor);
  document.getElementById("saveAccountOpening")?.addEventListener("click",saveAccountOpeningBalance);
  document.getElementById("accountBalanceBackdrop")?.addEventListener("click",event=>{if(event.target.id==="accountBalanceBackdrop")closeAccountBalanceEditor()});
- document.getElementById("accountOpeningInput")?.addEventListener("keydown",event=>{if(event.key==="Enter")saveAccountOpeningBalance();if(event.key==="Escape")closeAccountBalanceEditor()});
+ document.getElementById("accountOpeningInput")?.addEventListener("keydown",event=>{if(event.key==="Escape")closeAccountBalanceEditor()});
 }
