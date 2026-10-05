@@ -19,7 +19,7 @@
 <div class="app">
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div class="brand-copy"><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
+      <div class="brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div class="brand-copy"><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
       <div class="nav-cloud-tools topbar-cloud-tools">
         <span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span>
         <button id="cloudForceSyncBtn" class="cloud-force-sync" type="button" aria-label="Forcer l’envoi de cette session" title="Forcer l’envoi de toutes les données de cette session" hidden>
@@ -248,6 +248,14 @@
         </div>
         <button id="saveHouseholdBtn" class="btn btn-income" type="button">Enregistrer le foyer</button>
       </div>
+      <div class="settings-appearance">
+        <div class="settings-appearance-head">
+          <div><span>APPARENCE</span><strong>Personnaliser mon interface</strong></div>
+          <p>La couleur et la police sont personnelles à ton compte et ne modifient pas l’affichage des autres membres du foyer.</p>
+        </div>
+        <div id="settingsAppearancePicker"></div>
+        <button id="saveAppearanceBtn" class="btn btn-income" type="button">Enregistrer l’apparence</button>
+      </div>
       <p class="settings-copy">Les données actives sont chargées depuis Supabase et synchronisées en continu. Aucun mode hors ligne n’est utilisé. Si un envoi échoue, le bouton de relance près de l’état de synchronisation renvoie toute la session vers le cloud.</p>
       <div id="cloudConflictCard" class="cloud-conflict-card" hidden>
         <div>
@@ -274,7 +282,7 @@
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
     <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
     <div class="onboarding-card">
       <h3>Nouveau budget</h3>
@@ -298,7 +306,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><img src="icons/icon.svg" alt="" /></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
@@ -347,6 +355,7 @@
 <script src="js/config.js" defer></script>
 <script src="js/data.js" defer></script>
 <script src="js/storage.js" defer></script>
+<script src="js/appearance.js" defer></script>
 <script src="js/calculations.js" defer></script>
 <script src="js/ui.js" defer></script>
 <script src="js/categories.js" defer></script>
