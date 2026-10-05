@@ -28,7 +28,8 @@ function normalizeHousehold(value){
  return {
   name:String(v.name||DEFAULT_HOUSEHOLD.name).trim()||DEFAULT_HOUSEHOLD.name,
   personB:String(v.personB||DEFAULT_HOUSEHOLD.personB).trim()||DEFAULT_HOUSEHOLD.personB,
-  personA:String(v.personA||DEFAULT_HOUSEHOLD.personA).trim()||DEFAULT_HOUSEHOLD.personA
+  personA:String(v.personA||DEFAULT_HOUSEHOLD.personA).trim()||DEFAULT_HOUSEHOLD.personA,
+  mode:v.mode==="solo"?"solo":"couple"
  };
 }
 function normalizeState(x){
