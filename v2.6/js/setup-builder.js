@@ -59,9 +59,19 @@ function setupBuilderInitialDraft(){
  const household=normalizeHousehold(state.household);
  const mode=household.mode==="solo"?"solo":"couple";
  const income={};
- SETUP_BUILDER_INCOMES.forEach(item=>income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name:item.name});
+ SETUP_BUILDER_INCOMES.forEach(item=>{
+  const name=item.id==="salary-b"?`Salaire ${household.personB}`:item.id==="salary-a"?`Salaire ${household.personA}`:item.name;
+  income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,renamed:false};
+ });
  const expense={};
- SETUP_BUILDER_EXPENSES.forEach(item=>expense[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name:item.name,section:item.section});
+ SETUP_BUILDER_EXPENSES.forEach(item=>{
+  let name=item.name;
+  if(item.id==="phone-b")name=`Téléphone ${household.personB}`;
+  if(item.id==="phone-a")name=`Téléphone ${household.personA}`;
+  if(item.id==="saving-b")name=`Épargne ${household.personB}`;
+  if(item.id==="saving-a")name=`Épargne ${household.personA}`;
+  expense[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,section:item.section,renamed:false};
+ });
  const subscriptions={};
  SETUP_SUBSCRIPTIONS.forEach(item=>{const plan=item.plans[0];subscriptions[item.id]={selected:false,plan:0,amount:plan.price==null?"":String(plan.price),owner:mode==="solo"?"B":item.owner,name:item.name}});
  return {household:{name:household.name,personB:household.personB,personA:household.personA,mode},income,expense,subscriptions,customIncome:[],customExpense:[],customSubscriptions:[]};
@@ -116,16 +126,7 @@ function setupBuilderProgress(){
  const labels=["Foyer","Revenus","Dépenses","Abonnements","Résumé"];
  return labels.map((label,index)=>`<span class="${index===setupBuilderStep?"active":index<setupBuilderStep?"done":""}"><b>${index+1}</b><em>${label}</em></span>`).join("");
 }
-function setupBuilderDisplayName(item,data){
- let name=data.name||item?.name||"Catégorie";
- if(item?.id==="salary-b")name=`Salaire ${setupBuilderPersonName("B")}`;
- if(item?.id==="salary-a")name=`Salaire ${setupBuilderPersonName("A")}`;
- if(item?.id==="phone-b")name=`Téléphone ${setupBuilderPersonName("B")}`;
- if(item?.id==="phone-a")name=`Téléphone ${setupBuilderPersonName("A")}`;
- if(item?.id==="saving-b")name=`Épargne ${setupBuilderPersonName("B")}`;
- if(item?.id==="saving-a")name=`Épargne ${setupBuilderPersonName("A")}`;
- return name;
-}
+function setupBuilderDisplayName(item,data){return data.name||item?.name||"Catégorie"}
 function setupBuilderNameMarkup(key,name){
  if(setupBuilderEditingName===key)return `<input class="setup-builder-inline-name" type="text" maxlength="60" data-builder-name-input="${key}" value="${escapeHtml(name)}" autofocus>`;
  return `<strong>${escapeHtml(name)}</strong>`;
@@ -236,8 +237,24 @@ function setupBuilderDataForKey(key){
 function setupBuilderHandleInput(event){
  const target=event.target;
  if(!setupBuilderDraft||!(target instanceof HTMLInputElement||target instanceof HTMLSelectElement))return;
- if(target.dataset.builderHousehold){setupBuilderDraft.household[target.dataset.builderHousehold]=target.value;return}
- if(target.dataset.builderNameInput){const data=setupBuilderDataForKey(target.dataset.builderNameInput);if(data)data.name=target.value;return}
+ if(target.dataset.builderHousehold){
+  const field=target.dataset.builderHousehold;
+  setupBuilderDraft.household[field]=target.value;
+  if(field==="personB"){
+   const name=target.value.trim()||"Personne 1";
+   if(!setupBuilderDraft.income["salary-b"].renamed)setupBuilderDraft.income["salary-b"].name=`Salaire ${name}`;
+   if(!setupBuilderDraft.expense["phone-b"].renamed)setupBuilderDraft.expense["phone-b"].name=`Téléphone ${name}`;
+   if(!setupBuilderDraft.expense["saving-b"].renamed)setupBuilderDraft.expense["saving-b"].name=`Épargne ${name}`;
+  }
+  if(field==="personA"){
+   const name=target.value.trim()||"Personne 2";
+   if(!setupBuilderDraft.income["salary-a"].renamed)setupBuilderDraft.income["salary-a"].name=`Salaire ${name}`;
+   if(!setupBuilderDraft.expense["phone-a"].renamed)setupBuilderDraft.expense["phone-a"].name=`Téléphone ${name}`;
+   if(!setupBuilderDraft.expense["saving-a"].renamed)setupBuilderDraft.expense["saving-a"].name=`Épargne ${name}`;
+  }
+  return;
+ }
+ if(target.dataset.builderNameInput){const data=setupBuilderDataForKey(target.dataset.builderNameInput);if(data){data.name=target.value;data.renamed=true}return}
  if(target.dataset.builderSelect){const data=setupBuilderDataForKey(target.dataset.builderSelect);if(data){data.selected=target.checked;setupBuilderRender()}return}
  if(target.dataset.builderAmount){const data=setupBuilderDataForKey(target.dataset.builderAmount);if(data)data.amount=target.value;return}
  if(target.dataset.builderOwner){const data=setupBuilderDataForKey(target.dataset.builderOwner);if(data)data.owner=target.value;return}
@@ -336,6 +353,7 @@ async function finishSetupBuilder(){
   for(const item of SETUP_BUILDER_INCOMES){const data=setupBuilderDraft.income[item.id];setupBuilderSetBaseBudget("income",item.id,data.selected?setupBuilderNumber(data.amount):0,data.owner)}
   for(const item of SETUP_BUILDER_EXPENSES){const data=setupBuilderDraft.expense[item.id];setupBuilderSetBaseBudget("expense",item.id,data.selected?setupBuilderNumber(data.amount):0,data.owner)}
   setupBuilderApplyCustomCategories();setupBuilderPersonalizeCategoryNames();
+  state.deletedIncomeCategoriesGlobal=[...new Set([...(state.deletedIncomeCategoriesGlobal||[]),"extra-b","extra-a"])];
   state.onboardingComplete=true;applyCategoryState();syncHouseholdUi();render();saveState();await cloudPushLocalState({force:true});markSetupBuilderComplete();setupBuilderSetStatus("Budget créé.","success");
   setTimeout(()=>{closeSetupBuilder();showUndoToast?.("Budget de départ créé")},350);
  }catch(error){console.error("Setup builder",error);setupBuilderSetStatus(error?.message||"Impossible de créer le budget. Réessaie.","error")}finally{next.disabled=false}
