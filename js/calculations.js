@@ -43,6 +43,10 @@ function metricsForMonth(label=state.selectedMonth){
  let incomeB=0,incomeA=0,expenseB=0,expenseA=0,savingBShare=0,savingAShare=0;
  tx.forEach(t=>{const owner=transactionOwner(t),amount=Number(t.amount)||0;if(t.type==="income"){incomeB+=shareAmount(owner,amount,"B");incomeA+=shareAmount(owner,amount,"A")}else if(catById(t.category,"expense")?.saving){savingBShare+=shareAmount(owner,amount,"B");savingAShare+=shareAmount(owner,amount,"A")}else{expenseB+=shareAmount(owner,amount,"B");expenseA+=shareAmount(owner,amount,"A")}});
  const savingsBMonth=expMap["saving-b"]||0,savingsAMonth=expMap["saving-a"]||0,savingsB=cumulativeCategoryActual("saving-b","expense",label),savingsA=cumulativeCategoryActual("saving-a","expense",label);
- return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB:incomeB-expenseB-savingBShare,restA:incomeA-expenseA-savingAShare,savingsB,savingsA,savingsBMonth,savingsAMonth};
+ const restB=incomeB-expenseB-savingBShare,restA=incomeA-expenseA-savingAShare;
+ const openingB=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"B"):0,openingA=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"A"):0;
+ const openingBDefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"B"),openingADefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"A");
+ const accountBalanceB=openingBDefined?openingB+restB:null,accountBalanceA=openingADefined?openingA+restA:null;
+ return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB,restA,openingB,openingA,openingBDefined,openingADefined,accountBalanceB,accountBalanceA,savingsB,savingsA,savingsBMonth,savingsAMonth};
 }
 function metrics(){return metricsForMonth(state.selectedMonth)}

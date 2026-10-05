@@ -124,17 +124,49 @@ if(modular&&exists("js/storage.js")){
   else ok("État neuf sans transactions");
 }
 
+if(modular&&exists("js/ui.js")){
+  const overviewHtml=read("index.html");
+  const overviewUi=read("js/ui.js");
+  const remainderMarkers=['id="balanceSummary"','id="balanceRestB"','id="balanceRestA"'];
+  const missingRemainderMarkers=remainderMarkers.filter(marker=>!overviewHtml.includes(marker));
+  if(missingRemainderMarkers.length)fail("Carte Reste disponible incomplète: "+missingRemainderMarkers.join(", "));
+  else if(!overviewUi.includes("m.restB")||!overviewUi.includes("m.restA")||!overviewUi.includes("m.expense+m.saving"))fail("Rendu du reste réel par personne incomplet");
+  else ok("Carte Reste disponible : total foyer et restes réels Baptiste/Anaëlle présents");
+}
+
 if(modular&&exists("js/calculations.js")){
   const calc=read("js/calculations.js").replace(/\s+/g,"");
   const required=[
     "balance:income-expense-saving",
     "plannedBalance:plannedIncome-plannedExpense-plannedSaving",
-    "restB:incomeB-expenseB-savingBShare",
-    "restA:incomeA-expenseA-savingAShare"
+    "restB=incomeB-expenseB-savingBShare",
+    "restA=incomeA-expenseA-savingAShare",
+    "accountBalanceB=openingBDefined?openingB+restB:null",
+    "accountBalanceA=openingADefined?openingA+restA:null"
   ];
   const missing=required.filter(x=>!calc.includes(x));
   if(missing.length) fail("Formules métier critiques absentes: "+missing.join(", "));
   else ok("Formules critiques revenus/dépenses/épargne/restes présentes");
+}
+
+if(modular){
+  if(!exists("js/account-balances.js"))fail("Module de soldes d'ouverture absent");
+  else{
+    const accountBalances=read("js/account-balances.js");
+    const markers=["account_opening_balances","accountOpeningBalanceFor","saveAccountOpeningBalance","data-edit-opening-balance"];
+    const missing=markers.filter(marker=>!accountBalances.includes(marker)&&!read("index.html").includes(marker));
+    if(missing.length)fail("Soldes de compte V2.6 incomplets: "+missing.join(", "));
+    else ok("Soldes d'ouverture mensuels synchronisés présents");
+  }
+  const html=read("index.html");
+  const cloudLoad=read("js/cloud-load.js");
+  const realtime=read("js/cloud-realtime.js");
+  if(!html.includes('id="accountBalanceB"')||!html.includes('id="accountBalanceA"')||!html.includes('id="accountBalanceBackdrop"'))fail("Interface de solde de compte incomplète");
+  else ok("Interface Répartition du mois basée sur les soldes de compte présente");
+  if(!cloudLoad.includes('from("account_opening_balances")')||!realtime.includes('table:"account_opening_balances"'))fail("Synchronisation des soldes d'ouverture incomplète");
+  else ok("Chargement et Realtime des soldes d'ouverture présents");
+  if(!exists("supabase/migrations/20261003121500_v2_6_account_opening_balances.sql"))fail("Migration des soldes d'ouverture absente");
+  else ok("Migration V2.6 des soldes d'ouverture présente");
 }
 
 if(modular&&exists("js/settings.js")){
@@ -143,6 +175,47 @@ if(modular&&exists("js/settings.js")){
   const missing=migrationMarkers.filter(x=>!settings.includes(x));
   if(missing.length) fail("Moteur de migration incomplet: "+missing.join(", "));
   else ok("Moteur de migration V4/V5 présent");
+}
+
+if(modular&&exists("js/app.js")){
+  const app=read("js/app.js");
+  const enterMarkers=["enterPrimaryActionFor","e.key!==\"Enter\"","enterkeyhint","saveTransaction","saveCategoryEdit","saveRecurrenceEdit","saveAccountOpening","saveHouseholdBtn","cloudAuthSubmitBtn","cloudAcceptInviteBtn","cloudResetPasswordBtn"];
+  const missingEnter=enterMarkers.filter(marker=>!app.includes(marker));
+  if(missingEnter.length)fail("Validation clavier/mobile avec Entrée incomplète: "+missingEnter.join(", "));
+  else ok("Entrée valide les champs principaux sur clavier et mobile");
+}
+
+if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
+  const categoriesUi=read("js/ui.js");
+  const categoriesLogic=read("js/categories.js");
+  const transactions=read("js/transactions.js");
+  const detailsMarkers=["data-category-details-toggle","cat-detail-row","categoryDetailOwner","categoryDetailsMarkup"];
+  const missingDetails=detailsMarkers.filter(marker=>!categoriesUi.includes(marker)&&!categoriesLogic.includes(marker));
+  if(missingDetails.length)fail("Détail des opérations par catégorie incomplet: "+missingDetails.join(", "));
+  else if(!categoriesLogic.includes("toggleCategoryDetails"))fail("Ouverture du détail des catégories absente");
+  else if(!transactions.includes('owner:modalOwner'))fail("Attribution du payeur par opération absente");
+  else if(!transactions.includes('QUI A PAYÉ ?')&&!read("index.html").includes('QUI A PAYÉ ?'))fail("Libellé du payeur par opération absent");
+  else ok("Catégories : détail des opérations et payeur individuel présents");
+}
+
+if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
+  const categories=read("js/categories.js");
+  const ui=read("js/ui.js");
+  const categoryUxMarkers=[
+    'data-fill-category',
+    'data-category-menu-trigger',
+    'data-bulk-action="fill-empty"',
+    'data-bulk-clear'
+  ];
+  const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
+  if(missingCategoryUx.length)fail("UX Catégories V2.6 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V2.6 présente");
+  if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
+  else ok("Remplissage des vides préserve les montants déjà saisis");
+  if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
+  else ok("Tout vider est masqué derrière le menu secondaire");
+  if(!categories.includes("showUndoToast")||!categories.includes("restoreCategoryTransactions"))fail("Annulation des actions rapides Catégories absente");
+  else ok("Actions rapides Catégories annulables");
 }
 
 if(modular&&exists("js/cloud-state-core.js")){
@@ -239,13 +312,18 @@ if(modular&&exists("js/cloud-sync-v25.js")){
       {amount:30,label:"Base"},
       "local","transactions","tx-1"
     );
+    const categoryPayload={name:"Courses",type:"expense",group_name:"Vie courante",owner_slot:"B",is_saving:false,excluded_months:[],is_custom:false,sort_order:1,created_from:"2026-09-01"};
+    const categoryUpdate=context.cloudCategoryValues(categoryPayload,false);
+    const categoryInsert=context.cloudCategoryValues(categoryPayload,true);
     const valid=merged.conflicts.length===0
       &&merged.value.amount===20
       &&merged.value.label==="Cloud"
       &&conflict.conflicts.length===1
-      &&resolved.value.amount===20;
-    if(!valid)fail("Fusion optimiste V2.5 invalide");
-    else ok("Fusion V2.5 : changements indépendants fusionnés et conflits détectés");
+      &&resolved.value.amount===20
+      &&!("type" in categoryUpdate)
+      &&categoryInsert.type==="expense";
+    if(!valid)fail("Fusion optimiste V2.5 ou permissions de mise à jour catégorie invalides");
+    else ok("Fusion V2.5 : changements indépendants fusionnés, conflits détectés et type de catégorie immuable");
   }catch(error){
     fail("Test du moteur de synchronisation V2.5 impossible: "+error.message);
   }

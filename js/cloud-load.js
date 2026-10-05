@@ -7,10 +7,11 @@ async function cloudLoadState(){
  const budgetsRequest=cloudClient.from("budgets").select("*").eq("household_id",activeHouseholdId).order("month");
  const transactionsRequest=cloudClient.from("transactions").select("*").eq("household_id",activeHouseholdId).order("transaction_date");
  const recurrencesRequest=cloudClient.from("recurrences").select("*").eq("household_id",activeHouseholdId).order("start_month");
- const [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes]=await Promise.all([
-  householdRequest,categoriesRequest,budgetsRequest,transactionsRequest,recurrencesRequest
+ const openingBalancesRequest=cloudClient.from("account_opening_balances").select("*").eq("household_id",activeHouseholdId).order("month");
+ const [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes,openingBalancesRes]=await Promise.all([
+  householdRequest,categoriesRequest,budgetsRequest,transactionsRequest,recurrencesRequest,openingBalancesRequest
  ]);
- for(const result of [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes])if(result.error)throw result.error;
+ for(const result of [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes,openingBalancesRes])if(result.error)throw result.error;
 
  const household=householdRes.data;
  const selectedMonth=state.selectedMonth||currentMonthLabel();
@@ -29,6 +30,7 @@ async function cloudLoadState(){
  const allBudgetRows=budgetsRes.data||[];
  const allTransactionRows=transactionsRes.data||[];
  const allRecurrenceRows=recurrencesRes.data||[];
+ if(typeof loadAccountOpeningBalanceRows==="function")loadAccountOpeningBalanceRows(openingBalancesRes.data||[]);
  applyCloudBudgets(allBudgetRows.filter(row=>!row.archived_at),idMap,next);
  next.transactions=[
   ...cloudTransactionsToLocal(allTransactionRows.filter(row=>!row.archived_at),idMap),

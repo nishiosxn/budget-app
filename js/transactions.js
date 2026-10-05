@@ -22,7 +22,7 @@ function selectCreatedTransactionCategory(id){populateTransactionCategories(id);
 function openModal(type,transaction=null){
  modalType=type;editingTransactionId=transaction?.id||null;const isSaving=type==="saving",editing=!!transaction;
  document.getElementById("modalTitle").textContent=editing?(isSaving?"Modifier l’épargne":type==="expense"?"Modifier la dépense":"Modifier la rentrée"):(isSaving?"Ajouter une épargne":type==="expense"?"Ajouter une dépense":"Ajouter une rentrée");
- document.getElementById("modalKind").textContent=state.selectedMonth;saveBtn.className=`btn ${type==='expense'?'btn-expense':'btn-income'} save`;saveBtn.textContent=editing?"Enregistrer":isSaving?"Ajouter l’épargne":type==="expense"?"Ajouter la dépense":"Ajouter la rentrée";
+ document.getElementById("modalKind").textContent=state.selectedMonth;const ownerSwitchLabel=document.getElementById("ownerSwitchLabel");if(ownerSwitchLabel)ownerSwitchLabel.textContent=isSaving?"ÉPARGNÉ PAR ?":type==="expense"?"QUI A PAYÉ ?":"REÇU PAR ?";saveBtn.className=`btn ${type==='expense'?'btn-expense':'btn-income'} save`;saveBtn.textContent=editing?"Enregistrer":isSaving?"Ajouter l’épargne":type==="expense"?"Ajouter la dépense":"Ajouter la rentrée";
  populateTransactionCategories(transaction?.category||"");setModalOwner(transaction?.owner||categoryDefaultOwner()||"common");setTransactionScope(transaction?.scope==="forward"?"forward":"month");transactionScopeField.style.display=isSaving?"none":"block";
  amountInput.value=transaction?String(Number(transaction.amount)||""):"";transactionLabelInput.value=transaction?.label||"";refreshAmountState();backdrop.classList.add("open");backdrop.setAttribute("aria-hidden","false");setTimeout(()=>amountInput.focus(),80)
 }
