@@ -246,6 +246,19 @@ function setupBuilderRender(){
    setupBuilderSetMode(button.dataset.builderMode);
   };
  });
+ const appearanceRoot=content.querySelector("[data-appearance-picker]");
+ if(appearanceRoot&&typeof bindAppearanceCustomPicker==="function"){
+  delete appearanceRoot.dataset.customPickerBound;
+  bindAppearanceCustomPicker(
+   appearanceRoot,
+   ()=>setupBuilderDraft?.appearance||currentUserAppearance(),
+   (next,options={})=>{
+    setupBuilderDraft.appearance=normalizeUserAppearance(next);
+    applyUserAppearance(setupBuilderDraft.appearance);
+    if(options.render)setupBuilderRender();
+   }
+  );
+ }
  requestAnimationFrame(()=>{
   if(root&&sameStep)root.scrollTop=previousScroll;
   const field=document.querySelector("[data-builder-name-input]");
@@ -273,15 +286,7 @@ function setupBuilderDataForKey(key){
 function setupBuilderHandleInput(event){
  const target=event.target;
  if(!setupBuilderDraft||!(target instanceof HTMLInputElement||target instanceof HTMLSelectElement))return;
- if(target.matches("[data-appearance-custom-color]")){
-  setupBuilderDraft.appearance=appearanceFromPickerEvent(target,setupBuilderDraft.appearance);
-  applyUserAppearance(setupBuilderDraft.appearance);
-  const tile=target.closest(".appearance-color-custom");
-  if(tile){tile.classList.add("active");tile.style.setProperty("--swatch",target.value)}
-  target.closest("[data-appearance-picker]")?.querySelectorAll("[data-appearance-color]").forEach(button=>button.classList.remove("active"));
-  if(event.type==="change")setupBuilderRender();
-  return;
- }
+
  if(target.dataset.builderHousehold){
   const field=target.dataset.builderHousehold;
   setupBuilderDraft.household[field]=target.value;
@@ -320,7 +325,7 @@ function setupBuilderHandleInput(event){
  if(target.dataset.builderSubOwner){const data=setupBuilderDataForKey(target.dataset.builderSubOwner);if(data)data.owner=target.value}
 }
 function setupBuilderHandleClick(event){
- const appearanceButton=event.target.closest("[data-appearance-color],[data-appearance-font]");
+ const appearanceButton=event.target.closest("[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]");
  if(appearanceButton&&setupBuilderDraft?.appearance){
   setupBuilderDraft.appearance=appearanceFromPickerEvent(appearanceButton,setupBuilderDraft.appearance);
   applyUserAppearance(setupBuilderDraft.appearance);
