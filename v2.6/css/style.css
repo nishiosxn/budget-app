@@ -2688,3 +2688,20 @@ input:focus-visible{
     max-width:none;
   }
 }
+
+
+/* === V2.6 · Builder controller stabilisé === */
+.appearance-custom-panel[hidden]{display:none!important}
+#setupBuilderBackdrop.open .setup-builder-panel,
+#setupBuilderBackdrop.open .setup-builder-content,
+#setupBuilderBackdrop.open .setup-builder-actions{
+  pointer-events:auto;
+}
+#setupBuilderBackdrop button,
+#setupBuilderBackdrop input,
+#setupBuilderBackdrop select,
+#setupBuilderBackdrop label,
+#setupBuilderBackdrop [data-appearance-sv],
+#setupBuilderBackdrop [data-appearance-hue]{
+  pointer-events:auto;
+}
