@@ -35,6 +35,7 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Objectif : simplifier fortement **Catégories** puis clarifier la **Vue d’ensemble**, en séparant le reste réel du mois du solde de compte personnel.
 - Critères d’acceptation :
   - montant réel directement cliquable ;
+  - détail dépliable des opérations de chaque catégorie avec libellé, date, montant et payeur individuel ;
   - montant prévu directement cliquable ;
   - action individuelle « réel = prévu » en un clic quand elle est pertinente ;
   - actions secondaires regroupées derrière un menu `⋯` ;
@@ -60,6 +61,8 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - `Courses` : attribution **Baptiste** uniquement en septembre 2026, puis retour **À deux** à partir d’octobre.
 - Erreur 403 Supabase sur les mises à jour de catégories corrigée : le moteur de synchronisation ne tente plus de réécrire la colonne `categories.type` lors d’une modification normale.
 - Carte verte « Reste disponible ce mois » simplifiée : total foyer à gauche, reste réel Baptiste/Anaëlle à droite sur desktop et empilé proprement sur mobile.
+- Catégories : petite flèche sur les catégories ayant des mouvements ; ouverture d’une liste locale des opérations du mois. Le payeur est lu sur chaque transaction, pas sur le total de la catégorie.
+- Vérification live : l’opération Courses de **6,52 €** du 5 octobre est bien enregistrée individuellement avec Baptiste comme payeur.
 - Validation navigateur/visuelle : à poursuivre sur la preview publique.
 - Preview : https://nishiosxn.github.io/budget-app/previews/pr-23/
 - Source applicative publiée : `a60dc4e5725bd4f46fe97662983379c746b3c881`.
