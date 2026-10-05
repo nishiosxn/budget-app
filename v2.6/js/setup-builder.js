@@ -239,6 +239,13 @@ function setupBuilderRender(){
    <div class="setup-builder-recap"><strong>${totals.count} catégorie${totals.count>1?"s":""} configurée${totals.count>1?"s":""}</strong><span>Mode ${setupBuilderIsSolo()?"seul":"à deux"} · historique réel vide · tout reste modifiable ensuite.</span></div>`;
  }
  if(root)root.dataset.builderStep=String(setupBuilderStep);
+ content.querySelectorAll("[data-builder-mode]").forEach(button=>{
+  button.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   setupBuilderSetMode(button.dataset.builderMode);
+  };
+ });
  requestAnimationFrame(()=>{
   if(root&&sameStep)root.scrollTop=previousScroll;
   const field=document.querySelector("[data-builder-name-input]");
@@ -266,6 +273,15 @@ function setupBuilderDataForKey(key){
 function setupBuilderHandleInput(event){
  const target=event.target;
  if(!setupBuilderDraft||!(target instanceof HTMLInputElement||target instanceof HTMLSelectElement))return;
+ if(target.matches("[data-appearance-custom-color]")){
+  setupBuilderDraft.appearance=appearanceFromPickerEvent(target,setupBuilderDraft.appearance);
+  applyUserAppearance(setupBuilderDraft.appearance);
+  const tile=target.closest(".appearance-color-custom");
+  if(tile){tile.classList.add("active");tile.style.setProperty("--swatch",target.value)}
+  target.closest("[data-appearance-picker]")?.querySelectorAll("[data-appearance-color]").forEach(button=>button.classList.remove("active"));
+  if(event.type==="change")setupBuilderRender();
+  return;
+ }
  if(target.dataset.builderHousehold){
   const field=target.dataset.builderHousehold;
   setupBuilderDraft.household[field]=target.value;
@@ -317,18 +333,23 @@ function setupBuilderHandleClick(event){
  const add=event.target.closest("[data-builder-add]");if(add){setupBuilderAddCustom(add.dataset.builderAdd);return}
 }
 function setupBuilderSetMode(mode){
+ if(!setupBuilderDraft?.household)return;
  mode=mode==="solo"?"solo":"couple";
- const previous=setupBuilderMode();if(previous===mode)return;
+ const previous=setupBuilderMode();
  setupBuilderDraft.household.mode=mode;
- const makeOwner=data=>{
-  if(mode==="solo")data.owner="B";
-  else if(data.owner==="B"&&data._previousOwner)data.owner=data._previousOwner;
- };
- for(const store of [setupBuilderDraft.income,setupBuilderDraft.expense,setupBuilderDraft.subscriptions])for(const data of Object.values(store)){
-  if(mode==="solo"){data._previousOwner=data.owner;data.owner="B"}else if(data._previousOwner){data.owner=data._previousOwner;delete data._previousOwner}
+ if(previous!==mode){
+  const makeOwner=data=>{
+   if(mode==="solo"){data._previousOwner=data.owner;data.owner="B"}
+   else if(data._previousOwner){data.owner=data._previousOwner;delete data._previousOwner}
+  };
+  for(const store of [setupBuilderDraft.income,setupBuilderDraft.expense,setupBuilderDraft.subscriptions])for(const data of Object.values(store))makeOwner(data);
+  for(const list of [setupBuilderDraft.customIncome,setupBuilderDraft.customExpense,setupBuilderDraft.customSubscriptions])for(const data of list)makeOwner(data);
+  if(mode==="solo"){
+   setupBuilderDraft.income["salary-a"].selected=false;
+   setupBuilderDraft.expense["phone-a"].selected=false;
+   setupBuilderDraft.expense["saving-a"].selected=false;
+  }
  }
- for(const list of [setupBuilderDraft.customIncome,setupBuilderDraft.customExpense,setupBuilderDraft.customSubscriptions])for(const data of list)makeOwner(data);
- if(mode==="solo"){setupBuilderDraft.income["salary-a"].selected=false;setupBuilderDraft.expense["phone-a"].selected=false;setupBuilderDraft.expense["saving-a"].selected=false}
  setupBuilderRender();
 }
 function setupBuilderAddCustom(type){
