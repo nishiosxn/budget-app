@@ -59,17 +59,29 @@ function categoryDetailAmount(t,type){
  return euro(amount);
 }
 function categoryDetailsMarkup(c,type,m){
- const transactions=(m?.tx||[]).filter(t=>t.type===type&&t.category===c.id).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||String(b.id).localeCompare(String(a.id)));
- if(!transactions.length)return {count:0,html:""};
+ const all=(m?.tx||[]).filter(t=>t.type===type&&t.category===c.id);
+ const transactions=all.filter(t=>!t.adjustment).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||String(b.id).localeCompare(String(a.id)));
+ const adjustments=all.filter(t=>t.adjustment),adjustmentTotal=Math.round(sum(adjustments.map(t=>Number(t.amount)||0))*100)/100;
+ if(!transactions.length&&Math.abs(adjustmentTotal)<.005)return {count:0,html:""};
  const open=categoryDetailsOpen(c.id,type);
- const rows=transactions.map(t=>`<div class="cat-detail-row">
+ let rows=transactions.map(t=>`<div class="cat-detail-row">
    <div class="cat-detail-main">
     <div class="cat-detail-label">${escapeHtml(categoryDetailLabel(t))}</div>
     <div class="cat-detail-meta">${escapeHtml(categoryDetailDate(t))} · ${escapeHtml(categoryDetailOwner(t,type))}</div>
    </div>
    <strong class="cat-detail-amount">${categoryDetailAmount(t,type)}</strong>
   </div>`).join("");
- return {count:transactions.length,open,html:`<div class="cat-details" data-category-details="${escapeHtml(c.id)}" ${open?"":"hidden"}>${rows}</div>`};
+ if(Math.abs(adjustmentTotal)>=.005){
+  rows+=`<div class="cat-detail-row cat-detail-adjustment">
+   <div class="cat-detail-main">
+    <div class="cat-detail-label">Ajustement du total</div>
+    <div class="cat-detail-meta">Correction manuelle · non liée à un achat précis</div>
+   </div>
+   <strong class="cat-detail-amount">${adjustmentTotal<0?"−":""}${euro(Math.abs(adjustmentTotal))}</strong>
+  </div>`;
+ }
+ const count=transactions.length+(Math.abs(adjustmentTotal)>=.005?1:0);
+ return {count,open,html:`<div class="cat-details" data-category-details="${escapeHtml(c.id)}" ${open?"":"hidden"}>${rows}</div>`};
 }
 function categoryRow(c,actual,type,m){
  const isSaving=type==="expense"&&!!c.saving,current=Number(actual)||0,planned=Number(c.budget)||0,hasPlanned=planned>.005,isEmpty=Math.abs(current)<.005,isMatched=hasPlanned&&Math.abs(current-planned)<.005;
