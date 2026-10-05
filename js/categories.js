@@ -99,6 +99,8 @@ function armBulkClear(button){
 }
 
 categoryGrid.addEventListener("click",e=>{
+ const detailsToggle=e.target.closest("[data-category-details-toggle]");
+ if(detailsToggle){closeCategoryMenus();toggleCategoryDetails(detailsToggle.dataset.categoryDetailsToggle,detailsToggle.dataset.categoryType||"expense");return}
  const rowMenuTrigger=e.target.closest("[data-category-menu-trigger]");
  if(rowMenuTrigger){toggleCategoryMenu(rowMenuTrigger.closest(".cat-item")?.querySelector("[data-category-menu]"));return}
  const sectionMenuTrigger=e.target.closest("[data-section-menu-trigger]");
