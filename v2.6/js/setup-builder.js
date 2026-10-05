@@ -62,7 +62,7 @@ function setupBuilderInitialDraft(){
  const income={};
  SETUP_BUILDER_INCOMES.forEach(item=>{
   const name=item.id==="salary-b"?`Salaire ${household.personB}`:item.id==="salary-a"?`Salaire ${household.personA}`:item.name;
-  income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,renamed:false,removable:!!item.removable,hidden:false};
+  income[item.id]={selected:item.owner==="A"&&mode==="solo"?false:item.selected,amount:"",owner:mode==="solo"?"B":item.owner,name,renamed:false,removable:item.kind!=="salary",hidden:false};
  });
  const expense={};
  SETUP_BUILDER_EXPENSES.forEach(item=>{
@@ -189,20 +189,45 @@ function setupBuilderAddCard(type,label){
 }
 function setupBuilderVisibleIncomes(){return SETUP_BUILDER_INCOMES.filter(item=>!setupBuilderDraft.income[item.id]?.hidden&&(!setupBuilderIsSolo()||item.owner!=="A"))}
 function setupBuilderVisibleExpenses(){return SETUP_BUILDER_EXPENSES.filter(item=>!setupBuilderIsSolo()||item.owner!=="A")}
+function setupBuilderEventTarget(event){
+ const target=event.target;
+ return target instanceof Element?target:null;
+}
+function installSetupBuilderEventBridge(){
+ if(globalThis.__budgetSetupBuilderBridgeInstalled)return;
+ globalThis.__budgetSetupBuilderBridgeInstalled=true;
+
+ document.addEventListener("click",event=>{
+  const target=setupBuilderEventTarget(event);
+  const root=target?.closest?.("#setupBuilderBackdrop");
+  if(!root?.classList.contains("open"))return;
+
+  const button=target.closest("[data-builder-mode],[data-builder-rename],[data-builder-delete],[data-builder-add],[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]");
+  if(!button)return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  setupBuilderHandleClick({...event,target:button});
+ },true);
+
+ document.addEventListener("change",event=>{
+  const target=setupBuilderEventTarget(event);
+  if(!target?.closest?.("#setupBuilderBackdrop.open"))return;
+  if(!target.matches("[data-builder-select],[data-builder-owner],[data-builder-section],[data-builder-plan],[data-builder-sub-owner]"))return;
+  setupBuilderHandleInput(event);
+ },true);
+
+ document.addEventListener("input",event=>{
+  const target=setupBuilderEventTarget(event);
+  if(!target?.closest?.("#setupBuilderBackdrop.open"))return;
+  if(!target.matches("[data-builder-household],[data-builder-name-input],[data-builder-amount],[data-builder-sub-amount]"))return;
+  setupBuilderHandleInput(event);
+ },true);
+}
+installSetupBuilderEventBridge();
+
 function bindSetupBuilderControls(content){
  if(!content)return;
- content.querySelectorAll("[data-builder-household],[data-builder-name-input],[data-builder-amount],[data-builder-sub-amount]").forEach(input=>{
-  input.oninput=setupBuilderHandleInput;
- });
- content.querySelectorAll("[data-builder-select],[data-builder-owner],[data-builder-section],[data-builder-plan],[data-builder-sub-owner]").forEach(control=>{
-  control.onchange=setupBuilderHandleInput;
- });
- content.querySelectorAll("[data-builder-mode],[data-builder-rename],[data-builder-delete],[data-builder-add],[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]").forEach(button=>{
-  button.onclick=event=>{
-   event.preventDefault();
-   setupBuilderHandleClick(event);
-  };
- });
  const appearanceRoot=content.querySelector("[data-appearance-picker]");
  if(appearanceRoot&&typeof bindAppearanceCustomPicker==="function"){
   delete appearanceRoot.dataset.customPickerBound;
@@ -212,6 +237,7 @@ function bindSetupBuilderControls(content){
    (next,options={})=>{
     setupBuilderDraft.appearance=normalizeUserAppearance(next);
     applyUserAppearance(setupBuilderDraft.appearance);
+    syncAppearancePickerUi?.(appearanceRoot,setupBuilderDraft.appearance,{customOpen:true});
     if(options.render)setupBuilderRender();
    }
   );
@@ -331,17 +357,47 @@ function setupBuilderHandleInput(event){
  if(target.dataset.builderSubOwner){const data=setupBuilderDataForKey(target.dataset.builderSubOwner);if(data)data.owner=target.value}
 }
 function setupBuilderHandleClick(event){
- const appearanceButton=event.target.closest("[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]");
- if(appearanceButton&&setupBuilderDraft?.appearance){
-  setupBuilderDraft.appearance=appearanceFromPickerEvent(appearanceButton,setupBuilderDraft.appearance);
+ const target=event.target;
+ if(!(target instanceof Element))return;
+
+ const customToggle=target.closest("[data-appearance-custom-toggle]");
+ if(customToggle&&setupBuilderDraft?.appearance){
+  setupBuilderDraft.appearance={...normalizeUserAppearance(setupBuilderDraft.appearance),color:"custom"};
   applyUserAppearance(setupBuilderDraft.appearance);
-  setupBuilderRender();
+  const picker=customToggle.closest("[data-appearance-picker]");
+  if(typeof syncAppearancePickerUi==="function")syncAppearancePickerUi(picker,setupBuilderDraft.appearance,{customOpen:true});
   return;
  }
- const mode=event.target.closest("[data-builder-mode]");if(mode){setupBuilderSetMode(mode.dataset.builderMode);return}
- const rename=event.target.closest("[data-builder-rename]");if(rename){const key=rename.dataset.builderRename;setupBuilderEditingName=setupBuilderEditingName===key?"":key;setupBuilderRender();return}
- const remove=event.target.closest("[data-builder-delete]");if(remove){setupBuilderDeleteCustom(remove.dataset.builderDelete);return}
- const add=event.target.closest("[data-builder-add]");if(add){setupBuilderAddCustom(add.dataset.builderAdd);return}
+
+ const colorButton=target.closest("[data-appearance-color]");
+ if(colorButton&&setupBuilderDraft?.appearance){
+  setupBuilderDraft.appearance=appearanceFromPickerEvent(colorButton,setupBuilderDraft.appearance);
+  applyUserAppearance(setupBuilderDraft.appearance);
+  const picker=colorButton.closest("[data-appearance-picker]");
+  if(typeof syncAppearancePickerUi==="function")syncAppearancePickerUi(picker,setupBuilderDraft.appearance,{customOpen:false});
+  return;
+ }
+
+ const fontButton=target.closest("[data-appearance-font]");
+ if(fontButton&&setupBuilderDraft?.appearance){
+  setupBuilderDraft.appearance=appearanceFromPickerEvent(fontButton,setupBuilderDraft.appearance);
+  applyUserAppearance(setupBuilderDraft.appearance);
+  const picker=fontButton.closest("[data-appearance-picker]");
+  if(typeof syncAppearancePickerUi==="function")syncAppearancePickerUi(picker,setupBuilderDraft.appearance,{customOpen:setupBuilderDraft.appearance.color==="custom"});
+  return;
+ }
+
+ const mode=target.closest("[data-builder-mode]");
+ if(mode){setupBuilderSetMode(mode.dataset.builderMode);return}
+
+ const rename=target.closest("[data-builder-rename]");
+ if(rename){const key=rename.dataset.builderRename;setupBuilderEditingName=setupBuilderEditingName===key?"":key;setupBuilderRender();return}
+
+ const remove=target.closest("[data-builder-delete]");
+ if(remove){setupBuilderDeleteCustom(remove.dataset.builderDelete);return}
+
+ const add=target.closest("[data-builder-add]");
+ if(add){setupBuilderAddCustom(add.dataset.builderAdd);return}
 }
 function setupBuilderSetMode(mode){
  if(!setupBuilderDraft?.household)return;
