@@ -268,6 +268,4 @@ cloudAuthSubmitBtn?.addEventListener("click",submitCloudAuth);
 cloudSendMagicLinkBtn?.addEventListener("click",sendMagicLink);
 document.getElementById("cloudForgotPasswordBtn")?.addEventListener("click",sendPasswordReset);
 document.getElementById("cloudResetPasswordBtn")?.addEventListener("click",updateCloudPassword);
-cloudEmailInput?.addEventListener("keydown",e=>{if(e.key==="Enter")submitCloudAuth()});
-cloudPasswordInput?.addEventListener("keydown",e=>{if(e.key==="Enter")submitCloudAuth()});
 document.getElementById("cloudSignOutBtn")?.addEventListener("click",cloudSignOut);
