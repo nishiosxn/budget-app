@@ -92,7 +92,7 @@ const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.i
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 
-const scripts=[...html.matchAll(/<script src="js\/([^"]+\.js)" defer><\/script>/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
 const missingScripts=scripts.filter(f=>!exists(path.join("js",f)));
 if(missingScripts.length) fail("Scripts HTML absents: "+missingScripts.join(", "));
 else if(scripts.length) ok("Scripts référencés présents");
@@ -141,8 +141,8 @@ if(modular&&exists("js/calculations.js")){
     "plannedBalance:plannedIncome-plannedExpense-plannedSaving",
     "restB=incomeB-expenseB-savingBShare",
     "restA=incomeA-expenseA-savingAShare",
-    "accountBalanceB=openingBDefined?openingB+restB:null",
-    "accountBalanceA=openingADefined?openingA+restA:null"
+    "accountBalanceB=openingB+restB",
+    "accountBalanceA=openingA+restA"
   ];
   const missing=required.filter(x=>!calc.includes(x));
   if(missing.length) fail("Formules métier critiques absentes: "+missing.join(", "));
@@ -155,7 +155,7 @@ if(modular){
     const accountBalances=read("js/account-balances.js");
     const markers=["account_opening_balances","accountOpeningBalanceFor","saveAccountOpeningBalance","data-edit-opening-balance"];
     const missing=markers.filter(marker=>!accountBalances.includes(marker)&&!read("index.html").includes(marker));
-    if(missing.length)fail("Soldes de compte V2.6 incomplets: "+missing.join(", "));
+    if(missing.length)fail("Soldes de compte V2.7 incomplets: "+missing.join(", "));
     else ok("Soldes d'ouverture mensuels synchronisés présents");
   }
   const html=read("index.html");
@@ -208,8 +208,8 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
     'data-bulk-clear'
   ];
   const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
-  if(missingCategoryUx.length)fail("UX Catégories V2.6 incomplète: "+missingCategoryUx.join(", "));
-  else ok("UX Catégories V2.6 présente");
+  if(missingCategoryUx.length)fail("UX Catégories V2.7 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V2.7 présente");
   if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
   else ok("Remplissage des vides préserve les montants déjà saisis");
   if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
