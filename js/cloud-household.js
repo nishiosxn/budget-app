@@ -79,15 +79,24 @@ async function provisionPersonalHousehold(){
   p_display_name:displayName
  });
  if(error)throw error;
+
  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
+ if(typeof markSetupBuilderPending==="function")markSetupBuilderPending(data);
+
  await loadCloudMemberships();
  selectActiveMembership();
+
+ // Nouveau foyer : on prépare l'état local immédiatement.
+ // Le premier push cloud est fait une seule fois après le builder (ou en arrière-plan si ignoré).
  state=seedState();
  state.onboardingComplete=true;
- state.household=normalizeHousehold({name:householdName,personB:displayName,personA:"Personne 2"});
- cloudApplyingRemote=true;saveState();cloudApplyingRemote=false;
- await cloudPushLocalState({force:true});
+ state.household=normalizeHousehold({name:householdName,personB:displayName,personA:"Personne 2",mode:"couple"});
+ cloudApplyingRemote=true;
+ saveState();
+ cloudApplyingRemote=false;
+
  clearPendingPersonalProfile();
+ return true;
 }
 async function cloudBootstrap(){
  if(!cloudSession)return;
@@ -101,16 +110,21 @@ async function cloudBootstrap(){
    return;
   }
   await loadCloudMemberships();
+  let provisionedNow=false;
   if(!cloudMemberships.length){
-   await provisionPersonalHousehold();
+   provisionedNow=await provisionPersonalHousehold();
   }else{
    selectActiveMembership();
   }
-  await cloudLoadState();
+
+  // Un foyer tout juste créé n'a encore aucune donnée distante à relire.
+  // Évite un push complet suivi immédiatement d'un reload complet avant l'ouverture du builder.
+  if(!provisionedNow)await cloudLoadState();
   startCloudRealtime();
   cloudSyncReady=true;
-  setCloudStatus("Synchronisé","ok");
+  setCloudStatus(provisionedNow?"Configuration du budget…":"Synchronisé",provisionedNow?"syncing":"ok");
   hideCloudGate();
+  if(typeof setupBuilderNeedsRun==="function"&&setupBuilderNeedsRun(activeHouseholdId)&&typeof openSetupBuilder==="function")openSetupBuilder();
  }catch(error){
   console.error("Cloud bootstrap",error);
   cloudSyncReady=false;
