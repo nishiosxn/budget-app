@@ -3,15 +3,97 @@ const settingsBackdrop=document.getElementById("settingsBackdrop");
 const settingsHouseholdName=document.getElementById("settingsHouseholdName");
 const settingsPersonB=document.getElementById("settingsPersonB");
 const settingsPersonA=document.getElementById("settingsPersonA");
+const settingsPersonAField=document.getElementById("settingsPersonAField");
+const settingsPersonBLabel=document.getElementById("settingsPersonBLabel");
+const settingsModeButtons=[...document.querySelectorAll("[data-household-mode]")];
+let settingsHouseholdMode="couple";
+const settingsAppearancePicker=document.getElementById("settingsAppearancePicker");
+const saveAppearanceBtn=document.getElementById("saveAppearanceBtn");
+let settingsAppearanceDraft=null;
+let settingsAppearanceOriginal=null;
+let settingsAppearanceSaved=true;
+
+function setSettingsHouseholdMode(mode){
+ settingsHouseholdMode=mode==="solo"?"solo":"couple";
+ settingsModeButtons.forEach(button=>{
+  const active=button.dataset.householdMode===settingsHouseholdMode;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-pressed",String(active));
+ });
+ if(settingsPersonAField)settingsPersonAField.hidden=settingsHouseholdMode==="solo";
+ if(settingsPersonBLabel)settingsPersonBLabel.textContent=settingsHouseholdMode==="solo"?"VOTRE NOM":"PERSONNE 1";
+}
+settingsModeButtons.forEach(button=>button.addEventListener("click",()=>setSettingsHouseholdMode(button.dataset.householdMode)));
 
 function fillHouseholdSettings(){
  const household=normalizeHousehold(state.household);
  settingsHouseholdName.value=household.name;
  settingsPersonB.value=household.personB;
  settingsPersonA.value=household.personA;
+ setSettingsHouseholdMode(household.mode);
 }
-function openSettings(){fillHouseholdSettings();if(typeof updateCloudAccountUi==="function")updateCloudAccountUi();if(typeof updateCloudHouseholdUi==="function")updateCloudHouseholdUi();settingsBackdrop.classList.add("open");settingsBackdrop.setAttribute("aria-hidden","false")}
-function closeSettings(){settingsBackdrop.classList.remove("open");settingsBackdrop.setAttribute("aria-hidden","true")}
+function bindSettingsCustomPicker(){
+ if(!settingsAppearancePicker||typeof bindAppearanceCustomPicker!=="function")return;
+ delete settingsAppearancePicker.dataset.customPickerBound;
+ bindAppearanceCustomPicker(
+  settingsAppearancePicker,
+  ()=>settingsAppearanceDraft||currentUserAppearance(),
+  (next,options={})=>previewSettingsAppearance(next,options)
+ );
+}
+function fillAppearanceSettings(){
+ if(typeof currentUserAppearance!=="function"||!settingsAppearancePicker)return;
+ settingsAppearanceDraft=currentUserAppearance();
+ settingsAppearanceOriginal={...settingsAppearanceDraft};
+ settingsAppearanceSaved=true;
+ settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+ bindSettingsCustomPicker();
+}
+function previewSettingsAppearance(next,{render=true}={}){
+ settingsAppearanceDraft=normalizeUserAppearance(next);
+ settingsAppearanceSaved=false;
+ applyUserAppearance(settingsAppearanceDraft);
+ if(render&&settingsAppearancePicker){
+  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+  bindSettingsCustomPicker();
+ }
+}
+settingsAppearancePicker?.addEventListener("click",event=>{
+ const button=event.target.closest("[data-appearance-color],[data-appearance-font],[data-appearance-custom-toggle]");
+ if(!button||!settingsAppearanceDraft)return;
+ previewSettingsAppearance(appearanceFromPickerEvent(button,settingsAppearanceDraft));
+});
+saveAppearanceBtn?.addEventListener("click",async()=>{
+ if(!settingsAppearanceDraft)return;
+ saveAppearanceBtn.disabled=true;
+ try{
+  settingsAppearanceDraft=await saveUserAppearance(settingsAppearanceDraft);
+  settingsAppearanceOriginal={...settingsAppearanceDraft};
+  settingsAppearanceSaved=true;
+  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
+  bindSettingsCustomPicker();
+  showUndoToast("Apparence enregistrée");
+ }catch(error){
+  console.error("Appearance save",error);
+  alert("Impossible d’enregistrer l’apparence pour le moment.");
+ }finally{saveAppearanceBtn.disabled=false}
+});
+function openSettings(){
+ fillHouseholdSettings();
+ fillAppearanceSettings();
+ if(typeof updateCloudAccountUi==="function")updateCloudAccountUi();
+ if(typeof updateCloudHouseholdUi==="function")updateCloudHouseholdUi();
+ settingsBackdrop.classList.add("open");
+ settingsBackdrop.setAttribute("aria-hidden","false");
+}
+function closeSettings(){
+ if(!settingsAppearanceSaved&&settingsAppearanceOriginal)applyUserAppearance(settingsAppearanceOriginal);
+ settingsAppearanceDraft=null;
+ settingsAppearanceOriginal=null;
+ settingsAppearanceSaved=true;
+ settingsBackdrop.classList.remove("open");
+ settingsBackdrop.setAttribute("aria-hidden","true");
+}
 document.getElementById("settingsBtn").addEventListener("click",openSettings);
 document.getElementById("closeSettings").addEventListener("click",closeSettings);
 settingsBackdrop.addEventListener("click",e=>{if(e.target===settingsBackdrop)closeSettings()});
@@ -99,8 +181,15 @@ function availableLegacySources(){
 }
 
 document.getElementById("saveHouseholdBtn").addEventListener("click",()=>{
- state.household=normalizeHousehold({name:settingsHouseholdName.value,personB:settingsPersonB.value,personA:settingsPersonA.value});
- saveState();syncHouseholdUi();render();fillHouseholdSettings();showUndoToast("Noms du foyer enregistrés")
+ const previousMode=normalizeHousehold(state.household).mode;
+ state.household=normalizeHousehold({
+  name:settingsHouseholdName.value,
+  personB:settingsPersonB.value,
+  personA:settingsPersonA.value,
+  mode:settingsHouseholdMode
+ });
+ saveState();syncHouseholdUi();render();fillHouseholdSettings();
+ showUndoToast(previousMode===state.household.mode?"Foyer enregistré":state.household.mode==="solo"?"Mode seul activé":"Mode à deux activé")
 });
 document.getElementById("migrateLocalBtn").addEventListener("click",()=>{closeSettings();openOnboarding(true)});
 

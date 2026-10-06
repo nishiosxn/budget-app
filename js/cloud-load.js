@@ -21,7 +21,8 @@ async function cloudLoadState(){
  next.household=normalizeHousehold({
   name:household.name,
   personB:household.person_b_label,
-  personA:household.person_a_label
+  personA:household.person_a_label,
+  mode:household.household_mode
  });
  const categoryRows=categoriesRes.data||[];
  const createdMonths=categoryRows.map(row=>String(row.created_from||"").slice(0,7)).filter(key=>/^\d{4}-\d{2}$/.test(key)).sort();

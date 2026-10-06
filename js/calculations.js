@@ -15,9 +15,10 @@ function setCategoryPlan(id,type,budget,owner,scope="forward"){
 }
 function categoryCreatedFrom(id,type="expense"){const c=(type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES).find(x=>x.id===id);return c?.createdFrom||state.createdMonth||monthKey(state.selectedMonth)}
 function isCategoryVisible(id,label=state.selectedMonth,type="expense"){const key=monthKey(label),globalDeleted=type==="income"?(state.deletedIncomeCategoriesGlobal||[]):(state.deletedCategoriesGlobal||[]),monthDeleted=type==="income"?(state.deletedIncomeCategoryMonths?.[key]||[]):(state.deletedCategoryMonths?.[key]||[]);return key>=categoryCreatedFrom(id,type)&&!globalDeleted.includes(id)&&!monthDeleted.includes(id)}
-function visibleExpenseCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>!c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label))}
-function visibleSavingCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label))}
-function visibleIncomeCategories(label=state.selectedMonth){return INCOME_CATEGORIES.filter(c=>isCategoryVisible(c.id,label,"income")).map(c=>categoryView(c,"income",label))}
+function householdCategoryVisible(c){return !householdIsSolo()||c.owner!=="A"}
+function visibleExpenseCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>!c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label)).filter(householdCategoryVisible)}
+function visibleSavingCategories(label=state.selectedMonth){return EXPENSE_CATEGORIES.filter(c=>c.saving&&isCategoryVisible(c.id,label,"expense")).map(c=>categoryView(c,"expense",label)).filter(householdCategoryVisible)}
+function visibleIncomeCategories(label=state.selectedMonth){return INCOME_CATEGORIES.filter(c=>isCategoryVisible(c.id,label,"income")).map(c=>categoryView(c,"income",label)).filter(householdCategoryVisible)}
 function recurringOccurrenceDate(t,key){const raw=String(t.date||"");const day=Math.max(1,Math.min(31,Number(raw.slice(8,10))||1)),[y,m]=key.split("-").map(Number),last=new Date(y,m,0).getDate();return `${key}-${String(Math.min(day,last)).padStart(2,"0")}`}
 function previousMonthKey(key){const [y,m]=key.split("-").map(Number),d=new Date(y,m-2,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
 function recurringSeriesId(t){return t?.seriesId||t?.id||""}
@@ -30,7 +31,7 @@ function catById(id,type){return (type==="income"?INCOME_CATEGORIES:EXPENSE_CATE
 function totalsByCategoryAtKey(type,key){const map={};transactionsForMonthKey(key).filter(t=>t.type===type).forEach(t=>map[t.category]=(map[t.category]||0)+(Number(t.amount)||0));return map}
 function totalsByCategory(type){return totalsByCategoryAtKey(type,monthKey(state.selectedMonth))}
 function sum(list){return list.reduce((a,b)=>a+b,0)}
-function shareAmount(owner,amount,person){if(owner==="common")return amount/2;if(owner===person)return amount;return 0}
+function shareAmount(owner,amount,person){const solo=normalizeHousehold(state.household).mode==="solo";if(solo&&owner==="common")return person==="B"?amount:0;if(owner==="common")return amount/2;if(owner===person)return amount;return 0}
 function transactionOwner(t){if(t.owner)return t.owner;const c=catById(t.category,t.type);if(!c)return "common";return planForCategoryAtKey(c,String(t.date||"").slice(0,7)||monthKey(state.selectedMonth),t.type).owner||"common"}
 function actualForCategoryAtMonth(id,key,type="expense"){return Math.round(sum(transactionsForMonthKey(key).filter(t=>t.type===type&&t.category===id).map(t=>Number(t.amount)||0))*100)/100}
 function cumulativeCategoryActual(id,type="expense",throughLabel=state.selectedMonth){const through=monthKey(throughLabel);return MONTHS.map(monthKey).filter(key=>key<=through).reduce((total,key)=>total+actualForCategoryAtMonth(id,key,type),0)}

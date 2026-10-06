@@ -45,7 +45,8 @@ function cloudBuildLocalSnapshot(source=state){
  tables.households.set("household",{payload:{
   name:household.name,
   person_b_label:household.personB,
-  person_a_label:household.personA
+  person_a_label:household.personA,
+  household_mode:household.mode
  }});
 
  const categoryItems=cloudLocalCategories(source);
@@ -141,7 +142,8 @@ function cloudBuildRemoteSnapshot(rows){
  if(household)tables.households.set("household",cloudRemoteEntry(household,{
   name:household.name,
   person_b_label:household.person_b_label,
-  person_a_label:household.person_a_label
+  person_a_label:household.person_a_label,
+  household_mode:household.household_mode||"couple"
  }));
 
  const categoryUuidToLocal=new Map();
@@ -473,7 +475,8 @@ async function cloudApplyMutation(mutation,categoryMap){
   return cloudGuardedUpdate(table,entry,{
    name:mutation.payload.name,
    person_b_label:mutation.payload.person_b_label,
-   person_a_label:mutation.payload.person_a_label
+   person_a_label:mutation.payload.person_a_label,
+   household_mode:mutation.payload.household_mode||"couple"
   },key);
  }
  if(table==="categories"){
