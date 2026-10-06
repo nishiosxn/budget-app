@@ -47,7 +47,7 @@ function metricsForMonth(label=state.selectedMonth){
  const restB=incomeB-expenseB-savingBShare,restA=incomeA-expenseA-savingAShare;
  const openingB=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"B"):0,openingA=typeof accountOpeningBalanceFor==="function"?accountOpeningBalanceFor(label,"A"):0;
  const openingBDefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"B"),openingADefined=typeof accountOpeningBalanceDefined==="function"&&accountOpeningBalanceDefined(label,"A");
- const accountBalanceB=openingBDefined?openingB+restB:null,accountBalanceA=openingADefined?openingA+restA:null;
+ const accountBalanceB=openingB+restB,accountBalanceA=openingA+restA;
  return {label,key,tx,incMap,expMap,income,expense,saving,plannedIncome,plannedExpense,plannedSaving,balance:income-expense-saving,plannedBalance:plannedIncome-plannedExpense-plannedSaving,incomeB,incomeA,expenseB,expenseA,savingBShare,savingAShare,restB,restA,openingB,openingA,openingBDefined,openingADefined,accountBalanceB,accountBalanceA,savingsB,savingsA,savingsBMonth,savingsAMonth};
 }
 function metrics(){return metricsForMonth(state.selectedMonth)}

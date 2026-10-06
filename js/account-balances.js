@@ -18,6 +18,34 @@ function loadAccountOpeningBalanceRows(rows){
   if(/^[0-9]{4}-[0-9]{2}\|[BA]$/.test(key))accountOpeningBalances.set(key,Number(row.amount)||0);
  }
 }
+function serializeAccountOpeningBalances(){
+ return [...accountOpeningBalances.entries()].map(([key,amount])=>{
+  const [month,owner_slot]=key.split("|");
+  return {month,owner_slot,amount:Number(amount)||0};
+ }).filter(row=>/^\d{4}-\d{2}$/.test(row.month)&&["B","A"].includes(row.owner_slot)).sort((a,b)=>(a.month+a.owner_slot).localeCompare(b.month+b.owner_slot));
+}
+async function clearAccountOpeningBalances(){
+ if(!activeHouseholdId){loadAccountOpeningBalanceRows([]);return}
+ if(!cloudClient)throw new Error("Cloud indisponible.");
+ cloudIgnoreRealtimeUntil=Date.now()+3000;
+ const result=await cloudClient.from("account_opening_balances").delete().eq("household_id",activeHouseholdId);
+ if(result.error)throw result.error;
+ loadAccountOpeningBalanceRows([]);
+}
+async function replaceAccountOpeningBalancesFromBackup(rows){
+ await clearAccountOpeningBalances();
+ const normalized=(Array.isArray(rows)?rows:[]).map(row=>({
+  month:String(row?.month||"").slice(0,7),
+  owner_slot:row?.owner_slot,
+  amount:Math.round((Number(row?.amount)||0)*100)/100
+ })).filter(row=>/^\d{4}-\d{2}$/.test(row.month)&&["B","A"].includes(row.owner_slot));
+ if(!normalized.length)return;
+ const payload=normalized.map(row=>({household_id:activeHouseholdId,month:row.month+"-01",owner_slot:row.owner_slot,amount:row.amount}));
+ cloudIgnoreRealtimeUntil=Date.now()+3000;
+ const result=await cloudClient.from("account_opening_balances").insert(payload);
+ if(result.error)throw result.error;
+ loadAccountOpeningBalanceRows(normalized);
+}
 function accountBalancePersonName(slot){
  return slot==="B"?state.household.personB:state.household.personA;
 }
@@ -38,7 +66,7 @@ function openAccountBalanceEditor(slot){
  if(!backdrop||!input)return;
  title.textContent="Solde de départ";
  kind.textContent=`${accountBalancePersonName(slot)} · ${state.selectedMonth}`;
- input.value=accountOpeningBalanceDefined(state.selectedMonth,slot)?accountOpeningBalanceFor(state.selectedMonth,slot).toFixed(2):"";
+ input.value=accountOpeningBalanceDefined(state.selectedMonth,slot)?accountOpeningBalanceFor(state.selectedMonth,slot).toFixed(2):"0.00";
  backdrop.classList.add("open");
  backdrop.setAttribute("aria-hidden","false");
  setTimeout(()=>{input.focus();input.select()},70);

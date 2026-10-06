@@ -224,7 +224,7 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.6</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.7</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -275,26 +275,17 @@
       </div>
       <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.6 · synchronisation cloud directe · Supabase</div>
+      <div class="settings-version">V2.7 · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="onboardingTitle">Configurer ce navigateur</h2></div></div>
-    <p class="onboarding-intro">Cette version ne contient plus tes données financières dans le code public. Choisis comment initialiser ce navigateur.</p>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
+    <p class="onboarding-intro">Retrouve ici une ancienne version locale ou importe une sauvegarde compatible. La création d’un nouveau budget passe désormais uniquement par le builder V2.7.</p>
     <div class="onboarding-card">
-      <h3>Nouveau budget</h3>
-      <div class="field"><label for="setupHouseholdName">NOM DU FOYER</label><input id="setupHouseholdName" class="category-form-input" type="text" maxlength="60" placeholder="Mon foyer"></div>
-      <div class="settings-name-grid">
-        <div class="field"><label for="setupPersonB">PERSONNE 1</label><input id="setupPersonB" class="category-form-input" type="text" maxlength="40" placeholder="Personne 1"></div>
-        <div class="field"><label for="setupPersonA">PERSONNE 2</label><input id="setupPersonA" class="category-form-input" type="text" maxlength="40" placeholder="Personne 2"></div>
-      </div>
-      <button id="createNewBudgetBtn" class="btn btn-income onboarding-primary" type="button">Créer un budget vide</button>
-    </div>
-    <div class="onboarding-card">
-      <h3>Récupérer mes données</h3>
+      <h3>Migration et sauvegardes</h3>
       <p>Les versions locales détectées apparaissent ci-dessous. La copie est non destructive.</p>
       <div id="legacySourceList" class="legacy-source-list"></div>
       <button id="onboardingImportBtn" class="btn btn-ghost" type="button">Importer une sauvegarde JSON</button>
@@ -306,7 +297,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.6</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
