@@ -250,7 +250,7 @@ async function cloudForcePushSessionState(){
   if(activeMembership?.role==="owner"){
    const household=normalizeHousehold(snapshot.household);
    const householdRes=await cloudClient.from("households")
-    .update({name:household.name,person_b_label:household.personB,person_a_label:household.personA})
+    .update({name:household.name,person_b_label:household.personB,person_a_label:household.personA,household_mode:household.mode})
     .eq("id",activeHouseholdId);
    if(householdRes.error)throw householdRes.error;
   }
