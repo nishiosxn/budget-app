@@ -6,6 +6,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
 - **Version stable V2.6** : https://nishiosxn.github.io/budget-app/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
+- **Preview V2.7** : https://nishiosxn.github.io/budget-app/v2.7/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
 - **Preview V2.1** : https://nishiosxn.github.io/budget-app/v2.1/
 - **Preview V2.2** : https://nishiosxn.github.io/budget-app/v2.2/
@@ -20,10 +21,10 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 ## État actuel
 
 - **Production du code** : V2.6 sur `main`.
-- Version du code : `V2.6`
+- Version du code : `V2.7`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.6 à la racine et snapshot sur `/v2.6/`.
-- **État de release** : V2.6 est la version stable ; `develop` reste le tronc des prochains lots.
+- **État de release** : V2.6 reste la version stable ; V2.7 est en validation sur `work/v2.7-stabilization` avec preview `/v2.7/`.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 

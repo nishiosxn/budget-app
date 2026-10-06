@@ -3,7 +3,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.6`
+- Version du code : `V2.7`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.6.
 - Publication : `gh-pages`.
@@ -28,11 +28,11 @@ Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots
 
 La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
-## Lot courant — V2.6 Catégories & Vue d’ensemble
+## Lot courant — V2.7 Stabilisation
 
-- Branche : `work/v2.6-categories`
+- Branche : `work/v2.7-stabilization`
 - Base : `develop`
-- Objectif : simplifier fortement **Catégories** puis clarifier la **Vue d’ensemble**, en séparant le reste réel du mois du solde de compte personnel.
+- Objectif : stabiliser la V2.6 publiée avant promotion V2.7 : restauration des catégories, création d’épargne, sauvegarde/reset complets, picker couleur Paramètres, unités relatives et alignement Git/Supabase.
 - Critères d’acceptation :
   - montant réel directement cliquable ;
   - détail dépliable des opérations de chaque catégorie avec libellé, date, montant et payeur individuel ;
@@ -70,4 +70,4 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 
 ## Prochaine action
 
-Après publication V2.6, repartir de `develop` pour le prochain lot court. La PR #23 peut être fusionnée puis sa branche temporaire supprimée.
+Valider la preview `/v2.7/`, faire passer **App integrity** sur la PR #26, puis fusionner vers `develop`. La promotion vers `main` restera une opération séparée.

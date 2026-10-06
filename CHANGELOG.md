@@ -1,5 +1,25 @@
 # Changelog
 
+## V2.7 — stabilisation
+
+### Données et catégories
+- Catégories masquées réactivables depuis leur section.
+- Création d’une catégorie d’épargne possible même si aucune épargne n’avait été activée dans le builder.
+- Solde de départ absent traité comme 0 € et affiché comme tel.
+
+### Paramètres et sauvegardes
+- Sauvegarde V2.7 incluant les soldes d’ouverture mensuels.
+- Réinitialisation complète des données budgétaires du foyer, soldes d’ouverture compris, puis relance du builder V2.7.
+- Ancien onboarding réduit à la migration/import des anciennes versions.
+- Picker de couleur personnalisé des Paramètres maintenu ouvert et interactif.
+- Force-sync du foyer incluant le mode Seul / À deux.
+
+### Interface et technique
+- Unités `px` retirées de l’interface active au profit de `rem`, `clamp()` et unités relatives.
+- Builder mobile aligné sur `100dvh`.
+- Source V2.6 publiée réalignée avec `develop` avant les changements V2.7.
+- Migration Supabase de `household_mode` ajoutée au dépôt et index dupliqués supprimés.
+
 ## V2.6 — catégories simplifiées
 
 ### Interface
