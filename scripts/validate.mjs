@@ -171,6 +171,22 @@ if(modular){
 
 if(modular&&exists("js/settings.js")){
   const settings=read("js/settings.js");
+  const appearance=read("js/appearance.js");
+  if(settings.includes("delete settingsAppearancePicker.dataset.customPickerBound"))fail("Le picker d’apparence réattache encore ses listeners à chaque rendu");
+  else if(!appearance.includes("__appearanceCustomPickerController")||!appearance.includes("requestAnimationFrame")||!appearance.includes("commitTimer"))fail("Contrôleur stable du picker couleur absent");
+  else{
+   try{
+    const context=vm.createContext({console,document:{documentElement:{style:{setProperty:()=>{}},dataset:{}},querySelector:()=>null,activeElement:null},localStorage:{getItem:()=>null,setItem:()=>{}},requestAnimationFrame:fn=>{fn();return 1},cancelAnimationFrame:()=>{},setTimeout,clearTimeout});
+    vm.runInContext(appearance,context,{filename:"js/appearance.js"});
+    const hueTarget={matches:q=>q==="[data-appearance-hue]",getBoundingClientRect:()=>({left:0,top:0,width:100,height:12})};
+    const svTarget={matches:q=>q==="[data-appearance-sv]",getBoundingClientRect:()=>({left:0,top:0,width:100,height:100})};
+    const black={color:"custom",font:"current",customColor:"#000000"};
+    const hue=context.appearanceCustomPointerState(hueTarget,{clientX:75,clientY:6},black,{h:0,s:1,v:0});
+    const color=context.appearanceCustomPointerState(svTarget,{clientX:100,clientY:0},hue.appearance,hue.hsv);
+    if(Math.abs(hue.hsv.h-270)>.01||color.appearance.customColor==="#000000")fail("Le picker perd encore la teinte quand la couleur courante est noire");
+    else ok("Picker couleur : teinte HSV préservée même depuis noir/blanc et rendu de drag découplé");
+   }catch(error){fail("Test du picker couleur impossible: "+error.message)}
+  }
   const migrationMarkers=["validateV5State","validateLegacyState","buildLegacyV5State","prepareImportedState","migrateLegacySource"];
   const missing=migrationMarkers.filter(x=>!settings.includes(x));
   if(missing.length) fail("Moteur de migration incomplet: "+missing.join(", "));

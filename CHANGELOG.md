@@ -8,6 +8,9 @@
 - Solde de départ absent traité comme 0 € et affiché comme tel.
 
 ### Paramètres et sauvegardes
+- Sélecteur de couleur personnalisé réécrit autour d’un contrôleur unique : plus d’empilement de listeners après chaque drag.
+- Le drag ne recalcule plus tout le thème à chaque événement : curseurs/HEX sont prévisualisés en local, puis le thème est appliqué une seule fois 120 ms après le relâchement.
+- La teinte HSV est conservée séparément du HEX pendant l’édition, ce qui empêche la barre de teinte de revenir au rouge lorsqu’une couleur est noire, blanche ou grise.
 - Sauvegarde V2.7 incluant les soldes d’ouverture mensuels.
 - Réinitialisation complète des données budgétaires du foyer, soldes d’ouverture compris, puis relance du builder V2.7.
 - Ancien onboarding réduit à la migration/import des anciennes versions.

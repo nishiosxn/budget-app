@@ -34,7 +34,6 @@ function fillHouseholdSettings(){
 }
 function bindSettingsCustomPicker(){
  if(!settingsAppearancePicker||typeof bindAppearanceCustomPicker!=="function")return;
- delete settingsAppearancePicker.dataset.customPickerBound;
  bindAppearanceCustomPicker(
   settingsAppearancePicker,
   ()=>settingsAppearanceDraft||currentUserAppearance(),
@@ -49,10 +48,11 @@ function fillAppearanceSettings(){
  settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
  bindSettingsCustomPicker();
 }
-function previewSettingsAppearance(next,{render=true}={}){
+function previewSettingsAppearance(next,{render=true,apply=true}={}){
+ if(!settingsAppearanceDraft)return;
  settingsAppearanceDraft=normalizeUserAppearance(next);
  settingsAppearanceSaved=false;
- applyUserAppearance(settingsAppearanceDraft);
+ if(apply)applyUserAppearance(settingsAppearanceDraft);
  if(render&&settingsAppearancePicker){
   settingsAppearancePicker.innerHTML=appearancePickerMarkup("settings",settingsAppearanceDraft);
   bindSettingsCustomPicker();
@@ -91,6 +91,7 @@ function openSettings(){
  settingsBackdrop.setAttribute("aria-hidden","false");
 }
 function closeSettings(){
+ if(typeof cancelAppearanceCustomPicker==="function")cancelAppearanceCustomPicker(settingsAppearancePicker);
  if(!settingsAppearanceSaved&&settingsAppearanceOriginal)applyUserAppearance(settingsAppearanceOriginal);
  settingsAppearanceDraft=null;
  settingsAppearanceOriginal=null;

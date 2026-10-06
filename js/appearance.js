@@ -1,4 +1,4 @@
-// V2.6 — apparence personnelle (par compte, sans modifier le foyer partagé)
+// V2.7 — apparence personnelle, sélecteur custom stable et sauvegarde par compte
 const APPEARANCE_DEFAULT={color:"green",font:"current",customColor:"#7c73d8"};
 const APPEARANCE_COLORS={
  green:{label:"Vert",accent:"#2f6b51",deep:"#173c2d",soft:"#e9f2ed",border:"#bfd2c6"},
@@ -193,10 +193,11 @@ function syncAppearancePickerUi(root,value,{customOpen=null}={}){
  setAppearanceCustomPanelOpen(root,open);
  syncAppearanceCustomPanel(root,appearance);
 }
-function appearanceCustomFromPointer(target,event,current=currentUserAppearance()){
+function appearanceCustomPointerState(target,event,current=currentUserAppearance(),hsvState=null){
  const appearance=normalizeUserAppearance(current),rect=target.getBoundingClientRect();
- const x=Math.max(0,Math.min(rect.width,event.clientX-rect.left)),y=Math.max(0,Math.min(rect.height,event.clientY-rect.top));
- const hsv=hexToHsv(appearance.customColor);
+ const x=Math.max(0,Math.min(rect.width,Number(event.clientX)-rect.left)),y=Math.max(0,Math.min(rect.height,Number(event.clientY)-rect.top));
+ const source=hsvState&&Number.isFinite(hsvState.h)&&Number.isFinite(hsvState.s)&&Number.isFinite(hsvState.v)?hsvState:hexToHsv(appearance.customColor);
+ const hsv={h:source.h,s:source.s,v:source.v};
  if(target.matches("[data-appearance-sv]")){
   hsv.s=rect.width?x/rect.width:0;
   hsv.v=rect.height?1-y/rect.height:0;
@@ -205,12 +206,15 @@ function appearanceCustomFromPointer(target,event,current=currentUserAppearance(
  }
  appearance.color="custom";
  appearance.customColor=hsvToHex(hsv.h,hsv.s,hsv.v);
- return appearance;
+ return {appearance,hsv};
 }
-function syncAppearanceCustomPanel(root,value,{syncHex=true}={}){
+function appearanceCustomFromPointer(target,event,current=currentUserAppearance(),hsvState=null){
+ return appearanceCustomPointerState(target,event,current,hsvState).appearance;
+}
+function syncAppearanceCustomPanel(root,value,{syncHex=true,hsvState=null}={}){
  const appearance=normalizeUserAppearance(value),panel=root?.querySelector?.("[data-appearance-custom-panel]");
  if(!panel)return;
- const hsv=hexToHsv(appearance.customColor);
+ const hsv=hsvState&&Number.isFinite(hsvState.h)&&Number.isFinite(hsvState.s)&&Number.isFinite(hsvState.v)?hsvState:hexToHsv(appearance.customColor);
  const sv=panel.querySelector("[data-appearance-sv]"),svThumb=panel.querySelector(".appearance-sv-thumb"),hueThumb=panel.querySelector(".appearance-hue-thumb"),hex=panel.querySelector("[data-appearance-hex]"),preview=panel.querySelector(".appearance-custom-preview");
  if(sv)sv.style.setProperty("--picker-hue",hsv.h.toFixed(2)+"deg");
  if(svThumb){svThumb.style.left=(hsv.s*100)+"%";svThumb.style.top=((1-hsv.v)*100)+"%"}
@@ -218,53 +222,121 @@ function syncAppearanceCustomPanel(root,value,{syncHex=true}={}){
  if(hex&&syncHex&&document.activeElement!==hex){hex.value=appearance.customColor;hex.classList.remove("invalid")}
  if(preview)preview.style.setProperty("--custom-preview",appearance.customColor);
 }
+function cancelAppearanceCustomPicker(root){
+ const controller=root?.__appearanceCustomPickerController;
+ if(!controller)return;
+ if(controller.frame)cancelAnimationFrame(controller.frame);
+ clearTimeout(controller.commitTimer);
+ controller.frame=0;
+ controller.commitTimer=null;
+ controller.activeTarget=null;
+ controller.pointerId=null;
+}
 function bindAppearanceCustomPicker(root,getAppearance,onChange){
- if(!root||root.dataset.customPickerBound==="1")return;
+ if(!root)return;
+ if(root.__appearanceCustomPickerController){
+  root.__appearanceCustomPickerController.getAppearance=getAppearance;
+  root.__appearanceCustomPickerController.onChange=onChange;
+  return;
+ }
+ const controller={
+  activeTarget:null,pointerId:null,workingAppearance:null,hsv:null,
+  frame:0,pendingPoint:null,commitTimer:null,getAppearance,onChange
+ };
+ root.__appearanceCustomPickerController=controller;
  root.dataset.customPickerBound="1";
- let activeTarget=null;
- const update=(target,event,commit=false)=>{
+
+ const emitDraft=(next,hsv)=>{
+  controller.workingAppearance=normalizeUserAppearance(next);
+  controller.hsv={...hsv};
+  syncAppearanceCustomPanel(root,controller.workingAppearance,{hsvState:controller.hsv});
+  controller.onChange(controller.workingAppearance,{render:false,apply:false,commit:false});
+ };
+ const updateAtPoint=(target,point)=>{
   if(!target)return;
-  const next=appearanceCustomFromPointer(target,event,getAppearance());
-  syncAppearanceCustomPanel(root,next);
-  onChange(next,{render:commit});
+  const base=controller.workingAppearance||controller.getAppearance();
+  const result=appearanceCustomPointerState(target,point,base,controller.hsv);
+  emitDraft(result.appearance,result.hsv);
+ };
+ const scheduleCommit=()=>{
+  clearTimeout(controller.commitTimer);
+  const next=normalizeUserAppearance(controller.workingAppearance||controller.getAppearance());
+  controller.commitTimer=setTimeout(()=>{
+   controller.commitTimer=null;
+   controller.onChange(next,{render:false,apply:true,commit:true});
+  },120);
+ };
+ const flushFrame=()=>{
+  if(controller.frame){cancelAnimationFrame(controller.frame);controller.frame=0}
+  if(controller.pendingPoint&&controller.activeTarget){
+   const point=controller.pendingPoint;controller.pendingPoint=null;
+   updateAtPoint(controller.activeTarget,point);
+  }
  };
  root.addEventListener("pointerdown",event=>{
   const target=event.target.closest("[data-appearance-sv],[data-appearance-hue]");
   if(!target)return;
-  activeTarget=target;
+  clearTimeout(controller.commitTimer);
+  controller.activeTarget=target;
+  controller.pointerId=event.pointerId;
+  controller.workingAppearance=normalizeUserAppearance(controller.getAppearance());
+  if(!controller.hsv)controller.hsv=hexToHsv(controller.workingAppearance.customColor);
   target.setPointerCapture?.(event.pointerId);
   event.preventDefault();
-  update(target,event,false);
+  updateAtPoint(target,{clientX:event.clientX,clientY:event.clientY});
  });
  root.addEventListener("pointermove",event=>{
-  if(!activeTarget)return;
+  if(!controller.activeTarget||event.pointerId!==controller.pointerId)return;
   event.preventDefault();
-  update(activeTarget,event,false);
+  controller.pendingPoint={clientX:event.clientX,clientY:event.clientY};
+  if(controller.frame)return;
+  controller.frame=requestAnimationFrame(()=>{
+   controller.frame=0;
+   if(!controller.pendingPoint||!controller.activeTarget)return;
+   const point=controller.pendingPoint;controller.pendingPoint=null;
+   updateAtPoint(controller.activeTarget,point);
+  });
  });
  const end=event=>{
-  if(!activeTarget)return;
-  update(activeTarget,event,true);
-  activeTarget=null;
+  if(!controller.activeTarget||event.pointerId!==controller.pointerId)return;
+  controller.pendingPoint={clientX:event.clientX,clientY:event.clientY};
+  flushFrame();
+  try{controller.activeTarget.releasePointerCapture?.(event.pointerId)}catch{}
+  controller.activeTarget=null;
+  controller.pointerId=null;
+  scheduleCommit();
  };
  root.addEventListener("pointerup",end);
- root.addEventListener("pointercancel",()=>{activeTarget=null});
+ root.addEventListener("pointercancel",event=>{
+  if(event.pointerId!==controller.pointerId)return;
+  flushFrame();
+  controller.activeTarget=null;
+  controller.pointerId=null;
+  scheduleCommit();
+ });
  root.addEventListener("input",event=>{
   const input=event.target.closest("[data-appearance-hex]");
   if(!input)return;
   const hex=validAppearanceHex(input.value);
   input.classList.toggle("invalid",!hex);
   if(!hex)return;
-  const next=normalizeUserAppearance(getAppearance());
+  const next=normalizeUserAppearance(controller.getAppearance());
   next.color="custom";next.customColor=hex;
-  syncAppearanceCustomPanel(root,next,{syncHex:false});
-  onChange(next,{render:false});
+  controller.workingAppearance=next;
+  controller.hsv=hexToHsv(hex);
+  syncAppearanceCustomPanel(root,next,{syncHex:false,hsvState:controller.hsv});
+  controller.onChange(next,{render:false,apply:false,commit:false});
  });
  root.addEventListener("change",event=>{
   const input=event.target.closest("[data-appearance-hex]");
   if(!input)return;
   const hex=validAppearanceHex(input.value);
-  if(!hex){input.value=normalizeUserAppearance(getAppearance()).customColor;input.classList.remove("invalid");return}
-  const next=normalizeUserAppearance(getAppearance());next.color="custom";next.customColor=hex;onChange(next,{render:true});
+  if(!hex){input.value=normalizeUserAppearance(controller.getAppearance()).customColor;input.classList.remove("invalid");return}
+  const next=normalizeUserAppearance(controller.getAppearance());
+  next.color="custom";next.customColor=hex;
+  controller.workingAppearance=next;
+  controller.hsv=hexToHsv(hex);
+  scheduleCommit();
  });
 }
 function appearanceFromPickerEvent(target,current=currentUserAppearance()){
