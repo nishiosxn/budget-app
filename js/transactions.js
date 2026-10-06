@@ -1,6 +1,6 @@
 // V2.3 — opérations, récurrences et actions d'historique
 let modalType="expense",modalOwner="common",transactionScope="month",editingTransactionId=null;const backdrop=document.getElementById("modalBackdrop"),amountInput=document.getElementById("amountInput"),transactionLabelInput=document.getElementById("transactionLabel"),categorySelect=document.getElementById("categorySelect"),saveBtn=document.getElementById("saveTransaction"),ownerButtons=[...document.querySelectorAll("#ownerSwitch .owner-option")],transactionScopeField=document.getElementById("transactionScopeField"),transactionScopeHint=document.getElementById("transactionScopeHint"),transactionScopeButtons=[...document.querySelectorAll("[data-transaction-scope]")];buildCustomSelect(categorySelect);
-function setModalOwner(owner){modalOwner=owner;ownerButtons.forEach(b=>b.classList.toggle("active",b.dataset.owner===owner))}
+function setModalOwner(owner){if(householdIsSolo())owner="B";modalOwner=owner;ownerButtons.forEach(b=>b.classList.toggle("active",b.dataset.owner===owner))}
 function setTransactionScope(scope){transactionScope=scope;transactionScopeButtons.forEach(b=>b.classList.toggle("active",b.dataset.transactionScope===scope));transactionScopeHint.textContent=scope==="forward"?`Cette opération sera reprise automatiquement à partir de ${state.selectedMonth}.`:`Cette opération sera comptée uniquement sur ${state.selectedMonth}.`}
 function modalDataType(){return modalType==="saving"?"expense":modalType}
 function categoryDefaultOwner(){const type=modalDataType(),c=catById(categorySelect.value,type);return c?planForCategory(c,state.selectedMonth,type).owner||"common":"common"}
@@ -8,12 +8,12 @@ function groupedExpenseOptions(cats){return ["Obligatoires","Abonnements","Vie c
 function populateTransactionCategories(selected=""){
  const isSaving=modalType==="saving",type=modalDataType(),cats=isSaving?visibleSavingCategories():type==="expense"?visibleExpenseCategories():visibleIncomeCategories();
  const placeholder=`<option value="" disabled>Choisir une catégorie</option>`;
- let choices=type==="expense"?groupedExpenseOptions(cats):cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+ let choices=isSaving?cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(""):type==="expense"?groupedExpenseOptions(cats):cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
  if(selected&&!cats.some(c=>c.id===selected)){
    const archived=catById(selected,type);
    if(archived&&(!isSaving||archived.saving))choices+=`<optgroup label="Archivée"><option value="${escapeHtml(archived.id)}">${escapeHtml(archived.name)} · archivée</option></optgroup>`;
  }
- const create=isSaving?"":`<optgroup label="Nouveau"><option value="__create__">＋ Créer un nouveau champ…</option></optgroup>`;
+ const create=`<optgroup label="Nouveau"><option value="__create__">＋ ${isSaving?"Créer une nouvelle épargne":"Créer un nouveau champ"}…</option></optgroup>`;
  categorySelect.innerHTML=placeholder+choices+create;
  categorySelect.value=selected&&[...categorySelect.options].some(o=>o.value===selected)?selected:"";
  rebuildCustomSelect(categorySelect);syncCustomSelect(categorySelect)
@@ -29,18 +29,49 @@ function openModal(type,transaction=null){
 function closeModal(){closeCustomSelects();backdrop.classList.remove("open");backdrop.setAttribute("aria-hidden","true");editingTransactionId=null}
 function refreshAmountState(){saveBtn.disabled=!(Number(amountInput.value)>0&&categorySelect.value&&categorySelect.value!=="__create__")}
 function nudgeAmount(direction){if(direction>0)amountInput.stepUp();else amountInput.stepDown();refreshAmountState();amountInput.focus()}
-document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>openModal(b.dataset.add)));document.getElementById("closeModal").addEventListener("click",closeModal);backdrop.addEventListener("click",e=>{if(e.target===backdrop)closeModal()});amountInput.addEventListener("input",refreshAmountState);document.getElementById("amountUp").addEventListener("click",()=>nudgeAmount(1));document.getElementById("amountDown").addEventListener("click",()=>nudgeAmount(-1));ownerButtons.forEach(b=>b.addEventListener("click",()=>setModalOwner(b.dataset.owner)));transactionScopeButtons.forEach(b=>b.addEventListener("click",()=>setTransactionScope(b.dataset.transactionScope)));categorySelect.addEventListener("change",()=>{if(categorySelect.value==="__create__"){categorySelect.value="";syncCustomSelect(categorySelect);refreshAmountState();openCategoryEditor(null,modalType==="expense"?"Vie courante":"Revenus","planned",modalDataType(),"transaction");return}setModalOwner(categoryDefaultOwner());refreshAmountState()});
+document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>openModal(b.dataset.add)));document.getElementById("closeModal").addEventListener("click",closeModal);backdrop.addEventListener("click",e=>{if(e.target===backdrop)closeModal()});amountInput.addEventListener("input",refreshAmountState);document.getElementById("amountUp").addEventListener("click",()=>nudgeAmount(1));document.getElementById("amountDown").addEventListener("click",()=>nudgeAmount(-1));ownerButtons.forEach(b=>b.addEventListener("click",()=>setModalOwner(b.dataset.owner)));transactionScopeButtons.forEach(b=>b.addEventListener("click",()=>setTransactionScope(b.dataset.transactionScope)));categorySelect.addEventListener("change",()=>{if(categorySelect.value==="__create__"){categorySelect.value="";syncCustomSelect(categorySelect);refreshAmountState();openCategoryEditor(null,modalType==="saving"?"__savings__":modalType==="expense"?"Vie courante":"Revenus","planned",modalDataType(),"transaction");return}setModalOwner(categoryDefaultOwner());refreshAmountState()});
 function transactionDateForSelectedMonth(){const [y,m]=monthKey(state.selectedMonth).split("-");const now=new Date();const current=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;const day=monthKey(state.selectedMonth)===current?String(now.getDate()).padStart(2,'0'):"01";return `${y}-${m}-${day}`}
 saveBtn.addEventListener("click",()=>{const amount=Math.round(Number(amountInput.value)*100)/100;if(!(amount>0)||!categorySelect.value||categorySelect.value==="__create__")return;const recurring=modalType!=="saving"&&transactionScope==="forward",label=transactionLabelInput.value.trim();
  if(editingTransactionId){const index=state.transactions.findIndex(t=>t.id===editingTransactionId);if(index<0)return;const previous=state.transactions[index],next={...previous,type:modalDataType(),category:categorySelect.value,owner:modalOwner,amount};if(label)next.label=label;else delete next.label;if(recurring){next.scope="forward";next.seriesId=next.seriesId||next.id;next.excludedMonths=Array.isArray(next.excludedMonths)?next.excludedMonths:[];next.overrides=next.overrides&&typeof next.overrides==="object"?next.overrides:{}}else{delete next.scope;delete next.seriesId;delete next.excludedMonths;delete next.overrides;delete next.endMonth}state.transactions[index]=next;
  }else{const id=uid();state.transactions.push({id,type:modalDataType(),category:categorySelect.value,owner:modalOwner,amount,date:transactionDateForSelectedMonth(),seed:false,...(label?{label}:{}),...(recurring?{scope:"forward",seriesId:id,excludedMonths:[],overrides:{}}:{})})}
  saveState();closeModal();render()});
-let undoTimer=null,undoAction=null;const undoToast=document.getElementById("undoToast"),undoToastText=document.getElementById("undoToastText"),undoToastBtn=document.getElementById("undoToastBtn");
-function showUndoToast(label,action=null){undoAction=typeof action==="function"?action:null;undoToastText.textContent=label;undoToastBtn.style.display=undoAction?"":"none";undoToast.classList.add("show");clearTimeout(undoTimer);undoTimer=setTimeout(()=>{undoAction=null;undoToast.classList.remove("show")},6500)}
-function removeTransactions(predicate,label){const removed=state.transactions.filter(predicate);if(!removed.length)return;state.transactions=state.transactions.filter(t=>!predicate(t));saveState();render();showUndoToast(label,()=>{state.transactions.push(...removed);saveState();render()})}
+let undoTimer=null,undoAction=null,transactionDeleteUndoBatch=null;const undoToast=document.getElementById("undoToast"),undoToastText=document.getElementById("undoToastText"),undoToastBtn=document.getElementById("undoToastBtn");
+function showUndoToast(label,action=null,options={}){
+ const keepDeleteBatch=!!options.keepDeleteBatch,duration=Number(options.duration)||9000;
+ if(!keepDeleteBatch)transactionDeleteUndoBatch=null;
+ undoAction=typeof action==="function"?action:null;
+ undoToastText.textContent=label;
+ undoToastBtn.style.display=undoAction?"":"none";
+ undoToastBtn.textContent=options.buttonLabel||(undoAction?"Annuler":"");
+ undoToast.classList.add("show");
+ clearTimeout(undoTimer);
+ undoTimer=setTimeout(()=>{undoAction=null;transactionDeleteUndoBatch=null;undoToast.classList.remove("show")},duration);
+}
+function restoreDeletedTransactionBatch(batch){
+ if(!batch?.items?.length)return;
+ const existing=new Set(state.transactions.map(t=>t.id));
+ batch.items.forEach(item=>{if(!existing.has(item.id))state.transactions.push(cloneData(item))});
+ transactionDeleteUndoBatch=null;
+ saveState();
+ render();
+}
+function removeTransactions(predicate,label){
+ const removed=state.transactions.filter(predicate);
+ if(!removed.length)return;
+ if(!transactionDeleteUndoBatch)transactionDeleteUndoBatch={items:[],actions:0};
+ const known=new Set(transactionDeleteUndoBatch.items.map(item=>item.id));
+ removed.forEach(item=>{if(!known.has(item.id)){transactionDeleteUndoBatch.items.push(cloneData(item));known.add(item.id)}});
+ transactionDeleteUndoBatch.actions++;
+ state.transactions=state.transactions.filter(t=>!predicate(t));
+ saveState();
+ render();
+ const batch=transactionDeleteUndoBatch,count=batch.items.length;
+ const text=count===1&&batch.actions===1?label:`${count} opération${count>1?"s":""} supprimée${count>1?"s":""}`;
+ showUndoToast(text,()=>restoreDeletedTransactionBatch(batch),{keepDeleteBatch:true,duration:10000,buttonLabel:count>1?"Annuler tout":"Annuler"});
+}
 function transactionSnapshot(){return JSON.parse(JSON.stringify(state.transactions))}
 function restoreTransactionSnapshot(snapshot){state.transactions=snapshot;saveState();render()}
-undoToastBtn.addEventListener("click",()=>{if(!undoAction)return;const action=undoAction;undoAction=null;action();undoToast.classList.remove("show");clearTimeout(undoTimer)});
+undoToastBtn.addEventListener("click",()=>{if(!undoAction)return;const action=undoAction;undoAction=null;action();transactionDeleteUndoBatch=null;undoToast.classList.remove("show");clearTimeout(undoTimer)});
 const recurrenceDeleteBackdrop=document.getElementById("recurrenceDeleteBackdrop"),recurrenceDeleteName=document.getElementById("recurrenceDeleteName"),recurrenceDeleteKind=document.getElementById("recurrenceDeleteKind");let recurrenceDeleteSourceId=null;
 function openRecurrenceDelete(sourceId){const root=recurringRoot(sourceId);if(!root)return;const occurrence=transactionsForMonthKey(monthKey(state.selectedMonth)).find(t=>t.sourceId===sourceId)||root;recurrenceDeleteSourceId=sourceId;recurrenceDeleteName.textContent=transactionTitle(occurrence);recurrenceDeleteKind.textContent=state.selectedMonth;recurrenceDeleteBackdrop.classList.add("open");recurrenceDeleteBackdrop.setAttribute("aria-hidden","false")}
 function closeRecurrenceDelete(){recurrenceDeleteBackdrop.classList.remove("open");recurrenceDeleteBackdrop.setAttribute("aria-hidden","true");recurrenceDeleteSourceId=null}
@@ -51,7 +82,7 @@ function deleteRecurringSeries(sourceId){const root=recurringRoot(sourceId);if(!
 document.getElementById("closeRecurrenceDelete").addEventListener("click",closeRecurrenceDelete);document.getElementById("cancelRecurrenceDelete").addEventListener("click",closeRecurrenceDelete);recurrenceDeleteBackdrop.addEventListener("click",e=>{if(e.target===recurrenceDeleteBackdrop)closeRecurrenceDelete()});document.getElementById("deleteRecurrenceMonth").addEventListener("click",()=>{if(recurrenceDeleteSourceId)mutateRecurringWithUndo("Occurrence supprimée",()=>deleteRecurringMonth(recurrenceDeleteSourceId,monthKey(state.selectedMonth)))});document.getElementById("deleteRecurrenceForward").addEventListener("click",()=>{if(recurrenceDeleteSourceId)mutateRecurringWithUndo("Récurrence arrêtée",()=>deleteRecurringForward(recurrenceDeleteSourceId,monthKey(state.selectedMonth)))});document.getElementById("deleteRecurrenceAll").addEventListener("click",()=>{if(recurrenceDeleteSourceId)mutateRecurringWithUndo("Série supprimée",()=>deleteRecurringSeries(recurrenceDeleteSourceId))});
 
 const recurrenceEditBackdrop=document.getElementById("recurrenceEditBackdrop"),recurrenceAmountInput=document.getElementById("recurrenceAmountInput"),recurrenceLabelInput=document.getElementById("recurrenceLabelInput"),recurrenceCategorySelect=document.getElementById("recurrenceCategorySelect"),recurrenceEditKind=document.getElementById("recurrenceEditKind"),recurrenceOwnerButtons=[...document.querySelectorAll("[data-recurrence-owner]")],recurrenceEditScopeButtons=[...document.querySelectorAll("[data-recurrence-edit-scope]")],recurrenceEditHint=document.getElementById("recurrenceEditHint");let recurrenceEditSourceId=null,recurrenceEditOwner="common",recurrenceEditScopeValue="month";buildCustomSelect(recurrenceCategorySelect);
-function setRecurrenceEditOwner(owner){recurrenceEditOwner=owner;recurrenceOwnerButtons.forEach(b=>b.classList.toggle("active",b.dataset.recurrenceOwner===owner))}
+function setRecurrenceEditOwner(owner){if(householdIsSolo())owner="B";recurrenceEditOwner=owner;recurrenceOwnerButtons.forEach(b=>b.classList.toggle("active",b.dataset.recurrenceOwner===owner))}
 function setRecurrenceEditScope(scope){recurrenceEditScopeValue=scope;recurrenceEditScopeButtons.forEach(b=>b.classList.toggle("active",b.dataset.recurrenceEditScope===scope));recurrenceEditHint.textContent=scope==="month"?`Seule l’occurrence de ${state.selectedMonth} sera modifiée.`:scope==="forward"?`Les mois précédents restent inchangés ; la nouvelle valeur s’applique à partir de ${state.selectedMonth}.`:`Toutes les occurrences de cette série, passées et futures, utiliseront ces valeurs.`}
 function recurrenceCategoryOptions(type,currentId){let cats=type==="income"?visibleIncomeCategories():visibleExpenseCategories();const current=catById(currentId,type);if(current&&!cats.some(c=>c.id===current.id))cats=[categoryView(current,type),...cats];return type==="expense"?groupedExpenseOptions(cats):cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}
 function openRecurrenceEdit(sourceId){const root=recurringRoot(sourceId);if(!root)return;const key=monthKey(state.selectedMonth),occurrence=transactionsForMonthKey(key).find(t=>t.sourceId===sourceId);if(!occurrence)return;recurrenceEditSourceId=sourceId;recurrenceEditKind.textContent=`${state.selectedMonth} · ${root.type==="income"?"Revenu":"Dépense"}`;recurrenceLabelInput.value=String(occurrence.label||"");recurrenceAmountInput.value=Number(occurrence.amount||0).toFixed(2);setRecurrenceEditOwner(transactionOwner(occurrence));recurrenceCategorySelect.innerHTML=recurrenceCategoryOptions(root.type,occurrence.category);recurrenceCategorySelect.value=occurrence.category;rebuildCustomSelect(recurrenceCategorySelect);syncCustomSelect(recurrenceCategorySelect);setRecurrenceEditScope("month");recurrenceEditBackdrop.classList.add("open");recurrenceEditBackdrop.setAttribute("aria-hidden","false");setTimeout(()=>recurrenceAmountInput.focus(),70)}

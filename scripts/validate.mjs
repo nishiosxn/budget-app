@@ -92,7 +92,7 @@ const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.i
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 
-const scripts=[...html.matchAll(/<script src="js\/([^"]+\.js)" defer><\/script>/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
 const missingScripts=scripts.filter(f=>!exists(path.join("js",f)));
 if(missingScripts.length) fail("Scripts HTML absents: "+missingScripts.join(", "));
 else if(scripts.length) ok("Scripts référencés présents");
@@ -141,8 +141,8 @@ if(modular&&exists("js/calculations.js")){
     "plannedBalance:plannedIncome-plannedExpense-plannedSaving",
     "restB=incomeB-expenseB-savingBShare",
     "restA=incomeA-expenseA-savingAShare",
-    "accountBalanceB=openingBDefined?openingB+restB:null",
-    "accountBalanceA=openingADefined?openingA+restA:null"
+    "accountBalanceB=openingB+restB",
+    "accountBalanceA=openingA+restA"
   ];
   const missing=required.filter(x=>!calc.includes(x));
   if(missing.length) fail("Formules métier critiques absentes: "+missing.join(", "));
@@ -155,7 +155,7 @@ if(modular){
     const accountBalances=read("js/account-balances.js");
     const markers=["account_opening_balances","accountOpeningBalanceFor","saveAccountOpeningBalance","data-edit-opening-balance"];
     const missing=markers.filter(marker=>!accountBalances.includes(marker)&&!read("index.html").includes(marker));
-    if(missing.length)fail("Soldes de compte V2.6 incomplets: "+missing.join(", "));
+    if(missing.length)fail("Soldes de compte V2.7 incomplets: "+missing.join(", "));
     else ok("Soldes d'ouverture mensuels synchronisés présents");
   }
   const html=read("index.html");
@@ -171,6 +171,22 @@ if(modular){
 
 if(modular&&exists("js/settings.js")){
   const settings=read("js/settings.js");
+  const appearance=read("js/appearance.js");
+  if(settings.includes("delete settingsAppearancePicker.dataset.customPickerBound"))fail("Le picker d’apparence réattache encore ses listeners à chaque rendu");
+  else if(!appearance.includes("__appearanceCustomPickerController")||!appearance.includes("requestAnimationFrame")||!appearance.includes("commitTimer"))fail("Contrôleur stable du picker couleur absent");
+  else{
+   try{
+    const context=vm.createContext({console,document:{documentElement:{style:{setProperty:()=>{}},dataset:{}},querySelector:()=>null,activeElement:null},localStorage:{getItem:()=>null,setItem:()=>{}},requestAnimationFrame:fn=>{fn();return 1},cancelAnimationFrame:()=>{},setTimeout,clearTimeout});
+    vm.runInContext(appearance,context,{filename:"js/appearance.js"});
+    const hueTarget={matches:q=>q==="[data-appearance-hue]",getBoundingClientRect:()=>({left:0,top:0,width:100,height:12})};
+    const svTarget={matches:q=>q==="[data-appearance-sv]",getBoundingClientRect:()=>({left:0,top:0,width:100,height:100})};
+    const black={color:"custom",font:"current",customColor:"#000000"};
+    const hue=context.appearanceCustomPointerState(hueTarget,{clientX:75,clientY:6},black,{h:0,s:1,v:0});
+    const color=context.appearanceCustomPointerState(svTarget,{clientX:100,clientY:0},hue.appearance,hue.hsv);
+    if(Math.abs(hue.hsv.h-270)>.01||color.appearance.customColor==="#000000")fail("Le picker perd encore la teinte quand la couleur courante est noire");
+    else ok("Picker couleur : teinte HSV préservée même depuis noir/blanc et rendu de drag découplé");
+   }catch(error){fail("Test du picker couleur impossible: "+error.message)}
+  }
   const migrationMarkers=["validateV5State","validateLegacyState","buildLegacyV5State","prepareImportedState","migrateLegacySource"];
   const missing=migrationMarkers.filter(x=>!settings.includes(x));
   if(missing.length) fail("Moteur de migration incomplet: "+missing.join(", "));
@@ -208,8 +224,8 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
     'data-bulk-clear'
   ];
   const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
-  if(missingCategoryUx.length)fail("UX Catégories V2.6 incomplète: "+missingCategoryUx.join(", "));
-  else ok("UX Catégories V2.6 présente");
+  if(missingCategoryUx.length)fail("UX Catégories V2.7 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V2.7 présente");
   if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
   else ok("Remplissage des vides préserve les montants déjà saisis");
   if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
@@ -341,6 +357,17 @@ if(modular){
   else ok("Données financières sans cache local actif");
   if(!html.includes('id="cloudForceSyncBtn"')||!read("js/cloud-save.js").includes("cloudForcePushSessionState"))fail("Relance manuelle de synchronisation absente");
   else ok("Relance manuelle de session présente");
+  const cloudSave=read("js/cloud-save.js");
+  const batchMarkers=["CLOUD_SYNC_DEBOUNCE_MS=1500","CLOUD_SYNC_MAX_WAIT_MS=5000","Modifications en attente…","cloudFlushPendingSync","visibilitychange","pagehide"];
+  const missingBatch=batchMarkers.filter(marker=>!cloudSave.includes(marker));
+  if(missingBatch.length)fail("Batching de synchronisation V2.7 incomplet: "+missingBatch.join(", "));
+  else ok("Batching cloud V2.7 : debounce 1,5 s, maxWait 5 s et flush de sécurité présents");
+  const syncEngine=read("js/cloud-sync-v25.js");
+  if(!syncEngine.includes("changedDuringPush")||!syncEngine.includes("remoteAfterPush")||!syncEngine.includes('setCloudStatus("Modifications en attente…","pending")'))fail("Protection contre les modifications pendant une synchronisation absente");
+  else ok("Synchronisation concurrente : les changements locaux faits pendant un push ne sont plus écrasés");
+  const transactionLogic=read("js/transactions.js");
+  if(!transactionLogic.includes("transactionDeleteUndoBatch")||!transactionLogic.includes("restoreDeletedTransactionBatch")||!transactionLogic.includes('"Annuler tout"'))fail("Undo groupé des suppressions d’historique absent");
+  else ok("Historique : suppressions successives regroupées dans un Undo unique");
   const migrations=[
     "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
     "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
