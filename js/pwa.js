@@ -7,7 +7,7 @@
   const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
   const isIos=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
   const isAndroid=()=>/android/i.test(navigator.userAgent);
-  const isMobile=()=>window.matchMedia("(max-width: 820px)").matches||isIos()||isAndroid();
+  const isMobile=()=>window.matchMedia("(max-width: 51.25rem)").matches||isIos()||isAndroid();
 
   function configureMobileShell(){
     const root=document.documentElement;
