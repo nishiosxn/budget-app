@@ -571,9 +571,18 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
 
   await cloudApplySyncPlan(plan);
   cloudClearConflict();
-  await cloudLoadState();
-  cloudUnsyncedSession=false;
-  setCloudStatus("Synchronisé","ok");
+  const changedDuringPush=cloudSyncDigest()!==digest;
+  if(changedDuringPush){
+   const remoteAfterPush=await cloudFetchRemoteSyncSnapshot();
+   cloudWriteSyncBaseline(remoteAfterPush);
+   setCloudSyncedBaseline(digest);
+   cloudPushRequested=true;
+   setCloudStatus("Modifications en attente…","pending");
+  }else{
+   await cloudLoadState();
+   cloudUnsyncedSession=false;
+   setCloudStatus("Synchronisé","ok");
+  }
  }catch(error){
   cloudUnsyncedSession=true;
   if(error?.code==="CLOUD_SYNC_RACE"){

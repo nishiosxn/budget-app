@@ -283,6 +283,9 @@ async function sendMagicLink(){
  }finally{cloudSendMagicLinkBtn.disabled=false}
 }
 async function cloudSignOut(){
+ try{
+  if(typeof cloudFlushPendingSync==="function")await cloudFlushPendingSync({force:true,wait:true});
+ }catch(error){console.error("Cloud signout flush",error)}
  if(typeof stopCloudRealtime==="function")stopCloudRealtime();
  cloudSyncReady=false;
  activeHouseholdId=null;

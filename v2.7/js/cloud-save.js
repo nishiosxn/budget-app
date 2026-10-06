@@ -2,6 +2,51 @@
 let cloudLastSyncedDigest="";
 let cloudPushRequested=false;
 let cloudUnsyncedSession=false;
+let cloudPushMaxTimer=null;
+let cloudSyncBatchStartedAt=0;
+const CLOUD_SYNC_DEBOUNCE_MS=1500;
+const CLOUD_SYNC_MAX_WAIT_MS=5000;
+
+function clearCloudSyncSchedule(){
+ clearTimeout(cloudPushTimer);
+ clearTimeout(cloudPushMaxTimer);
+ cloudPushTimer=null;
+ cloudPushMaxTimer=null;
+ cloudSyncBatchStartedAt=0;
+}
+function runQueuedCloudSync(){
+ clearCloudSyncSchedule();
+ if(cloudPushInProgress){cloudPushRequested=true;return}
+ cloudPushLocalState().catch(error=>{
+  if(error?.code!=="CLOUD_SYNC_CONFLICT")console.error("Cloud push",error);
+ });
+}
+async function waitForCloudPush(timeoutMs=8000){
+ const started=Date.now();
+ while(cloudPushInProgress&&Date.now()-started<timeoutMs){
+  await new Promise(resolve=>setTimeout(resolve,50));
+ }
+}
+async function cloudFlushPendingSync({force=false,wait=false}={}){
+ clearCloudSyncSchedule();
+ if(!cloudSession||!activeHouseholdId||!cloudSyncReady)return;
+ if(cloudPushInProgress){
+  cloudPushRequested=true;
+  if(!wait)return;
+  await waitForCloudPush();
+  if(cloudPushInProgress)return;
+  clearCloudSyncSchedule();
+  cloudPushRequested=false;
+ }
+ const digest=cloudSyncDigest();
+ if(!force&&digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return;
+ if(!navigator.onLine){
+  cloudUnsyncedSession=true;
+  setCloudStatus("Connexion perdue · réessayer","error");
+  return;
+ }
+ return cloudPushLocalState({force});
+}
 
 function cloudSyncDigest(source=state){
  const snapshot=cloneData(source);
@@ -17,19 +62,29 @@ function queueCloudSync(){
  const digest=cloudSyncDigest();
  if(digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return;
  cloudUnsyncedSession=true;
- clearTimeout(cloudPushTimer);
  if(typeof cloudSyncConflict!=="undefined"&&cloudSyncConflict){
+  clearCloudSyncSchedule();
   setCloudStatus("Conflit de synchronisation","error");
   return;
  }
  if(!navigator.onLine){
+  clearCloudSyncSchedule();
   setCloudStatus("Connexion perdue · réessayer","error");
   return;
  }
- setCloudStatus("Synchronisation…","syncing");
- cloudPushTimer=setTimeout(()=>cloudPushLocalState().catch(error=>{
-  if(error?.code!=="CLOUD_SYNC_CONFLICT")console.error("Cloud push",error);
- }),80);
+ setCloudStatus("Modifications en attente…","pending");
+ if(cloudPushInProgress){
+  cloudPushRequested=true;
+  return;
+ }
+ const now=Date.now();
+ if(!cloudSyncBatchStartedAt)cloudSyncBatchStartedAt=now;
+ clearTimeout(cloudPushTimer);
+ cloudPushTimer=setTimeout(runQueuedCloudSync,CLOUD_SYNC_DEBOUNCE_MS);
+ if(!cloudPushMaxTimer){
+  const elapsed=now-cloudSyncBatchStartedAt;
+  cloudPushMaxTimer=setTimeout(runQueuedCloudSync,Math.max(0,CLOUD_SYNC_MAX_WAIT_MS-elapsed));
+ }
 }
 function cloudLocalCategories(source=state){
  const rows=[];
@@ -225,6 +280,7 @@ async function cloudPushLocalState({force=false}={}){
 }
 
 async function cloudForcePushSessionState(){
+ clearCloudSyncSchedule();
  const button=typeof document!=="undefined"?document.getElementById("cloudForceSyncBtn"):null;
  if(!cloudSession||!activeHouseholdId){
   setCloudStatus("Session cloud indisponible","error");
@@ -275,8 +331,14 @@ async function cloudForcePushSessionState(){
 
 if(typeof document!=="undefined"){
  document.getElementById("cloudForceSyncBtn")?.addEventListener("click",cloudForcePushSessionState);
+ document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden")cloudFlushPendingSync().catch(error=>console.error("Cloud hidden flush",error));
+ });
 }
 
+window.addEventListener("pagehide",()=>{
+ cloudFlushPendingSync().catch(error=>console.error("Cloud pagehide flush",error));
+});
 window.addEventListener("online",()=>{
  if(cloudSession&&!cloudSyncReady){
   requestCloudBootstrap().catch(error=>console.error("Cloud reconnect bootstrap",error));
