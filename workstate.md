@@ -32,7 +32,7 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 
 - Branche : `work/v2.7-stabilization`
 - Base : `develop`
-- Objectif : stabiliser la V2.6 publiée avant promotion V2.7 : restauration des catégories, création d’épargne, sauvegarde/reset complets, picker couleur Paramètres, unités relatives et alignement Git/Supabase.
+- Objectif : stabiliser la V2.6 publiée avant promotion V2.7 : restauration des catégories, création d’épargne, sauvegarde/reset complets, picker couleur Paramètres, unités relatives, batching cloud sûr et alignement Git/Supabase.
 - Critères d’acceptation :
   - montant réel directement cliquable ;
   - détail dépliable des opérations de chaque catégorie avec libellé, date, montant et payeur individuel ;

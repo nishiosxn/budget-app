@@ -2721,3 +2721,7 @@ html{font-size:clamp(.9375rem,.9rem + .18vw,1rem)}
  .setup-builder-panel{min-height:100dvh}
  .setup-builder-title p,.setup-builder-check small,.setup-builder-note,.setup-builder-recap span,.setup-builder-source{font-size:clamp(.6875rem,.65rem + .18vw,.75rem)}
 }
+
+/* === V2.7 · état de synchronisation différée === */
+.cloud-sync-status[data-state="pending"]{color:var(--warning);border-color:rgba(143,103,37,.24);background:rgba(143,103,37,.07)}
+.cloud-sync-status[data-state="pending"]::before{background:var(--warning);box-shadow:0 0 0 .1875rem rgba(143,103,37,.12)}

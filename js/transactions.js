@@ -35,12 +35,43 @@ saveBtn.addEventListener("click",()=>{const amount=Math.round(Number(amountInput
  if(editingTransactionId){const index=state.transactions.findIndex(t=>t.id===editingTransactionId);if(index<0)return;const previous=state.transactions[index],next={...previous,type:modalDataType(),category:categorySelect.value,owner:modalOwner,amount};if(label)next.label=label;else delete next.label;if(recurring){next.scope="forward";next.seriesId=next.seriesId||next.id;next.excludedMonths=Array.isArray(next.excludedMonths)?next.excludedMonths:[];next.overrides=next.overrides&&typeof next.overrides==="object"?next.overrides:{}}else{delete next.scope;delete next.seriesId;delete next.excludedMonths;delete next.overrides;delete next.endMonth}state.transactions[index]=next;
  }else{const id=uid();state.transactions.push({id,type:modalDataType(),category:categorySelect.value,owner:modalOwner,amount,date:transactionDateForSelectedMonth(),seed:false,...(label?{label}:{}),...(recurring?{scope:"forward",seriesId:id,excludedMonths:[],overrides:{}}:{})})}
  saveState();closeModal();render()});
-let undoTimer=null,undoAction=null;const undoToast=document.getElementById("undoToast"),undoToastText=document.getElementById("undoToastText"),undoToastBtn=document.getElementById("undoToastBtn");
-function showUndoToast(label,action=null){undoAction=typeof action==="function"?action:null;undoToastText.textContent=label;undoToastBtn.style.display=undoAction?"":"none";undoToast.classList.add("show");clearTimeout(undoTimer);undoTimer=setTimeout(()=>{undoAction=null;undoToast.classList.remove("show")},6500)}
-function removeTransactions(predicate,label){const removed=state.transactions.filter(predicate);if(!removed.length)return;state.transactions=state.transactions.filter(t=>!predicate(t));saveState();render();showUndoToast(label,()=>{state.transactions.push(...removed);saveState();render()})}
+let undoTimer=null,undoAction=null,transactionDeleteUndoBatch=null;const undoToast=document.getElementById("undoToast"),undoToastText=document.getElementById("undoToastText"),undoToastBtn=document.getElementById("undoToastBtn");
+function showUndoToast(label,action=null,options={}){
+ const keepDeleteBatch=!!options.keepDeleteBatch,duration=Number(options.duration)||9000;
+ if(!keepDeleteBatch)transactionDeleteUndoBatch=null;
+ undoAction=typeof action==="function"?action:null;
+ undoToastText.textContent=label;
+ undoToastBtn.style.display=undoAction?"":"none";
+ undoToastBtn.textContent=options.buttonLabel||(undoAction?"Annuler":"");
+ undoToast.classList.add("show");
+ clearTimeout(undoTimer);
+ undoTimer=setTimeout(()=>{undoAction=null;transactionDeleteUndoBatch=null;undoToast.classList.remove("show")},duration);
+}
+function restoreDeletedTransactionBatch(batch){
+ if(!batch?.items?.length)return;
+ const existing=new Set(state.transactions.map(t=>t.id));
+ batch.items.forEach(item=>{if(!existing.has(item.id))state.transactions.push(cloneData(item))});
+ transactionDeleteUndoBatch=null;
+ saveState();
+ render();
+}
+function removeTransactions(predicate,label){
+ const removed=state.transactions.filter(predicate);
+ if(!removed.length)return;
+ if(!transactionDeleteUndoBatch)transactionDeleteUndoBatch={items:[],actions:0};
+ const known=new Set(transactionDeleteUndoBatch.items.map(item=>item.id));
+ removed.forEach(item=>{if(!known.has(item.id)){transactionDeleteUndoBatch.items.push(cloneData(item));known.add(item.id)}});
+ transactionDeleteUndoBatch.actions++;
+ state.transactions=state.transactions.filter(t=>!predicate(t));
+ saveState();
+ render();
+ const batch=transactionDeleteUndoBatch,count=batch.items.length;
+ const text=count===1&&batch.actions===1?label:`${count} opération${count>1?"s":""} supprimée${count>1?"s":""}`;
+ showUndoToast(text,()=>restoreDeletedTransactionBatch(batch),{keepDeleteBatch:true,duration:10000,buttonLabel:count>1?"Annuler tout":"Annuler"});
+}
 function transactionSnapshot(){return JSON.parse(JSON.stringify(state.transactions))}
 function restoreTransactionSnapshot(snapshot){state.transactions=snapshot;saveState();render()}
-undoToastBtn.addEventListener("click",()=>{if(!undoAction)return;const action=undoAction;undoAction=null;action();undoToast.classList.remove("show");clearTimeout(undoTimer)});
+undoToastBtn.addEventListener("click",()=>{if(!undoAction)return;const action=undoAction;undoAction=null;action();transactionDeleteUndoBatch=null;undoToast.classList.remove("show");clearTimeout(undoTimer)});
 const recurrenceDeleteBackdrop=document.getElementById("recurrenceDeleteBackdrop"),recurrenceDeleteName=document.getElementById("recurrenceDeleteName"),recurrenceDeleteKind=document.getElementById("recurrenceDeleteKind");let recurrenceDeleteSourceId=null;
 function openRecurrenceDelete(sourceId){const root=recurringRoot(sourceId);if(!root)return;const occurrence=transactionsForMonthKey(monthKey(state.selectedMonth)).find(t=>t.sourceId===sourceId)||root;recurrenceDeleteSourceId=sourceId;recurrenceDeleteName.textContent=transactionTitle(occurrence);recurrenceDeleteKind.textContent=state.selectedMonth;recurrenceDeleteBackdrop.classList.add("open");recurrenceDeleteBackdrop.setAttribute("aria-hidden","false")}
 function closeRecurrenceDelete(){recurrenceDeleteBackdrop.classList.remove("open");recurrenceDeleteBackdrop.setAttribute("aria-hidden","true");recurrenceDeleteSourceId=null}

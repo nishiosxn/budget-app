@@ -14,6 +14,12 @@
 - Picker de couleur personnalisé des Paramètres maintenu ouvert et interactif.
 - Force-sync du foyer incluant le mode Seul / À deux.
 
+### Synchronisation
+- Les modifications successives sont regroupées : envoi 1,5 s après la dernière action, avec un maximum de 5 s avant envoi.
+- Une modification effectuée pendant un push n’est plus écrasée par le rechargement cloud de la passe précédente.
+- Les suppressions successives de l’Historique partagent un Undo : plusieurs opérations peuvent être restaurées avec « Annuler tout ».
+- Flush de sécurité lors du passage en arrière-plan, de `pagehide` et avant déconnexion.
+
 ### Interface et technique
 - Unités `px` retirées de l’interface active au profit de `rem`, `clamp()` et unités relatives.
 - Builder mobile aligné sur `100dvh`.

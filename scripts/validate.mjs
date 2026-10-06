@@ -341,6 +341,17 @@ if(modular){
   else ok("Données financières sans cache local actif");
   if(!html.includes('id="cloudForceSyncBtn"')||!read("js/cloud-save.js").includes("cloudForcePushSessionState"))fail("Relance manuelle de synchronisation absente");
   else ok("Relance manuelle de session présente");
+  const cloudSave=read("js/cloud-save.js");
+  const batchMarkers=["CLOUD_SYNC_DEBOUNCE_MS=1500","CLOUD_SYNC_MAX_WAIT_MS=5000","Modifications en attente…","cloudFlushPendingSync","visibilitychange","pagehide"];
+  const missingBatch=batchMarkers.filter(marker=>!cloudSave.includes(marker));
+  if(missingBatch.length)fail("Batching de synchronisation V2.7 incomplet: "+missingBatch.join(", "));
+  else ok("Batching cloud V2.7 : debounce 1,5 s, maxWait 5 s et flush de sécurité présents");
+  const syncEngine=read("js/cloud-sync-v25.js");
+  if(!syncEngine.includes("changedDuringPush")||!syncEngine.includes("remoteAfterPush")||!syncEngine.includes('setCloudStatus("Modifications en attente…","pending")'))fail("Protection contre les modifications pendant une synchronisation absente");
+  else ok("Synchronisation concurrente : les changements locaux faits pendant un push ne sont plus écrasés");
+  const transactionLogic=read("js/transactions.js");
+  if(!transactionLogic.includes("transactionDeleteUndoBatch")||!transactionLogic.includes("restoreDeletedTransactionBatch")||!transactionLogic.includes('"Annuler tout"'))fail("Undo groupé des suppressions d’historique absent");
+  else ok("Historique : suppressions successives regroupées dans un Undo unique");
   const migrations=[
     "supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql",
     "supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql",
