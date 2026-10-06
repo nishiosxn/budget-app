@@ -2,7 +2,7 @@
 // Contrôleur unique : un seul arbre DOM persistant, une seule délégation d'événements.
 const SETUP_BUILDER_PREFIX="budget-foyer-v2.6-setup-builder:";
 const SETUP_BUILDER_UPDATED="2026-10-05";
-const SETUP_BUILDER_CONTROLLER_VERSION="2.7.0";
+const SETUP_BUILDER_CONTROLLER_VERSION="2.7.1";
 
 const SETUP_BUILDER_INCOMES=[
  {id:"salary-b",name:"Salaire personne 1",selected:true,owner:"B",kind:"salary"},
@@ -59,6 +59,10 @@ class SetupBuilderController{
   this.originalAppearance=null;
   this.customPickerOpen=false;
   this.dragTarget=null;
+  this.customPickerHsv=null;
+  this.appearanceCommitTimer=null;
+  this.appearanceFrame=0;
+  this.pendingAppearancePoint=null;
   this.busy=false;
 
   this.onClick=this.onClick.bind(this);
@@ -125,6 +129,9 @@ class SetupBuilderController{
   this.step=0;
   this.editingName="";
   this.customPickerOpen=this.draft.appearance.color==="custom";
+  this.customPickerHsv=hexToHsv(this.draft.appearance.customColor);
+  clearTimeout(this.appearanceCommitTimer);
+  this.appearanceCommitTimer=null;
   this.busy=false;
 
   const root=this.ensureRoot();
@@ -140,6 +147,11 @@ class SetupBuilderController{
   this.root.setAttribute("aria-hidden","true");
   document.documentElement.classList.remove("setup-builder-open");
   this.dragTarget=null;
+  this.pendingAppearancePoint=null;
+  if(this.appearanceFrame)cancelAnimationFrame(this.appearanceFrame);
+  this.appearanceFrame=0;
+  clearTimeout(this.appearanceCommitTimer);
+  this.appearanceCommitTimer=null;
  }
 
  createInitialDraft(){
@@ -576,9 +588,9 @@ class SetupBuilderController{
    target.classList.toggle("invalid",!hex);
    if(!hex)return;
    this.draft.appearance={...normalizeUserAppearance(this.draft.appearance),color:"custom",customColor:hex};
-   applyUserAppearance(this.draft.appearance);
+   this.customPickerHsv=hexToHsv(hex);
    const picker=this.root.querySelector("[data-setup-appearance]");
-   syncAppearanceCustomPanel(picker,this.draft.appearance,{syncHex:false});
+   syncAppearanceCustomPanel(picker,this.draft.appearance,{syncHex:false,hsvState:this.customPickerHsv});
   }
  }
 
@@ -633,6 +645,9 @@ class SetupBuilderController{
    if(!hex){
     target.value=normalizeUserAppearance(this.draft.appearance).customColor;
     target.classList.remove("invalid");
+   }else{
+    this.customPickerHsv=hexToHsv(hex);
+    this.scheduleAppearanceCommit();
    }
   }
  }
@@ -649,31 +664,52 @@ class SetupBuilderController{
  onPointerDown(event){
   const target=event.target instanceof Element?event.target.closest("[data-appearance-sv],[data-appearance-hue]"):null;
   if(!target||!target.closest("[data-setup-appearance]"))return;
+  clearTimeout(this.appearanceCommitTimer);
   this.dragTarget=target;
   target.setPointerCapture?.(event.pointerId);
   event.preventDefault();
-  this.updateCustomColorFromPointer(target,event);
+  this.updateCustomColorFromPointer(target,{clientX:event.clientX,clientY:event.clientY});
  }
 
  onPointerMove(event){
   if(!this.dragTarget)return;
   event.preventDefault();
-  this.updateCustomColorFromPointer(this.dragTarget,event);
+  this.pendingAppearancePoint={clientX:event.clientX,clientY:event.clientY};
+  if(this.appearanceFrame)return;
+  this.appearanceFrame=requestAnimationFrame(()=>{
+   this.appearanceFrame=0;
+   if(!this.dragTarget||!this.pendingAppearancePoint)return;
+   const point=this.pendingAppearancePoint;
+   this.pendingAppearancePoint=null;
+   this.updateCustomColorFromPointer(this.dragTarget,point);
+  });
  }
 
  onPointerUp(event){
   if(!this.dragTarget)return;
-  this.updateCustomColorFromPointer(this.dragTarget,event);
+  if(this.appearanceFrame){cancelAnimationFrame(this.appearanceFrame);this.appearanceFrame=0}
+  this.pendingAppearancePoint=null;
+  this.updateCustomColorFromPointer(this.dragTarget,{clientX:event.clientX,clientY:event.clientY});
   try{this.dragTarget.releasePointerCapture?.(event.pointerId)}catch{}
   this.dragTarget=null;
+  this.scheduleAppearanceCommit();
+ }
+
+ scheduleAppearanceCommit(){
+  clearTimeout(this.appearanceCommitTimer);
+  this.appearanceCommitTimer=setTimeout(()=>{
+   this.appearanceCommitTimer=null;
+   if(this.draft?.appearance)applyUserAppearance(this.draft.appearance);
+  },120);
  }
 
  updateCustomColorFromPointer(target,event){
-  this.draft.appearance=appearanceCustomFromPointer(target,event,this.draft.appearance);
+  const result=appearanceCustomPointerState(target,event,this.draft.appearance,this.customPickerHsv);
+  this.draft.appearance=result.appearance;
+  this.customPickerHsv=result.hsv;
   this.customPickerOpen=true;
-  applyUserAppearance(this.draft.appearance);
   const picker=this.root.querySelector("[data-setup-appearance]");
-  syncAppearanceCustomPanel(picker,this.draft.appearance);
+  syncAppearanceCustomPanel(picker,this.draft.appearance,{hsvState:this.customPickerHsv});
  }
 
  updateDynamicNames(field,value){
