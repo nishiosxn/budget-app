@@ -35,6 +35,13 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 - Aucune sauvegarde accessible depuis l'application publique, aucune restauration automatique. Ces copies restent dans Supabase et ne constituent pas un backup hors site.
 - Procédure de contrôle : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
 
+## Exports chiffrés hors Supabase — préparation V2.9
+
+- GitHub Actions : export quotidien via `pg_dump`, chiffré en flux avec `age`, dépôt **public** mais artefacts exclusivement chiffrés, rétention 60 jours.
+- Nécessite la clé publique et l'URL de base déclarées volontairement en GitHub Actions ; la clé privée reste sur le PC de l'utilisateur.
+- **Pas encore activé / vérifié** avant le premier run réel et le déchiffrement d'un artefact.
+- Guide : [docs/OFFSITE_BACKUP.md](docs/OFFSITE_BACKUP.md).
+
 ## Lot V2.9 — historique et sécurité
 
 - **Abonnements et récurrences** : nouvelle synthèse dans Catégories, distincte des budgets prévus et des prélèvements effectivement confirmés ; actions Modifier et Arrêter réutilisant les fenêtres de récurrence existantes.
