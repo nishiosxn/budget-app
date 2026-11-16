@@ -3,12 +3,12 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.8`
+- Version du code : `V2.9`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.7.
+- Production du code : `main` → V2.8.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
-- V2.7 est publiée ; V2.8 est en travail, sans promotion sur main.
+- V2.8 publiée à la racine de GitHub Pages. V2.9 est isolée sur `work/v2.9-history-safety`.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -81,6 +81,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Les tests manuels responsive, le chargement public de la preview et les parcours authentifiés restent à valider.
 - Important : la preview utilise le **Supabase de production** ; essais de saisie uniquement sur un foyer de test.
 
+## Lot courant — V2.9 Historique et sécurité
+
+- Branche : `work/v2.9-history-safety` depuis `develop` après fusion de la PR #30.
+- Production actuelle : V2.8, release PR #33 fusionnée, publication Pages `9d9d347390c72eed2e3b504def36d2c33f0d0e89` ; le déploiement a réussi au second essai après erreur d'infrastructure GitHub Jekyll.
+- Incident du 16 novembre : les sauvegardes privées `incident_backup_20261116`, la restauration ciblée et les 6 protections d'écriture Supabase restent inchangées. Le client utilise `x-smart-budget-sync-version: 20261116-hf1`.
+- Inclus : recherche en historique, filtres type/personne/catégorie, tris date/montant, réinitialisation, regroupements protégés si partiellement filtrés, déplacement de date des transactions ponctuelles vers un autre mois.
+- Exclu de ce lot : nouvelles migrations Supabase, import bancaire, réécriture de la synchronisation, synchronisation offline, sauvegardes automatiques par serveur.
+- Tests : App integrity, accessibilité des contrôles, comportement des groupes, date hors mois pour opérations ponctuelles, date bornée pour ajout/récurrence. Préversion à publier dans `/v2.9/` avant validation utilisateur.
+
 ## Prochaine action
 
-Vérifier le déploiement public de la preview `/v2.8/`, tester navigation/ajout/date sur mobile et desktop, puis faire valider la V2.8 avant merge vers `develop`. La racine de production `main` / `gh-pages` reste inchangée jusqu'à accord explicite.
+Publier la préversion V2.9, vérifier le CI et recueillir une validation utilisateur sur foyer de test avant merge vers `develop` et toute promotion vers `main`.
