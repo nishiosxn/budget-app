@@ -15,6 +15,7 @@
   <title>Budget foyer</title>
   <link rel="stylesheet" href="css/style.css?v=20261006-v27a" />
   <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
+  <link rel="stylesheet" href="css/history-filters.css?v=20261116-v29a" />
 </head>
 <body>
 <div class="app">
@@ -103,7 +104,38 @@
     </section>
 
     <section id="categories" class="view"><div class="category-layout" id="categoryGrid"></div></section>
-    <section id="history" class="view"><article class="card history-card" id="historyList"></article></section>
+    <section id="history" class="view">
+      <div class="card history-toolbar" role="search" aria-label="Recherche et filtres d'historique">
+        <div class="history-toolbar-title">
+          <h2>Historique des opérations</h2>
+          <span id="historyResultsCount" aria-live="polite">0 opération</span>
+        </div>
+        <label class="history-filter-field history-search-field" for="historySearch">
+          <span>Rechercher</span>
+          <input id="historySearch" type="search" placeholder="Libellé, catégorie, bénéficiaire…" autocomplete="off" />
+        </label>
+        <div class="history-filter-fields">
+          <label class="history-filter-field" for="historyTypeFilter">
+            <span>Type</span>
+            <select id="historyTypeFilter"><option value="all">Tous les types</option><option value="expense">Dépenses</option><option value="income">Revenus</option><option value="saving">Épargne</option></select>
+          </label>
+          <label class="history-filter-field" for="historyOwnerFilter">
+            <span>Personne</span>
+            <select id="historyOwnerFilter"><option value="all">Toutes les personnes</option><option value="B">Personne 1</option><option value="A">Personne 2</option><option value="common">À deux</option></select>
+          </label>
+          <label class="history-filter-field" for="historyCategoryFilter">
+            <span>Catégorie</span>
+            <select id="historyCategoryFilter"><option value="all">Toutes les catégories</option></select>
+          </label>
+          <label class="history-filter-field" for="historySortFilter">
+            <span>Trier par</span>
+            <select id="historySortFilter"><option value="newest">Date · récent d’abord</option><option value="oldest">Date · ancien d’abord</option><option value="amount-desc">Montant · décroissant</option><option value="amount-asc">Montant · croissant</option></select>
+          </label>
+        </div>
+        <button id="historyResetFilters" type="button" class="history-reset-filters" hidden>Effacer les filtres</button>
+      </div>
+      <article class="card history-card" id="historyList"></article>
+    </section>
 
     <section id="tracking" class="view">
       <div class="tracking-head">
@@ -241,7 +273,7 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.8</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.9</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -292,14 +324,14 @@
       </div>
       <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.8 · synchronisation cloud directe · Supabase</div>
+      <div class="settings-version">V2.9 · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.8</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.9</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
     <p class="onboarding-intro">Retrouve ici une ancienne version locale ou importe une sauvegarde compatible. La création d’un nouveau budget passe désormais uniquement par le builder V2.8.</p>
     <div class="onboarding-card">
       <h3>Migration et sauvegardes</h3>
@@ -314,7 +346,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.8</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.9</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
@@ -365,9 +397,10 @@
 <script src="js/storage.js" defer></script>
 <script src="js/appearance.js?v=20261006-v27c" defer></script>
 <script src="js/calculations.js" defer></script>
-<script src="js/ui.js" defer></script>
+<script src="js/ui.js?v=20261116-v29a" defer></script>
+<script src="js/history-filters.js?v=20261116-v29a" defer></script>
 <script src="js/categories.js" defer></script>
-<script src="js/transactions.js" defer></script>
+<script src="js/transactions.js?v=20261116-v29a" defer></script>
 <script src="js/settings.js?v=20261006-v27c" defer></script>
 <script src="js/tracking.js" defer></script>
 <script src="js/onboarding.js" defer></script>
