@@ -21,6 +21,7 @@ function stage(s){
  if(s==="household"||s==="data")el.classList.add("sb-show-skeletons");
 }
 function begin(){loading=true;ready=false;percent=0;const el=makeBoot();el.classList.remove("sb-show-skeletons");el.classList.add("sb-open");el.querySelector(".sb-ring").style.strokeDashoffset="100";stage("start")}
+function beginIfNeeded(){if(!loading){begin();stage("session")}}
 function cancel(){loading=false;boot?.classList.remove("sb-open")}
 function num(s){const v=String(s||"").replace(/[\s\u00a0\u202f€]/g,"").replace(",",".");return /^[+-]?\d+(\.\d+)?$/.test(v)?Number(v):null}
 function animateOne(el){
@@ -69,6 +70,7 @@ function chartHover(host,months){
 }
 function changeView(btn){
  const next=document.getElementById(btn?.dataset.tab||""),current=document.querySelector(".view.active");if(!next||next===current)return;
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===btn));
  clearTimeout(tabTimer);document.querySelectorAll(".view").forEach(x=>x.classList.remove("sb-enter","sb-exit"));
  const swap=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===btn));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x===next));
@@ -77,5 +79,5 @@ function changeView(btn){
  };
  if(current&&!noMotion()){current.classList.add("sb-exit");tabTimer=setTimeout(swap,130)}else swap();
 }
-window.SmartBudgetMotion={begin,stage,finish,cancel,afterRender,changeView,chartHover,animateChart};
+window.SmartBudgetMotion={begin,beginIfNeeded,stage,finish,cancel,afterRender,changeView,chartHover,animateChart};
 })();
