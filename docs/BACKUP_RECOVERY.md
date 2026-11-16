@@ -2,7 +2,7 @@
 
 ## Statut (16 novembre 2026)
 
-- Supabase : projet `budget-foyer` (`bqbemjxwdctyovtlpxpm`).
+- Supabase : projet `budget-foyer`.
 - Sauvegardes dans **`smart_budget_backups`**, schéma privé non exposé à l'API.
 - Table `snapshots` (ID, date, motif, fin) et table `snapshot_tables` (table, nombre, contenu JSONB intégral).
 - 8 tables sauvegardées **en une lecture cohérente MVCC** : `households`, `household_members`, `household_invites`, `categories`, `budgets`, `transactions`, `recurrences`, `account_opening_balances`.
