@@ -93,6 +93,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Tests ajoutés en CI : ordre des catégories après chargement, ajout ponctuel unique, archivage massif réellement détectable.
 - Aucune écriture financière ni migration Supabase dans ce lot. Sauvegardes `incident_backup_20261116` et garde-fous V2.7.1 intacts.
 
+## Lot infrastructure — export externe chiffré V2.9
+
+- Branche `work/v2.9-offsite-encrypted-backups` issue de `main` (UI V2.8.1 inchangée).
+- Workflow GitHub Actions `offsite-backup.yml` planifié chaque jour 03:43 UTC et déclenchable manuellement. Le job ne tourne qu'après ajout de la variable GitHub `SMART_BUDGET_BACKUP_AGE_RECIPIENT` (clé publique) et du secret `SMART_BUDGET_BACKUP_DATABASE_URL` (Session pooler PostgreSQL).
+- L'export des schémas `public`, `smart_budget_backups`, `incident_backup_20261116` est chiffré directement en flux via `age` ; aucun dump non chiffré écrit sur disque ou commit dans le dépôt public.
+- Artefact chiffré 60 jours, en dehors du projet Supabase ; sans clé privée locale il est inutilisable. La clé privée n'est pas stockée sur GitHub.
+- Activation **en attente de la configuration volontaire du propriétaire** ; le workflow ne garantit aucune sauvegarde hors site avant le premier run réussi suivi d'un test de déchiffrement.
+- Les sauvegardes internes Supabase et protections de synchronisation existantes restent inchangées. Documentation [docs/OFFSITE_BACKUP.md](docs/OFFSITE_BACKUP.md).
+
 ## Prochaine action
 
-Valider App integrity et les tests de roundtrip, publier la production V2.8.1 avec cache-busting des scripts, rétroporter sur `develop` et les préversions, vérifier le statut Pages puis tester une modification contrôlée en foyer de test.
+Vérifier App integrity, fusionner l'infrastructure sur `main`, puis laisser le propriétaire configurer la clé age publique et l'URL PostgreSQL en secret GitHub. Déclencher le premier export et contrôler un déchiffrement local avant d'affirmer que la sauvegarde hors site fonctionne. Répercuter le workflow et le guide dans `develop`.
