@@ -75,8 +75,12 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Périmètre : navbar tactile à cinq emplacements, bouton + flottant, ajout dépense/revenu via la modale existante, panneau de saisie mobile, date d'opération modifiable dans le mois choisi, accueil mobile réordonné, restauration du zoom natif.
 - Exclusions : calculs financiers, données Supabase, migrations et publication en production.
 - Vérification : `node scripts/validate.mjs`, check **App integrity**, tests visuels iPhone/Android/desktop et saisie d'une transaction de test sur un foyer non personnel.
-- État : implémentation sur la branche, sans validation visuelle ni déploiement de preview.
+- État : implémentation sur la branche ; **App integrity** réussi pour le SHA source `3aa0b465f0feee7c85529ecf03b458d4fe40ae09`.
+- Preview publiée dans la branche `gh-pages` : https://nishiosxn.github.io/budget-app/v2.8/
+- Commit de publication `gh-pages` : `5d14a322ee0c462db9d6d9b8bb0da799b110db61` ; copie de 38 fichiers applicatifs sans toucher à la racine ni aux snapshots.
+- Les tests manuels responsive, le chargement public de la preview et les parcours authentifiés restent à valider.
+- Important : la preview utilise le **Supabase de production** ; essais de saisie uniquement sur un foyer de test.
 
 ## Prochaine action
 
-Vérifier **App integrity** sur le dernier commit de PR #30, tester les parcours sur navigateur, puis valider une preview avant merge vers `develop`. Publication `main` / `gh-pages` seulement après validation explicite.
+Vérifier le déploiement public de la preview `/v2.8/`, tester navigation/ajout/date sur mobile et desktop, puis faire valider la V2.8 avant merge vers `develop`. La racine de production `main` / `gh-pages` reste inchangée jusqu'à accord explicite.
