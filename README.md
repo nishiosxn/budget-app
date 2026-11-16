@@ -21,7 +21,7 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 ## État actuel
 
 - **Production du code** : V2.7 sur `main`.
-- Version du code : `V2.7`
+- Version du code : `V2.8`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.7 à la racine ; snapshot V2.6 conservé sur `/v2.6/`.
 - **État de release** : V2.7 est publiée ; V2.8 est en développement sur `work/v2.8-mobile-ux` (PR #30 brouillon). Aucune preview V2.8 ni mise en production à ce stade.
