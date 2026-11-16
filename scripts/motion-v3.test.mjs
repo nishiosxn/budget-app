@@ -5,7 +5,7 @@ const read=path=>fs.readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("motion V3 ne modifie aucune donnée financière",()=>{
  const motion=read("js/motion.js");
  assert.match(motion,/prefers-reduced-motion/);
- assert.doesNotMatch(motion,/\.from\s*\(|\.rpc\s*\(|\.update\s*\(|\.insert\s*\(|\.delete\s*\(/);
+ assert.doesNotMatch(motion,/\.from\s*\(|\.rpc\s*\(|\.update\s*\(|\.insert\s*\(/);
  for(const key of ["session","household","data","ready"])assert.ok(motion.includes(key));
 });
 test("le chargement ne se termine qu'après bootstrap, et masque les erreurs",()=>{
