@@ -1,5 +1,14 @@
 # Changelog
 
+## V2.7.1 — correctif urgent de synchronisation
+
+- Désactivation de l'ancien envoi intégral qui pouvait archiver toute donnée absente d'une session incomplète.
+- Bouton de relance redirigé vers la fusion contrôlée, avec fermeture sécurisée si le moteur n'est pas chargé.
+- Garde-fou avant écriture contre les archivages massifs et les remises à zéro massives de budgets ; impossibilité de contourner l'alerte avec les boutons de résolution de conflit.
+- Actualisation des URL des scripts critiques pour éviter de recharger des versions mises en cache.
+- Préparation d'une restauration ciblée et sauvegarde SQL privée, sans import destructif.
+
+
 ## V2.7 — stabilisation
 
 ### Données et catégories
