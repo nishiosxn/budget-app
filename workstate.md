@@ -90,6 +90,17 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Exclu de ce lot : nouvelles migrations Supabase, import bancaire, réécriture de la synchronisation, synchronisation offline, sauvegardes automatiques par serveur.
 - Tests : App integrity, tests des synthèses d'abonnements (budgets vs mouvements récurrents, actions non destructives), accessibilité et responsive. Préversion mise à jour sur `/v2.9/` avant validation utilisateur.
 
+## Sauvegardes privées V2.9 — lot serveur
+
+- Branche : `work/v2.9-private-backups` depuis `develop`, après fusion de la PR #34 (historique et abonnements).
+- Trois migrations SQL enregistrées côté Supabase, fichiers sources alignés sur les versions réelles de migration : `20261116025347`, `20261116025548`, `20261116025626`.
+- Schéma privé `smart_budget_backups`, avec contrôle du rôle `postgres` et droits `anon`, `authenticated`, `service_role` refusés ; RLS activée sans politique d'accès client.
+- Instantanés des 8 tables, copie cohérente en une lecture MVCC, données archivées incluses. Rétention de 30 jours seulement pour les instantanés planifiés.
+- Supabase Cron : tâche `smart-budget-financial-snapshot-every-6h`, horaire `17 */6 * * *` (UTC), active.
+- Tests manuels réussis : snapshot #1 (`manual`) et #2 (`scheduled`) complets, 1 060 lignes dans 8 tables, aucune différence détectée avec l'état actuel. Les six garde-fous précédents restent activés.
+- La récupération reste manuelle, en transaction contrôlée ; pas de fonction de restauration accessible à l'application. Les snapshots sont dans la même base et ne remplacent pas des sauvegardes externes.
+- Runbook : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
+
 ## Prochaine action
 
-Publier la préversion V2.9 enrichie, valider le CI et faire tester le tableau d'abonnements ainsi que l'historique avant merge vers `develop` et toute promotion vers `main`. Les sauvegardes automatiques restent un lot indépendant nécessitant un mécanisme serveur vérifié.
+Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.
