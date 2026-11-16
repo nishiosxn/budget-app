@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot isolé — V3.0 Motion / UX
+
+- Branche : `work/v3.0-motion-ux` dérivée de `develop` V2.9.
+- Animations de chargement, skeletons, transitions, compteurs et graphiques ; refonte lecture seule des abonnements et synthèse de l’accueil.
+- Aucun déploiement GitHub Pages ; `/` et `/v2.9/` restent inchangés.
+- Tests et validation de la préversion authentifiée à terminer avant toute publication. Voir `docs/V3_0_MOTION.md`.
+
+
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
