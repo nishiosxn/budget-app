@@ -4,7 +4,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
 ## Accès
 
-- **Version stable V2.6** : https://nishiosxn.github.io/budget-app/
+- **Production V2.7.1 — correctif de synchronisation** : https://nishiosxn.github.io/budget-app/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
 - **Preview V2.7** : https://nishiosxn.github.io/budget-app/v2.7/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
@@ -20,8 +20,8 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 
 ## État actuel
 
-- **Production du code** : V2.6 sur `main`.
-- Version du code : `V2.7`
+- **Production du code** : V2.7.1 à publier depuis `main`.
+- Version du code : `V2.7.1`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.6 à la racine et snapshot sur `/v2.6/`.
 - **État de release** : V2.6 reste la version stable ; V2.7 est en validation sur `work/v2.7-stabilization` avec preview `/v2.7/`.
@@ -167,3 +167,7 @@ Sécurité côté Supabase validée après implémentation :
 Le compte propriétaire déjà présent au moment du déploiement a été désigné comme premier administrateur. Les administrateurs suivants doivent être ajoutés explicitement depuis le SQL Editor avec `select private.grant_app_admin_by_email('adresse@example.com');` ; cette fonction n'est pas exposée à l'API.
 
 Les URLs de confirmation/récupération doivent être autorisées dans **Authentication → URL Configuration** pour `https://nishiosxn.github.io/budget-app/v2.4/**`. La protection contre les mots de passe compromis se règle dans **Authentication → Sign In / Password Security** ; ces réglages Auth hébergés ne sont pas modifiables par les migrations SQL.
+
+## Incident de synchronisation du 16 novembre 2026
+
+Correctif V2.7.1 : le bouton de relance n'envoie plus un remplacement intégral des données ; un moteur de fusion absent bloque l'envoi ; les archivages massifs et mises à zéro massives des budgets sont rejetés. Les archives historiques ne doivent pas être restaurées globalement. Les données d'incident sont sauvegardées dans le schéma privé Supabase `incident_backup_20261116`. Ne pas versionner la sauvegarde ni ses données dans GitHub.

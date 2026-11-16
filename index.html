@@ -22,7 +22,7 @@
       <div class="brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div class="brand-copy"><h1 id="householdTitle">Budget foyer</h1><p>Simple, partagé, sans prise de tête.</p></div></div>
       <div class="nav-cloud-tools topbar-cloud-tools">
         <span id="cloudSyncStatus" class="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Connexion…</span>
-        <button id="cloudForceSyncBtn" class="cloud-force-sync" type="button" aria-label="Forcer l’envoi de cette session" title="Forcer l’envoi de toutes les données de cette session" hidden>
+        <button id="cloudForceSyncBtn" class="cloud-force-sync" type="button" aria-label="Relancer la synchronisation sécurisée" title="Relancer une fusion sécurisée, sans remplacer toutes les données" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg>
         </button>
         <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres et données" title="Paramètres et données"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
@@ -224,7 +224,7 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.7</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V2.7.1</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -275,14 +275,14 @@
       </div>
       <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V2.7 · synchronisation cloud directe · Supabase</div>
+      <div class="settings-version">V2.7.1 · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7.1</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
     <p class="onboarding-intro">Retrouve ici une ancienne version locale ou importe une sauvegarde compatible. La création d’un nouveau budget passe désormais uniquement par le builder V2.7.</p>
     <div class="onboarding-card">
       <h3>Migration et sauvegardes</h3>
@@ -297,7 +297,7 @@
 
 <div id="cloudGate" class="cloud-gate open" aria-hidden="false">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V2.7.1</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
@@ -362,8 +362,8 @@
 <script src="js/account-balances.js" defer></script>
 <script src="js/cloud-state-core.js" defer></script>
 <script src="js/cloud-load.js" defer></script>
-<script src="js/cloud-save.js" defer></script>
-<script src="js/cloud-sync-v25.js" defer></script>
+<script src="js/cloud-save.js?v=20261116-hotfix1" defer></script>
+<script src="js/cloud-sync-v25.js?v=20261116-hotfix1" defer></script>
 <script src="js/cloud-realtime.js" defer></script>
 <script src="js/setup-builder.js?v=20261006-v27c" defer></script>
 <script src="js/pwa.js" defer></script>
