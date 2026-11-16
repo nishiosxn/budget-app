@@ -1,5 +1,13 @@
 # Changelog
 
+## V3.0 — animations, chargement progressif et lecture du budget (préversion isolée)
+
+- Logo SVG de démarrage et progression par étapes réelles de la session et du chargement.
+- Skeletons pendant les chargements authentifiés, transitions d'onglets et incrémentation visuelle des KPI.
+- Courbe de suivi interactive (réel/prévu), réorganisation des abonnements et nouveaux repères de dépenses.
+- Aucune migration ni modification du moteur de synchronisation; pas de publication dans `main` ou `gh-pages`.
+
+
 ## V2.9 — historique, fiabilité et sauvegardes (préversion)
 
 - Export externe **préparé**, non activé tant que la clé publique age et le secret de connexion PostgreSQL ne sont pas configurés : workflow quotidien GitHub Actions, données chiffrées en flux, rétention 60 jours.
