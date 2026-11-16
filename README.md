@@ -2,6 +2,12 @@
 
 Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
+## Sauvegarde externe chiffrée (activation manuelle requise)
+
+Un workflow GitHub Actions prépare des exports PostgreSQL quotidiennement, chiffrés avec **age** puis conservés en artefacts pendant 60 jours. Ce workflow nécessite une clé publique et une URL de base stockée dans les Secrets GitHub avant de pouvoir fonctionner ; aucune donnée ne quitte Supabase tant que ces paramètres sont absents. La clé privée reste détenue par l'utilisateur.
+
+Configuration Windows, test et limites : [Guide de sauvegarde externe](docs/OFFSITE_BACKUP.md).
+
 ## Accès
 
 - **Préversion V2.8 validée sur mobile** : https://nishiosxn.github.io/budget-app/v2.8/
