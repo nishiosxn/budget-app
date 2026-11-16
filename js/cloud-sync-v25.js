@@ -371,11 +371,16 @@ function cloudRenderConflictUi(){
  const detail=document.getElementById("cloudConflictDetail");
  if(!card)return;
  card.hidden=!cloudSyncConflict;
+ const safetyBlocked=!!cloudSyncConflict?.conflicts?.some(item=>item.table==="sync_safety");
+ const localButton=document.getElementById("cloudConflictKeepLocal");
+ const remoteButton=document.getElementById("cloudConflictKeepRemote");
+ if(localButton)localButton.hidden=safetyBlocked;
+ if(remoteButton)remoteButton.hidden=safetyBlocked;
  if(detail&&cloudSyncConflict){
   const count=cloudSyncConflict.conflicts.length;
-  detail.textContent=count
-   ?count+" modification"+(count>1?"s":"")+" touche"+(count>1?"nt":"")+" la même donnée sur plusieurs appareils."
-   :"Des modifications locales et distantes doivent être réconciliées.";
+  detail.textContent=safetyBlocked
+   ?"Envoi bloqué : la session demande un archivage massif. Ne forcez aucune synchronisation avant récupération."
+   :count+" modification"+(count>1?"s":"")+" touche"+(count>1?"nt":"")+" la même donnée sur plusieurs appareils.";
  }
 }
 
@@ -569,6 +574,20 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
    throw cloudConflictError(plan.conflicts);
   }
 
+  // Incident 16 novembre : empêcher qu'un état local incomplet archive massivement le cloud.
+  const archives=plan.mutations.filter(item=>item.action==="archive");
+  const categoryArchives=archives.filter(item=>item.table==="categories").length;
+  const transactionArchives=archives.filter(item=>item.table==="transactions").length;
+  const budgetArchives=archives.filter(item=>item.table==="budgets").length;
+  if(archives.length>=10||categoryArchives>=3||transactionArchives>=8||budgetArchives>=10){
+   const conflict=[{table:"sync_safety",key:"mass-archive",field:null}];
+   cloudSetConflict(conflict);
+   const error=new Error("Envoi annulé : archivage massif anormal ("+archives.length+" lignes).");
+   error.code="CLOUD_SYNC_SAFETY_GUARD";
+   error.archives=archives.length;
+   throw error;
+  }
+
   await cloudApplySyncPlan(plan);
   cloudClearConflict();
   const changedDuringPush=cloudSyncDigest()!==digest;
@@ -585,6 +604,10 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
   }
  }catch(error){
   cloudUnsyncedSession=true;
+  if(error?.code==="CLOUD_SYNC_SAFETY_GUARD"){
+   setCloudStatus("Archivage massif bloqué — données protégées","error");
+   throw error;
+  }
   if(error?.code==="CLOUD_SYNC_RACE"){
    const conflicts=[{table:error.table||"sync",key:error.key||"race",field:null}];
    cloudSetConflict(conflicts);
