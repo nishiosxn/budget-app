@@ -21,7 +21,7 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 ## État actuel
 
 - **Production du code** : V2.8.1 sur `main`.
-- Version du code : `V2.9`
+- Version du code : `V3.0`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.8.1 à la racine ; previews historiques conservées.
 - **État de release** : V2.8 validée sur mobile, PR #30 fusionnée dans `develop`, release PR #33 fusionnée dans `main` et déploiement Pages réussi. V2.9 en développement sur `work/v2.9-history-safety`.
