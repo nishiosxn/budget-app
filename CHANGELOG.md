@@ -1,5 +1,13 @@
 # Changelog
 
+## Infrastructure V2.9 — sauvegarde externe chiffrée (non activée)
+
+- Workflow GitHub Actions quotidien préparé pour exporter les schémas financiers de Supabase et chiffrer le flux directement avec `age`.
+- Conservation des seuls artefacts `.dump.age` pendant 60 jours, sans données en clair dans le dépôt public.
+- Clé publique GitHub et URL de base secrète nécessaires avant activation ; clé privée conservée hors plateforme.
+- Aucun changement aux données Supabase, aucune restauration automatique et aucun changement de l'interface de production.
+
+
 ## V2.8.1 — synchronisation des catégories
 
 - Chargement et conservation de l'ordre des catégories directement depuis Supabase (`sort_order`).

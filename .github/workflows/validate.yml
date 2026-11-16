@@ -26,5 +26,5 @@ jobs:
 
       - name: Run application audit
         run: |
-          node --test scripts/validate-docs.test.mjs scripts/cloud-sync-roundtrip.test.mjs
+          node --test scripts/validate-docs.test.mjs scripts/cloud-sync-roundtrip.test.mjs scripts/offsite-backup.test.mjs
           node scripts/validate.mjs
