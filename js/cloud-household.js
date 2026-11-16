@@ -139,6 +139,7 @@ async function cloudBootstrap(){
   );
   setCloudStatus(navigator.onLine?"Erreur de synchronisation":"Connexion requise","error");
   if(typeof cloudRenderConflictUi==="function")cloudRenderConflictUi();
+   window.SmartBudgetMotion?.cancel();
  }
 }
 async function acceptCloudInvite(){
