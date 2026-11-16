@@ -41,9 +41,9 @@ function renderSubscriptionsOverview(m){
  const plural=(n,singular,plural)=>n===1?singular:plural;
  const configured=data.groups.filter(group=>group.occurrences.length).sort((a,b)=>String(a.occurrences[0]?.date||"").localeCompare(String(b.occurrences[0]?.date||"")));
  const unconfigured=data.groups.filter(group=>!group.occurrences.length).sort((a,b)=>a.category.name.localeCompare(b.category.name,"fr"));
- const allRecurrences=[...configured.flatMap(g=>g.occurrences),...data.other].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""));
+ const allRecurrences=[...configured.flatMap(g=>g.occurrences),...data.other].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
  const now=new Date(),today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
- const selected=monthKey(state.selectedMonth),todayMonth=today.slice(0,7);
+ const selected=typeof state!=="undefined"&&typeof monthKey==="function"?monthKey(state.selectedMonth):today.slice(0,7),todayMonth=today.slice(0,7);
  const next=allRecurrences.find(t=>selected===todayMonth?String(t.date||"")>=today:true)||null;
  const nextDate=next?new Date(String(next.date)+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}):"Aucune";
  const nextAmount=next?euro(Math.abs(Number(next.amount)||0)):"Aucune échéance programmée";
@@ -77,7 +77,7 @@ function renderSubscriptionsOverview(m){
   <div><span>Budget prévu des abonnements</span><strong>${euro(data.budgetAmount)}</strong></div>
   <div><span>${selected===todayMonth?"Prochaine échéance":"Première échéance affichée"}</span><strong>${nextDate}</strong><small>${nextAmount}</small></div>
  </div>
- <p class="subscriptions-explain">Échéances enregistrées dans Smart Budget, sans confirmation de prélèvement bancaire.</p>
+ <p class="subscriptions-explain">Échéances enregistrées dans Smart Budget : elles ne prouvent pas qu’un prélèvement bancaire a eu lieu.</p>
  <div class="subscription-list">${groupHtml||'<p class="subscriptions-empty">Aucune échéance d’abonnement configurée ce mois-ci.</p>'}${extras}</div>
  ${inactiveMarkup?'<div class="sb-subscription-secondary"><span>Catégories sans échéance configurée</span>'+inactiveMarkup+'</div>':""}`;
 }
