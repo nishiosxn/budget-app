@@ -101,6 +101,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - La récupération reste manuelle, en transaction contrôlée ; pas de fonction de restauration accessible à l'application. Les snapshots sont dans la même base et ne remplacent pas des sauvegardes externes.
 - Runbook : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
 
+## Exports chiffrés GitHub Actions — configuration en attente
+
+- Branche de production `main` : PR #38 fusionnée, workflow `offsite-backup.yml` installé sans toucher à l'application V2.8.1.
+- Backport infrastructure V2.9 : ce lot recopie le workflow, le guide Windows et les tests vers `develop`.
+- Cron GitHub quotidien à 03:43 UTC, export PostgreSQL 17 de `public`, `smart_budget_backups`, `incident_backup_20261116` directement dans `age`, fichier `.dump.age` conservé 60 jours en artefact.
+- La tâche n'exporte rien avant configuration par le propriétaire : `SMART_BUDGET_BACKUP_AGE_RECIPIENT` (variable GitHub) et `SMART_BUDGET_BACKUP_DATABASE_URL` (secret GitHub).
+- La clé privée n'est pas transmise à GitHub ni à ChatGPT. Première sauvegarde externe encore à vérifier par un run et un déchiffrement local.
+- Les sauvegardes internes (pg_cron) et six protections incident restent inchangées.
+
 ## Prochaine action
 
 Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.

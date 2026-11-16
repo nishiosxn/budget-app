@@ -1,0 +1,98 @@
+name: Smart Budget — sauvegarde externe chiffrée
+
+# Exécuté uniquement depuis la branche par défaut, jamais sur pull_request.
+# Tant que la clé publique age n'est pas configurée, le job est ignoré.
+on:
+  schedule:
+    - cron: '43 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smart-budget-encrypted-offsite
+  cancel-in-progress: false
+
+jobs:
+  encrypted-backup:
+    if: ${{ vars.SMART_BUDGET_BACKUP_AGE_RECIPIENT != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SMART_BUDGET_BACKUP_DATABASE_URL }}
+      AGE_RECIPIENT: ${{ vars.SMART_BUDGET_BACKUP_AGE_RECIPIENT }}
+    steps:
+      - name: Vérifier la configuration sans révéler les secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SUPABASE_DB_URL:-}" ]]; then
+            echo "::error::Configurer le secret SMART_BUDGET_BACKUP_DATABASE_URL dans Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [[ "$SUPABASE_DB_URL" != postgresql://* && "$SUPABASE_DB_URL" != postgres://* ]]; then
+            echo "::error::Le secret doit être une URL PostgreSQL valide du Session pooler Supabase."
+            exit 1
+          fi
+          if [[ "$AGE_RECIPIENT" != age1* ]]; then
+            echo "::error::Configurer la variable SMART_BUDGET_BACKUP_AGE_RECIPIENT avec une clé publique age valide."
+            exit 1
+          fi
+
+      - name: Installer Go (pour age)
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.x'
+          cache: false
+
+      - name: Installer age (version figée)
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install filippo.io/age/cmd/age@v1.3.2
+          "$(go env GOPATH)/bin/age" --version
+
+      - name: Exporter PostgreSQL directement vers un fichier chiffré
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          output_dir="$RUNNER_TEMP/smart-budget-offsite"
+          install -d -m 700 "$output_dir"
+          archive="$output_dir/smart-budget-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
+          age_bin="$(go env GOPATH)/bin/age"
+
+          # AUCUN dump en clair sur disque ou dans le dépôt :
+          # pg_dump envoie son flux custom via stdout directement à age.
+          # Le rôle postgres doit pouvoir exporter les trois schémas.
+          docker run --rm --env SUPABASE_DB_URL postgres:17.6-alpine \
+            sh -ceu 'exec pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --compress=9 --no-owner --no-acl --schema=public --schema=smart_budget_backups --schema=incident_backup_20261116' \
+            | "$age_bin" --encrypt --recipient "$AGE_RECIPIENT" --output "$archive"
+
+          test -s "$archive"
+          if [[ "$(stat -c%s "$archive")" -lt 4096 ]]; then
+            echo "::error::Archive chiffrée anormalement petite."
+            exit 1
+          fi
+          if ! head -c 21 "$archive" | grep -q '^age-encryption.org/v1'; then
+            echo "::error::En-tête age invalide."
+            exit 1
+          fi
+          echo "Archive age chiffrée : $(stat -c%s "$archive") octets"
+          sha256sum "$archive"
+
+      - name: Conserver seulement le fichier .age sur GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-budget-chiffre-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/smart-budget-offsite/*.dump.age
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 60
+
+      - name: Nettoyer le fichier chiffré local au runner
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/smart-budget-offsite/"*.dump.age

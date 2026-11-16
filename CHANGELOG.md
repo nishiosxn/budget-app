@@ -2,6 +2,8 @@
 
 ## V2.9 — historique, fiabilité et sauvegardes (préversion)
 
+- Export externe **préparé**, non activé tant que la clé publique age et le secret de connexion PostgreSQL ne sont pas configurés : workflow quotidien GitHub Actions, données chiffrées en flux, rétention 60 jours.
+
 - Base Supabase : instantanés atomiques privés toutes les six heures, 30 jours de rétention des snapshots planifiés, copies manuelles conservées.
 - Fonction de comparaison SQL en lecture seule avant restauration ; accès refusé aux rôles publics, authentifiés et service-role.
 - Documentation de reprise détaillée ; aucun bouton de restauration exposé au navigateur et aucune modification des tables financières lors de l'installation.
