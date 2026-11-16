@@ -10,17 +10,18 @@ const steps={start:[8,"Préparation"],session:[25,"Session vérifiée"],househol
 function makeBoot(){
  if(boot)return boot;
  boot=document.createElement("div");boot.className="sb-boot";boot.setAttribute("role","status");boot.setAttribute("aria-live","polite");
- boot.innerHTML='<div class="sb-skeletons" aria-hidden="true"><i class="sb-wide"></i><div class="sb-sk-grid"><i class="sb-feature"></i><div class="sb-sk-four"><i></i><i></i><i></i><i></i></div></div><div class="sb-sk-three"><i></i><i></i><i></i></div><div class="sb-sk-two"><i></i><i></i></div></div><div class="sb-boot-card"><div class="sb-boot-mark"><img src="icons/icon.svg" alt="" /><svg viewBox="0 0 64 64" aria-hidden="true"><path class="sb-track" d="M32 5 A27 27 0 0 0 5 32 A27 27 0 0 0 32 59 A27 27 0 0 0 59 32 A27 27 0 0 0 32 5"/><path class="sb-ring" pathLength="100" d="M32 5 A27 27 0 0 0 5 32 A27 27 0 0 0 32 59 A27 27 0 0 0 59 32 A27 27 0 0 0 32 5"/></svg></div><strong>Smart Budget</strong><span class="sb-loading-label">Préparation</span><small class="sb-loading-percent">0 %</small></div>';
+ boot.innerHTML='<div class="sb-skeletons" aria-hidden="true"><i class="sb-wide"></i><div class="sb-sk-grid"><i class="sb-feature"></i><div class="sb-sk-four"><i></i><i></i><i></i><i></i></div></div><div class="sb-sk-three"><i></i><i></i><i></i></div><div class="sb-sk-two"><i></i><i></i></div></div><div class="sb-boot-card"><div class="sb-boot-mark"><svg class="sb-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#285F49"/><defs><mask id="sb-logo-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><path class="sb-logo-reveal" pathLength="100" d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="none" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1" mask="url(#sb-logo-reveal-mask)"/></svg></div><strong>Smart Budget</strong><span class="sb-loading-label">Préparation</span><small class="sb-loading-percent">0 %</small></div>';
  document.body.append(boot);return boot;
 }
 function stage(s){
  if(!loading||!steps[s])return;
  const d=steps[s],el=makeBoot();percent=Math.max(percent,d[0]);
- el.querySelector(".sb-ring").style.strokeDashoffset=String(100-percent);
+ el.querySelector(".sb-logo-reveal").style.strokeDashoffset=String(100-percent);
+ if(s==="ready")el.classList.add("sb-done");
  el.querySelector(".sb-loading-label").textContent=d[1];el.querySelector(".sb-loading-percent").textContent=percent+" %";
  if(s==="household"||s==="data")el.classList.add("sb-show-skeletons");
 }
-function begin(){loading=true;ready=false;percent=0;const el=makeBoot();el.classList.remove("sb-show-skeletons");el.classList.add("sb-open");el.querySelector(".sb-ring").style.strokeDashoffset="100";stage("start")}
+function begin(){loading=true;ready=false;percent=0;const el=makeBoot();el.classList.remove("sb-show-skeletons","sb-done");el.classList.add("sb-open");el.querySelector(".sb-logo-reveal").style.strokeDashoffset="100";stage("start")}
 function beginIfNeeded(){if(!loading){begin();stage("session")}}
 function cancel(){loading=false;boot?.classList.remove("sb-open")}
 function num(s){const v=String(s||"").replace(/[\s\u00a0\u202f€]/g,"").replace(",",".");return /^[+-]?\d+(\.\d+)?$/.test(v)?Number(v):null}
@@ -40,7 +41,7 @@ function animateOne(el){
  frames.set(el,requestAnimationFrame(step));
 }
 function counters(root){if(!ready)return;for(const id of ids){const el=document.getElementById(id);if(el&&root.contains(el)&&el.getClientRects().length)animateOne(el)}}
-function finish(){if(!loading)return;stage("ready");ready=true;requestAnimationFrame(()=>{cancel();counters(document.querySelector(".view.active")||document);})}
+function finish(){if(!loading)return;stage("ready");ready=true;requestAnimationFrame(()=>{counters(document.querySelector(".view.active")||document);setTimeout(cancel,noMotion()?0:300);})}
 function afterRender(){if(ready)requestAnimationFrame(()=>counters(document.querySelector(".view.active")||document))}
 function animateChart(host){
  const svg=host?.querySelector("svg");if(!svg||!host.closest(".view.active")||noMotion()||svg.dataset.sbDrawn)return;
