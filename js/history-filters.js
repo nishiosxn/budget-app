@@ -47,7 +47,7 @@ function filterHistoryEntries(entries,metricsForHistory){
    continue;
   }
   const matched=entry.tx.filter(historyTransactionMatches);
-  if(matched.length)filtered.push({...entry,tx:matched});
+  if(matched.length)filtered.push({...entry,tx:matched,filteredGroup:matched.length<entry.tx.length});
  }
  const magnitude=entry=>Math.abs(entry.group
   ?entry.tx.reduce((n,t)=>n+(Number(t.amount)||0),0)
