@@ -100,6 +100,7 @@ async function provisionPersonalHousehold(){
 }
 async function cloudBootstrap(){
  if(!cloudSession)return;
+ window.SmartBudgetMotion?.beginIfNeeded();
  setCloudGateView("loading");
  setCloudGateStatus("Chargement du foyer partagé…");
  try{
