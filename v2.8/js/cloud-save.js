@@ -241,46 +241,18 @@ async function cloudSyncTransactions(idMap,source=state){
   adjustment_label:item.adjustmentLabel||null,metadata:cloudMetadata(item,excluded),archived_at:null
  }));
 }
+// Incident du 16 novembre 2026 : aucun fallback de remplacement intégral.
 async function cloudPushLocalState({force=false}={}){
- if(typeof cloudPushLocalStateV25==="function")return cloudPushLocalStateV25({force});
- if(!cloudSession||!activeHouseholdId)return;
- if(cloudPushInProgress){cloudPushRequested=true;return}
- const snapshot=cloneData(state),digest=cloudSyncDigest(snapshot);
- if(!force&&digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return
- if(!navigator.onLine){cloudUnsyncedSession=true;setCloudStatus("Connexion perdue · réessayer","error");return}
- cloudPushInProgress=true;cloudPushRequested=false;setCloudStatus("Synchronisation…","syncing");
- try{
-  cloudIgnoreRealtimeUntil=Date.now()+5000;
-  if(activeMembership?.role==="owner"){
-   const household=normalizeHousehold(snapshot.household);
-   const householdRes=await cloudClient.from("households").update({name:household.name,person_b_label:household.personB,person_a_label:household.personA,household_mode:household.mode}).eq("id",activeHouseholdId);
-   if(householdRes.error)throw householdRes.error;
-  }
-  const idMap=await cloudSyncCategories(snapshot);
-  await cloudSyncBudgets(idMap,snapshot);
-  await cloudSyncRecurrences(idMap,snapshot);
-  await cloudSyncTransactions(idMap,snapshot);
-  setCloudSyncedBaseline(digest);
-  if(cloudSyncDigest()===digest){
-   cloudUnsyncedSession=false;
-   setCloudStatus("Synchronisé","ok");
-  }else{
-   cloudPushRequested=true;
-   cloudUnsyncedSession=true;
-   setCloudStatus("Synchronisation…","syncing");
-  }
- }catch(error){
+ if(typeof cloudPushLocalStateV25!=="function"){
   cloudUnsyncedSession=true;
-  setCloudStatus("Échec de synchronisation · réessayer","error");
-  throw error;
- }finally{
-  cloudPushInProgress=false;
-  if(cloudPushRequested){cloudPushRequested=false;queueCloudSync()}
+  setCloudStatus("Synchronisation sécurisée indisponible — envoi bloqué","error");
+  throw new Error("Moteur de fusion V2.5 indisponible. Aucun envoi intégral autorisé.");
  }
+ return cloudPushLocalStateV25({force});
 }
 
+// Le bouton de relance ne doit plus réécrire/archiver la totalité des tables.
 async function cloudForcePushSessionState(){
- clearCloudSyncSchedule();
  const button=typeof document!=="undefined"?document.getElementById("cloudForceSyncBtn"):null;
  if(!cloudSession||!activeHouseholdId){
   setCloudStatus("Session cloud indisponible","error");
@@ -290,41 +262,15 @@ async function cloudForcePushSessionState(){
   setCloudStatus("Connexion requise","error");
   return;
  }
- if(cloudPushInProgress){
-  cloudPushRequested=true;
-  return;
- }
- const snapshot=cloneData(state);
- const digest=cloudSyncDigest(snapshot);
- cloudPushInProgress=true;
- cloudPushRequested=false;
- cloudUnsyncedSession=true;
  if(button)button.disabled=true;
- setCloudStatus("Envoi complet…","syncing");
  try{
-  cloudIgnoreRealtimeUntil=Date.now()+5000;
-  if(activeMembership?.role==="owner"){
-   const household=normalizeHousehold(snapshot.household);
-   const householdRes=await cloudClient.from("households")
-    .update({name:household.name,person_b_label:household.personB,person_a_label:household.personA,household_mode:household.mode})
-    .eq("id",activeHouseholdId);
-   if(householdRes.error)throw householdRes.error;
-  }
-  const idMap=await cloudSyncCategories(snapshot);
-  await cloudSyncBudgets(idMap,snapshot);
-  await cloudSyncRecurrences(idMap,snapshot);
-  await cloudSyncTransactions(idMap,snapshot);
-  cloudClearConflict?.();
-  await cloudLoadState();
-  cloudUnsyncedSession=false;
-  setCloudStatus("Synchronisé","ok");
-  showUndoToast?.("Session renvoyée au cloud");
+  await cloudPushLocalState({force:true});
  }catch(error){
-  console.error("Force cloud sync",error);
-  cloudUnsyncedSession=true;
-  setCloudStatus("Échec de synchronisation · réessayer","error");
+  console.error("Safe cloud sync retry",error);
+  setCloudStatus(error?.code==="CLOUD_SYNC_SAFETY_GUARD"
+   ?"Archivage massif bloqué — données protégées"
+   :"Synchronisation sécurisée indisponible","error");
  }finally{
-  cloudPushInProgress=false;
   if(button)button.disabled=false;
  }
 }
