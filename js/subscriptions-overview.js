@@ -39,7 +39,9 @@ function renderSubscriptionsOverview(m){
  if(!root||!m)return;
  const data=subscriptionOverviewData(visibleExpenseCategories(),m.tx);
  const plural=(n,singular,plural)=>n===1?singular:plural;
- const groupHtml=data.groups.map(({category,occurrences})=>{
+ const configured=data.groups.filter(group=>group.occurrences.length);
+ const unconfigured=data.groups.filter(group=>!group.occurrences.length);
+ const groupHtml=configured.map(({category,occurrences})=>{
   const actual=Number(m.expMap?.[category.id])||0;
   return `<div class="subscription-category">
    <div class="subscription-category-top">
@@ -50,6 +52,12 @@ function renderSubscriptionsOverview(m){
      '<div class="subscription-no-recurrence">Aucune opération récurrente configurée pour ce mois.</div>'}
   </div>`;
  }).join("");
+ const inactiveMarkup=unconfigured.length?`<details class="subscription-unconfigured">
+  <summary>${unconfigured.length} ${plural(unconfigured.length,"catégorie","catégories")} sans récurrence ce mois-ci</summary>
+  <div class="subscription-unconfigured-list">${unconfigured.map(({category})=>`<div>
+   <span>${escapeHtml(category.name)}</span><span>Budget prévu : ${euro(Number(category.budget)||0)}</span>
+  </div>`).join("")}</div>
+ </details>`:"";
  const extras=data.other.length?`<div class="subscription-extra">
   <h3>Autres récurrences du mois</h3>
   ${data.other.map(subscriptionOccurrenceMarkup).join("")}
@@ -63,7 +71,7 @@ function renderSubscriptionsOverview(m){
   <div><span>Récurrences comptabilisées</span><strong>${euro(data.scheduledAmount)}</strong></div>
  </div>
  <p class="subscriptions-explain">Les échéances affichées viennent de Smart Budget. Elles ne prouvent pas qu'un prélèvement bancaire a eu lieu.</p>
- <div class="subscription-list">${groupHtml||'<p class="subscriptions-empty">Aucune catégorie d’abonnement active ce mois-ci.</p>'}</div>
+ <div class="subscription-list">${groupHtml||'<p class="subscriptions-empty">Aucune récurrence d’abonnement configurée pour ce mois.</p>'}${inactiveMarkup}</div>
  ${extras}`;
 }
 document.getElementById("subscriptionsOverview")?.addEventListener("click",event=>{
