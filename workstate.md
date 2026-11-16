@@ -3,7 +3,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.7`
+- Version du code : `V2.7.1`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.6.
 - Publication : `gh-pages`.
@@ -68,6 +68,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Source applicative publiée : `3ed291c8912c601092d87cab8f6a0900378ba3f3`.
 - Commit `gh-pages` de la preview : `d685e7b394a99f928828713edc3ce86d32b23227`.
 
+## Incident du 16 novembre 2026 — sauvegarde et correctif urgent
+
+- PR : https://github.com/nishiosxn/budget-app/pull/31 (`work/v2.7.1-sync-safety` vers `main`).
+- Constat Supabase : 28 catégories, 68 budgets, 131 transactions archivés depuis le 11 novembre ; 26 budgets actifs à 0 € après l'incident.
+- Sauvegarde privée SQL : `incident_backup_20261116` (copies complètes des tables principales, y compris les archives), contrôlée avant restauration.
+- Verrou d'écriture temporaire côté Supabase sur les 6 tables financières lors de la récupération.
+- Correctif : supprimer l'envoi intégral non protégé, forcer la fusion contrôlée, bloquer archives massives et zéros massifs ; chargement des scripts avec version cache-bust.
+- Les archives précédant le 11 novembre ne doivent pas être restaurées en masse.
+
 ## Prochaine action
 
-Valider la preview `/v2.7/`, faire passer **App integrity** sur la PR #26, puis fusionner vers `develop`. La promotion vers `main` restera une opération séparée.
+Valider et déployer le hotfix, restaurer uniquement les lignes touchées par l'incident avec transaction SQL, vérifier les comptes, libérer le verrou de maintenance après contrôles, puis porter le correctif sur `develop` et les previews actives.
