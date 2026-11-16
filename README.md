@@ -4,7 +4,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
 ## Accès
 
-- **Version publiée V2.7** : https://nishiosxn.github.io/budget-app/
+- **Version publiée V2.8.1** : https://nishiosxn.github.io/budget-app/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
 - **Preview V2.7** : https://nishiosxn.github.io/budget-app/v2.7/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
@@ -20,13 +20,23 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 
 ## État actuel
 
-- **Production du code** : V2.7 sur `main`.
-- Version du code : `V2.8`
+- **Production du code** : V2.8.1 sur `main`.
+- Version du code : `V2.9`
 - **Branche de développement de référence** : `develop`.
-- **Version stable publiée** : V2.7 à la racine ; snapshot V2.6 conservé sur `/v2.6/`.
-- **État de release** : V2.7 est publiée ; V2.8 est en développement sur `work/v2.8-mobile-ux` (PR #30 brouillon). Aucune preview V2.8 ni mise en production à ce stade.
+- **Version stable publiée** : V2.8.1 à la racine ; previews historiques conservées.
+- **État de release** : V2.8 validée sur mobile, PR #30 fusionnée dans `develop`, release PR #33 fusionnée dans `main` et déploiement Pages réussi. V2.9 en développement sur `work/v2.9-history-safety`.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
+
+## Lot V2.9 — historique et sécurité
+
+- **Abonnements et récurrences** : nouvelle synthèse dans Catégories, distincte des budgets prévus et des prélèvements effectivement confirmés ; actions Modifier et Arrêter réutilisant les fenêtres de récurrence existantes.
+- Autres dépenses récurrentes de chaque mois regroupées pour être retrouvées sans recherche manuelle dans l'historique.
+
+- Recherche des opérations par libellé, catégorie et personne (accents et casse ignorés).
+- Filtres de type, propriétaire et catégorie, tri par date ou montant ; aucun état financier modifié par les filtres.
+- Correction de date d'une opération individuelle vers un autre mois ; les occurrences de série récurrente gardent les restrictions existantes.
+- Garde-fous V2.7.1 de synchronisation et contrôle des clients obsolètes préservés. Aucun schéma Supabase modifié ; sauvegardes automatiques historisées à étudier séparément, après tests.
 
 ## Fonctionnalités principales
 

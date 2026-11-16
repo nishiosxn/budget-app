@@ -3,12 +3,12 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.8`
+- Version du code : `V2.9`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.7.
+- Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
-- V2.7 est publiée ; V2.8 est en travail, sans promotion sur main.
+- V2.8.1 publiée à la racine de GitHub Pages. V2.9 est isolée sur `work/v2.9-history-safety`.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -81,6 +81,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Les tests manuels responsive, le chargement public de la preview et les parcours authentifiés restent à valider.
 - Important : la preview utilise le **Supabase de production** ; essais de saisie uniquement sur un foyer de test.
 
+## Lot courant — V2.9 Historique et sécurité
+
+- Branche : `work/v2.9-history-safety` depuis `develop` après fusion de la PR #30.
+- Production actuelle : V2.8.1 ; le correctif de synchronisation de l'ordre des catégories a été fusionné (PR #35) et publié dans la racine et les previews actives.
+- Incident du 16 novembre : les sauvegardes privées `incident_backup_20261116`, la restauration ciblée et les 6 protections d'écriture Supabase restent inchangées. Le client utilise `x-smart-budget-sync-version: 20261116-hf1`.
+- Inclus : historique filtrable et triable, déplacement des opérations ponctuelles, et nouveau tableau d'abonnements et de récurrences en lecture seule dans l'onglet Catégories. Les boutons Modifier/Arrêter ouvrent les modales existantes.
+- Exclu de ce lot : nouvelles migrations Supabase, import bancaire, réécriture de la synchronisation, synchronisation offline, sauvegardes automatiques par serveur.
+- Tests : App integrity, tests des synthèses d'abonnements (budgets vs mouvements récurrents, actions non destructives), accessibilité et responsive. Préversion mise à jour sur `/v2.9/` avant validation utilisateur.
+
 ## Prochaine action
 
-Vérifier le déploiement public de la preview `/v2.8/`, tester navigation/ajout/date sur mobile et desktop, puis faire valider la V2.8 avant merge vers `develop`. La racine de production `main` / `gh-pages` reste inchangée jusqu'à accord explicite.
+Publier la préversion V2.9 enrichie, valider le CI et faire tester le tableau d'abonnements ainsi que l'historique avant merge vers `develop` et toute promotion vers `main`. Les sauvegardes automatiques restent un lot indépendant nécessitant un mécanisme serveur vérifié.
