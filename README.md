@@ -4,7 +4,7 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
 ## Accès
 
-- **Version stable V2.6** : https://nishiosxn.github.io/budget-app/
+- **Version publiée V2.7** : https://nishiosxn.github.io/budget-app/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
 - **Preview V2.7** : https://nishiosxn.github.io/budget-app/v2.7/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
@@ -16,15 +16,15 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.5 Sync** : https://nishiosxn.github.io/budget-app/v2.5/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
-Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
+Le dépôt est public. Aucun historique de transactions personnelles ne doit être inscrit dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
 ## État actuel
 
-- **Production du code** : V2.6 sur `main`.
+- **Production du code** : V2.7 sur `main`.
 - Version du code : `V2.7`
 - **Branche de développement de référence** : `develop`.
-- **Version stable publiée** : V2.6 à la racine et snapshot sur `/v2.6/`.
-- **État de release** : V2.6 reste la version stable ; V2.7 est en validation sur `work/v2.7-stabilization` avec preview `/v2.7/`.
+- **Version stable publiée** : V2.7 à la racine ; snapshot V2.6 conservé sur `/v2.6/`.
+- **État de release** : V2.7 est publiée ; V2.8 est en développement sur `work/v2.8-mobile-ux` (PR #30 brouillon). Aucune preview V2.8 ni mise en production à ce stade.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
