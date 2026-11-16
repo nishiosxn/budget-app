@@ -11,7 +11,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.9`
+- Version du code : `V3.0`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.
