@@ -1,4 +1,4 @@
-// V2.8 — Builder de premier budget
+// V2.8.1 — Builder de premier budget
 // Contrôleur unique : un seul arbre DOM persistant, une seule délégation d'événements.
 const SETUP_BUILDER_PREFIX="budget-foyer-v2.6-setup-builder:";
 const SETUP_BUILDER_UPDATED="2026-10-05";
@@ -95,7 +95,7 @@ class SetupBuilderController{
     <header class="setup-builder-head">
      <div class="setup-builder-brand">
       ${typeof themeLogoMarkup==="function"?themeLogoMarkup("theme-logo setup-builder-logo"):""}
-      <div><span>Budget foyer · V2.8</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div>
+      <div><span>Budget foyer · V2.8.1</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div>
      </div>
      <div id="setupBuilderProgress" class="setup-builder-progress" aria-label="Progression"></div>
     </header>
