@@ -2,6 +2,8 @@
 
 ## V2.9 — historique et fiabilité (préversion)
 
+- Tableau de bord des abonnements : catégories, budget prévu, récurrences de dépenses du mois, autre récurrence, affichage du payeur, montant et date, actions Modifier/Arrêter raccordées aux modales existantes.
+- Distinction explicite entre budget prévu, opérations récurrentes comptabilisées et débit bancaire non confirmé.
 - Recherche insensible aux accents et à la casse sur les libellés, catégories et personnes de l’historique du mois.
 - Filtres par type (dépense/revenu/épargne), propriétaire et catégorie, tri montant/date, compteur de résultats et bouton de réinitialisation.
 - Lors d’un filtre partiel sur un groupe, suppression complète de ce groupe désactivée pour éviter toute suppression masquée.
