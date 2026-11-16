@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f4f5f1" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -14,6 +14,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>Budget foyer</title>
   <link rel="stylesheet" href="css/style.css?v=20261006-v27a" />
+  <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
 </head>
 <body>
 <div class="app">
@@ -144,7 +145,22 @@
     </section>
   </main>
 
-  <div class="mobile-actions"><button class="btn btn-income" data-add="income">＋ Rentrée</button><button class="btn btn-expense" data-add="expense">＋ Dépense</button></div>
+  <nav class="mobile-bottom-nav" aria-label="Navigation principale mobile">
+    <div class="mobile-bottom-nav__inner">
+      <button class="mobile-nav-item is-active" type="button" data-mobile-tab="overview" aria-controls="overview" aria-current="page"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3Z"/></svg></span><span class="mobile-nav-label">Accueil</span></button>
+      <button class="mobile-nav-item" type="button" data-mobile-tab="categories" aria-controls="categories"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg></span><span class="mobile-nav-label">Catégories</span></button>
+      <button class="mobile-nav-item mobile-nav-add" type="button" id="mobileAddButton" aria-label="Ajouter une dépense ou un revenu" aria-haspopup="dialog" aria-controls="mobileQuickAdd" aria-expanded="false"><span class="mobile-nav-add__circle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="mobile-nav-label">Ajouter</span></button>
+      <button class="mobile-nav-item" type="button" data-mobile-tab="history" aria-controls="history"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l4 2"/></svg></span><span class="mobile-nav-label">Historique</span></button>
+      <button class="mobile-nav-item" type="button" data-mobile-tab="tracking" aria-controls="tracking"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 16l4-5 4 2 5-7"/></svg></span><span class="mobile-nav-label">Suivi</span></button>
+    </div>
+  </nav>
+  <div id="mobileQuickAdd" class="mobile-quick-add" aria-hidden="true">
+    <button class="mobile-quick-add__scrim" type="button" aria-label="Fermer les actions d’ajout"></button>
+    <div class="mobile-quick-add__panel" role="dialog" aria-label="Ajouter une opération">
+      <button class="mobile-quick-add__option" type="button" data-add="expense"><span class="mobile-quick-add__option-icon expense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M10 17h7v-7"/></svg></span><span><strong>Ajouter une dépense</strong><small>Achat, facture, abonnement…</small></span></button>
+      <button class="mobile-quick-add__option" type="button" data-add="income"><span class="mobile-quick-add__option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 17 7 7M14 7H7v7"/></svg></span><span><strong>Ajouter un revenu</strong><small>Salaire, aide, remboursement…</small></span></button>
+    </div>
+  </div>
 </div>
 <div id="undoToast" class="toast" role="status" aria-live="polite"><span id="undoToastText">Opération supprimée</span><button id="undoToastBtn" type="button">Annuler</button></div>
 
@@ -157,6 +173,7 @@
       <span class="euro">€</span>
     </div>
     <div class="field"><label for="transactionLabel">LIBELLÉ <span style="font-weight:600">(FACULTATIF)</span></label><input id="transactionLabel" class="category-form-input transaction-label" type="text" maxlength="70" placeholder="Ex. Courses Lidl, salaire, restaurant…"></div>
+    <div class="field"><label for="transactionDateInput">DATE DE L’OPÉRATION</label><input id="transactionDateInput" class="category-form-input" type="date" required></div>
     <div class="field"><label id="ownerSwitchLabel">QUI A PAYÉ ?</label><div id="ownerSwitch" class="owner-switch" role="group" aria-label="Attribuer l'opération"><button type="button" class="owner-option active" data-owner="common">À deux</button><button type="button" class="owner-option" data-owner="B" data-person-label="B">Personne 1</button><button type="button" class="owner-option" data-owner="A" data-person-label="A">Personne 2</button></div></div>
     <div class="field"><label for="categorySelect">CATÉGORIE</label><div class="select-wrap"><select id="categorySelect" class="category-select"></select><div class="custom-select" data-select="categorySelect"><button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="custom-select-value">Choisir une catégorie</span><span class="custom-select-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></span></button><div class="custom-select-menu" role="listbox"><div class="custom-select-scroll"></div></div></div></div></div>
     <div class="field" id="transactionScopeField"><label>PÉRIODE</label><div class="owner-switch plan-scope-switch" role="group" aria-label="Période de l’opération"><button type="button" class="owner-option active" data-transaction-scope="month">Ce mois seulement</button><button type="button" class="owner-option" data-transaction-scope="forward">À partir de ce mois</button></div><div class="scope-hint" id="transactionScopeHint">Cette opération sera comptée uniquement sur le mois affiché.</div></div>
@@ -368,5 +385,6 @@
 <script src="js/setup-builder.js?v=20261006-v27c" defer></script>
 <script src="js/pwa.js" defer></script>
 <script src="js/app.js" defer></script>
+<script src="js/mobile-ui.js?v=20261116-v28a" defer></script>
 </body>
 </html>
