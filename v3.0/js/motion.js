@@ -6,24 +6,66 @@ const ids=["balanceValue","balanceRestB","balanceRestA","incomeTotal","expenseTo
 const format=new Intl.NumberFormat("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const values=new WeakMap(),frames=new WeakMap();
 let boot=null,loading=false,ready=false,percent=0,tabTimer=0;
-const steps={start:[8,"Préparation"],session:[25,"Session vérifiée"],household:[50,"Foyer identifié"],data:[85,"Données chargées"],ready:[100,"Budget prêt"]};
+let goal=0,frameId=0,lastFrame=0,finishing=false,finishFrom=0,finishAt=0,hideTimer=0;
+const steps={start:[23,"Préparation"],session:[49,"Session vérifiée"],household:[79,"Foyer identifié"],data:[96,"Données chargées"],ready:[100,"Budget prêt"]};
 function makeBoot(){
  if(boot)return boot;
- boot=document.createElement("div");boot.className="sb-boot";boot.setAttribute("role","status");boot.setAttribute("aria-live","polite");
- boot.innerHTML='<div class="sb-skeletons" aria-hidden="true"><i class="sb-wide"></i><div class="sb-sk-grid"><i class="sb-feature"></i><div class="sb-sk-four"><i></i><i></i><i></i><i></i></div></div><div class="sb-sk-three"><i></i><i></i><i></i></div><div class="sb-sk-two"><i></i><i></i></div></div><div class="sb-boot-card"><div class="sb-boot-mark"><svg class="sb-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#285F49"/><defs><mask id="sb-logo-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><path class="sb-logo-reveal" pathLength="100" d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="none" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1" mask="url(#sb-logo-reveal-mask)"/></svg></div><strong>Smart Budget</strong><span class="sb-loading-label">Préparation</span><small class="sb-loading-percent">0 %</small></div>';
- document.body.append(boot);return boot;
+ boot=document.getElementById("sbBootScreen")||document.createElement("div");
+ boot.id="sbBootScreen";boot.classList.add("sb-boot");boot.setAttribute("role","status");boot.setAttribute("aria-live","polite");
+ boot.innerHTML='<div class="sb-skeletons" aria-hidden="true"><i class="sb-wide"></i><div class="sb-sk-grid"><i class="sb-feature"></i><div class="sb-sk-four"><i></i><i></i><i></i><i></i></div></div><div class="sb-sk-three"><i></i><i></i><i></i></div><div class="sb-sk-two"><i></i><i></i></div></div><div class="sb-boot-card"><div class="sb-boot-mark"><svg class="sb-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#285F49"/><defs><mask id="sb-logo-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><path class="sb-logo-reveal" pathLength="100" d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="none" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1" mask="url(#sb-logo-reveal-mask)"/><path class="sb-logo-glint" pathLength="100" d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="none" stroke="#B6D8C4" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="9 91" mask="url(#sb-logo-reveal-mask)"/></svg></div><strong>Smart Budget</strong><span class="sb-loading-label">Préparation</span><small class="sb-loading-percent">0 %</small></div>';
+ if(!boot.isConnected)document.body.append(boot);
+ return boot;
+}
+function paintProgress(){
+ const el=makeBoot();
+ el.querySelector(".sb-logo-reveal").style.strokeDashoffset=String(Math.max(0,100-percent));
+ el.querySelector(".sb-loading-percent").textContent=Math.floor(percent)+" %";
+}
+function tick(now){
+ if(!loading)return;
+ const delta=lastFrame?Math.min(70,Math.max(0,now-lastFrame)):16;
+ lastFrame=now;
+ if(finishing){
+  const t=Math.min(1,(now-finishAt)/500);
+  percent=finishFrom+(100-finishFrom)*(1-Math.pow(1-t,3));
+ }else{
+  // Valeur visuelle estimée, jamais 100 % tant que Supabase n'a pas terminé.
+  // Avancée par petites étapes à chaque frame; le reflet continue de bouger en cas d'attente.
+  percent+=(goal-percent)*(1-Math.exp(-delta/1850));
+  percent=Math.min(percent,96);
+ }
+ paintProgress();
+ if(finishing&&now-finishAt>=500){
+  percent=100;paintProgress();makeBoot().classList.add("sb-done");
+  frameId=0;clearTimeout(hideTimer);hideTimer=setTimeout(cancel,180);
+  return;
+ }
+ frameId=requestAnimationFrame(tick);
 }
 function stage(s){
  if(!loading||!steps[s])return;
- const d=steps[s],el=makeBoot();percent=Math.max(percent,d[0]);
- el.querySelector(".sb-logo-reveal").style.strokeDashoffset=String(100-percent);
- if(s==="ready")el.classList.add("sb-done");
- el.querySelector(".sb-loading-label").textContent=d[1];el.querySelector(".sb-loading-percent").textContent=percent+" %";
+ const d=steps[s],el=makeBoot();
+ goal=Math.max(goal,d[0]);
+ el.querySelector(".sb-loading-label").textContent=d[1];
  if(s==="household"||s==="data")el.classList.add("sb-show-skeletons");
+ if(noMotion()&&!finishing){percent=goal;paintProgress()}
 }
-function begin(){loading=true;ready=false;percent=0;const el=makeBoot();el.classList.remove("sb-show-skeletons","sb-done");el.classList.add("sb-open");el.querySelector(".sb-logo-reveal").style.strokeDashoffset="100";stage("start")}
+function begin(){
+ clearTimeout(hideTimer);
+ if(frameId)cancelAnimationFrame(frameId);
+ loading=true;ready=false;percent=0;goal=0;finishing=false;lastFrame=0;
+ const el=makeBoot();el.classList.remove("sb-show-skeletons","sb-done");el.classList.add("sb-open");
+ paintProgress();stage("start");
+ if(!noMotion())frameId=requestAnimationFrame(tick);
+}
 function beginIfNeeded(){if(!loading){begin();stage("session")}}
-function cancel(){loading=false;boot?.classList.remove("sb-open")}
+function isLoading(){return loading}
+function cancel(){
+ loading=false;finishing=false;
+ if(frameId)cancelAnimationFrame(frameId);
+ frameId=0;clearTimeout(hideTimer);
+ boot?.classList.remove("sb-open");
+}
 function num(s){const v=String(s||"").replace(/[\s\u00a0\u202f€]/g,"").replace(",",".");return /^[+-]?\d+(\.\d+)?$/.test(v)?Number(v):null}
 function animateOne(el){
  const target=num(el.textContent);if(target===null)return;
@@ -41,7 +83,15 @@ function animateOne(el){
  frames.set(el,requestAnimationFrame(step));
 }
 function counters(root){if(!ready)return;for(const id of ids){const el=document.getElementById(id);if(el&&root.contains(el)&&el.getClientRects().length)animateOne(el)}}
-function finish(){if(!loading)return;stage("ready");ready=true;requestAnimationFrame(()=>{counters(document.querySelector(".view.active")||document);setTimeout(cancel,noMotion()?0:300);})}
+function finish(){
+ if(!loading)return;
+ stage("ready");ready=true;
+ requestAnimationFrame(()=>counters(document.querySelector(".view.active")||document));
+ if(noMotion()){percent=100;paintProgress();makeBoot().classList.add("sb-done");cancel();return}
+ finishing=true;finishFrom=percent;finishAt=performance.now();
+ // Uniquement l'animation de finition du logo, pas un faux délai réseau.
+ hideTimer=setTimeout(cancel,1150); // Sécurité si l'onglet est suspendu pendant l'animation.
+}
 function afterRender(){if(ready)requestAnimationFrame(()=>counters(document.querySelector(".view.active")||document))}
 function animateChart(host){
  const svg=host?.querySelector("svg");if(!svg||!host.closest(".view.active")||noMotion()||svg.dataset.sbDrawn)return;
@@ -80,5 +130,5 @@ function changeView(btn){
  };
  if(current&&!noMotion()){current.classList.add("sb-exit");tabTimer=setTimeout(swap,130)}else swap();
 }
-window.SmartBudgetMotion={begin,beginIfNeeded,stage,finish,cancel,afterRender,changeView,chartHover,animateChart};
+window.SmartBudgetMotion={begin,beginIfNeeded,isLoading,stage,finish,cancel,afterRender,changeView,chartHover,animateChart};
 })();

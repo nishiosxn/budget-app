@@ -17,9 +17,10 @@
   <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
   <link rel="stylesheet" href="css/history-filters.css?v=20261116-v29a" />
   <link rel="stylesheet" href="css/subscriptions-overview.css?v=20261116-v29b" />
-  <link rel="stylesheet" href="css/motion.css?v=20261116-v30b" />
+  <link rel="stylesheet" href="css/motion.css?v=20261117-v30c" />
 </head>
 <body>
+<div id="sbBootScreen" class="sb-boot sb-open" role="status" aria-live="polite" aria-label="Chargement du budget"><div class="sb-boot-card"><strong>Smart Budget</strong><span class="sb-loading-label">Préparation du budget…</span></div></div>
 <div class="app">
   <main class="shell">
     <header class="topbar">
@@ -346,7 +347,7 @@
   </section>
 </div>
 
-<div id="cloudGate" class="cloud-gate open" aria-hidden="false">
+<div id="cloudGate" class="cloud-gate" aria-hidden="true">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
     <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V3.0</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
@@ -375,7 +376,7 @@
       </details>
     </div>
     <div id="cloudLoadingView" class="cloud-gate-view">
-      <div class="cloud-loader" aria-hidden="true"></div><h3>Connexion au foyer…</h3><p>Chargement des données depuis Supabase. Une connexion internet est requise.</p>
+      <h3>Impossible de charger le foyer</h3><p>Vérifie ta connexion puis recharge la page. Tes données ne sont pas modifiées.</p>
     </div>
     <div id="cloudInviteView" class="cloud-gate-view" hidden>
       <h3>Rejoindre le foyer</h3>
@@ -410,8 +411,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/supabase-client.js?v=20261116-hf1" defer></script>
-<script src="js/motion.js?v=20261116-v30b" defer></script>
-  <script src="js/auth.js" defer></script>
+<script src="js/motion.js?v=20261117-v30c" defer></script>
+  <script src="js/auth.js?v=20261117-v30c" defer></script>
 <script src="js/cloud-household.js?v=20261006-v27a" defer></script>
 <script src="js/account-balances.js" defer></script>
 <script src="js/cloud-state-core.js?v=20261116-v281" defer></script>
