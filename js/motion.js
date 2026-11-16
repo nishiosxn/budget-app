@@ -37,7 +37,7 @@ function tick(now){
  paintProgress();
  if(finishing&&now-finishAt>=500){
   percent=100;paintProgress();makeBoot().classList.add("sb-done");
-  frameId=0;hideTimer=setTimeout(cancel,180);
+  frameId=0;clearTimeout(hideTimer);hideTimer=setTimeout(cancel,180);
   return;
  }
  frameId=requestAnimationFrame(tick);
