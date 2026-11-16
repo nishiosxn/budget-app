@@ -23,13 +23,13 @@ begin
    execute format('select coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text),''[]''::jsonb) from public.%I t',e.tbl)
    into v_rows;
    select coalesce(jsonb_object_agg(
-      case e.tbl when 'household_members' then item->>'household_id'||'|'||item->>'user_id'
-                 when 'account_opening_balances' then item->>'household_id'||'|'||item->>'month'||'|'||item->>'owner_slot'
+      case e.tbl when 'household_members' then concat_ws('|',item->>'household_id',item->>'user_id')
+                 when 'account_opening_balances' then concat_ws('|',item->>'household_id',item->>'month',item->>'owner_slot')
                  else item->>'id' end,item
    ),'{}'::jsonb) into v_old from jsonb_array_elements(e.old_rows) as item;
    select coalesce(jsonb_object_agg(
-      case e.tbl when 'household_members' then item->>'household_id'||'|'||item->>'user_id'
-                 when 'account_opening_balances' then item->>'household_id'||'|'||item->>'month'||'|'||item->>'owner_slot'
+      case e.tbl when 'household_members' then concat_ws('|',item->>'household_id',item->>'user_id')
+                 when 'account_opening_balances' then concat_ws('|',item->>'household_id',item->>'month',item->>'owner_slot')
                  else item->>'id' end,item
    ),'{}'::jsonb) into v_new from jsonb_array_elements(v_rows) as item;
    table_name:=e.tbl;
