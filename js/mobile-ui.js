@@ -42,7 +42,7 @@
     const desktopTab=document.querySelector('.nav-row .tab[data-tab="'+button.dataset.mobileTab+'"]');
     desktopTab?.click();
     syncActiveTab();
-    window.scrollTo({top:0,behavior:"instant"});
+    window.scrollTo({top:0,behavior:"auto"});
   }));
   document.querySelectorAll(".nav-row .tab").forEach(tab=>tab.addEventListener("click",syncActiveTab));
   document.addEventListener("keydown",event=>{
