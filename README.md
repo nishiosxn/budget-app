@@ -23,10 +23,10 @@ Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dan
 ## État actuel
 
 - **Production du code** : V2.8 sur `main` après validation de cette PR.
-- Version du code : `V2.8`
+- Version du code : `V2.8.1`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.8 à la racine après déploiement, snapshot V2.6 préservé.
-- **État de release** : V2.8 intégrée à `develop` via PR #30 ; release préparée séparément depuis `main` avec correctif cloud V2.7.1 conservé.
+- **État de release** : V2.8 publiée ; correctif V2.8.1 prépare la réparation de la synchronisation, sans toucher aux données ; V2.9 reste en preview isolée.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 

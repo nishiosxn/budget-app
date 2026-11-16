@@ -3,9 +3,9 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.8`
+- Version du code : `V2.8.1`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.8 après fusion de la PR de livraison.
+- Production du code : `main` → V2.8.1 après validation du correctif.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
 - V2.7.1 a réparé l'incident Supabase du 16 novembre ; la V2.8 conserve tous ses garde-fous.
@@ -85,6 +85,14 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Sauvegardes privées Supabase `incident_backup_20261116` conservées ; aucune migration ou écriture financière.
 - Vérifier le check App integrity de la PR release, fusionner sur `main` puis publier la racine `gh-pages` sans modifier les archives de previews.
 
+## Hotfix V2.8.1 — conflits de synchronisation
+
+- Branche : `work/v2.8.1-sync-roundtrip`; PR #35 vers `main`.
+- Cause vérifiée : 33 catégories actives du foyer concerné ont un `sort_order` différent de l'index recalculé par le navigateur ; à l'édition d'un seul mouvement cela pouvait produire des dizaines de `UPDATE` et déclencher le garde-fou des modifications massives.
+- Correctif : chargement de `sort_order` dans l'état des catégories, puis synchronisation de cette valeur originale avec repli sur l'index uniquement pour une catégorie nouvellement créée.
+- Tests ajoutés en CI : ordre des catégories après chargement, ajout ponctuel unique, archivage massif réellement détectable.
+- Aucune écriture financière ni migration Supabase dans ce lot. Sauvegardes `incident_backup_20261116` et garde-fous V2.7.1 intacts.
+
 ## Prochaine action
 
-Préparer V2.9 sur une branche courte de `develop` : historique consultable et filtrable, puis amélioration progressive de la fiabilité cloud avec tests non destructifs.
+Valider App integrity et les tests de roundtrip, publier la production V2.8.1 avec cache-busting des scripts, rétroporter sur `develop` et les préversions, vérifier le statut Pages puis tester une modification contrôlée en foyer de test.
