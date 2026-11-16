@@ -1,5 +1,13 @@
 # Changelog
 
+## V2.8.1 — synchronisation des catégories
+
+- Chargement et conservation de l'ordre des catégories directement depuis Supabase (`sort_order`).
+- Fin des mises à jour massives involontaires lors de l'édition d'une seule opération après rechargement.
+- Tests de régression sur l'hydratation du cloud, un ajout isolé et la détection des suppressions massives.
+- Protection contre les suppressions massives conservée, aucune migration ni modification des valeurs financières.
+
+
 ## V2.8 — navigation mobile (livraison)
 
 - Publication de la navigation mobile validée sur la préversion `/v2.8/`.
