@@ -13,19 +13,9 @@ function render(){
  document.getElementById("accountBalanceB").textContent=euro(m.accountBalanceB);document.getElementById("accountBalanceA").textContent=euro(m.accountBalanceA);
  document.getElementById("personBDetail").textContent=`Départ ${euro(m.openingB)} · +${euro(m.incomeB)} · −${euro(m.expenseB+m.savingBShare)}`;
  document.getElementById("personADetail").textContent=`Départ ${euro(m.openingA)} · +${euro(m.incomeA)} · −${euro(m.expenseA+m.savingAShare)}`;
- renderOverviewInsights(m);renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);if(typeof renderSubscriptionsOverview==="function")renderSubscriptionsOverview(m);renderHistory(m);renderTracking();
+ renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);if(typeof renderSubscriptionsOverview==="function")renderSubscriptionsOverview(m);renderHistory(m);renderTracking();
  window.SmartBudgetMotion?.afterRender();
  document.getElementById("transactionCount").textContent=`${m.tx.length} opération${m.tx.length>1?"s":""}`;
-}
-function renderOverviewInsights(m){
- const host=document.getElementById("sbOverviewInsights");if(!host)return;
- const categories=visibleExpenseCategories().filter(c=>!c.saving);
- const above=categories.filter(c=>Number(c.budget)>0&&(Number(m.expMap?.[c.id])||0)>Number(c.budget)).length;
- const budget=Number(m.plannedExpense)||0,spent=Number(m.expense)||0,ratio=budget>0?Math.round(spent/budget*100):null;
- const difference=budget-spent;
- host.innerHTML=`<article class="sb-overview-insight"><span>Budget de dépenses utilisé</span><strong>${ratio===null?"—":ratio+" %"}</strong><small>${euro(spent)} dépensés sur ${euro(budget)} prévus</small></article>
- <article class="sb-overview-insight"><span>Écart avec le budget prévu</span><strong>${difference>=0?euro(difference):"−"+euro(Math.abs(difference))}</strong><small>${difference>=0?"Reste sur le budget prévu":"Budget de dépenses dépassé"}</small></article>
- <article class="sb-overview-insight"><span>Catégories au-dessus du prévu</span><strong>${above}</strong><small>${above?"Voir la section À surveiller":"Aucun dépassement de catégorie budgétée"}</small></article>`;
 }
 function renderSections(m){const sections=["Obligatoires","Abonnements","Vie courante"];document.getElementById("sectionCards").innerHTML=sections.map(s=>{const cats=visibleExpenseCategories().filter(c=>c.section===s),planned=sum(cats.map(c=>c.budget)),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===s).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===s).map(c=>m.expMap[c.id]||0)),pct=planned?actual/planned*100:(actual?100:0),over=actual>planned;return `<article class="card budget-card"><div class="budget-card-head"><h3>${s}</h3><span class="${over?'row-value exp':'row-sub'}">${Math.round(pct)}%</span></div><div class="nums"><strong>${euro(actual)}</strong> / ${euro(planned)}</div><div class="progress ${over?'over':''}"><span style="width:${Math.min(pct,100)}%"></span></div><div class="budget-foot">${over?`Dépassement de ${euro(actual-planned)}`:`Il reste ${euro(Math.max(planned-actual,0))}`}</div></article>`}).join("")}
 function renderTop(m){const items=visibleExpenseCategories().map(c=>{const actual=m.expMap[c.id]||0,pct=c.budget>0?actual/c.budget*100:(actual>0?999:0);return {...c,actual,pct}}).filter(c=>c.actual>0&&(c.pct>=75||c.budget===0)).sort((a,b)=>b.pct-a.pct).slice(0,6);document.getElementById("topCategories").innerHTML=items.length?items.map(c=>{const over=c.budget>0&&c.actual>c.budget,remaining=c.budget>0?c.budget-c.actual:0,label=over?`Dépassé de ${euro(Math.abs(remaining))}`:c.budget>0?`Il reste ${euro(Math.max(remaining,0))}`:"Aucun budget prévu",pill=over?"danger":c.pct>=90?"warn":"ok";return `<div class="row"><div class="watch-status"><div class="watch-copy"><div class="watch-title">${escapeHtml(c.name)}</div><div class="watch-sub">${euro(c.actual)} / ${euro(c.budget)}</div></div><span class="watch-pill ${pill}">${label}</span></div></div>`}).join(""):`<div class="empty">Tout est dans les budgets ce mois-ci.</div>`}

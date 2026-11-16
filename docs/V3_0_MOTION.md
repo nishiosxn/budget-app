@@ -7,13 +7,13 @@
 - Préversion `/v2.9/`: **inchangée**. La V3.0 ne sera pas publiée sans validation.
 
 ## Implémentations
-1. Démarrage: logo Smart Budget avec arc de progression depuis le haut en sens antihoraire, bornes attachées à la résolution réelle de session, foyer, chargement et rendu. Pourcentage = étapes, pas estimation de temps ou d'octets réseau.
+1. Démarrage: le tracé blanc du logo Smart Budget original se révèle progressivement depuis le haut, le long de sa forme, sans anneau externe. Progression liée à la session, au foyer, aux données et au rendu; animation de finition discrète. Pourcentage = étapes, pas estimation de temps ou d'octets réseau.
 2. Skeletons de la vue d'accueil affichés pendant le chargement authentifié réel, sans délai artificiel.
 3. Animation d'entrée et sortie des vues, sans page intermédiaire; navigation mobile existante conservée.
 4. Incrémentation des KPI, première apparition et changements de valeur, à partir du DOM déjà calculé.
 5. Courbe réelle animée, courbe prévue révélée, infobulle au survol, au toucher et au focus clavier.
 6. Abonnements: seules les catégories dotées d'échéances figurent dans la partie principale, tri chronologique; catégories sans récurrence regroupées et repliables.
-7. Accueil: pourcentage du budget de dépenses utilisé, écart réel/prévu, nombre de catégories dépassant leur prévu (indicateurs de lecture seule).
+7. Accueil: les trois indicateurs ajoutés en V3.0 ont été retirés à la demande de l'utilisateur; les cartes et informations V2.9 sont conservées.
 8. Micro-interactions sur cartes et ouverture des modales.
 9. Adaptation responsive, palette CSS existante et `prefers-reduced-motion`.
 10. Dépendances financières, historique, sauvegardes, schéma PostgreSQL, RLS et moteur de synchronisation inchangés.

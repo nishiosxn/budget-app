@@ -24,3 +24,18 @@ test("la V3 reprend le moteur V2.9 et ajoute le suivi accessible",()=>{
  assert.match(tracking,/SmartBudgetMotion\?\.chartHover/);
  assert.match(subscriptions,/sb-subscription-secondary/);
 });
+
+test("logo de chargement : seul le tracé réel du logo est animé, sans anneau ajouté",()=>{
+ const motion=read("js/motion.js"),css=read("css/motion.css");
+ assert.match(motion,/sb-logo-svg/);
+ assert.match(motion,/sb-logo-reveal/);
+ assert.match(motion,/M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z/);
+ assert.doesNotMatch(motion,/sb-ring|sb-track/);
+ assert.match(css,/prefers-reduced-motion/);
+});
+test("les trois indicateurs V3 inutiles sont totalement supprimés",()=>{
+ for(const path of ["index.html","js/ui.js","css/motion.css"]){
+  const source=read(path);
+  assert.doesNotMatch(source,/sbOverviewInsights|sb-overview-insight|renderOverviewInsights/);
+ }
+});
