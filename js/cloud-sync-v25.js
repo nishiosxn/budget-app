@@ -583,7 +583,12 @@ async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
    &&item.action==="update"
    &&Number(item.remote?.payload?.planned_amount)>0
    &&Number(item.payload?.planned_amount)===0).length;
-  if(archives.length>=10||categoryArchives>=3||transactionArchives>=8||budgetArchives>=10||budgetZeroUpdates>=5){
+  const broadUpdates=plan.mutations.filter(item=>item.action==="update");
+  const categoryUpdates=broadUpdates.filter(item=>item.table==="categories").length;
+  const transactionUpdates=broadUpdates.filter(item=>item.table==="transactions").length;
+  const budgetUpdates=broadUpdates.filter(item=>item.table==="budgets").length;
+  if(archives.length>=10||categoryArchives>=3||transactionArchives>=8||budgetArchives>=10||budgetZeroUpdates>=5
+    ||broadUpdates.length>=35||categoryUpdates>=12||transactionUpdates>=18||budgetUpdates>=15){
    const conflict=[{table:"sync_safety",key:"mass-change",field:null}];
    cloudSetConflict(conflict);
    const error=new Error("Envoi annulé : modifications destructrices massives ("+archives.length+" lignes).");
