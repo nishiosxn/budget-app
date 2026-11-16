@@ -3,12 +3,12 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.7.1`
+- Version du code : `V2.8`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.6.
+- Production du code : `main` → V2.8 après fusion de la PR de livraison.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
-- V2.6 est la base stable de production du code ; le workflow hybride de la PR #19 reste actif.
+- V2.7.1 a réparé l'incident Supabase du 16 novembre ; la V2.8 conserve tous ses garde-fous.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -77,6 +77,14 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Correctif : supprimer l'envoi intégral non protégé, forcer la fusion contrôlée, bloquer archives massives et zéros massifs ; chargement des scripts avec version cache-bust.
 - Les archives précédant le 11 novembre ne doivent pas être restaurées en masse.
 
+## Livraison V2.8
+
+- Navigation mobile et ajout rapide validés par l'utilisateur sur la preview `/v2.8/`.
+- PR #30 fusionnée vers `develop` ; check App integrity vert.
+- Branche release isolée `work/v2.8-release` issue de `main`, uniquement fichiers UI V2.8, en préservant les garde-fous de synchronisation et le client versionné.
+- Sauvegardes privées Supabase `incident_backup_20261116` conservées ; aucune migration ou écriture financière.
+- Vérifier le check App integrity de la PR release, fusionner sur `main` puis publier la racine `gh-pages` sans modifier les archives de previews.
+
 ## Prochaine action
 
-Valider et déployer le hotfix, restaurer uniquement les lignes touchées par l'incident avec transaction SQL, vérifier les comptes, libérer le verrou de maintenance après contrôles, puis porter le correctif sur `develop` et les previews actives.
+Préparer V2.9 sur une branche courte de `develop` : historique consultable et filtrable, puis amélioration progressive de la fiabilité cloud avec tests non destructifs.

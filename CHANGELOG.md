@@ -1,5 +1,12 @@
 # Changelog
 
+## V2.8 — navigation mobile (livraison)
+
+- Publication de la navigation mobile validée sur la préversion `/v2.8/`.
+- Fusion et publication de l'interface sans modifier la structure Supabase ni les finances.
+- Conservation impérative des correctifs de synchronisation et de version client de la V2.7.1.
+
+
 ## V2.7.1 — correctif urgent de synchronisation
 
 - Désactivation de l'ancien envoi intégral qui pouvait archiver toute donnée absente d'une session incomplète.

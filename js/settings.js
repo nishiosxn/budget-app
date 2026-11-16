@@ -1,4 +1,4 @@
-// V2.7 — paramètres, sauvegarde complète et synchronisation cloud
+// V2.8 — paramètres, sauvegarde complète et synchronisation cloud
 const settingsBackdrop=document.getElementById("settingsBackdrop");
 const settingsHouseholdName=document.getElementById("settingsHouseholdName");
 const settingsPersonB=document.getElementById("settingsPersonB");
@@ -214,17 +214,17 @@ importFile.addEventListener("change",async()=>{
  const file=importFile.files?.[0];if(!file)return;
  try{
   const backup=await readBackupFile(file);
-  if(!confirm("Importer cette sauvegarde et remplacer les données actuelles du foyer partagé V2.7 ?"))return;
+  if(!confirm("Importer cette sauvegarde et remplacer les données actuelles du foyer partagé V2.8 ?"))return;
   installPreparedState(backup.state);
   if(typeof replaceAccountOpeningBalancesFromBackup==="function")await replaceAccountOpeningBalancesFromBackup(backup.accountOpeningBalances);
   if(typeof cloudPushLocalState==="function")await cloudPushLocalState({force:true});
-  render();showUndoToast("Sauvegarde V2.7 importée")
+  render();showUndoToast("Sauvegarde V2.8 importée")
  }catch(error){console.error("Backup import",error);alert("Ce fichier n’est pas une sauvegarde compatible de Budget foyer.")}
  finally{importFile.value=""}
 });
 
 document.getElementById("resetBtn").addEventListener("click",async()=>{
- if(!confirm("Réinitialiser toutes les données budgétaires du foyer V2.7 ? Les comptes, les membres du foyer et ton apparence seront conservés."))return;
+ if(!confirm("Réinitialiser toutes les données budgétaires du foyer V2.8 ? Les comptes, les membres du foyer et ton apparence seront conservés."))return;
  const button=document.getElementById("resetBtn"),household=normalizeHousehold(state.household),selectedMonth=state.selectedMonth;
  button.disabled=true;
  try{
@@ -244,7 +244,7 @@ document.getElementById("resetBtn").addEventListener("click",async()=>{
   closeSettings();
   if(typeof openSetupBuilder==="function")openSetupBuilder();
  }catch(error){
-  console.error("Reset V2.7",error);
+  console.error("Reset V2.8",error);
   alert("La réinitialisation n’a pas pu être terminée. Aucune nouvelle configuration n’a été lancée.");
  }finally{button.disabled=false}
 });
