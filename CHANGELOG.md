@@ -1,5 +1,15 @@
 # Changelog
 
+## V2.8 — mobile UX (en cours de validation)
+
+- Barre de navigation mobile fixe : Accueil, Catégories, action + centrale, Historique, Suivi.
+- Menu d’ajout rapide dépense/revenu raccordé aux formulaires et événements existants.
+- Formulaire de transaction présenté comme un panneau inférieur sur mobile, avec date de saisie modifiable dans le mois sélectionné.
+- Accueil mobile réordonné pour afficher les derniers mouvements et alertes immédiatement après les indicateurs principaux.
+- Adaptation aux zones de sécurité iPhone et aux appareils étroits ; prise en charge de `prefers-reduced-motion`.
+- Rétablissement du zoom natif pour l’accessibilité, sans modifier le stockage des données.
+
+
 ## V2.7 — stabilisation
 
 ### Données et catégories
