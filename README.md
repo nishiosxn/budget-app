@@ -28,6 +28,13 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
+## Sauvegardes privées V2.9
+
+- PostgreSQL : sauvegarde automatique toutes les 6 heures dans le schéma privé `smart_budget_backups`, conservation glissante des sauvegardes planifiées sur 30 jours.
+- Instantanés des 8 tables (lignes archivées incluses), comparaison des écarts ligne par ligne et procédure de restauration réservée à l'opérateur.
+- Aucune sauvegarde accessible depuis l'application publique, aucune restauration automatique. Ces copies restent dans Supabase et ne constituent pas un backup hors site.
+- Procédure de contrôle : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
+
 ## Lot V2.9 — historique et sécurité
 
 - **Abonnements et récurrences** : nouvelle synthèse dans Catégories, distincte des budgets prévus et des prélèvements effectivement confirmés ; actions Modifier et Arrêter réutilisant les fenêtres de récurrence existantes.
