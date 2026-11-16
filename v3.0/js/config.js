@@ -1,0 +1,28 @@
+// V2.5 — configuration, utilitaires et navigation temporelle
+const MONTHS=["Septembre 2026","Octobre 2026","Novembre 2026","Décembre 2026","Janvier 2027","Février 2027","Mars 2027","Avril 2027","Mai 2027","Juin 2027","Juillet 2027","Août 2027","Septembre 2027","Octobre 2027","Novembre 2027","Décembre 2027","Janvier 2028","Février 2028","Mars 2028","Avril 2028","Mai 2028","Juin 2028","Juillet 2028","Août 2028","Septembre 2028"];
+
+const STORAGE_KEY="budget-foyer-v2.5";
+const ACTIVE_HOUSEHOLD_KEY="budget-foyer-v2.5-active-household";
+const PREVIOUS_STORAGE_KEYS=["budget-foyer-v2.4"];
+const PREVIOUS_ACTIVE_HOUSEHOLD_KEYS=["budget-foyer-v2.4-active-household"];
+const LEGACY_STORAGE_SOURCES=[
+  {key:"budget-foyer-v2.4",label:"V2.4 / V2.4.1"},
+  {key:"budget-foyer-v2.3",label:"V2.3"},
+  {key:"budget-foyer-v2.3-preview",label:"V2.3 preview"},
+  {key:"budget-foyer-v2.2-preview",label:"V2.2"},
+  {key:"budget-foyer-v2.1-preview",label:"V2.1"},
+  {key:"budget-foyer-v2-preview",label:"V2.0"},
+  {key:"budget-foyer-v2",label:"V2 locale"},
+  {key:"budget-foyer-v1",label:"V1"}
+];
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits:2}).format(Number(n)||0);
+const escapeHtml=s=>String(s).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+const cloneData=value=>JSON.parse(JSON.stringify(value));
+
+function monthKey(label){const parts=label.split(" ");const m={Janvier:"01",Février:"02",Mars:"03",Avril:"04",Mai:"05",Juin:"06",Juillet:"07",Août:"08",Septembre:"09",Octobre:"10",Novembre:"11",Décembre:"12"};return `${parts[1]}-${m[parts[0]]}`}
+function labelFromYM(year,month){const names=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];return `${names[month-1]} ${year}`}
+function currentMonthLabel(){const d=new Date();return labelFromYM(d.getFullYear(),d.getMonth()+1)}
+function appendNextMonth(){const last=MONTHS[MONTHS.length-1],key=monthKey(last),[y,m]=key.split("-").map(Number),d=new Date(y,m,1);MONTHS.push(labelFromYM(d.getFullYear(),d.getMonth()+1));return MONTHS[MONTHS.length-1]}
+function ensureMonthAvailable(label){if(MONTHS.includes(label))return;const target=monthKey(label);let guard=0;while(monthKey(MONTHS[MONTHS.length-1])<target&&guard++<240)appendNextMonth()}

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Migration Budget foyer</title></head>
+<body>
+<script src="../v2.2/js/data.js"></script>
+<script>
+(() => {
+  const clean = value => JSON.parse(JSON.stringify(value));
+  parent.postMessage({
+    type: "budget-legacy-profile-v2.2",
+    profile: {
+      incomeCategories: clean(INCOME_CATEGORIES),
+      expenseCategories: clean(EXPENSE_CATEGORIES)
+    }
+  }, location.origin);
+})();
+</script>
+</body>
+</html>
