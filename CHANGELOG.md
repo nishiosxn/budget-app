@@ -1,5 +1,14 @@
 # Changelog
 
+## V2.9 — historique et fiabilité (préversion)
+
+- Recherche insensible aux accents et à la casse sur les libellés, catégories et personnes de l’historique du mois.
+- Filtres par type (dépense/revenu/épargne), propriétaire et catégorie, tri montant/date, compteur de résultats et bouton de réinitialisation.
+- Lors d’un filtre partiel sur un groupe, suppression complète de ce groupe désactivée pour éviter toute suppression masquée.
+- Modification de la date d’une opération unique vers un autre mois, sans appliquer cette ouverture aux nouveaux mouvements ni aux récurrences.
+- Interface responsive et accessible, respectant les variables de thème. Aucun changement Supabase ni aux garde-fous cloud V2.7.1.
+
+
 ## V2.8 — mobile UX (en cours de validation)
 
 - Barre de navigation mobile fixe : Accueil, Catégories, action + centrale, Historique, Suivi.
