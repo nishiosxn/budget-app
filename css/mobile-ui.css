@@ -5,6 +5,17 @@
   .nav-row .tabs{display:none!important}
   .mobile-actions{display:none!important}
   .shell{padding-bottom:calc(7.5rem + env(safe-area-inset-bottom))}
+  /* Un accueil pensé pour la consultation : mouvements et alertes après le solde. */
+  #overview.view.active{display:flex;flex-direction:column}
+  #overview>.hero-grid{order:1}
+  #overview>.two-col.section{order:2;display:flex;flex-direction:column}
+  #overview>.two-col.section>div:last-child{order:1}
+  #overview>.two-col.section>div:first-child{order:2}
+  #overview>.section-head:nth-child(2){order:3}
+  #overview>.people:nth-child(3){order:4}
+  #overview>.section-head:nth-child(4){order:5}
+  #overview>.budget-sections:nth-child(5){order:6}
+
   .mobile-bottom-nav{
     display:block;position:fixed;inset:auto 0 0;
     z-index:80;background:var(--panel);border-top:1px solid var(--line);
