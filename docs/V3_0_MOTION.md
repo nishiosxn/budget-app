@@ -23,3 +23,8 @@
 - Vérification navigateur sur un foyer de test: connexion, chargement, navigation rapide, historique, modification d'échéances, catégories, courbes et passage de mois.
 - Contrôle sécurité: les nouvelles étapes visuelles ne déclenchent aucune écriture dans Supabase.
 - Attention : ce lot n'inclut pas encore de synchronisation bancaire, de nouvelles statistiques financières ou de prévisions.
+
+## Correctif du chargement continu
+- L'animation du tracé du logo est interpolée chaque image et possède un reflet discret en mouvement constant; l'affichage du pourcentage est **estimatif**, non une mesure réseau.
+- Les jalons de session, identification du foyer et données plafonnent la progression à 96 % avant la réussite réelle.
+- L'ancien panneau « Connexion au foyer » ne s'affiche plus pendant le chargement normal : seul le splash V3.0 est visible. Le panneau reste disponible uniquement pour la connexion utilisateur, les invitations, la récupération et les erreurs.

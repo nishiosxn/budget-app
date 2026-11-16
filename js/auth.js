@@ -77,6 +77,12 @@ function setCloudGateView(name){
  [cloudLoginView,cloudLoadingView,cloudInviteView,cloudResetView].forEach(el=>{if(el)el.hidden=true});
  const map={login:cloudLoginView,loading:cloudLoadingView,invite:cloudInviteView,reset:cloudResetView};
  if(map[name])map[name].hidden=false;
+ // Le seul écran de chargement normal est désormais le logo V3.0.
+ if(name==="loading"&&window.SmartBudgetMotion?.isLoading?.()){
+  cloudGate.classList.remove("open");
+  cloudGate.setAttribute("aria-hidden","true");
+  return;
+ }
  cloudGate.classList.add("open");
  cloudGate.setAttribute("aria-hidden","false");
 }
@@ -88,6 +94,12 @@ function hideCloudGate(){
 function setCloudGateStatus(message,type=""){
  cloudGateStatus.textContent=message||"";
  cloudGateStatus.className=("cloud-gate-status "+type).trim();
+ // En cas d'échec, on garde le message d'erreur et les contrôles de récupération.
+ if(type==="error"&&cloudLoadingView&&!cloudLoadingView.hidden){
+  window.SmartBudgetMotion?.cancel();
+  cloudGate.classList.add("open");
+  cloudGate.setAttribute("aria-hidden","false");
+ }
 }
 function lastCloudIdentifier(){try{return localStorage.getItem(CLOUD_LAST_IDENTIFIER_KEY)||""}catch{return""}}
 function rememberCloudIdentifier(identifier){

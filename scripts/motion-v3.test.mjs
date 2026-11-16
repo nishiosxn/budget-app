@@ -39,3 +39,20 @@ test("les trois indicateurs V3 inutiles sont totalement supprimés",()=>{
   assert.doesNotMatch(source,/sbOverviewInsights|sb-overview-insight|renderOverviewInsights/);
  }
 });
+
+test("la progression V3.0 est continue et strictement bornée avant la fin du chargement réel",()=>{
+ const code=read("js/motion.js");
+ assert.match(code,/requestAnimationFrame\(tick\)/);
+ assert.match(code,/1-Math\.exp\(-delta\/1850\)/);
+ assert.match(code,/Math\.min\(percent,96\)/);
+ assert.match(code,/if\(finishing&&now-finishAt>=500\)/);
+ assert.match(code,/sb-logo-glint/);
+});
+test("l'ancienne fenêtre de chargement est invisible pendant la connexion normale",()=>{
+ const html=read("index.html"),auth=read("js/auth.js");
+ assert.match(html,/id="sbBootScreen" class="sb-boot sb-open"/);
+ assert.match(html,/id="cloudGate" class="cloud-gate" aria-hidden="true"/);
+ assert.doesNotMatch(html,/Connexion au foyer…|class="cloud-loader"/);
+ assert.match(auth,/name==="loading"&&window\.SmartBudgetMotion\?\.isLoading\?\.\(\)/);
+ assert.match(auth,/type==="error"&&cloudLoadingView/);
+});
