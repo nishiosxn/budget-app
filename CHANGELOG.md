@@ -1,6 +1,10 @@
 # Changelog
 
-## V2.9 — historique et fiabilité (préversion)
+## V2.9 — historique, fiabilité et sauvegardes (préversion)
+
+- Base Supabase : instantanés atomiques privés toutes les six heures, 30 jours de rétention des snapshots planifiés, copies manuelles conservées.
+- Fonction de comparaison SQL en lecture seule avant restauration ; accès refusé aux rôles publics, authentifiés et service-role.
+- Documentation de reprise détaillée ; aucun bouton de restauration exposé au navigateur et aucune modification des tables financières lors de l'installation.
 
 - Tableau de bord des abonnements : catégories, budget prévu, récurrences de dépenses du mois, autre récurrence, affichage du payeur, montant et date, actions Modifier/Arrêter raccordées aux modales existantes.
 - Distinction explicite entre budget prévu, opérations récurrentes comptabilisées et débit bancaire non confirmé.
