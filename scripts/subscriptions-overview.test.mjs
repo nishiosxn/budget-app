@@ -48,7 +48,7 @@ test("le tableau distingue budgets et dépenses réellement récurrentes",()=>{
 test("une opération ponctuelle n'est jamais présentée comme un abonnement récurrent",()=>{
  const x=loadOverview();
  x.context.renderSubscriptionsOverview({tx:x.transactions,expMap:{music:11,video:9,rent:500}});
- assert.match(x.root.innerHTML,/Aucune opération récurrente configurée/);
+ assert.match(x.root.innerHTML,/catégorie sans récurrence|catégories sans récurrence/);
  assert.match(x.root.innerHTML,/11\.00 €|11,00 €/);
  assert.doesNotMatch(x.root.innerHTML,/data-subscription-edit="one-shot"/);
  assert.match(x.root.innerHTML,/ne prouvent pas/);
