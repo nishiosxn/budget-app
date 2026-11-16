@@ -110,6 +110,7 @@ async function cloudBootstrap(){
    return;
   }
   await loadCloudMemberships();
+  window.SmartBudgetMotion?.stage("household");
   let provisionedNow=false;
   if(!cloudMemberships.length){
    provisionedNow=await provisionPersonalHousehold();
@@ -120,6 +121,7 @@ async function cloudBootstrap(){
   // Un foyer tout juste créé n'a encore aucune donnée distante à relire.
   // Évite un push complet suivi immédiatement d'un reload complet avant l'ouverture du builder.
   if(!provisionedNow)await cloudLoadState();
+  window.SmartBudgetMotion?.stage("data");
   startCloudRealtime();
   cloudSyncReady=true;
   setCloudStatus(provisionedNow?"Configuration du budget…":"Synchronisé",provisionedNow?"syncing":"ok");

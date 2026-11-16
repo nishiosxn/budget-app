@@ -73,6 +73,7 @@ function clearPendingPersonalProfile(){
  localStorage.removeItem("budget-foyer-v2.5-pending-profile");
 }
 function setCloudGateView(name){
+ if(name!=="loading")window.SmartBudgetMotion?.cancel();
  [cloudLoginView,cloudLoadingView,cloudInviteView,cloudResetView].forEach(el=>{if(el)el.hidden=true});
  const map={login:cloudLoginView,loading:cloudLoadingView,invite:cloudInviteView,reset:cloudResetView};
  if(map[name])map[name].hidden=false;
@@ -80,6 +81,7 @@ function setCloudGateView(name){
  cloudGate.setAttribute("aria-hidden","false");
 }
 function hideCloudGate(){
+ window.SmartBudgetMotion?.finish();
  cloudGate.classList.remove("open");
  cloudGate.setAttribute("aria-hidden","true");
 }
@@ -200,6 +202,7 @@ async function submitCloudAuth(){
     const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
     if(error)throw error;
     cloudSession=data?.session||null;
+ window.SmartBudgetMotion?.stage("session");
     updateCloudAccountUi();
     setCloudGateStatus(`Compte créé. Ton identifiant est « ${identifier} ».`,"success");
     if(cloudSession)await requestCloudBootstrap();
@@ -295,11 +298,13 @@ async function cloudSignOut(){
 }
 async function initCloudAuth(){
  pendingInviteToken=readPendingInvite();
+ window.SmartBudgetMotion?.begin();
  setCloudGateView("loading");
  setCloudGateStatus("Vérification de la session…");
  if(!cloudClient){
   setCloudGateStatus("Le service de synchronisation n’a pas pu être chargé. Une connexion cloud est requise pour ouvrir le budget.","error");
   setCloudStatus("Cloud indisponible","error");
+  window.SmartBudgetMotion?.cancel();
   return;
  }
  const {data,error}=await cloudClient.auth.getSession();
