@@ -3,12 +3,12 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.7`
+- Version du code : `V2.8`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.6.
+- Production du code : `main` → V2.7.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
-- V2.6 est la base stable de production du code ; le workflow hybride de la PR #19 reste actif.
+- V2.7 est publiée ; V2.8 est en travail, sans promotion sur main.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -28,7 +28,7 @@ Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots
 
 La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
-## Lot courant — V2.7 Stabilisation
+## Lot précédent — V2.7 Stabilisation
 
 - Branche : `work/v2.7-stabilization`
 - Base : `develop`
@@ -68,6 +68,15 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Source applicative publiée : `3ed291c8912c601092d87cab8f6a0900378ba3f3`.
 - Commit `gh-pages` de la preview : `d685e7b394a99f928828713edc3ce86d32b23227`.
 
+## Lot courant — V2.8 Mobile UX
+
+- Branche : `work/v2.8-mobile-ux`, issue de `develop`.
+- PR brouillon : https://github.com/nishiosxn/budget-app/pull/30
+- Périmètre : navbar tactile à cinq emplacements, bouton + flottant, ajout dépense/revenu via la modale existante, panneau de saisie mobile, date d'opération modifiable dans le mois choisi, accueil mobile réordonné, restauration du zoom natif.
+- Exclusions : calculs financiers, données Supabase, migrations et publication en production.
+- Vérification : `node scripts/validate.mjs`, check **App integrity**, tests visuels iPhone/Android/desktop et saisie d'une transaction de test sur un foyer non personnel.
+- État : implémentation sur la branche, sans validation visuelle ni déploiement de preview.
+
 ## Prochaine action
 
-Valider la preview `/v2.7/`, faire passer **App integrity** sur la PR #26, puis fusionner vers `develop`. La promotion vers `main` restera une opération séparée.
+Vérifier **App integrity** sur le dernier commit de PR #30, tester les parcours sur navigateur, puis valider une preview avant merge vers `develop`. Publication `main` / `gh-pages` seulement après validation explicite.
