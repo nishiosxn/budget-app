@@ -10,3 +10,16 @@
 .tracking-chart{position:relative}.sb-chart-tip{position:absolute;z-index:2;top:.65rem;display:grid;gap:.2rem;min-width:8.5rem;padding:.7rem .85rem;border-radius:.85rem;background:var(--panel,#fff);border:1px solid var(--line,#e1e5de);box-shadow:0 .6rem 1.6rem rgba(21,42,29,.12);color:var(--text,#1a2b20);font-size:.72rem;pointer-events:none;opacity:0;transform:translate(-50%,-5px);transition:opacity .15s ease,transform .15s ease}.sb-chart-tip strong{font-size:.82rem}.sb-chart-tip.is-visible{opacity:1;transform:translate(-50%,0)}.sb-chart-guide{stroke:var(--accent,#285f49);stroke-dasharray:3 5;stroke-width:1;opacity:0;pointer-events:none;transition:opacity .15s ease}.sb-chart-guide.is-visible{opacity:.5}.chart-real-point,.chart-planned-point{cursor:crosshair;outline-offset:4px}
 .sb-overview-insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin:0 0 1.3rem}.sb-overview-insight{display:grid;gap:.2rem;padding:.85rem 1rem;background:var(--panel,#fff);border:1px solid var(--line,#e0e5df);border-radius:1rem}.sb-overview-insight span,.sb-overview-insight small{font-size:.71rem;color:var(--muted,#69786d)}.sb-overview-insight strong{font-size:1.02rem;font-variant-numeric:tabular-nums;color:var(--text,#18271c)}
 @media(max-width:40rem){.sb-sk-grid{grid-template-columns:1fr}.sb-sk-three{grid-template-columns:1fr 1fr}.sb-overview-insights{grid-template-columns:1fr 1fr}.sb-overview-insight:last-child{grid-column:span 2}.sb-boot-card{min-width:min(17rem,90vw)}}@media(prefers-reduced-motion:reduce){.sb-boot,.sb-ring,.sb-skeletons,.sb-chart-tip,.sb-chart-guide,.card,.cat-item,.subscription-category{transition:none!important}.sb-skeletons i,.view.sb-exit,.view.sb-enter,.view.sb-enter .card{animation:none!important}}
+/* Abonnements V3.0: échéances actives en haut et catégories sans échéance secondaires. */
+.subscriptions-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.subscriptions-summary>div small{font-size:.69rem;color:var(--muted);line-height:1.4}
+.subscriptions-summary strong{font-size:1.22rem}
+.sb-subscription-secondary{display:grid;gap:.5rem;padding-top:.6rem;border-top:1px solid var(--line)}
+.sb-subscription-secondary>span{font-size:.73rem;color:var(--muted);font-weight:700}
+.subscription-unconfigured{background:var(--panel-2);opacity:.87}
+.subscription-category{animation:sb-card .34s ease both}
+.modal-backdrop.open .modal{animation:sb-modal-enter .24s cubic-bezier(.16,1,.3,1) both}
+@keyframes sb-modal-enter{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@media(max-width:48rem){.subscriptions-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.subscriptions-summary>div:last-child{grid-column:span 2}}
+@media(max-width:24rem){.subscriptions-summary{grid-template-columns:1fr}.subscriptions-summary>div:last-child{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.modal-backdrop.open .modal,.subscription-category{animation:none!important}}
