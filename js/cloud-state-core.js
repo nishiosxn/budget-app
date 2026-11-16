@@ -4,7 +4,7 @@ function cloudCategoriesToLocal(rows,next){
  for(const row of rows){
   const localId=row.legacy_id||row.id;
   idMap.set(row.id,localId);
-  const c={id:localId,name:row.name,budget:0,owner:slotToOwner(row.owner_slot),createdFrom:String(row.created_from).slice(0,7)};
+  const c={id:localId,name:row.name,budget:0,owner:slotToOwner(row.owner_slot),createdFrom:String(row.created_from).slice(0,7),sortOrder:Number.isFinite(Number(row.sort_order))?Number(row.sort_order):0};
   if(row.type==="expense"){c.section=row.group_name||"Vie courante";c.saving=!!row.is_saving}
   if(row.is_custom)c.custom=true;
   if(row.type==="income")(row.is_custom?ic:ib).push(c);else(row.is_custom?ec:eb).push(c);

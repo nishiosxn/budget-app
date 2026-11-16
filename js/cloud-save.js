@@ -104,7 +104,7 @@ function cloudLocalCategories(source=state){
    created_from:cloudMonthDate(category.createdFrom||source.createdMonth||monthKey(source.selectedMonth)),
    excluded_months:excluded,
    is_custom:!!isCustom,
-   sort_order:index,
+   sort_order:Number.isFinite(Number(category.sortOrder))?Number(category.sortOrder):index,
    archived:globalDeletes?.includes(category.id)||false,
    category
   });
