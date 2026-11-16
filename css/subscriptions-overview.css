@@ -1,0 +1,43 @@
+/* V2.9 — aperçu des abonnements et échéances, utilisant la charte Smart Budget */
+.subscriptions-panel{padding:1.25rem 1.35rem;margin-bottom:1.375rem;display:grid;gap:1rem}
+.subscriptions-heading{display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:.75rem}
+.subscriptions-heading h2{margin:.15rem 0 0;font-size:1.12rem;letter-spacing:-.025em;color:var(--text)}
+.subscriptions-eyebrow{font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+.subscriptions-count{font-size:.75rem;color:var(--muted);font-weight:700}
+.subscriptions-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.subscriptions-summary>div{display:grid;gap:.3rem;background:var(--panel-2);border:1px solid var(--line);border-radius:.9rem;padding:.9rem 1rem}
+.subscriptions-summary span{font-size:.7rem;font-weight:700;color:var(--muted)}
+.subscriptions-summary strong{font-size:1.45rem;letter-spacing:-.035em;color:var(--text);font-variant-numeric:tabular-nums}
+.subscriptions-explain{font-size:.74rem;line-height:1.5;color:var(--muted);margin:0}
+.subscription-list{display:grid;gap:.75rem}
+.subscription-category{border:1px solid var(--line);border-radius:.9rem;overflow:hidden}
+.subscription-category-top{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:.35rem 1rem;padding:.85rem 1rem;background:var(--panel-2)}
+.subscription-category-top strong{font-size:.875rem;color:var(--text)}
+.subscription-category-top span{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.subscription-no-recurrence,.subscriptions-empty{font-size:.79rem;line-height:1.5;color:var(--muted);padding:.9rem 1rem;margin:0}
+.subscription-occurrence{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.8rem;padding:.85rem 1rem;border-top:1px solid var(--line)}
+.subscription-occurrence:first-child{border-top:0}
+.subscription-occurrence-info{display:grid;gap:.22rem;min-width:0}
+.subscription-occurrence-name{font-size:.8rem;font-weight:750;color:var(--text);overflow-wrap:anywhere}
+.subscription-occurrence-meta{font-size:.7rem;font-weight:600;color:var(--muted)}
+.subscription-amount{font-size:.85rem;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+.subscription-actions{display:flex;align-items:center;gap:.3rem}
+.subscription-actions button{background:var(--panel-2);border:1px solid var(--line);border-radius:.6rem;color:var(--text);padding:.46rem .65rem;min-height:2.5rem;font-size:.73rem;font-weight:750}
+.subscription-actions button:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.subscription-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.subscription-extra{padding-top:.5rem;display:grid;gap:.6rem}
+.subscription-extra h3{font-size:.88rem;color:var(--text);margin:0}
+.subscription-extra .subscription-occurrence{border:1px solid var(--line);border-radius:.85rem}
+@media(max-width:40rem){
+ .subscriptions-panel{padding:1rem;margin-bottom:1rem}
+ .subscriptions-summary>div{padding:.8rem}
+ .subscriptions-summary strong{font-size:1.23rem}
+ .subscription-occurrence{grid-template-columns:minmax(0,1fr) auto;gap:.55rem}
+ .subscription-occurrence-info{grid-column:1}
+ .subscription-amount{grid-column:2;grid-row:1}
+ .subscription-actions{grid-column:1/-1}
+ .subscription-actions button{flex:1}
+}
+@media(max-width:24rem){
+ .subscriptions-summary{grid-template-columns:1fr}
+}
