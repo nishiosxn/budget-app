@@ -2,17 +2,12 @@
 
 Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
-## Sauvegarde externe chiffrée (activation manuelle requise)
-
-Un workflow GitHub Actions prépare des exports PostgreSQL quotidiennement, chiffrés avec **age** puis conservés en artefacts pendant 60 jours. Ce workflow nécessite une clé publique et une URL de base stockée dans les Secrets GitHub avant de pouvoir fonctionner ; aucune donnée ne quitte Supabase tant que ces paramètres sont absents. La clé privée reste détenue par l'utilisateur.
-
-Configuration Windows, test et limites : [Guide de sauvegarde externe](docs/OFFSITE_BACKUP.md).
-
 ## Accès
 
-- **Préversion V2.8 validée sur mobile** : https://nishiosxn.github.io/budget-app/v2.8/
-
-- **Production V2.8 — navigation mobile** : https://nishiosxn.github.io/budget-app/
+- **Production V3.0** : https://nishiosxn.github.io/budget-app/
+- **Snapshot V3.0 validé** : https://nishiosxn.github.io/budget-app/v3.0/
+- **Préversion V2.9 conservée** : https://nishiosxn.github.io/budget-app/v2.9/
+- **Archive V2.8.1** : https://nishiosxn.github.io/budget-app/v2.8.1/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
 - **Preview V2.7** : https://nishiosxn.github.io/budget-app/v2.7/
 - **Snapshot V2.0** : https://nishiosxn.github.io/budget-app/v2/
@@ -24,17 +19,41 @@ Configuration Windows, test et limites : [Guide de sauvegarde externe](docs/OFFS
 - **Preview V2.5 Sync** : https://nishiosxn.github.io/budget-app/v2.5/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
-Le dépôt est public. Aucune donnée financière personnelle n'est inscrite dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
+Le dépôt est public. Aucun historique de transactions personnelles ne doit être inscrit dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
 
 ## État actuel
 
-- **Production du code** : V2.8 sur `main` après validation de cette PR.
-- Version du code : `V2.8.1`
+- **Production du code** : V3.0 sur `main`.
+- Version du code : `V3.0`
 - **Branche de développement de référence** : `develop`.
-- **Version stable publiée** : V2.8 à la racine après déploiement, snapshot V2.6 préservé.
-- **État de release** : V2.8 publiée ; correctif V2.8.1 prépare la réparation de la synchronisation, sans toucher aux données ; V2.9 reste en preview isolée.
+- **Version stable publiée** : V3.0 à la racine ; V2.8.1 conservée sous `/v2.8.1/` et toutes les préversions historiques préservées.
+- **État de release** : V3.0 validée visuellement par l'utilisateur le 17 novembre 2026 ; intégrée à `develop` via PR #40, puis promue vers `main` via PR de release distincte.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
+
+## Sauvegardes privées V2.9
+
+- PostgreSQL : sauvegarde automatique toutes les 6 heures dans le schéma privé `smart_budget_backups`, conservation glissante des sauvegardes planifiées sur 30 jours.
+- Instantanés des 8 tables (lignes archivées incluses), comparaison des écarts ligne par ligne et procédure de restauration réservée à l'opérateur.
+- Aucune sauvegarde accessible depuis l'application publique, aucune restauration automatique. Ces copies restent dans Supabase et ne constituent pas un backup hors site.
+- Procédure de contrôle : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
+
+## Exports chiffrés hors Supabase — V2.9
+
+- GitHub Actions : export quotidien via `pg_dump`, chiffré en flux avec `age`, dépôt **public** mais artefacts exclusivement chiffrés, rétention 60 jours.
+- Nécessite la clé publique et l'URL de base déclarées volontairement en GitHub Actions ; la clé privée reste sur le PC de l'utilisateur.
+- **Activé et testé le 16 novembre 2026** : export GitHub Actions réussi, déchiffrement local avec la clé privée et lecture par `pg_restore --list` vérifiés ; une restauration complète en base isolée reste à tester.
+- Guide : [docs/OFFSITE_BACKUP.md](docs/OFFSITE_BACKUP.md).
+
+## Lot V2.9 — historique et sécurité
+
+- **Abonnements et récurrences** : nouvelle synthèse dans Catégories, distincte des budgets prévus et des prélèvements effectivement confirmés ; actions Modifier et Arrêter réutilisant les fenêtres de récurrence existantes.
+- Autres dépenses récurrentes de chaque mois regroupées pour être retrouvées sans recherche manuelle dans l'historique.
+
+- Recherche des opérations par libellé, catégorie et personne (accents et casse ignorés).
+- Filtres de type, propriétaire et catégorie, tri par date ou montant ; aucun état financier modifié par les filtres.
+- Correction de date d'une opération individuelle vers un autre mois ; les occurrences de série récurrente gardent les restrictions existantes.
+- Garde-fous V2.7.1 de synchronisation et contrôle des clients obsolètes préservés. Aucun schéma Supabase modifié ; sauvegardes automatiques historisées à étudier séparément, après tests.
 
 ## Fonctionnalités principales
 
@@ -175,7 +194,3 @@ Sécurité côté Supabase validée après implémentation :
 Le compte propriétaire déjà présent au moment du déploiement a été désigné comme premier administrateur. Les administrateurs suivants doivent être ajoutés explicitement depuis le SQL Editor avec `select private.grant_app_admin_by_email('adresse@example.com');` ; cette fonction n'est pas exposée à l'API.
 
 Les URLs de confirmation/récupération doivent être autorisées dans **Authentication → URL Configuration** pour `https://nishiosxn.github.io/budget-app/v2.4/**`. La protection contre les mots de passe compromis se règle dans **Authentication → Sign In / Password Security** ; ces réglages Auth hébergés ne sont pas modifiables par les migrations SQL.
-
-## Incident de synchronisation du 16 novembre 2026
-
-Correctif V2.7.1 : le bouton de relance n'envoie plus un remplacement intégral des données ; un moteur de fusion absent bloque l'envoi ; les archivages massifs et mises à zéro massives des budgets sont rejetés. Les archives historiques ne doivent pas être restaurées globalement. Les données d'incident sont sauvegardées dans le schéma privé Supabase `incident_backup_20261116`. Ne pas versionner la sauvegarde ni ses données dans GitHub.

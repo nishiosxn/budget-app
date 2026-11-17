@@ -1,14 +1,25 @@
 # Workstate — Budget foyer
 
+## Publication — V3.0 Motion / UX
+
+- Branche source : `work/v3.0-motion-ux` issue de `develop` (socle V2.9).
+- PR d’intégration : [#40](https://github.com/nishiosxn/budget-app/pull/40), vers `develop`.
+- Fonctionnalités : logo animé à progression fluide, écran de chargement unique, skeletons, transitions, compteurs, courbes interactives, meilleure lecture des abonnements. Les trois cartes supplémentaires d’accueil ont été retirées après retour utilisateur.
+- Préversion validée par l’utilisateur le **17 novembre 2026** : https://nishiosxn.github.io/budget-app/v3.0/
+- Dernier contrôle automatique avant la demande de publication : **App integrity réussi** sur `df65d2a61311991f2667ae2902618ff770ffe51b`, run [43981314800](https://github.com/nishiosxn/budget-app/actions/runs/43981314800).
+- Authentification, écritures financières, synchronisation, RLS, migrations et sauvegardes Supabase inchangées par le lot V3.0.
+- Livraison : PR #40 fusionnée dans `develop` ; promotion par PR de release distincte vers `main` avec CI **App integrity**, publication de la racine `gh-pages` et archivage de l'ancienne production V2.8.1 sous `/v2.8.1/`. Les préversions `/v2.9/` et `/v3.0/` restent intactes.
+- Le déploiement de la préversion ne remplace pas des tests manuels de reprise d’une base ; aucune restauration de production n’est requise ici.
+
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.8.1`
+- Version du code : `V3.0`
 - Branche de développement de référence : `develop`
-- Production du code : `main` → V2.8.1 après validation du correctif.
+- Production du code : `main` → V3.0.
 - Publication : `gh-pages`.
 - Version V2.6 publiée : https://nishiosxn.github.io/budget-app/v2.6/
-- V2.7.1 a réparé l'incident Supabase du 16 novembre ; la V2.8 conserve tous ses garde-fous.
+- V3.0 publiée à la racine de GitHub Pages ; V2.8.1 conservée sous `/v2.8.1/`, préversions `/v2.9/` et `/v3.0/` conservées.
 - Pour l'état exact de la branche temporaire, des PR et des checks, consulter GitHub plutôt que considérer ce fichier comme un journal de branches.
 
 ## Socle V2.5.1 à préserver
@@ -28,7 +39,7 @@ Les branches permanentes sont `main`, `develop` et `gh-pages`. Les nouveaux lots
 
 La branche historique `v2.5.1` sert de source à ce lot de migration. Après intégration validée et création du tag `v2.5.1`, elle pourra être supprimée avec les autres branches historiques.
 
-## Lot courant — V2.7 Stabilisation
+## Lot précédent — V2.7 Stabilisation
 
 - Branche : `work/v2.7-stabilization`
 - Base : `develop`
@@ -68,40 +79,48 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 - Source applicative publiée : `3ed291c8912c601092d87cab8f6a0900378ba3f3`.
 - Commit `gh-pages` de la preview : `d685e7b394a99f928828713edc3ce86d32b23227`.
 
-## Incident du 16 novembre 2026 — sauvegarde et correctif urgent
+## Lot courant — V2.8 Mobile UX
 
-- PR : https://github.com/nishiosxn/budget-app/pull/31 (`work/v2.7.1-sync-safety` vers `main`).
-- Constat Supabase : 28 catégories, 68 budgets, 131 transactions archivés depuis le 11 novembre ; 26 budgets actifs à 0 € après l'incident.
-- Sauvegarde privée SQL : `incident_backup_20261116` (copies complètes des tables principales, y compris les archives), contrôlée avant restauration.
-- Verrou d'écriture temporaire côté Supabase sur les 6 tables financières lors de la récupération.
-- Correctif : supprimer l'envoi intégral non protégé, forcer la fusion contrôlée, bloquer archives massives et zéros massifs ; chargement des scripts avec version cache-bust.
-- Les archives précédant le 11 novembre ne doivent pas être restaurées en masse.
+- Branche : `work/v2.8-mobile-ux`, issue de `develop`.
+- PR brouillon : https://github.com/nishiosxn/budget-app/pull/30
+- Périmètre : navbar tactile à cinq emplacements, bouton + flottant, ajout dépense/revenu via la modale existante, panneau de saisie mobile, date d'opération modifiable dans le mois choisi, accueil mobile réordonné, restauration du zoom natif.
+- Exclusions : calculs financiers, données Supabase, migrations et publication en production.
+- Vérification : `node scripts/validate.mjs`, check **App integrity**, tests visuels iPhone/Android/desktop et saisie d'une transaction de test sur un foyer non personnel.
+- État : implémentation sur la branche ; **App integrity** réussi pour le SHA source `3aa0b465f0feee7c85529ecf03b458d4fe40ae09`.
+- Preview publiée dans la branche `gh-pages` : https://nishiosxn.github.io/budget-app/v2.8/
+- Commit de publication `gh-pages` : `5d14a322ee0c462db9d6d9b8bb0da799b110db61` ; copie de 38 fichiers applicatifs sans toucher à la racine ni aux snapshots.
+- Les tests manuels responsive, le chargement public de la preview et les parcours authentifiés restent à valider.
+- Important : la preview utilise le **Supabase de production** ; essais de saisie uniquement sur un foyer de test.
 
-## Livraison V2.8
+## Lot courant — V2.9 Historique et sécurité
 
-- Navigation mobile et ajout rapide validés par l'utilisateur sur la preview `/v2.8/`.
-- PR #30 fusionnée vers `develop` ; check App integrity vert.
-- Branche release isolée `work/v2.8-release` issue de `main`, uniquement fichiers UI V2.8, en préservant les garde-fous de synchronisation et le client versionné.
-- Sauvegardes privées Supabase `incident_backup_20261116` conservées ; aucune migration ou écriture financière.
-- Vérifier le check App integrity de la PR release, fusionner sur `main` puis publier la racine `gh-pages` sans modifier les archives de previews.
+- Branche : `work/v2.9-history-safety` depuis `develop` après fusion de la PR #30.
+- Production actuelle : V2.8.1 ; le correctif de synchronisation de l'ordre des catégories a été fusionné (PR #35) et publié dans la racine et les previews actives.
+- Incident du 16 novembre : les sauvegardes privées `incident_backup_20261116`, la restauration ciblée et les 6 protections d'écriture Supabase restent inchangées. Le client utilise `x-smart-budget-sync-version: 20261116-hf1`.
+- Inclus : historique filtrable et triable, déplacement des opérations ponctuelles, et nouveau tableau d'abonnements et de récurrences en lecture seule dans l'onglet Catégories. Les boutons Modifier/Arrêter ouvrent les modales existantes.
+- Exclu de ce lot : nouvelles migrations Supabase, import bancaire, réécriture de la synchronisation, synchronisation offline, sauvegardes automatiques par serveur.
+- Tests : App integrity, tests des synthèses d'abonnements (budgets vs mouvements récurrents, actions non destructives), accessibilité et responsive. Préversion mise à jour sur `/v2.9/` avant validation utilisateur.
 
-## Hotfix V2.8.1 — conflits de synchronisation
+## Sauvegardes privées V2.9 — lot serveur
 
-- Branche : `work/v2.8.1-sync-roundtrip`; PR #35 vers `main`.
-- Cause vérifiée : 33 catégories actives du foyer concerné ont un `sort_order` différent de l'index recalculé par le navigateur ; à l'édition d'un seul mouvement cela pouvait produire des dizaines de `UPDATE` et déclencher le garde-fou des modifications massives.
-- Correctif : chargement de `sort_order` dans l'état des catégories, puis synchronisation de cette valeur originale avec repli sur l'index uniquement pour une catégorie nouvellement créée.
-- Tests ajoutés en CI : ordre des catégories après chargement, ajout ponctuel unique, archivage massif réellement détectable.
-- Aucune écriture financière ni migration Supabase dans ce lot. Sauvegardes `incident_backup_20261116` et garde-fous V2.7.1 intacts.
+- Branche : `work/v2.9-private-backups` depuis `develop`, après fusion de la PR #34 (historique et abonnements).
+- Trois migrations SQL enregistrées côté Supabase, fichiers sources alignés sur les versions réelles de migration : `20261116025347`, `20261116025548`, `20261116025626`.
+- Schéma privé `smart_budget_backups`, avec contrôle du rôle `postgres` et droits `anon`, `authenticated`, `service_role` refusés ; RLS activée sans politique d'accès client.
+- Instantanés des 8 tables, copie cohérente en une lecture MVCC, données archivées incluses. Rétention de 30 jours seulement pour les instantanés planifiés.
+- Supabase Cron : tâche `smart-budget-financial-snapshot-every-6h`, horaire `17 */6 * * *` (UTC), active.
+- Tests manuels réussis : snapshot #1 (`manual`) et #2 (`scheduled`) complets, 1 060 lignes dans 8 tables, aucune différence détectée avec l'état actuel. Les six garde-fous précédents restent activés.
+- La récupération reste manuelle, en transaction contrôlée ; pas de fonction de restauration accessible à l'application. Les snapshots sont dans la même base et ne remplacent pas des sauvegardes externes.
+- Runbook : [docs/BACKUP_RECOVERY.md](docs/BACKUP_RECOVERY.md).
 
-## Lot infrastructure — export externe chiffré V2.9
+## Exports chiffrés GitHub Actions — configuration en attente
 
-- Branche `work/v2.9-offsite-encrypted-backups` issue de `main` (UI V2.8.1 inchangée).
-- Workflow GitHub Actions `offsite-backup.yml` planifié chaque jour 03:43 UTC et déclenchable manuellement. Le job ne tourne qu'après ajout de la variable GitHub `SMART_BUDGET_BACKUP_AGE_RECIPIENT` (clé publique) et du secret `SMART_BUDGET_BACKUP_DATABASE_URL` (Session pooler PostgreSQL).
-- L'export des schémas `public`, `smart_budget_backups`, `incident_backup_20261116` est chiffré directement en flux via `age` ; aucun dump non chiffré écrit sur disque ou commit dans le dépôt public.
-- Artefact chiffré 60 jours, en dehors du projet Supabase ; sans clé privée locale il est inutilisable. La clé privée n'est pas stockée sur GitHub.
-- Activation **en attente de la configuration volontaire du propriétaire** ; le workflow ne garantit aucune sauvegarde hors site avant le premier run réussi suivi d'un test de déchiffrement.
-- Les sauvegardes internes Supabase et protections de synchronisation existantes restent inchangées. Documentation [docs/OFFSITE_BACKUP.md](docs/OFFSITE_BACKUP.md).
+- Branche de production `main` : PR #38 fusionnée, workflow `offsite-backup.yml` installé sans toucher à l'application V2.8.1.
+- Backport infrastructure V2.9 : ce lot recopie le workflow, le guide Windows et les tests vers `develop`.
+- Cron GitHub quotidien à 03:43 UTC, export PostgreSQL 17 de `public`, `smart_budget_backups`, `incident_backup_20261116` directement dans `age`, fichier `.dump.age` conservé 60 jours en artefact.
+- La tâche n'exporte rien avant configuration par le propriétaire : `SMART_BUDGET_BACKUP_AGE_RECIPIENT` (variable GitHub) et `SMART_BUDGET_BACKUP_DATABASE_URL` (secret GitHub).
+- La clé privée n'est pas transmise à GitHub ni à ChatGPT. Première sauvegarde externe encore à vérifier par un run et un déchiffrement local.
+- Les sauvegardes internes (pg_cron) et six protections incident restent inchangées.
 
 ## Prochaine action
 
-Vérifier App integrity, fusionner l'infrastructure sur `main`, puis laisser le propriétaire configurer la clé age publique et l'URL PostgreSQL en secret GitHub. Déclencher le premier export et contrôler un déchiffrement local avant d'affirmer que la sauvegarde hors site fonctionne. Répercuter le workflow et le guide dans `develop`.
+Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.
