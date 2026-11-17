@@ -26,3 +26,5 @@ test("exactly three compact suggestions are above the composer; remaining fixtur
  assert.equal(demo.examples.length,9);
  for(const text of ["J’ai dépensé 20 €","J’ai fait un virement","Ajoute 10 € au budget"])assert.equal(demo.infer(text,ctx,null).kind,"clarify");
 });
+
+test("a full simple Lidl command creates a draft without needing hidden fixtures",()=>{const v=demo.infer("J’ai dépensé 20 € chez Lidl",ctx,null);assert.equal(v.kind,"draft");assert.equal(v.operations[0].amountCents,2000)});

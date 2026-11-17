@@ -9,10 +9,13 @@
  const draft=(...operations)=>({kind:"draft",operations});
  const clarify=message=>({kind:"clarify",message});
  function infer(command,ctx,previous){
+ const d=ctx.today,month=d.slice(0,7);
+ if(["j ai depense 20 € chez lidl","j ai depense 20 euros chez lidl"].includes(norm(command)))return draft(op("expense","food","B",2000,d,"Lidl"));
  if(norm(command)===norm("J’ai dépensé 20 €"))return clarify("Dans quelle catégorie ou chez quel commerçant ?");
  if(norm(command)===norm("J’ai fait un virement"))return clarify("Quel montant et s’agit-il d’un revenu, d’une dépense ou d’un transfert interne ?");
+ if(norm(command)===norm("Ajoute 10 € au budget courses"))return clarify("Indique le nouveau montant total du budget courses, pour éviter une modification ambiguë.");
  if(norm(command)===norm("Ajoute 10 € au budget"))return clarify("Quel budget veux-tu ajuster ?");
- const idx=examples.findIndex(e=>norm(e)===norm(command));const d=ctx.today,month=d.slice(0,7);
+ const idx=examples.findIndex(e=>norm(e)===norm(command));
  switch(idx){
  case 0:return draft(op("expense","food","B",2000,d,"Lidl"),op("expense","home","B",1000,d,"Action"));
  case 1:if(previous?.kind!=="draft"||!previous.operations.some(o=>o.label==="Lidl"))return clarify("Commence par le premier exemple de dépenses Lidl et Action.");return draft(...previous.operations.map(o=>o.label==="Lidl"?{...o,amountCents:3500}:o));
