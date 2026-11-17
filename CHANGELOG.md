@@ -1,5 +1,11 @@
 # Changelog
 
+### V3.0 — correctif recherche Historique mobile (17 novembre 2026)
+
+- Empêche le zoom automatique sur iPhone lors du focus du champ de recherche de l'historique (`font-size:16px` sur mobile).
+- Zoom manuel préservé ; aucun changement des filtres, de l'historique, des écritures financières ou de la synchronisation Supabase.
+
+
 ## V3.0 — Motion & UX (validation utilisateur du 17 novembre 2026)
 
 - Logo Smart Budget animé par révélation continue du symbole lui-même, progrès visuel plafonné avant la résolution réelle de la connexion, reflet animé et finition fluide.
