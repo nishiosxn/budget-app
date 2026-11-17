@@ -1,5 +1,12 @@
 # Changelog
 
+### V3.0.2 — prévention du zoom automatique sur les formulaires tactiles (17 novembre 2026)
+
+- Minimum de 16 px pour les champs de saisie natifs sur écrans tactiles et tablettes, y compris transactions, catégories, historique, paramètres et builder.
+- Les grands éditeurs de montants, le zoom manuel, et les contrôles particuliers restent inchangés.
+- Pas de modification des données, de Supabase, du moteur de synchronisation ou des calculs financiers.
+
+
 ### V3.0 — correctif recherche Historique mobile (17 novembre 2026)
 
 - Empêche le zoom automatique sur iPhone lors du focus du champ de recherche de l'historique (`font-size:16px` sur mobile).
