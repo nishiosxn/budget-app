@@ -3,8 +3,8 @@
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
 - Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
-- Accent violet Smart Budget par défaut et logo de démarrage recoloré ; préférences enregistrées conservées.
-- IA distante, confirmation, mémoire, icônes PWA et validation réelle à finaliser.
+- Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
+- IA distante, confirmation connectée, mémoire et validation réelle à finaliser.
 
 
 ### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)

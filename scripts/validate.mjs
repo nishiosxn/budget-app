@@ -23,7 +23,7 @@ const missingIcons=iconFiles.filter(file=>!exists(path.join("icons",file)));
 if(missingIcons.length)fail("Icônes Smart Budget manquantes: "+missingIcons.join(", "));
 else{
   const svg=read("icons/icon.svg");
-  if(!svg.includes("#285F49")||!svg.includes("#F4F5F1")||/<text\b|>B</i.test(svg))fail("Logo SVG validé absent ou ancien B conservé");
+  if(!svg.includes("#5C29D6")||!svg.includes("#F4F5F1")||/<text\b|>B</i.test(svg))fail("Logo SVG validé absent ou ancien B conservé");
   const pngSizes={"icon-192.png":192,"icon-512.png":512,"apple-touch-icon.png":180};
   for(const [file,size] of Object.entries(pngSizes)){
     const png=fs.readFileSync(path.join(root,"icons",file));

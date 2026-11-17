@@ -1,6 +1,6 @@
 :root{
       --bg:#f4f5f1;--panel:#fff;--panel-2:#f8f9f6;--text:#17201b;--muted:#707973;
-      --line:#e6e9e3;--accent:#285f49;--accent-soft:#e6f0eb;--income:#216b4d;--expense:#a9483d;
+      --line:#e6e9e3;--accent:#5C29D6;--accent-soft:#F0EAFE;--income:#216b4d;--expense:#a9483d;
       --warning:#a66b1f;--shadow:0 .75rem 2.125rem rgba(24,36,29,.07);--radius:1.375rem;
     }
     *{box-sizing:border-box} html{background:var(--bg)} body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
@@ -249,8 +249,8 @@
   --text:#26342d;
   --muted:#56635b;
   --line:#e1e6e0;
-  --accent:#2f6b51;
-  --accent-soft:#e9f2ed;
+  --accent:#5C29D6;
+  --accent-soft:#F0EAFE;
   --income:#23704d;
   --expense:#ad5046;
   --warning:#8f6725;
@@ -2150,9 +2150,9 @@ body.pwa-install-open{overflow:hidden}
 /* === V2.6 · Apparence personnelle par utilisateur === */
 :root{
   --app-font:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --accent-deep:#173c2d;
-  --accent-border:#bfd2c6;
-  --accent-rgb:47,107,81;
+  --accent-deep:#39138F;
+  --accent-border:#D6C7FA;
+  --accent-rgb:92,41,214;
 }
 body{font-family:var(--app-font)}
 .theme-logo{
