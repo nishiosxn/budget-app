@@ -34,9 +34,10 @@ function renderTrackingChart(months){
  const realPoints=months.map((m,i)=>hasActualActivity(m)?{m,i}:null).filter(Boolean),real=realPoints.map(({m,i})=>`${x(i)},${y(m.balance)}`).join(" ");
  const grid=[-1,-.5,0,.5,1].map(f=>{const yy=zeroY-f*(innerH/2-12),val=f*max;return `<line class="${f===0?"chart-zero-line":"chart-grid-line"}" x1="${pad.l}" x2="${W-pad.r}" y1="${yy}" y2="${yy}"/><text class="chart-axis-label" x="${pad.l-8}" y="${yy+3}" text-anchor="end">${Math.round(val)} €</text>`}).join("");
  const labels=months.map((m,i)=>`<text class="chart-month-label" x="${x(i)}" y="${H-12}" text-anchor="middle">${monthShort(m.label)}</text>`).join("");
- const realPts=realPoints.map(({m,i})=>`<circle class="chart-real-point" cx="${x(i)}" cy="${y(m.balance)}" r="4"><title>${m.label} · Réel ${euro(m.balance)}</title></circle>`).join("");
- const plannedPts=months.map((m,i)=>`<circle class="chart-planned-point" cx="${x(i)}" cy="${y(m.plannedBalance)}" r="3"><title>${m.label} · Prévu ${euro(m.plannedBalance)}</title></circle>`).join("");
+ const realPts=realPoints.map(({m,i})=>`<circle class="chart-real-point" data-month-index="${i}" cx="${x(i)}" cy="${y(m.balance)}" r="4"><title>${m.label} · Réel ${euro(m.balance)}</title></circle>`).join("");
+ const plannedPts=months.map((m,i)=>`<circle class="chart-planned-point" data-month-index="${i}" cx="${x(i)}" cy="${y(m.plannedBalance)}" r="3"><title>${m.label} · Prévu ${euro(m.plannedBalance)}</title></circle>`).join("");
  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du reste mensuel réel et prévu"><g>${grid}</g><polyline class="chart-planned-line" points="${planned}"/>${realPoints.length>1?`<polyline class="chart-real-line" points="${real}"/>`:""}${plannedPts}${realPts}${labels}</svg>`;
+ window.SmartBudgetMotion?.chartHover(host,months);
 }
 function renderTracking(){
  const yearEl=document.getElementById("trackingYear");if(!yearEl)return;
