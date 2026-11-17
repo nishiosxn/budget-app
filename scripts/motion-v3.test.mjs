@@ -56,3 +56,12 @@ test("l'ancienne fenêtre de chargement est invisible pendant la connexion norma
  assert.match(auth,/name==="loading"&&window\.SmartBudgetMotion\?\.isLoading\?\.\(\)/);
  assert.match(auth,/type==="error"&&cloudLoadingView/);
 });
+
+test("l'entrée Recherche Historique ne déclenche pas le zoom automatique iOS",()=>{
+ const css=read("css/history-filters.css");
+ const html=read("index.html");
+ assert.match(css,/@media\(max-width:52rem\)\s*\{\s*#historySearch\s*\{font-size:16px\}/);
+ assert.match(html,/id="historySearch" type="search"/);
+ assert.match(html,/history-filters\.css\?v=20261117-ios-focus/);
+ assert.doesNotMatch(html,/maximum-scale=1|user-scalable=no/);
+});
