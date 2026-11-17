@@ -48,10 +48,12 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  if(selectedMonth<firstMonth||selectedMonth>lastMonth)return null;
  return {context:{today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
 }
-async function reserve(token:string,householdId:string){
- // This RPC is deliberately NOT installed yet. No request reaches Cloudflare until
- // the audited, household-scoped, durable quota guard is installed in a test project.
- const r=await fetch(supabaseUrl+"/rest/v1/rpc/reserve_smart_assistant_quota",{method:"POST",headers:headersFor(token),body:JSON.stringify({p_household_id:householdId}),signal:timeout()});
+async function reserve(_token:string,_householdId:string,units:number){
+ // This RPC is server-only. The gateway has already authenticated and authorized
+ // the user and household; no user JWT can reserve quota directly.
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");
+ if(!key||!Number.isInteger(units)||units<1||units>1000)throw Error("Quota configuration unavailable");
+ const r=await fetch(supabaseUrl+"/rest/v1/rpc/reserve_smart_assistant_quota_v1",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({p_units:units}),signal:timeout()});
  if(!r.ok)throw Error("Quota RPC unavailable");
  return (await r.json())===true;
 }
@@ -62,9 +64,9 @@ async function infer(model:string,payload:unknown){
  return await r.json();
 }
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size>0&&allowedUsers.size>0&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size>0&&allowedUsers.size>0&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate});
 function headers(req:Request){
- return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
+ return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
 Deno.serve(async req=>{
  const h=headers(req);

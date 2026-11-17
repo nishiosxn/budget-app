@@ -1,7 +1,8 @@
 /* No database mutations or model-controlled execution. Dependencies injected for tests. */
 const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const uuid=v=>typeof v==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
-const modelIds=new Set(["@cf/google/gemma-4-26b-a4b-it","@cf/zai-org/glm-4.7-flash"]);
+// Pilot permits only the model covered by our current reservation estimate.
+const modelIds=new Set(["@cf/google/gemma-4-26b-a4b-it"]);
 export const validModel=id=>modelIds.has(id);
 export const modelSchema={
  type:"object",properties:{
@@ -22,9 +23,17 @@ const systemPrompt=[
  "Aucun SQL, suppression, création de catégorie, transfert bancaire ou action non autorisée. Si la demande hors périmètre implique une action, précise la limite. Au plus 12 opérations."
 ].join("\n");
 export function makeModelRequest(command,context,history=[]){
- return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_tokens:1400,temperature:0.1,stream:false};
+ return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_completion_tokens:1400,temperature:0.1,stream:false};
 }
-export function decodeModelResponse(raw){
+// Estimate, not provider metering: reserve pessimistically from UTF-8 payload size,
+ // 2048 tokens of template headroom, maximum completion tokens and 50% margin.
+ // Reference rates: 9,091 input / 27,273 output neurons per million tokens.
+ export function estimateReservation(payload){
+  const bytes=new TextEncoder().encode(JSON.stringify(payload)).length;
+  if(bytes>24000||payload.max_completion_tokens!==1400)return null;
+  return Math.ceil(1.5*((bytes+2048)*9091+1400*27273)/1000000);
+ }
+ export function decodeModelResponse(raw){
  const result=raw?.result??raw;
  const content=result?.choices?.[0]?.message?.content??result?.response;
  if(typeof content==="string"){
@@ -55,10 +64,12 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
     history.push({command:turn.command.trim(),result:prior.value});
    }
   }
-  // Durable reservation must succeed before any provider invocation. No permissive fallback.
-  try{if(await reserve(token,body.householdId)!==true)return response(429,{error:"quota_exhausted"})}catch{return response(503,{error:"quota_unavailable"})}
+  const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
+  if(units===null)return response(413,{error:"context_too_large"});
+  // Durable reservation must succeed before any provider invocation. No refund on failure.
+  try{if(await reserve(token,body.householdId,units)!==true)return response(429,{error:"quota_exhausted"})}catch{return response(503,{error:"quota_unavailable"})}
   try{
-   const raw=await infer(model,makeModelRequest(body.command.trim(),auth.context,history));
+   const raw=await infer(model,payload);
    const decoded=decodeModelResponse(raw),checked=validate(decoded,auth.context);
    if(!checked.ok)return response(422,{error:"invalid_model_result"});
    return response(200,{result:checked.value,model});

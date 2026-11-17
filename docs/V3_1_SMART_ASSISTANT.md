@@ -48,3 +48,10 @@ Page de laboratoire dans preview/assistant : foyer fictif en mémoire, simulateu
 
 ## Interface et dictée
 Trois suggestions en ligne au-dessus de la saisie, pictogrammes à gauche. Le laboratoire conserve les autres scénarios en code. Dictée partagée : transcription intermédiaire, relance bornée, chronomètre, arrêt manuel et sur changement de contexte. Tests navigateur réels à faire. Modèle candidat Gemma 4 26B, GLM 4.7 Flash en alternative configurable (aucun fallback automatique). Secrets renseignés par le propriétaire, non vérifiés ; quota durable et foyer de test restent nécessaires avant activation.
+
+## Quota pilote — code à vérifier en base isolée
+- Gemma 4 seulement pendant le pilote : estimation réservée avant appel, taille totale 24 000 octets maximum, 1 400 tokens de sortie maximum, marge 50 %. Les alternatives restent désactivées tant que leur tarification n'est pas validée.
+- Compteur quotidien global UTC, proposition de 8 000 neurones estimés et 100 appels maximum. Aucune restitution après échec ou interruption ; échec de réservation bloque l'appel. RPC invoker réservée à service_role, table non exposée avec RLS. Auth utilisateur et adhésion au foyer vérifiées séparément avant réservation.
+- [SQL de revue non appliqué](smart-assistant-quota-draft.sql) : avant déploiement, tests Postgres (droits anon/authenticated refusés, service_role autorisé, concurrence, limites, invalides, changement UTC), conseiller sécurité et migration créée via CLI.
+- Ce compteur n'est **pas** la facturation Cloudflare : autres usages du compte non mesurés ni surcoûts possibles sur un forfait payant. Activation interdite jusqu'à confirmation explicite Workers Free (`SMART_ASSISTANT_FREE_PLAN_CONFIRMED=true`), secrets disponibles et foyer de test isolé. Vérifier l'usage réel dans le dashboard et la compatibilité du modèle avant benchmark.
+- Tarification consultée le 18 novembre 2026 : https://developers.cloudflare.com/workers-ai/platform/pricing/ et https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/.

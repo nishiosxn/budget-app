@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
-import {createAssistantGateway,decodeModelResponse,makeModelRequest} from "../supabase/functions/smart-assistant/gateway.mjs";
+import {createAssistantGateway,decodeModelResponse,makeModelRequest,estimateReservation} from "../supabase/functions/smart-assistant/gateway.mjs";
 const box={};vm.createContext(box);vm.runInContext(fs.readFileSync("js/assistant-core.js","utf8"),box);
 const core=box.SmartBudgetAssistantCore, model="@cf/google/gemma-4-26b-a4b-it";
 const ctx={today:"2026-11-17",firstMonth:"2026-09",lastMonth:"2028-12",selectedMonth:"2026-11",solo:false,actor:"B",members:{B:"Membre 1",A:"Membre 2"},categories:[{id:"food",name:"Courses",kind:"expense",owner:"common",createdFrom:"2026-09"}]};
@@ -16,7 +16,7 @@ test("quota failure fails closed",async()=>{for(const reserve of [async()=>false
 test("unknown model cannot run",async()=>{const {handler,calls}=setup({model:"not-approved"});assert.equal((await handler(request)).status,503);assert.equal(calls.length,0)});
 test("malicious or malformed outputs cannot become proposals",async()=>{for(const output of [{kind:"delete_all"},{...valid,operations:[{...valid.operations[0],categoryId:"unknown"}]},"not json"]){const {handler}=setup({infer:async()=>({result:{response:output}})});assert.equal([422,502].includes((await handler(request)).status),true)}});
 test("supports both REST output variants; rejects extra text",()=>{assert.equal(decodeModelResponse({result:{response:valid}}),valid);assert.equal(decodeModelResponse({result:{choices:[{message:{content:JSON.stringify(valid)}}]}}).kind,"draft");assert.throws(()=>decodeModelResponse({result:{response:"Here is JSON: "+JSON.stringify(valid)}}))});
-test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_tokens,1400);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
+test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_completion_tokens,1400);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
 test("shared client and server validator remain identical",()=>{assert.equal(fs.readFileSync("js/assistant-core.js","utf8"),fs.readFileSync("supabase/functions/_shared/smart-assistant-core.js","utf8"))});
 
 test("guarded conversation carries a bounded prior draft and question",async()=>{
@@ -30,4 +30,19 @@ test("malformed, stale, excessive and non-draft history fails before quota or pr
  for(const history of [null,[entry,entry,entry],[{...entry,evil:true}],[{...entry,command:" "}],[{...entry,command:"a".repeat(1601)}],[{...entry,result:{kind:"answer",message:"bonjour"}}],[{...entry,result:{...valid,operations:[{...valid.operations[0],categoryId:"retired"}]}}]]){
   const {handler,calls}=setup();const r=await handler({...request,body:{...request.body,history}});assert.equal(r.status,400);assert.deepEqual(calls,["auth"]);
  }
+});
+
+test("Gemma pilot reserves the bounded estimate before a real provider call",async()=>{
+ let amount=null,seen;const {handler}=setup({reserve:async(_token,_household,units)=>{amount=units;return true},infer:async(_model,payload)=>{seen=payload;return {result:{response:valid}}}});
+ assert.equal((await handler(request)).status,200);
+ assert.equal(amount,estimateReservation(seen));assert.ok(Number.isInteger(amount)&&amount>0&&amount<=1000);
+});
+test("oversized context is rejected before quota or provider",async()=>{
+ let invoked=false;const tooLarge={...ctx,categories:Array.from({length:280},(_,i)=>({id:"c"+i,name:"é".repeat(120),kind:"expense",owner:"common"}))};
+ const {handler}=setup({authorize:async()=>({context:tooLarge}),reserve:async()=>{invoked=true;return true},infer:async()=>{invoked=true;return {result:{response:valid}}}});
+ assert.equal((await handler(request)).status,413);assert.equal(invoked,false);
+});
+test("unpriced alternative disabled during pilot",async()=>{
+ const {handler,calls}=setup({model:"@cf/zai-org/glm-4.7-flash"});
+ assert.equal((await handler(request)).status,503);assert.equal(calls.length,0);
 });

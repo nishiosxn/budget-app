@@ -152,3 +152,6 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 ## Prochaine action
 
 Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.
+
+### Reprise V3.1 — quota pilote
+Code de réservation conservative avant inférence et SQL de revue isolé, non appliqué. Aucun appel Cloudflare. Foyer de test et forfait Workers Free à confirmer avant activation ; tests SQL et modèle réel manquants.
