@@ -9,7 +9,7 @@
 - Conversation courte : deux échanges transitoires maximum, réinitialisation, historique revalidé serveur avant quota, aucun enregistrement. Tests simulés ajoutés ; comportement réel à évaluer.
 - À terminer : quota durable, benchmark français réel, intégration de la synchronisation et confirmation sur foyer isolé, mémoire RLS, revue visuelle de la palette et tests navigateur.
 - Identité : logo SVG d'origine recoloré et déclinaisons PNG/ICO PWA régénérées ; tests statiques, décodage des images et contraste. Revue visuelle réelle à faire.
-- Production et gh-pages non modifiés. Pas de publication avant validation.
+- Aperçu demandé : laboratoire autonome sur foyer fictif, sans Supabase, validateurs et planificateur réels, simulateur local explicitement indiqué. Publication sous /v3.1/ après check ; production inchangée.
 
 
 ## Correctif V3.0.2 — zoom des champs iOS et tablette

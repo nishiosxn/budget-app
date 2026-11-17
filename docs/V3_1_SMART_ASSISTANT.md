@@ -42,3 +42,6 @@ Le tracé SVG original est conservé, fond #5C29D6 ; les PNG 192/512/180 et ICO 
 
 ## Conversations — contexte transitoire
 Deux échanges précédents au maximum, uniquement brouillons non enregistrés et précisions, conservés en mémoire de la page. Le bouton Nouvelle demande, la révocation du consentement ou le changement de session/foyer efface le contexte. La passerelle revalide chaque ancien résultat avec le catalogue actuel avant quota et inférence ; contexte invalide refusé. Aucune écriture, aucune mémoire persistante. Les corrections portent sur le brouillon complet. Tests simulés ; compréhension française réelle encore à mesurer.
+
+## Preview isolée
+Page de laboratoire dans preview/assistant : foyer fictif en mémoire, simulateur de commandes à choix limité, identifiée comme non-IA. Elle utilise le validateur et le planificateur réels pour les confirmations locales, ne charge aucun SDK cloud, n'a aucun stockage persistant ni authentification. Les tests ne mesurent ni le modèle ni la synchronisation. La dictée, si autorisée, est gérée par le navigateur.
