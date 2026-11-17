@@ -23,3 +23,11 @@ L'interface est un laboratoire, sans écriture, tant que le chemin de confirmati
 - https://developers.cloudflare.com/workers-ai/features/json-mode/
 - https://developers.cloudflare.com/workers-ai/platform/pricing/
 - https://developers.cloudflare.com/workers-ai/get-started/rest-api/
+
+## Passerelle IA (code préparé, non déployé)
+
+Le handler exige l'activation explicite et les listes positives de foyers et utilisateurs de test. Il vérifie le jeton avec Auth puis le rattachement au foyer sous RLS. Le catalogue envoyé au modèle est reconstruit à partir des catégories et du foyer réellement accessibles ; le corps client n'est pas une autorité. Les montants historiques ne sont pas envoyés. Le seul calcul distant est l'interprétation du prompt ; les requêtes budgétaires sont exécutées localement.
+
+Variables serveur (jamais dans GitHub ni dans le navigateur) : SMART_ASSISTANT_ENABLED, SMART_ASSISTANT_MODEL, SMART_ASSISTANT_CF_ACCOUNT_ID, SMART_ASSISTANT_CF_TOKEN, SMART_ASSISTANT_TEST_HOUSEHOLDS, SMART_ASSISTANT_TEST_USERS, SMART_ASSISTANT_SUPABASE_PUBLISHABLE si nécessaire. Ne rien activer avant le test du quota durable. La RPC reserve_smart_assistant_quota n'est pas installée. Si elle manque ou refuse, aucun appel au LLM n'est effectué. À concevoir et tester dans un projet isolé avec le contrôle des permissions et un plafond journalier global, puis valider les droits avant déploiement.
+
+La réponse de Qwen doit être vérifiée en direct (JSON mode documenté mais compatibilité réelle du modèle à confirmer). Pas de fallback silencieux vers un modèle payant. Les tests actuels utilisent un fournisseur simulé pour contrôler la validation et les chemins 401/403/429/503/422/502 ; ils ne prouvent pas la qualité de compréhension du LLM. Aucun secret n'a été renseigné.

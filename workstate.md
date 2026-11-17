@@ -4,7 +4,8 @@
 
 - Base develop : 463ae1b4beafbf96fc47d4fc16972dd434a181ea ; branche work/v3.1-smart-assistant.
 - Premier lot : interface de laboratoire, palette violette, contrat de validation et consultations bornées, dictée selon navigateur. Aucune écriture financière par l'assistant.
-- À terminer : proxy IA authentifié et quota durable, benchmark français, confirmation et intégration de la synchronisation sur foyer isolé, mémoire RLS, conversation, icônes PNG/ICO, tests navigateur.
+- Passerelle IA préparée côté Supabase : auth + adhésion RLS, catalogue reconstruit côté serveur, listes positives de comptes/foyers de test, modèle configurable et garde quota fail-closed. Non déployée ; RPC de quota et identifiants manquants.
+- À terminer : quota durable, benchmark français réel, confirmation et intégration de la synchronisation sur foyer isolé, mémoire RLS, conversation, icônes PNG/ICO, tests navigateur.
 - Production et gh-pages non modifiés. Pas de publication avant validation.
 
 
