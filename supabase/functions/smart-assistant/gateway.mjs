@@ -23,7 +23,7 @@ const systemPrompt=[
  "Aucun SQL, suppression, création de catégorie, transfert bancaire ou action non autorisée. Si la demande hors périmètre implique une action, précise la limite. Au plus 12 opérations."
 ].join("\n");
 export function makeModelRequest(command,context,history=[]){
- return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_completion_tokens:1400,temperature:0.1,stream:false};
+ return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_completion_tokens:1400,temperature:0.1,stream:false,chat_template_kwargs:{enable_thinking:false}};
 }
 // Estimate, not provider metering: reserve pessimistically from UTF-8 payload size,
  // 2048 tokens of template headroom, maximum completion tokens and 50% margin.
@@ -72,7 +72,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    const raw=await infer(model,payload);
    const decoded=decodeModelResponse(raw),checked=validate(decoded,auth.context);
    if(!checked.ok)return response(422,{error:"invalid_model_result"});
-   return response(200,{result:checked.value,model});
+   return response(200,{result:checked.value,model,context:auth.context});
   }catch{return response(502,{error:"model_unavailable_or_invalid"})}
  };
 }

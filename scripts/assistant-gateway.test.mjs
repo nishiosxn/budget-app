@@ -46,3 +46,5 @@ test("unpriced alternative disabled during pilot",async()=>{
  const {handler,calls}=setup({model:"@cf/zai-org/glm-4.7-flash"});
  assert.equal((await handler(request)).status,503);assert.equal(calls.length,0);
 });
+
+test("server returns only its validated catalog context",async()=>{const {handler}=setup();const result=await handler({...request,body:{...request.body,context:{secret:"untrusted",selectedMonth:"2026-11"}}});assert.equal(result.status,200);assert.deepEqual(result.body.context,ctx);assert.equal(result.body.context.secret,undefined);});

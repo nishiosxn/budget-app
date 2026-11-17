@@ -39,7 +39,9 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  ]);
  if(!Array.isArray(households)||households.length!==1||!Array.isArray(rows)||rows.length>300)return null;
  const h=households[0],solo=h.household_mode==="solo",actor=member[0].slot;
- if(solo&&actor!=="B")return null;
+ if(!solo||actor!=="B")return null;
+ const pilotMembers=await rest(token,"/rest/v1/household_members",{select:"user_id",household_id:"eq."+householdId,limit:"2"});
+ if(!Array.isArray(pilotMembers)||pilotMembers.length!==1||pilotMembers[0].user_id!==user.id)return null;
  const current=nowInParis(),currentMonth=current.slice(0,7);
  const selectedMonth=typeof input.selectedMonth==="string"&&monthPattern.test(input.selectedMonth)?input.selectedMonth:currentMonth;
  const categories=rows.map(row=>({id:row.legacy_id||row.id,name:String(row.name).slice(0,120),kind:row.type==="income"?"income":row.is_saving?"saving":"expense",owner:solo?"B":row.owner_slot==="A"||row.owner_slot==="B"?row.owner_slot:"common",createdFrom:String(row.created_from).slice(0,7),hiddenMonths:(Array.isArray(row.excluded_months)?row.excluded_months:[]).filter(x=>typeof x==="string"&&monthPattern.test(x)).slice(0,240)})).filter(c=>c.id&&monthPattern.test(c.createdFrom));
@@ -60,11 +62,11 @@ async function reserve(_token:string,_householdId:string,units:number){
 async function infer(model:string,payload:unknown){
  if(!/^[a-f0-9]{32}$/i.test(cfg.account)||!cfg.token)throw Error("Provider not configured");
  const r=await fetch("https://api.cloudflare.com/client/v4/accounts/"+cfg.account+"/ai/run/"+model,{method:"POST",headers:{Authorization:"Bearer "+cfg.token,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(35000)});
- if(!r.ok)throw Error("Provider rejected");
+ if(!r.ok){console.warn("smart-assistant provider HTTP",r.status);throw Error("Provider rejected");}
  return await r.json();
 }
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size>0&&allowedUsers.size>0&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }

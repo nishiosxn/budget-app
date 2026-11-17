@@ -155,3 +155,6 @@ Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurit�
 
 ### Reprise V3.1 — quota pilote
 Code de réservation conservative avant inférence et SQL de revue isolé, non appliqué. Aucun appel Cloudflare. Foyer de test et forfait Workers Free à confirmer avant activation ; tests SQL et modèle réel manquants.
+
+### Pilote connecté — migration et interface
+Quota installé (`20261117235347`) ; garde permissions/plafonds et zéro résidu vérifiés. La page `preview/assistant/live/` se connecte au compte isolé sans sauvegarde de session, appelle la passerelle, reçoit un résultat revalidé, sans écriture financière. Activation explicite par deux secrets et test réel navigateur encore nécessaires.
