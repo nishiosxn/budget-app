@@ -79,3 +79,9 @@
   .history-toolbar{padding:1rem;gap:.875rem}
   .history-filter-fields{grid-template-columns:1fr}
 }
+
+/* iOS Safari agrandit automatiquement un champ inférieur à 16px au focus.
+   Ne modifier que la recherche Historique, sans bloquer le zoom utilisateur. */
+@media(max-width:52rem){
+  #historySearch{font-size:16px}
+}
