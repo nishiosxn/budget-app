@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Correctif V3.0 — focus recherche Historique iOS
+
+- Développement : `work/v3.0.1-history-ios-focus`, PR [#43](https://github.com/nishiosxn/budget-app/pull/43) fusionnée dans `develop` (`c300ff06d06f044513a8fb37698eb94659a8afe3`).
+- Release : branche `work/v3.0.1-history-ios-release` issue de `main`, PR de release distincte vers `main` après App integrity, puis publication des fichiers CSS et HTML uniquement à la racine Pages.
+- Correctif : champ `#historySearch` à 16 px sur les petits écrans pour prévenir le zoom automatique Safari, sans bloquer le zoom manuel ; aucune donnée financière ni schéma Supabase modifié.
+- La préversion `/v3.0/`, le snapshot `/v2.8.1/` et les autres dossiers Pages demeurent inchangés.
+
+
 ## Publication — V3.0 Motion / UX
 
 - Branche source : `work/v3.0-motion-ux` issue de `develop` (socle V2.9).
