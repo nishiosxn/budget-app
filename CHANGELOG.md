@@ -1,35 +1,40 @@
 # Changelog
 
-## Infrastructure V2.9 — sauvegarde externe chiffrée (non activée)
+## V3.0 — Motion & UX (validation utilisateur du 17 novembre 2026)
 
-- Workflow GitHub Actions quotidien préparé pour exporter les schémas financiers de Supabase et chiffrer le flux directement avec `age`.
-- Conservation des seuls artefacts `.dump.age` pendant 60 jours, sans données en clair dans le dépôt public.
-- Clé publique GitHub et URL de base secrète nécessaires avant activation ; clé privée conservée hors plateforme.
-- Aucun changement aux données Supabase, aucune restauration automatique et aucun changement de l'interface de production.
-
-
-## V2.8.1 — synchronisation des catégories
-
-- Chargement et conservation de l'ordre des catégories directement depuis Supabase (`sort_order`).
-- Fin des mises à jour massives involontaires lors de l'édition d'une seule opération après rechargement.
-- Tests de régression sur l'hydratation du cloud, un ajout isolé et la détection des suppressions massives.
-- Protection contre les suppressions massives conservée, aucune migration ni modification des valeurs financières.
+- Logo Smart Budget animé par révélation continue du symbole lui-même, progrès visuel plafonné avant la résolution réelle de la connexion, reflet animé et finition fluide.
+- Suppression de l'ancien popup « Connexion au foyer… » pendant le chargement normal ; maintien des écrans de connexion, d'invitation et d'erreur.
+- Skeletons pendant le chargement authentifié, transitions d'onglets et incrémentation visuelle des montants.
+- Courbe de suivi interactive (réel/prévu), réorganisation des échéances d'abonnements ; suppression des trois KPI supplémentaires d'accueil après retour utilisateur.
+- Respect du mode mouvement réduit, animation sans écriture métier ; aucune migration et aucun changement de synchronisation, d'historique ou de sauvegarde pour ce lot.
+- Préversion /v3.0/ validée avant demande explicite de mise en production.
 
 
-## V2.8 — navigation mobile (livraison)
+## V2.9 — historique, fiabilité et sauvegardes (préversion)
 
-- Publication de la navigation mobile validée sur la préversion `/v2.8/`.
-- Fusion et publication de l'interface sans modifier la structure Supabase ni les finances.
-- Conservation impérative des correctifs de synchronisation et de version client de la V2.7.1.
+- Export externe **préparé**, non activé tant que la clé publique age et le secret de connexion PostgreSQL ne sont pas configurés : workflow quotidien GitHub Actions, données chiffrées en flux, rétention 60 jours.
+
+- Base Supabase : instantanés atomiques privés toutes les six heures, 30 jours de rétention des snapshots planifiés, copies manuelles conservées.
+- Fonction de comparaison SQL en lecture seule avant restauration ; accès refusé aux rôles publics, authentifiés et service-role.
+- Documentation de reprise détaillée ; aucun bouton de restauration exposé au navigateur et aucune modification des tables financières lors de l'installation.
+
+- Tableau de bord des abonnements : catégories, budget prévu, récurrences de dépenses du mois, autre récurrence, affichage du payeur, montant et date, actions Modifier/Arrêter raccordées aux modales existantes.
+- Distinction explicite entre budget prévu, opérations récurrentes comptabilisées et débit bancaire non confirmé.
+- Recherche insensible aux accents et à la casse sur les libellés, catégories et personnes de l’historique du mois.
+- Filtres par type (dépense/revenu/épargne), propriétaire et catégorie, tri montant/date, compteur de résultats et bouton de réinitialisation.
+- Lors d’un filtre partiel sur un groupe, suppression complète de ce groupe désactivée pour éviter toute suppression masquée.
+- Modification de la date d’une opération unique vers un autre mois, sans appliquer cette ouverture aux nouveaux mouvements ni aux récurrences.
+- Interface responsive et accessible, respectant les variables de thème. Aucun changement Supabase ni aux garde-fous cloud V2.7.1.
 
 
-## V2.7.1 — correctif urgent de synchronisation
+## V2.8 — mobile UX (en cours de validation)
 
-- Désactivation de l'ancien envoi intégral qui pouvait archiver toute donnée absente d'une session incomplète.
-- Bouton de relance redirigé vers la fusion contrôlée, avec fermeture sécurisée si le moteur n'est pas chargé.
-- Garde-fou avant écriture contre les archivages massifs et les remises à zéro massives de budgets ; impossibilité de contourner l'alerte avec les boutons de résolution de conflit.
-- Actualisation des URL des scripts critiques pour éviter de recharger des versions mises en cache.
-- Préparation d'une restauration ciblée et sauvegarde SQL privée, sans import destructif.
+- Barre de navigation mobile fixe : Accueil, Catégories, action + centrale, Historique, Suivi.
+- Menu d’ajout rapide dépense/revenu raccordé aux formulaires et événements existants.
+- Formulaire de transaction présenté comme un panneau inférieur sur mobile, avec date de saisie modifiable dans le mois sélectionné.
+- Accueil mobile réordonné pour afficher les derniers mouvements et alertes immédiatement après les indicateurs principaux.
+- Adaptation aux zones de sécurité iPhone et aux appareils étroits ; prise en charge de `prefers-reduced-motion`.
+- Rétablissement du zoom natif pour l’accessibilité, sans modifier le stockage des données.
 
 
 ## V2.7 — stabilisation
