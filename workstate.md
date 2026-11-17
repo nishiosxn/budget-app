@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Correctif V3.0.2 — zoom des champs iOS et tablette
+
+- Branche : `work/v3.0.2-touch-input-focus` issue de `develop` (V3.0 + correctif Historique V3.0.1).
+- Périmètre : CSS global mobile et tactile à 16 px minimum sur les champs éditables, maintien des grands montants et du zoom manuel. Aucune modification JavaScript métier, SQL ou Supabase.
+- Validation prévue : tests `App integrity`, PR vers `develop`, PR distincte issue de `main`, publication ciblée dans la racine GitHub Pages. Versions archivées et previews inchangées.
+
+
 ## Correctif V3.0 — recherche de l'historique sur iPhone
 
 - Branche : `work/v3.0.1-history-ios-focus` depuis `develop`, après fusion V3.0.

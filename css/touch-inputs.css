@@ -1,0 +1,20 @@
+/* Smart Budget V3.0.2 — iOS/iPadOS : prevents focus-zoom on editable controls.
+   Applies to any touchscreen (including tablet with external keyboard) and to narrow viewports.
+   No viewport locks or JS scroll hacks: native pinch zoom stays available. */
+@media (any-pointer: coarse), (max-width: 64rem){
+  :where(
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+    select,
+    textarea,
+    [contenteditable="true"]
+  ){
+    font-size:16px !important;
+    min-width:0;
+    max-width:100%;
+  }
+  /* Keep the original large amount editor; no reduction to 16px. */
+  #amountInput.amount-input{font-size:3rem !important;}
+}
+@media (max-width: 40rem){
+  #amountInput.amount-input{font-size:2.625rem !important;}
+}

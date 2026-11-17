@@ -1,5 +1,12 @@
 # Changelog
 
+### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)
+
+- Sur écran tactile ou fenêtre au format tablette, tous les champs éditables natifs (texte, nombre, recherche, email, dates, selects, textarea et champs du builder) utilisent une police minimale de 16 px : évite le zoom automatique Safari au focus.
+- Les grands montants conservent leur taille, les éléments checkbox/radio/slider/couleur gardent leurs interactions d'origine, et le zoom manuel reste autorisé.
+- Aucun changement des données, filtres, calculs, de l'authentification ni de la synchronisation Supabase.
+
+
 ### V3.0 — correctif de l'historique mobile (17 novembre 2026)
 
 - Recherche Historique : champ à 16 px sur les écrans mobiles pour empêcher le zoom automatique de Safari iOS au focus.
