@@ -6,6 +6,7 @@
 - Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
 - Contexte conversationnel court et réinitialisable, sans enregistrement ; historique revalidé côté passerelle.
 - Laboratoire web autonome à données fictives : démo guidée, validation et confirmation locale, sans connexion à Supabase.
+- Interface assistant centrée, trois suggestions horizontales et dictée continue avec transcription intermédiaire (selon navigateur).
 - IA distante, confirmation connectée, mémoire et validation réelle à finaliser.
 
 

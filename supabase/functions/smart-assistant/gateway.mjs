@@ -1,7 +1,7 @@
 /* No database mutations or model-controlled execution. Dependencies injected for tests. */
 const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const uuid=v=>typeof v==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
-const modelIds=new Set(["@cf/qwen/qwen3-30b-a3b-fp8","@cf/meta/llama-3.3-70b-instruct-fp8-fast"]);
+const modelIds=new Set(["@cf/google/gemma-4-26b-a4b-it","@cf/zai-org/glm-4.7-flash"]);
 export const validModel=id=>modelIds.has(id);
 export const modelSchema={
  type:"object",properties:{

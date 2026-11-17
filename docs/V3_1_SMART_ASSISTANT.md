@@ -45,3 +45,6 @@ Deux échanges précédents au maximum, uniquement brouillons non enregistrés e
 
 ## Preview isolée
 Page de laboratoire dans preview/assistant : foyer fictif en mémoire, simulateur de commandes à choix limité, identifiée comme non-IA. Elle utilise le validateur et le planificateur réels pour les confirmations locales, ne charge aucun SDK cloud, n'a aucun stockage persistant ni authentification. Les tests ne mesurent ni le modèle ni la synchronisation. La dictée, si autorisée, est gérée par le navigateur.
+
+## Interface et dictée
+Trois suggestions en ligne au-dessus de la saisie, pictogrammes à gauche. Le laboratoire conserve les autres scénarios en code. Dictée partagée : transcription intermédiaire, relance bornée, chronomètre, arrêt manuel et sur changement de contexte. Tests navigateur réels à faire. Modèle candidat Gemma 4 26B, GLM 4.7 Flash en alternative configurable (aucun fallback automatique). Secrets renseignés par le propriétaire, non vérifiés ; quota durable et foyer de test restent nécessaires avant activation.

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import {createAssistantGateway,decodeModelResponse,makeModelRequest} from "../supabase/functions/smart-assistant/gateway.mjs";
 const box={};vm.createContext(box);vm.runInContext(fs.readFileSync("js/assistant-core.js","utf8"),box);
-const core=box.SmartBudgetAssistantCore, model="@cf/qwen/qwen3-30b-a3b-fp8";
+const core=box.SmartBudgetAssistantCore, model="@cf/google/gemma-4-26b-a4b-it";
 const ctx={today:"2026-11-17",firstMonth:"2026-09",lastMonth:"2028-12",selectedMonth:"2026-11",solo:false,actor:"B",members:{B:"Membre 1",A:"Membre 2"},categories:[{id:"food",name:"Courses",kind:"expense",owner:"common",createdFrom:"2026-09"}]};
 const valid={kind:"draft",operations:[{kind:"expense",categoryId:"food",owner:"B",amountCents:2000,date:"2026-11-17",label:"Achat test",frequency:"once"}]};
 const request={token:"test-token-not-a-real-credential",body:{householdId:"11111111-1111-4111-8111-111111111111",command:"20 euros de courses",context:{selectedMonth:"2026-11"}}};

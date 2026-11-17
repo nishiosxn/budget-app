@@ -5,7 +5,7 @@ const originAllowed="https://nishiosxn.github.io";
 const env=(name:string)=>Deno.env.get(name)||"";
 const supabaseUrl=env("SUPABASE_URL").replace(/\/$/,"");
 const publishable=env("SMART_ASSISTANT_SUPABASE_PUBLISHABLE")||env("SUPABASE_ANON_KEY");
-const cfg={enabled:env("SMART_ASSISTANT_ENABLED")==="true",model:env("SMART_ASSISTANT_MODEL")||"@cf/qwen/qwen3-30b-a3b-fp8",account:env("SMART_ASSISTANT_CF_ACCOUNT_ID"),token:env("SMART_ASSISTANT_CF_TOKEN")};
+const cfg={enabled:env("SMART_ASSISTANT_ENABLED")==="true",model:env("SMART_ASSISTANT_MODEL")||"@cf/google/gemma-4-26b-a4b-it",account:env("SMART_ASSISTANT_CF_ACCOUNT_ID"),token:env("SMART_ASSISTANT_CF_TOKEN")};
 const uuidPattern=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const allowlist=new Set(env("SMART_ASSISTANT_TEST_HOUSEHOLDS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
 const allowedUsers=new Set(env("SMART_ASSISTANT_TEST_USERS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));

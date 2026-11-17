@@ -29,9 +29,9 @@
  const hint=document.createElement("p");hint.hidden=true;hint.textContent="Les demandes suivantes peuvent préciser ou corriger ce brouillon non enregistré. Les deux derniers échanges sont transmis à l’IA.";
  result.after(hint,reset);
  function clearConversation(){history=[];hint.hidden=true;reset.hidden=true}
- reset.addEventListener("click",()=>{seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";status.textContent="Nouvelle demande · aucune opération enregistrée.";input.focus()});
+ reset.addEventListener("click",()=>{voice.stop({discard:true});seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";status.textContent="Nouvelle demande · aucune opération enregistrée.";input.focus()});
  form.addEventListener("submit",async event=>{
-  event.preventDefault();if(busy)return;
+  event.preventDefault();if(busy)return;voice.stop();
   const command=input.value.trim(),who=identity();
   if(!command)return;if(!who){status.textContent="Connecte-toi à un foyer.";return}
   if(!consent.checked){status.textContent="Autorise d’abord l’envoi de la demande.";return}
@@ -53,18 +53,10 @@
   }catch{if(identity()===who&&request===seq)status.textContent="Erreur de communication. Aucune opération enregistrée."}
   finally{if(request===seq){busy=false;send.disabled=false}}
  });
- consent.addEventListener("change",()=>{if(!consent.checked){seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();status.textContent="Consentement retiré · aucune opération enregistrée."}});
- const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;let recognition=null;
- if(!Speech){mic.disabled=true;mic.title="Utilise la dictée du clavier."}
- else mic.addEventListener("click",()=>{
-  if(recognition){recognition.stop();return}
-  const r=new Speech();recognition=r;r.lang="fr-FR";r.interimResults=false;r.continuous=false;
-  r.onresult=e=>{input.value=(input.value+" "+Array.from(e.results).map(x=>x[0].transcript).join(" ")).trim().slice(0,1600)};
-  r.onerror=()=>{status.textContent="Dictée indisponible. Utilise le clavier."};
-  r.onend=()=>{recognition=null;mic.textContent="Dicter"};
-  try{r.start();mic.textContent="Arrêter"}catch{recognition=null;status.textContent="Impossible de démarrer la dictée."}
- });
+ consent.addEventListener("change",()=>{if(!consent.checked){voice.stop({discard:true});seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();status.textContent="Consentement retiré · aucune opération enregistrée."}});
+ const voice=globalThis.SmartBudgetAssistantVoice.bind({input,button:mic,status,clock:document.querySelector(".sb-voice-clock"),authorize:()=>window.confirm("La dictée peut transmettre ton audio au service vocal du navigateur. Continuer ?")});
+ document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",()=>{voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;input.focus()}));
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
  // Clear transient content when account/household changes; never persist prompts.
- let previous=identity();setInterval(()=>{const now=identity();if(now!==previous){previous=now;seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";consent.checked=false;status.textContent="Assistant V3.1 · laboratoire";try{recognition?.abort()}catch{}}},500);
+ let previous=identity();setInterval(()=>{const now=identity();if(now!==previous){previous=now;seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";consent.checked=false;status.textContent="Assistant V3.1 · laboratoire";voice.stop({discard:true})}},500);
 })();

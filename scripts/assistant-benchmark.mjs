@@ -7,7 +7,7 @@ const flags=new Set(process.argv.slice(2));
 if(!flags.has("--live")||process.env.SMART_ASSISTANT_BENCHMARK_FREE_CONFIRMED!=="yes"){
  console.log("Dry run:",scenarios.length,"synthetic French scenarios. Live test requires --live and explicit free-plan verification.");process.exit(0);
 }
-const account=process.env.SMART_ASSISTANT_CF_ACCOUNT_ID,token=process.env.SMART_ASSISTANT_CF_TOKEN,model=process.env.SMART_ASSISTANT_MODEL||"@cf/qwen/qwen3-30b-a3b-fp8";
+const account=process.env.SMART_ASSISTANT_CF_ACCOUNT_ID,token=process.env.SMART_ASSISTANT_CF_TOKEN,model=process.env.SMART_ASSISTANT_MODEL||"@cf/google/gemma-4-26b-a4b-it";
 if(!account||!token||!/^[a-f0-9]{32}$/i.test(account)||!validModel(model))throw Error("Provider configuration missing or unapproved");
 const offset=Number(process.env.SMART_ASSISTANT_BENCHMARK_OFFSET||0),limit=Number(process.env.SMART_ASSISTANT_BENCHMARK_LIMIT||5);
 if(!Number.isInteger(offset)||offset<0||offset>=scenarios.length||!Number.isInteger(limit)||limit<1||limit>10)throw Error("Max 10 live cases per run; choose a valid offset");
