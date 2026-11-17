@@ -39,8 +39,14 @@ function renderSubscriptionsOverview(m){
  if(!root||!m)return;
  const data=subscriptionOverviewData(visibleExpenseCategories(),m.tx);
  const plural=(n,singular,plural)=>n===1?singular:plural;
- const configured=data.groups.filter(group=>group.occurrences.length);
- const unconfigured=data.groups.filter(group=>!group.occurrences.length);
+ const configured=data.groups.filter(group=>group.occurrences.length).sort((a,b)=>String(a.occurrences[0]?.date||"").localeCompare(String(b.occurrences[0]?.date||"")));
+ const unconfigured=data.groups.filter(group=>!group.occurrences.length).sort((a,b)=>a.category.name.localeCompare(b.category.name,"fr"));
+ const allRecurrences=[...configured.flatMap(g=>g.occurrences),...data.other].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
+ const now=new Date(),today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+ const selected=typeof state!=="undefined"&&typeof monthKey==="function"?monthKey(state.selectedMonth):today.slice(0,7),todayMonth=today.slice(0,7);
+ const next=allRecurrences.find(t=>selected===todayMonth?String(t.date||"")>=today:true)||null;
+ const nextDate=next?new Date(String(next.date)+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}):"Aucune";
+ const nextAmount=next?euro(Math.abs(Number(next.amount)||0)):"Aucune échéance programmée";
  const groupHtml=configured.map(({category,occurrences})=>{
   const actual=Number(m.expMap?.[category.id])||0;
   return `<div class="subscription-category">
@@ -63,16 +69,17 @@ function renderSubscriptionsOverview(m){
   ${data.other.map(subscriptionOccurrenceMarkup).join("")}
  </div>`:"";
  root.innerHTML=`<div class="subscriptions-heading">
-  <div><div class="subscriptions-eyebrow">Ce mois-ci</div><h2>Abonnements et récurrences</h2></div>
-  <span class="subscriptions-count">${data.subscriptionCount} ${plural(data.subscriptionCount,"catégorie","catégories")} · ${data.occurrenceCount} ${plural(data.occurrenceCount,"récurrence","récurrences")}</span>
+  <div><div class="subscriptions-eyebrow">Échéances du mois</div><h2>Abonnements et récurrences</h2></div>
+  <span class="subscriptions-count">${data.occurrenceCount} ${plural(data.occurrenceCount,"échéance renseignée","échéances renseignées")} · ${data.subscriptionCount} ${plural(data.subscriptionCount,"catégorie","catégories")}</span>
  </div>
  <div class="subscriptions-summary">
-  <div><span>Budget prévu · abonnements</span><strong>${euro(data.budgetAmount)}</strong></div>
-  <div><span>Récurrences comptabilisées</span><strong>${euro(data.scheduledAmount)}</strong></div>
+  <div><span>Échéances enregistrées</span><strong>${euro(data.scheduledAmount)}</strong></div>
+  <div><span>Budget prévu des abonnements</span><strong>${euro(data.budgetAmount)}</strong></div>
+  <div><span>${selected===todayMonth?"Prochaine échéance":"Première échéance affichée"}</span><strong>${nextDate}</strong><small>${nextAmount}</small></div>
  </div>
- <p class="subscriptions-explain">Les échéances affichées viennent de Smart Budget. Elles ne prouvent pas qu'un prélèvement bancaire a eu lieu.</p>
- <div class="subscription-list">${groupHtml||'<p class="subscriptions-empty">Aucune récurrence d’abonnement configurée pour ce mois.</p>'}${inactiveMarkup}</div>
- ${extras}`;
+ <p class="subscriptions-explain">Échéances enregistrées dans Smart Budget : elles ne prouvent pas qu’un prélèvement bancaire a eu lieu.</p>
+ <div class="subscription-list">${groupHtml||'<p class="subscriptions-empty">Aucune échéance d’abonnement configurée ce mois-ci.</p>'}${extras}</div>
+ ${inactiveMarkup?'<div class="sb-subscription-secondary"><span>Catégories sans échéance configurée</span>'+inactiveMarkup+'</div>':""}`;
 }
 document.getElementById("subscriptionsOverview")?.addEventListener("click",event=>{
  const edit=event.target.closest("[data-subscription-edit]");

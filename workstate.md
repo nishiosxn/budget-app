@@ -1,9 +1,20 @@
 # Workstate — Budget foyer
 
+## Livraison — V3.0 Motion / UX
+
+- Branche source : `work/v3.0-motion-ux` issue de `develop` (socle V2.9).
+- PR d’intégration : [#40](https://github.com/nishiosxn/budget-app/pull/40), vers `develop`.
+- Fonctionnalités : logo animé à progression fluide, écran de chargement unique, skeletons, transitions, compteurs, courbes interactives, meilleure lecture des abonnements. Les trois cartes supplémentaires d’accueil ont été retirées après retour utilisateur.
+- Préversion validée par l’utilisateur le **17 novembre 2026** : https://nishiosxn.github.io/budget-app/v3.0/
+- Dernier contrôle automatique avant la demande de publication : **App integrity réussi** sur `df65d2a61311991f2667ae2902618ff770ffe51b`, run [43981314800](https://github.com/nishiosxn/budget-app/actions/runs/43981314800).
+- Authentification, écritures financières, synchronisation, RLS, migrations et sauvegardes Supabase inchangées par le lot V3.0.
+- Livraison demandée : fusion PR #40 → `develop`, PR de release distincte → `main`, publication de la racine de `gh-pages` après checks, préservation des snapshots et des previews antérieurs.
+- Le déploiement de la préversion ne remplace pas des tests manuels de reprise d’une base ; aucune restauration de production n’est requise ici.
+
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V2.9`
+- Version du code : `V3.0`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.

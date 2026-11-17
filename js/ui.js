@@ -14,6 +14,7 @@ function render(){
  document.getElementById("personBDetail").textContent=`Départ ${euro(m.openingB)} · +${euro(m.incomeB)} · −${euro(m.expenseB+m.savingBShare)}`;
  document.getElementById("personADetail").textContent=`Départ ${euro(m.openingA)} · +${euro(m.incomeA)} · −${euro(m.expenseA+m.savingAShare)}`;
  renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);if(typeof renderSubscriptionsOverview==="function")renderSubscriptionsOverview(m);renderHistory(m);renderTracking();
+ window.SmartBudgetMotion?.afterRender();
  document.getElementById("transactionCount").textContent=`${m.tx.length} opération${m.tx.length>1?"s":""}`;
 }
 function renderSections(m){const sections=["Obligatoires","Abonnements","Vie courante"];document.getElementById("sectionCards").innerHTML=sections.map(s=>{const cats=visibleExpenseCategories().filter(c=>c.section===s),planned=sum(cats.map(c=>c.budget)),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===s).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===s).map(c=>m.expMap[c.id]||0)),pct=planned?actual/planned*100:(actual?100:0),over=actual>planned;return `<article class="card budget-card"><div class="budget-card-head"><h3>${s}</h3><span class="${over?'row-value exp':'row-sub'}">${Math.round(pct)}%</span></div><div class="nums"><strong>${euro(actual)}</strong> / ${euro(planned)}</div><div class="progress ${over?'over':''}"><span style="width:${Math.min(pct,100)}%"></span></div><div class="budget-foot">${over?`Dépassement de ${euro(actual-planned)}`:`Il reste ${euro(Math.max(planned-actual,0))}`}</div></article>`}).join("")}
@@ -241,4 +242,4 @@ function moveMonth(step){let i=MONTHS.indexOf(state.selectedMonth),next=i+step;i
 monthSelect.addEventListener("change",e=>{state.selectedMonth=e.target.value;saveState();updateMonthNav();render()});
 prevMonthBtn.addEventListener("click",()=>moveMonth(-1));nextMonthBtn.addEventListener("click",()=>moveMonth(1));
 updateMonthNav();
-document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));btn.classList.add("active");document.getElementById(btn.dataset.tab).classList.add("active")}));
+document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{if(window.SmartBudgetMotion?.changeView){window.SmartBudgetMotion.changeView(btn);return;}document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));btn.classList.add("active");document.getElementById(btn.dataset.tab).classList.add("active")}));

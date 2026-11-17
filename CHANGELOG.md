@@ -1,5 +1,15 @@
 # Changelog
 
+## V3.0 — Motion & UX (validation utilisateur du 17 novembre 2026)
+
+- Logo Smart Budget animé par révélation continue du symbole lui-même, progrès visuel plafonné avant la résolution réelle de la connexion, reflet animé et finition fluide.
+- Suppression de l'ancien popup « Connexion au foyer… » pendant le chargement normal ; maintien des écrans de connexion, d'invitation et d'erreur.
+- Skeletons pendant le chargement authentifié, transitions d'onglets et incrémentation visuelle des montants.
+- Courbe de suivi interactive (réel/prévu), réorganisation des échéances d'abonnements ; suppression des trois KPI supplémentaires d'accueil après retour utilisateur.
+- Respect du mode mouvement réduit, animation sans écriture métier ; aucune migration et aucun changement de synchronisation, d'historique ou de sauvegarde pour ce lot.
+- Préversion /v3.0/ validée avant demande explicite de mise en production.
+
+
 ## V2.9 — historique, fiabilité et sauvegardes (préversion)
 
 - Export externe **préparé**, non activé tant que la clé publique age et le secret de connexion PostgreSQL ne sont pas configurés : workflow quotidien GitHub Actions, données chiffrées en flux, rétention 60 jours.
