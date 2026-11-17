@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Correctif V3.0.2 — formulaires tactiles
+
+- Source : PR #45 fusionnée dans `develop` (`463ae1b4beafbf96fc47d4fc16972dd434a181ea`).
+- Release depuis `main` : `work/v3.0.2-touch-input-release`. Correctif global des tailles de champs editables sur mobile/tablette sans bloquer le zoom manuel.
+- Tests : `App integrity` sur la PR de développement et PR distincte de production ; seuls `index.html` et `css/touch-inputs.css` doivent être publiés à la racine Pages.
+- Aucun changement dans les calculs, le backend ou les sauvegardes ; les snapshots restent inchangés.
+
+
 ## Correctif V3.0 — focus recherche Historique iOS
 
 - Développement : `work/v3.0.1-history-ios-focus`, PR [#43](https://github.com/nishiosxn/budget-app/pull/43) fusionnée dans `develop` (`c300ff06d06f044513a8fb37698eb94659a8afe3`).
