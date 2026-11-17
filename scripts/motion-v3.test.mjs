@@ -65,3 +65,21 @@ test("l'entrée Recherche Historique ne déclenche pas le zoom automatique iOS",
  assert.match(html,/history-filters\.css\?v=20261117-ios-focus/);
  assert.doesNotMatch(html,/maximum-scale=1|user-scalable=no/);
 });
+
+// Accessibility and iOS viewport regression tests for the entire app.
+test("tous les champs éditables mobiles ont au moins 16px, sans empêcher le zoom manuel",()=>{
+ const html=read("index.html"),css=read("css/touch-inputs.css");
+ assert.match(html,/css\/touch-inputs\.css\?v=20261117-v302/);
+ assert.match(html,/<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"\s*\/>/);
+ assert.doesNotMatch(html,/user-scalable\s*=\s*no|maximum-scale\s*=\s*1/i);
+ assert.match(css,/@media\s*\(any-pointer:\s*coarse\),\s*\(max-width:\s*64rem\)/);
+ assert.match(css,/input:not\(\[type="hidden"\]\)/);
+ for(const inputType of ["checkbox","radio","range","color","file","button","submit","reset","image"])
+  assert.ok(css.includes(':not([type="'+inputType+'"])'));
+ for(const control of ["select","textarea",'[contenteditable="true"]'])
+  assert.ok(css.includes(control));
+ assert.match(css,/font-size:16px\s*!important/);
+ assert.match(css,/#amountInput\.amount-input\{font-size:3rem\s*!important;/);
+ assert.match(css,/#amountInput\.amount-input\{font-size:2\.625rem\s*!important;/);
+ assert.doesNotMatch(css,/touch-action:\s*none|user-scalable|maximum-scale\s*:/i);
+});
