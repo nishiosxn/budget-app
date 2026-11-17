@@ -4,6 +4,7 @@
 
 - Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
 - Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
+- Contexte conversationnel court et réinitialisable, sans enregistrement ; historique revalidé côté passerelle.
 - IA distante, confirmation connectée, mémoire et validation réelle à finaliser.
 
 

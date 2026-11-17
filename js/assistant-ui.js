@@ -24,7 +24,12 @@
   if(!totals.size)line("Aucune opération enregistrée.");
   for(const t of totals.values())line(t.name+" · "+euro(t.total)+(t.budget!==null&&q.owner===null?" · prévu "+euro(t.budget):""));
  }
- let busy=false,seq=0;
+ let busy=false,seq=0,history=[];
+ const reset=document.createElement("button");reset.type="button";reset.textContent="Nouvelle demande";reset.hidden=true;
+ const hint=document.createElement("p");hint.hidden=true;hint.textContent="Les demandes suivantes peuvent préciser ou corriger ce brouillon non enregistré. Les deux derniers échanges sont transmis à l’IA.";
+ result.after(hint,reset);
+ function clearConversation(){history=[];hint.hidden=true;reset.hidden=true}
+ reset.addEventListener("click",()=>{seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";status.textContent="Nouvelle demande · aucune opération enregistrée.";input.focus()});
  form.addEventListener("submit",async event=>{
   event.preventDefault();if(busy)return;
   const command=input.value.trim(),who=identity();
@@ -33,11 +38,13 @@
   const ctx=assistantContext();if(!ctx.actor){status.textContent="Impossible d’identifier ton rôle.";return}
   result.replaceChildren();busy=true;send.disabled=true;const request=++seq;status.textContent="Analyse de la demande…";
   try{
-   const {data,error}=await cloudClient.functions.invoke("smart-assistant",{body:{householdId:activeHouseholdId,command,context:ctx}});
+   const {data,error}=await cloudClient.functions.invoke("smart-assistant",{body:{householdId:activeHouseholdId,command,context:ctx,...(history.length?{history}:{})}});
    if(identity()!==who||request!==seq)return;
-   if(error||!data?.result){status.textContent="Service IA non disponible ou non activé. Aucune opération enregistrée.";return}
+   if(error||!data?.result){status.textContent="Analyse indisponible ou contexte périmé. Réessaie ou commence une nouvelle demande. Aucune opération enregistrée.";return}
    const latest=assistantContext(),checked=core.validateResult(data.result,latest);
    if(!checked.ok){status.textContent="Réponse refusée : "+checked.error;return}
+   if(["draft","clarify"].includes(checked.value.kind)){history=[...history,{command,result:checked.value}].slice(-2);hint.hidden=false;reset.hidden=false}else clearConversation();
+   if(input.value.trim()===command)input.value="";
    status.textContent="Analyse terminée · aucune écriture automatique.";
    if(checked.value.kind==="draft"){
     for(const op of checked.value.operations){const c=latest.categories.find(x=>x.id===op.categoryId);line(op.label+" · "+c.name+" · "+euro(op.amountCents/100)+" · "+op.date+" · "+(op.owner==="common"?"À deux":latest.members[op.owner])+" · "+(op.kind==="plan"?"Budget prévu : ":"")+(op.frequency==="monthly"?"mensuel":"unique"))}
@@ -46,6 +53,7 @@
   }catch{if(identity()===who&&request===seq)status.textContent="Erreur de communication. Aucune opération enregistrée."}
   finally{if(request===seq){busy=false;send.disabled=false}}
  });
+ consent.addEventListener("change",()=>{if(!consent.checked){seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();status.textContent="Consentement retiré · aucune opération enregistrée."}});
  const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;let recognition=null;
  if(!Speech){mic.disabled=true;mic.title="Utilise la dictée du clavier."}
  else mic.addEventListener("click",()=>{
@@ -58,5 +66,5 @@
  });
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
  // Clear transient content when account/household changes; never persist prompts.
- let previous=identity();setInterval(()=>{const now=identity();if(now!==previous){previous=now;seq++;busy=false;send.disabled=false;result.replaceChildren();input.value="";consent.checked=false;status.textContent="Assistant V3.1 · laboratoire";try{recognition?.abort()}catch{}}},500);
+ let previous=identity();setInterval(()=>{const now=identity();if(now!==previous){previous=now;seq++;busy=false;send.disabled=false;clearConversation();result.replaceChildren();input.value="";consent.checked=false;status.textContent="Assistant V3.1 · laboratoire";try{recognition?.abort()}catch{}}},500);
 })();

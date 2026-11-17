@@ -18,3 +18,16 @@ test("malicious or malformed outputs cannot become proposals",async()=>{for(cons
 test("supports both REST output variants; rejects extra text",()=>{assert.equal(decodeModelResponse({result:{response:valid}}),valid);assert.equal(decodeModelResponse({result:{choices:[{message:{content:JSON.stringify(valid)}}]}}).kind,"draft");assert.throws(()=>decodeModelResponse({result:{response:"Here is JSON: "+JSON.stringify(valid)}}))});
 test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_tokens,1400);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
 test("shared client and server validator remain identical",()=>{assert.equal(fs.readFileSync("js/assistant-core.js","utf8"),fs.readFileSync("supabase/functions/_shared/smart-assistant-core.js","utf8"))});
+
+test("guarded conversation carries a bounded prior draft and question",async()=>{
+ const history=[{command:"20 euros de courses",result:valid},{command:"plutôt hier ?",result:{kind:"clarify",message:"Quel jour ?"}}];
+ let payload;const {handler}=setup({infer:async(_model,p)=>{payload=p;return {result:{response:valid}}}});
+ const r=await handler({...request,body:{...request.body,command:"le 16 novembre",history}});
+ assert.equal(r.status,200);const sent=JSON.parse(payload.messages[1].content);assert.equal(sent.history.length,2);assert.equal(sent.history[0].result.operations[0].amountCents,2000);assert.equal(sent.command,"le 16 novembre");
+});
+test("malformed, stale, excessive and non-draft history fails before quota or provider",async()=>{
+ const entry={command:"courses",result:valid};
+ for(const history of [null,[entry,entry,entry],[{...entry,evil:true}],[{...entry,command:" "}],[{...entry,command:"a".repeat(1601)}],[{...entry,result:{kind:"answer",message:"bonjour"}}],[{...entry,result:{...valid,operations:[{...valid.operations[0],categoryId:"retired"}]}}]]){
+  const {handler,calls}=setup();const r=await handler({...request,body:{...request.body,history}});assert.equal(r.status,400);assert.deepEqual(calls,["auth"]);
+ }
+});

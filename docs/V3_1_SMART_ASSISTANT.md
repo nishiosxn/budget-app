@@ -39,3 +39,6 @@ Le planificateur pur produit un patch en mémoire à partir d'un lot validé, sa
 
 ## Logo et identité
 Le tracé SVG original est conservé, fond #5C29D6 ; les PNG 192/512/180 et ICO 16/32/48 sont déclinés à partir de la géométrie originale. Les accents par défaut et le loader utilisent le violet, les préférences de compte existantes restent disponibles. Le contraste de la paire icône est testé ; la conformité globale WCAG et les contrôles sur appareils doivent encore être vérifiés.
+
+## Conversations — contexte transitoire
+Deux échanges précédents au maximum, uniquement brouillons non enregistrés et précisions, conservés en mémoire de la page. Le bouton Nouvelle demande, la révocation du consentement ou le changement de session/foyer efface le contexte. La passerelle revalide chaque ancien résultat avec le catalogue actuel avant quota et inférence ; contexte invalide refusé. Aucune écriture, aucune mémoire persistante. Les corrections portent sur le brouillon complet. Tests simulés ; compréhension française réelle encore à mesurer.
