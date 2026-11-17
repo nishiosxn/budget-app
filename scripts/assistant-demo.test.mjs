@@ -20,3 +20,9 @@ test("preview has no authentication, remote provider, persistence or cloud SDK",
  const src=["index.html","demo-model.js","demo-ui.js"].map(f=>fs.readFileSync("preview/assistant/"+f,"utf8")).join("\n");
  assert.doesNotMatch(src,/https?:\/\/|\bfetch\s*\(|localStorage|sessionStorage|serviceWorker|cloudClient|createClient/);
 });
+
+test("exactly three compact suggestions are above the composer; remaining fixtures are retained",()=>{
+ for(const file of ["index.html","preview/assistant/index.html"]){const html=fs.readFileSync(file,"utf8");assert.equal((html.match(/data-assistant-suggestion=/g)||[]).length,3);assert.ok(html.indexOf("sb-assistant-suggestions")<html.indexOf('id="sbAssistantInput"'));}
+ assert.equal(demo.examples.length,9);
+ for(const text of ["J’ai dépensé 20 €","J’ai fait un virement","Ajoute 10 € au budget"])assert.equal(demo.infer(text,ctx,null).kind,"clarify");
+});

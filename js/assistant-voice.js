@@ -8,7 +8,7 @@ function bind({input,button,status,clock,authorize=()=>true}){
  function display(){input.value=join(base,committed,partial).slice(0,input.maxLength>0?input.maxLength:1600)}
  function tick(){if(!clock)return;const s=Math.floor((Date.now()-started)/1000);clock.textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
  function paint(active){button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",active?"Arrêter la dictée":"Dicter");button.title=active?"Arrêter la dictée":"Dicter";if(clock)clock.hidden=!active}
- function stop({discard=false}={}){wanted=false;clearTimeout(retry);clearInterval(ticker);retry=ticker=null;if(discard){base=committed=partial="";}else{committed=join(committed,partial);partial="";display()}const r=current;current=null;try{r?.abort()}catch{}paint(false)}
+ function stop({discard=false}={}){if(!wanted&&!current)return;wanted=false;clearTimeout(retry);clearInterval(ticker);retry=ticker=null;if(discard){base=committed=partial="";}else{committed=join(committed,partial);partial="";display()}const r=current;current=null;try{r?.abort()}catch{}paint(false)}
  function start(){if(!wanted||current)return;const r=new Speech();current=r;r.lang="fr-FR";r.continuous=true;r.interimResults=true;
   let parts=[];
   r.onresult=e=>{if(!wanted||current!==r)return;retries=0;parts=Array.from(e.results).map(x=>({text:x[0].transcript,final:x.isFinal}));partial=join(...parts.map(x=>x.text));display();if(input.value.length>=input.maxLength&&input.maxLength>0){stop();status.textContent="Limite de texte atteinte."}};
