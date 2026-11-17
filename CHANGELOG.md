@@ -1,5 +1,11 @@
 # Changelog
 
+### V3.0 — correctif de l'historique mobile (17 novembre 2026)
+
+- Recherche Historique : champ à 16 px sur les écrans mobiles pour empêcher le zoom automatique de Safari iOS au focus.
+- Zoom manuel, historique, filtres, navigation et synchronisation inchangés.
+
+
 ## V3.0 — Motion & UX (validation utilisateur du 17 novembre 2026)
 
 - Logo Smart Budget animé par révélation continue du symbole lui-même, progrès visuel plafonné avant la résolution réelle de la connexion, reflet animé et finition fluide.

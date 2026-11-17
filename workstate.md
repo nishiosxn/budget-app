@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Correctif V3.0 — recherche de l'historique sur iPhone
+
+- Branche : `work/v3.0.1-history-ios-focus` depuis `develop`, après fusion V3.0.
+- Correction ciblée : `#historySearch` en 16 px sur mobile afin d'éviter le zoom automatique Safari iOS, sans désactiver le zoom du navigateur.
+- Source financière et synchronisation Supabase inchangées, fichier CSS versionné dans `index.html` pour forcer son actualisation.
+- Validation demandée : App integrity, PR vers `develop`, PR distincte vers `main`, puis mise à jour de la racine `gh-pages` en préservant les snapshots.
+
+
 ## Livraison — V3.0 Motion / UX
 
 - Branche source : `work/v3.0-motion-ux` issue de `develop` (socle V2.9).
