@@ -3,9 +3,7 @@
    No viewport locks or JS scroll hacks: native pinch zoom stays available. */
 @media (any-pointer: coarse), (max-width: 64rem){
   :where(
-    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])
-         :not([type="range"]):not([type="color"]):not([type="file"])
-         :not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
     select,
     textarea,
     [contenteditable="true"]
