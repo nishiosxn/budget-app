@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## V3.1 — Smart Assistant, chantier isolé
+
+- Base develop : 463ae1b4beafbf96fc47d4fc16972dd434a181ea ; branche work/v3.1-smart-assistant.
+- Premier lot : interface de laboratoire, palette violette, contrat de validation et consultations bornées, dictée selon navigateur. Aucune écriture financière par l'assistant.
+- À terminer : proxy IA authentifié et quota durable, benchmark français, confirmation et intégration de la synchronisation sur foyer isolé, mémoire RLS, conversation, icônes PNG/ICO, tests navigateur.
+- Production et gh-pages non modifiés. Pas de publication avant validation.
+
+
 ## Correctif V3.0.2 — zoom des champs iOS et tablette
 
 - Branche : `work/v3.0.2-touch-input-focus` issue de `develop` (V3.0 + correctif Historique V3.0.1).
@@ -29,7 +37,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V3.0`
+- Version du code : `V3.1`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.

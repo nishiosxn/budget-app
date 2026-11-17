@@ -1,5 +1,12 @@
 # Changelog
 
+## V3.1 — Smart Assistant (chantier expérimental, non publié)
+
+- Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
+- Accent violet Smart Budget par défaut et logo de démarrage recoloré ; préférences enregistrées conservées.
+- IA distante, confirmation, mémoire, icônes PWA et validation réelle à finaliser.
+
+
 ### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)
 
 - Sur écran tactile ou fenêtre au format tablette, tous les champs éditables natifs (texte, nombre, recherche, email, dates, selects, textarea et champs du builder) utilisent une police minimale de 16 px : évite le zoom automatique Safari au focus.

@@ -1,10 +1,10 @@
 // V2.7 — apparence personnelle, sélecteur custom stable et sauvegarde par compte
-const APPEARANCE_DEFAULT={color:"green",font:"current",customColor:"#7c73d8"};
+const APPEARANCE_DEFAULT={color:"purple",font:"current",customColor:"#5C29D6"};
 const APPEARANCE_COLORS={
  green:{label:"Vert",accent:"#2f6b51",deep:"#173c2d",soft:"#e9f2ed",border:"#bfd2c6"},
  blue:{label:"Bleu",accent:"#3f6fa6",deep:"#243f60",soft:"#e9eff6",border:"#c4d2e2"},
  pink:{label:"Rose",accent:"#b6537c",deep:"#673047",soft:"#f7eaf0",border:"#e5c2d1"},
- purple:{label:"Violet",accent:"#7558a6",deep:"#443460",soft:"#f0ecf6",border:"#d2c7e2"},
+ purple:{label:"Violet Smart Budget",accent:"#5C29D6",deep:"#39138F",soft:"#F0EAFE",border:"#D6C7FA"},
  orange:{label:"Orange",accent:"#b36a3c",deep:"#673d23",soft:"#f7eee8",border:"#e3c9b7"}
 };
 const APPEARANCE_FONTS={
@@ -107,7 +107,7 @@ function applyUserAppearance(value,{persistLocal=false,userId=appearanceUserId()
  root.style.setProperty("--accent-soft",palette.soft);
  root.style.setProperty("--accent-border",palette.border);
  root.style.setProperty("--accent-rgb",`${rgb.r},${rgb.g},${rgb.b}`);
- root.style.setProperty("--income",palette.accent);
+ root.style.setProperty("--income","#216B4D");
  root.style.setProperty("--app-font",font.stack);
  root.dataset.appearanceColor=appearance.color;
  root.dataset.appearanceFont=appearance.font;
