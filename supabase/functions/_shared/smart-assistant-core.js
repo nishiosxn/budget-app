@@ -55,5 +55,31 @@
   return fail("Action non autorisée.");
  }
  const findDuplicates=(ops,existing)=>ops.filter(o=>o.kind!=="plan"&&existing.some(t=>t.kind===o.kind&&t.categoryId===o.categoryId&&t.owner===o.owner&&t.amountCents===o.amountCents&&t.date===o.date));
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validDate,validMonth,findDuplicates});
+ // Unassigned proposals are permitted for display only. They can never pass validateResult.
+ function validateReview(v,c){
+  if(!contextOK(c)||!exact(v,["kind","operations"])||v.kind!=="draft"||!Array.isArray(v.operations)||!v.operations.length||v.operations.length>12)return fail("Brouillon invalide.");
+  const operations=[],seen=new Set(),plans=new Set();
+  for(const o of v.operations){
+   if(!obj(o)||Object.keys(o).some(k=>!["kind","categoryId","owner","amountCents","date","label","frequency","planMode"].includes(k)))return fail("Champs invalides.");
+   const {planMode,...base}=o;
+   if(!exact(base,["kind","categoryId","owner","amountCents","date","label","frequency"]))return fail("Champs invalides.");
+   if(planMode!==undefined&&(base.kind!=="plan"||!["set","increase","decrease"].includes(planMode)))return fail("Mode de budget invalide.");
+   if(planMode&&planMode!=="set"&&base.amountCents<=0)return fail("Variation invalide.");
+   if(base.categoryId===null){
+    if(!kinds.has(base.kind)||!ownerOK(base.owner,c)||!validDate(base.date)||!monthOK(base.date.slice(0,7),c)||!clean(base.label,120)||!Number.isSafeInteger(base.amountCents)||base.amountCents<(base.kind==="plan"?0:1)||base.amountCents>100000000||!["once","monthly"].includes(base.frequency)||(base.kind==="saving"&&base.frequency!=="once")||(base.kind!=="plan"&&base.frequency==="once"&&base.date>c.today))return fail("Proposition incomplète invalide.");
+   }else if(!validateAssistantOp(base,c).ok)return fail("Proposition invalide.");
+   const key=JSON.stringify([base.kind,base.categoryId,base.owner,base.amountCents,base.date,base.label.trim().toLowerCase(),base.frequency,planMode||"set"]);
+   if(seen.has(key))return fail("Doublon possible.");seen.add(key);
+   if(base.kind==="plan"&&base.categoryId!==null){const key=base.categoryId+"|"+base.date.slice(0,7);if(plans.has(key))return fail("Budgets concurrents.");plans.add(key)}
+   operations.push({...base,label:base.label.trim(),...(base.kind==="plan"?{planMode:planMode||"set"}:{})});
+  }
+  return {ok:true,value:{kind:"draft",operations}};
+ }
+ // Resolve a planned amount in integer cents; never ask the model to add up money.
+ function resolvePlanAmount(op,beforeCents){
+  if(op?.kind!=="plan"||!Number.isSafeInteger(op.amountCents)||op.amountCents<0||!Number.isSafeInteger(beforeCents)||beforeCents<0)return null;
+  const mode=op.planMode||"set",after=mode==="increase"?beforeCents+op.amountCents:mode==="decrease"?beforeCents-op.amountCents:mode==="set"?op.amountCents:NaN;
+  return Number.isSafeInteger(after)&&after>=0&&after<=100000000?{beforeCents,afterCents:after}:null;
+ }
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates});
 })(globalThis);

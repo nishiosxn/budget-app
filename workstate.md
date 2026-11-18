@@ -161,3 +161,6 @@ Quota installé (`20261117235347`) ; garde permissions/plafonds et zéro résidu
 
 ### Pilote IA — premières demandes réelles
 Plusieurs POST 200 vérifiés, 6 réservations et 917 unités le 18/11 UTC. Fonction v5 identique à la source f2326dd4. Préparation du contrôle des doublons futurs dans le planificateur, écriture toujours désactivée jusqu'à intégration et tests sur foyer isolé.
+
+### V3.1 — proposition immédiate
+Prompt et contrat de revue assouplis, catégories absentes explicitement non affectées, variation de budget calculée côté serveur, confirmation locale simulée. Validation stricte d'écriture conservée. Pas de mutation financière.

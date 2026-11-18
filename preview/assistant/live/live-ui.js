@@ -1,14 +1,40 @@
 (()=>{"use strict";
  const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),consent=$("pilotConsent"),form=$("sbAssistantForm"),send=$("send");
  const core=globalThis.SmartBudgetAssistantCore;
- let session=null,history=[],epoch=0,busy=false;
+ let session=null,history=[],epoch=0,busy=false,pendingReview=null;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  const kinds={expense:"Dépense",income:"Revenu",saving:"Épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
  const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",invalid_model_result:"Réponse du modèle refusée par le validateur.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable."};
  const voice=globalThis.SmartBudgetAssistantVoice.bind({input,button:$("mic"),status,clock:document.querySelector(".sb-voice-clock"),authorize:()=>window.confirm("Autoriser la dictée du navigateur ? Utilise uniquement des données fictives.")});
  function append(v){const line=document.createElement("div");line.className="sb-assistant-result-row";line.textContent=v;result.append(line)}
- function wipe(){history=[];result.replaceChildren();input.value="";$("cancel").hidden=true;voice.stop({discard:true})}
+ function renderDraft(v,ctx,previews){
+  const review=JSON.parse(JSON.stringify(v));pendingReview=review;
+  const choices=ctx.categories;
+  for(const [i,o] of review.operations.entries()){
+   const card=document.createElement("div");card.className="pilot-op";
+   const top=document.createElement("div");top.className="pilot-op-top";
+   const name=document.createElement("strong");name.textContent=o.label;
+   const amount=document.createElement("strong"),p=previews.find(x=>x.index===i);
+   amount.className=o.kind==="income"?"pilot-positive":o.kind==="expense"||o.kind==="saving"?"pilot-negative":"pilot-plan";
+   amount.textContent=o.kind==="plan"?(p?euro(p.beforeCents)+" → "+euro(p.afterCents):(o.planMode==="increase"?"+ ":o.planMode==="decrease"?"− ":"")+euro(o.amountCents)):(o.kind==="income"?"+ ":"− ")+euro(o.amountCents);
+   top.append(name,amount);card.append(top);
+   const sub=document.createElement("div");sub.className="pilot-op-meta";sub.textContent=(ctx.members[o.owner]||"À deux")+" · "+o.date+" · "+(o.frequency==="monthly"?"Mensuel":"Unique");card.append(sub);
+   const select=document.createElement("select");select.setAttribute("aria-label","Catégorie de "+o.label);
+   const missing=document.createElement("option");missing.value="";missing.textContent="Catégorie à choisir";select.append(missing);
+   for(const c of choices.filter(c=>(o.kind==="plan"||c.kind===o.kind)&&(!c.createdFrom||o.date.slice(0,7)>=c.createdFrom)&&!(c.hiddenMonths||[]).includes(o.date.slice(0,7)))){const opt=document.createElement("option");opt.value=c.id;opt.textContent=c.name;select.append(opt)}
+   select.value=o.categoryId||"";
+   if(o.kind==="plan"){select.disabled=true;if(!p){const note=document.createElement("div");note.className="pilot-op-meta";note.textContent="Montant actuel indisponible : modification non confirmable.";card.append(note)}}
+   select.addEventListener("change",()=>{o.categoryId=select.value||null;refresh()});card.append(select);result.append(card);
+  }
+  const actions=document.createElement("div");actions.className="sb-assistant-actions";
+  const ok=document.createElement("button");ok.type="button";ok.className="sb-assistant-send";ok.textContent="Confirmer (test)";
+  const note=document.createElement("p");note.className="pilot-op-meta";
+  function refresh(){ok.disabled=review.operations.some((o,i)=>o.categoryId===null||(o.kind==="plan"&&!previews.some(p=>p.index===i)));note.textContent=ok.disabled?"Choisis les catégories manquantes. Aucun appel IA supplémentaire.":"Un clic pour tout confirmer. Simulation : aucune écriture financière."}
+  ok.addEventListener("click",()=>{if(ok.disabled||pendingReview!==review)return;const validated=core.validateReview(review,ctx);if(!validated.ok){status.textContent=validated.error;return}pendingReview=null;history=[];ok.disabled=true;note.textContent="Simulation de confirmation réussie. Aucun enregistrement Supabase, aucun appel IA.";status.textContent="Lot confirmé en simulation."});
+  actions.append(ok);result.append(note,actions);refresh();
+ }
+ function wipe(){pendingReview=null;history=[];result.replaceChildren();input.value="";$("cancel").hidden=true;voice.stop({discard:true})}
  function logout(){epoch++;session=null;busy=false;send.disabled=false;wipe();consent.checked=false;$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
@@ -38,9 +64,9 @@
    if(current!==epoch)return;
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
    if(!r.ok){status.textContent=errorMessages[r.body.error]||"Erreur de la passerelle IA ("+r.status+").";return}
-   const ctx=r.body.context,checked=core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Réponse inconnue ou invalide.";return;}
-   result.replaceChildren();input.value="";const v=checked.value;
-   if(v.kind==="draft"){for(const o of v.operations)append(kinds[o.kind]+" · "+o.label+" · "+(ctx.categories.find(c=>c.id===o.categoryId)?.name||"Catégorie")+" · "+euro(o.amountCents)+" · "+o.date+" · "+(o.frequency==="monthly"?"Mensuel":"Unique"));append("Brouillon uniquement. Aucun enregistrement.");}
+   const ctx=r.body.context,checked=r.body.result?.kind==="draft"?core.validateReview(r.body.result,ctx):core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Réponse inconnue ou invalide.";return;}
+   pendingReview=null;result.replaceChildren();input.value="";const v=checked.value;
+   if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[]);}
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
    history=["draft","clarify"].includes(v.kind)?[...history,{command,result:v}].slice(-2):[];$("cancel").hidden=false;

@@ -65,8 +65,28 @@ async function infer(model:string,payload:unknown){
  if(!r.ok){console.warn("smart-assistant provider HTTP",r.status);throw Error("Provider rejected");}
  return await r.json();
 }
+async function planPreview(token:string,householdId:string,result:any,context:any){
+ const plans=result.operations.map((o:any,i:number)=>({o,i})).filter(({o}:any)=>o.kind==="plan"&&o.categoryId!==null);
+ if(!plans.length)return [];
+ const cats=await rest(token,"/rest/v1/categories",{select:"id,legacy_id",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"});
+ if(!Array.isArray(cats)||cats.length>300)return [];
+ const previews=[];
+ for(const {o,i} of plans){
+  const matches=cats.filter((c:any)=>(c.legacy_id||c.id)===o.categoryId);if(matches.length!==1)continue;
+  const month=o.date.slice(0,7)+"-01";
+  const rows=await rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope",household_id:"eq."+householdId,category_id:"eq."+matches[0].id,archived_at:"is.null",month:"lte."+month,order:"month.desc",limit:"301"});
+  if(!Array.isArray(rows)||rows.length>300)continue;
+  const exact=rows.find((r:any)=>r.month===month&&r.scope==="month"),forward=rows.find((r:any)=>r.scope==="forward");
+  const record=exact||forward;if(!record)continue;
+  const amount=Number(record.planned_amount);if(!Number.isFinite(amount)||amount<0)continue;
+  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,Math.round(amount*100));
+  if(computed)previews.push({index:i,...computed});
+ }
+ return previews;
+}
+const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,planPreview});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
