@@ -176,3 +176,6 @@ Budget relatif/absolu/zéro et alias essence/carburant, opérations familiales s
 
 ### 31h — budget et lots
 Variantes de budget relatif (course), delta UI, création explicite groupée et consultation historique catégorie en lecture seule. Tests de régression ; aucune mutation financière.
+
+### 31i — demande et Gundam
+Correction de la grammaire de création groupée et affichage du texte envoyé en mémoire. Tests de régression et publication pilote à vérifier. Aucune mutation financière.

@@ -596,14 +596,23 @@
  function quickCreateCategory(command,c){
   if(!contextOK(c)||!ownerOK(c.actor,c)||typeof command!=="string"||command.length>1600)return null;
   const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
-  const head=t.match(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([^,;]+)(?:[,;] (.+))?$/iu);
+  // Split clauses only at sentence punctuation or a conjunction followed by an action.
+  // Decimal separators inside amounts must remain intact.
+  const head=t.match(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?(?:budget )?([^,;.!?]+?)(?:(?:[,;.!?]\s*| (?:et|puis) )(.+))?$/iu);
   if(!head)return null;
-  const name=head[1].trim();if(!/^[\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}$/u.test(name)||/\b(?:et|puis|avec)\b/i.test(name))return null;
+  const name=head[1].trim();if(!/^[\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}$/u.test(name)||/\b(?:et|puis|avec|supprime|efface|mets|ajoute|fixe|enregistre)\b/i.test(name))return null;
   let budgetCents=null,expenseCents=null;
   if(head[2]){
-   const tail=head[2].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-   const m=tail.match(new RegExp("^(?:mets-y|mets y|fixe|ajoute|mets) (?:un |le )?budget (?:de |a )?("+amountPattern+")\\s*(?:€|euros?)(?:(?:,? et |, | puis )(?:ajoute-y|ajoute y|ajoute|enregistre) ("+amountPattern+")\\s*(?:€|euros?) (?:de depenses?|en depenses?))?$"));
-   if(!m)return null;budgetCents=centsFromText(m[1]);expenseCents=m[2]?centsFromText(m[2]):null;if(budgetCents===null||(m[2]&&(!expenseCents)))return null;
+   const tail=head[2].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+   const clauses=tail.split(/(?:[,;.!?]\s*| (?:et|puis) )(?=(?:et |puis )?(?:mets(?:-y| y)?|fixe|ajoute(?:-y| y)?|enregistre)\b)/).map(s=>s.replace(/^(?:et |puis )/,"").trim());
+   if(clauses.length>2)return null;
+   for(const clause of clauses){
+    const b=clause.match(new RegExp("^(?:mets-y|mets y|fixe|ajoute|mets) (?:un |le )?budget (?:de |a )?("+amountPattern+")\\s*(?:€|euros?)$"));
+    const e=clause.match(new RegExp("^(?:ajoute-y|ajoute y|ajoute|enregistre) (?:(?:une |la )?depense de ("+amountPattern+")\\s*(?:€|euros?)|("+amountPattern+")\\s*(?:€|euros?) (?:de depenses?|en depenses?))(?:(?: dans| pour) (?:cette|la) categorie)?$"));
+    if(b&&budgetCents===null){budgetCents=centsFromText(b[1]);if(budgetCents===null)return null}
+    else if(e&&expenseCents===null){expenseCents=centsFromText(e[1]||e[2]);if(!expenseCents)return null}
+    else return null;
+   }
   }
   const month=c.selectedMonth||c.today.slice(0,7);
   const matches=c.categories.filter(x=>normalizeCategory(x.name)===normalizeCategory(name));

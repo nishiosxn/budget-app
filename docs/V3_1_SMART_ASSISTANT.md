@@ -76,3 +76,6 @@ Commandes de budget intégrales avec alias exacts du catalogue et référentiel 
 
 ## 31h — intentions composées et consultation
 Correction augmente de + singulier course, affichage montant précédent → nouveau et variation calculée. Création explicite avec budget et dépense dans un seul brouillon déterministe, sans ID inventé ni écriture ; une catégorie existante est réutilisée. Lecture du mois précédent pour une catégorie de dépenses active, montant prévu réel et opérations enregistrées incluant les récurrences selon les règles du client ; pas de transfert au modèle. Absence d'historique/catégorie ou lecture non disponible signalée sans chiffres inventés. Le pilote confirme uniquement en simulation ; la grammaire des demandes composées n'est pas universelle.
+
+## 31i — demande visible et catégorie Gundam
+Le pilote conserve la demande envoyée au-dessus du statut et des réponses, y compris en cas d'erreur, en mémoire seulement. Le brouillon composé accepte plusieurs phrases, le préfixe « catégorie budget », les montants décimaux et « ajoute une dépense de ». Aucune interprétation partielle si une clause n'est pas reconnue. Carte de catégorie avec barre de consommation et reste. Tests Gundam 90/40/50 et absence de quota. Toujours en simulation.
