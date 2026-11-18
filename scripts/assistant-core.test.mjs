@@ -19,3 +19,24 @@ test("clarification and no writes in laboratory",()=>{assert.equal(core.validate
 
 test("review allows unassigned categories without weakening write validator",()=>{const draft={kind:"draft",operations:[{...op,categoryId:null}]};assert.equal(core.validateReview(draft,ctx).ok,true);assert.equal(core.validateResult(draft,ctx).ok,false);assert.equal(core.validateReview({kind:"draft",operations:[{...op,categoryId:null,amountCents:-1}]},ctx).ok,false);});
 test("relative planned amount is calculated in cents, never by the model",()=>{const plan={...op,kind:"plan",owner:"common",amountCents:1000,planMode:"increase"};assert.equal(core.validateReview({kind:"draft",operations:[plan]},ctx).ok,true);assert.equal(core.validateResult({kind:"draft",operations:[plan]},ctx).ok,false);assert.equal(core.resolvePlanAmount(plan,4500).afterCents,5500);assert.equal(core.resolvePlanAmount({...plan,planMode:"decrease"},500),null);});
+
+test("default taxonomy matches merchants, preserves exact specific categories, proposes missing category",()=>{
+ const c={...ctx,categories:[{id:"food",name:"Courses",kind:"expense",owner:"B"},{id:"game",name:"Loisirs",kind:"expense",owner:"B"},{id:"netflix",name:"Netflix",kind:"expense",owner:"B"}]};
+ const normal=(label,categoryId=null,categoryHint=null)=>core.normalizeModelDraft({kind:"draft",operations:[{...op,label,categoryId,categoryHint,planMode:null}]},c,"j'ai dépensé");
+ for(const label of ["Lidl","E.Leclerc","CARREFOUR","Aldi"])assert.equal(normal(label).value.operations[0].categoryId,"food",label);
+ assert.equal(normal("Steam").value.operations[0].categoryId,"game");
+ assert.equal(normal("Netflix","netflix").value.operations[0].categoryId,"netflix");
+ for(const label of ["McDo","McDonald's","Tacos","Kebab"]){const x=normal(label,"invented");assert.equal(x.ok,true,label);assert.equal(x.value.operations[0].categoryId,null);assert.equal(x.suggestions[0].ruleKey,"food");assert.equal(core.validateResult(x.value,c).ok,false);}
+ assert.equal(normal("Commerce inconnu").suggestions.length,0);
+ assert.equal(normal("achat indéterminé",null,"home").suggestions[0].ruleKey,"home");
+ assert.equal(normal("Lidl","wrong",null).value.operations[0].categoryId,"food");
+});
+test("manual category and remembered exact association are prioritized; hidden categories never proposed again",()=>{
+ const c={...ctx,categories:[{id:"a",name:"Courses",kind:"expense",owner:"B"},{id:"b",name:"Loisirs",kind:"expense",owner:"B"},{id:"c",name:"Fast-food",kind:"expense",owner:"B",hiddenMonths:["2026-11"]}]};
+ const base={...op,label:"Lidl",categoryId:"b"};
+ assert.equal(core.classifyCategory(base,c,{explicit:true}).categoryId,"b");
+ assert.equal(core.classifyCategory(base,c,{overrides:{lidl:"b"}}).categoryId,"b");
+ assert.equal(core.classifyCategory({...op,label:"McDo",categoryId:null},c).source,"unavailable");
+ assert.equal(core.draftCategorySuggestion({...op,categoryId:null},c,"food"),null);
+});
+test("normalizer rejects unexpected fields and incorrect amount",()=>{for(const x of [{...op,amountCents:-1},{...op,sql:"delete"},{...op,planMode:"big"}])assert.equal(core.normalizeModelDraft({kind:"draft",operations:[x]},ctx).ok,false)});

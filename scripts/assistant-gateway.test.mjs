@@ -50,3 +50,8 @@ test("unpriced alternative disabled during pilot",async()=>{
 test("server returns only its validated catalog context",async()=>{const {handler}=setup();const result=await handler({...request,body:{...request.body,context:{secret:"untrusted",selectedMonth:"2026-11"}}});assert.equal(result.status,200);assert.deepEqual(result.body.context,ctx);assert.equal(result.body.context.secret,undefined);});
 
 test("one provider call returns all review rows including missing category and relative budget",async()=>{let seen=0;const draft={kind:"draft",operations:[{...valid.operations[0],categoryId:null,label:"Virement maman",amountCents:1500},{...valid.operations[0],kind:"plan",owner:"common",amountCents:1000,planMode:"increase"}]};const {handler}=setup({validateReview:core.validateReview,infer:async()=>{seen++;return {result:{response:draft}}},planPreview:async()=>[{index:1,beforeCents:4500,afterCents:5500}]});const r=await handler(request);assert.equal(r.status,200);assert.equal(seen,1);assert.equal(r.body.result.operations[0].categoryId,null);assert.equal(r.body.planPreviews[0].afterCents,5500);});
+
+test("missing restaurant category remains a valid review preview after provider normalization",async()=>{
+ const {handler}=setup({normalizeDraft:core.normalizeModelDraft,validateReview:core.validateReview,infer:async()=>({result:{response:{kind:"draft",operations:[{...valid.operations[0],label:"McDo",categoryId:"fast-food",categoryHint:"food",planMode:null}]}}})});
+ const r=await handler(request);assert.equal(r.status,200);assert.equal(r.body.result.operations[0].categoryId,null);assert.equal(r.body.categorySuggestions[0].ruleKey,"food");
+});

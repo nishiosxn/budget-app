@@ -81,5 +81,438 @@
   const mode=op.planMode||"set",after=mode==="increase"?beforeCents+op.amountCents:mode==="decrease"?beforeCents-op.amountCents:mode==="set"?op.amountCents:NaN;
   return Number.isSafeInteger(after)&&after>=0&&after<=100000000?{beforeCents,afterCents:after}:null;
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates});
+ // Editable default taxonomy: stable semantic keys, never database IDs.
+ const categoryRules=Object.freeze([
+ {
+  "key": "groceries",
+  "kind": "expense",
+  "name": "Courses",
+  "icon": "cart",
+  "aliases": [
+   "courses",
+   "alimentation",
+   "supermarché",
+   "grande surface"
+  ],
+  "terms": [
+   "lidl",
+   "aldi",
+   "leclerc",
+   "e leclerc",
+   "carrefour",
+   "intermarché",
+   "auchan",
+   "super u",
+   "hyper u",
+   "monoprix",
+   "casino",
+   "netto",
+   "picard",
+   "courses"
+  ]
+ },
+ {
+  "key": "food",
+  "kind": "expense",
+  "name": "Restaurants / fast-food",
+  "icon": "food",
+  "aliases": [
+   "restaurant",
+   "restaurants",
+   "fast food",
+   "restauration",
+   "sorties restaurant",
+   "restauration rapide"
+  ],
+  "terms": [
+   "mcdo",
+   "mc donald s",
+   "mcdonalds",
+   "mcdonald",
+   "burger king",
+   "kfc",
+   "quick",
+   "otacos",
+   "o tacos",
+   "tacos",
+   "kebab",
+   "subway",
+   "pitaya",
+   "restaurant",
+   "pizza",
+   "pizzeria",
+   "deliveroo",
+   "uber eats"
+  ]
+ },
+ {
+  "key": "home",
+  "kind": "expense",
+  "name": "Maison / entretien",
+  "icon": "home",
+  "aliases": [
+   "maison",
+   "entretien",
+   "maison entretien",
+   "produits ménagers",
+   "ménage",
+   "bricolage",
+   "ameublement"
+  ],
+  "terms": [
+   "action",
+   "produits ménagers",
+   "lessive",
+   "liquide vaisselle",
+   "nettoyant",
+   "ikea",
+   "leroy merlin",
+   "castorama",
+   "gifi",
+   "entretien",
+   "bricolage"
+  ]
+ },
+ {
+  "key": "leisure",
+  "kind": "expense",
+  "name": "Loisirs",
+  "icon": "game",
+  "aliases": [
+   "loisirs",
+   "divertissement",
+   "jeux vidéo",
+   "gaming",
+   "culture"
+  ],
+  "terms": [
+   "steam",
+   "playstation store",
+   "xbox",
+   "nintendo eshop",
+   "epic games",
+   "jeu vidéo",
+   "jeux vidéo",
+   "lego",
+   "cinéma",
+   "concert",
+   "escape game"
+  ]
+ },
+ {
+  "key": "transfer",
+  "kind": "expense",
+  "name": "Virements",
+  "icon": "transfer",
+  "aliases": [
+   "virements",
+   "virement",
+   "transferts externes",
+   "aide familiale"
+  ],
+  "terms": [
+   "virement",
+   "transfert",
+   "envoyé à maman"
+  ]
+ },
+ {
+  "key": "extra",
+  "kind": "income",
+  "name": "Revenus supplémentaires",
+  "icon": "income",
+  "aliases": [
+   "revenus supplémentaires",
+   "revenus divers",
+   "autres revenus",
+   "rentrées diverses",
+   "cadeaux reçus",
+   "virements reçus"
+  ],
+  "terms": [
+   "virement",
+   "cadeau",
+   "reçu",
+   "remboursement",
+   "maman",
+   "papa"
+  ]
+ },
+ {
+  "key": "salary",
+  "kind": "income",
+  "name": "Salaire",
+  "icon": "income",
+  "aliases": [
+   "salaire",
+   "salaires",
+   "paie"
+  ],
+  "terms": [
+   "salaire",
+   "paie"
+  ]
+ },
+ {
+  "key": "benefits",
+  "kind": "income",
+  "name": "Aides / allocations",
+  "icon": "income",
+  "aliases": [
+   "aides",
+   "allocations",
+   "aides allocations",
+   "caf"
+  ],
+  "terms": [
+   "caf",
+   "apl",
+   "prime d activité",
+   "allocation",
+   "bourse"
+  ]
+ },
+ {
+  "key": "fuel",
+  "kind": "expense",
+  "name": "Carburant",
+  "icon": "fuel",
+  "aliases": [
+   "carburant",
+   "essence",
+   "gazole",
+   "diesel"
+  ],
+  "terms": [
+   "essence",
+   "carburant",
+   "gazole",
+   "diesel",
+   "station service",
+   "plein"
+  ]
+ },
+ {
+  "key": "transport",
+  "kind": "expense",
+  "name": "Transports",
+  "icon": "car",
+  "aliases": [
+   "transport",
+   "transports",
+   "déplacements"
+  ],
+  "terms": [
+   "sncf",
+   "ouigo",
+   "train",
+   "bus",
+   "métro",
+   "péage",
+   "parking",
+   "taxi"
+  ]
+ },
+ {
+  "key": "health",
+  "kind": "expense",
+  "name": "Santé",
+  "icon": "health",
+  "aliases": [
+   "santé",
+   "médical",
+   "frais médicaux"
+  ],
+  "terms": [
+   "pharmacie",
+   "médecin",
+   "dentiste",
+   "opticien",
+   "consultation médicale"
+  ]
+ },
+ {
+  "key": "clothing",
+  "kind": "expense",
+  "name": "Vêtements",
+  "icon": "shirt",
+  "aliases": [
+   "vêtements",
+   "habillement",
+   "mode"
+  ],
+  "terms": [
+   "zara",
+   "h m",
+   "uniqlo",
+   "kiabi",
+   "vêtement",
+   "chaussures"
+  ]
+ },
+ {
+  "key": "subscriptions",
+  "kind": "expense",
+  "name": "Abonnements",
+  "icon": "card",
+  "aliases": [
+   "abonnements",
+   "abonnement"
+  ],
+  "terms": [
+   "netflix",
+   "disney",
+   "spotify",
+   "icloud",
+   "youtube premium",
+   "abonnement"
+  ]
+ },
+ {
+  "key": "gifts",
+  "kind": "expense",
+  "name": "Cadeaux",
+  "icon": "gift",
+  "aliases": [
+   "cadeaux",
+   "cadeau"
+  ],
+  "terms": [
+   "cadeau",
+   "anniversaire"
+  ]
+ },
+ {
+  "key": "phone",
+  "kind": "expense",
+  "name": "Téléphone",
+  "icon": "card",
+  "aliases": [
+   "téléphone",
+   "forfait mobile",
+   "mobile"
+  ],
+  "terms": [
+   "forfait mobile",
+   "téléphone",
+   "sosh",
+   "bouygues telecom"
+  ]
+ },
+ {
+  "key": "insurance",
+  "kind": "expense",
+  "name": "Assurances",
+  "icon": "card",
+  "aliases": [
+   "assurances",
+   "assurance"
+  ],
+  "terms": [
+   "assurance",
+   "assurances",
+   "mutuelle"
+  ]
+ },
+ {
+  "key": "rent",
+  "kind": "expense",
+  "name": "Loyer / logement",
+  "icon": "home",
+  "aliases": [
+   "loyer",
+   "logement",
+   "loyer logement"
+  ],
+  "terms": [
+   "loyer"
+  ]
+ },
+ {
+  "key": "energy",
+  "kind": "expense",
+  "name": "Électricité / énergie",
+  "icon": "home",
+  "aliases": [
+   "électricité",
+   "énergie",
+   "électricité énergie"
+  ],
+  "terms": [
+   "edf",
+   "électricité",
+   "gaz"
+  ]
+ },
+ {
+  "key": "internet",
+  "kind": "expense",
+  "name": "Internet",
+  "icon": "card",
+  "aliases": [
+   "internet",
+   "box internet"
+  ],
+  "terms": [
+   "internet",
+   "box internet"
+  ]
+ }
+].map(r=>Object.freeze({...r,aliases:Object.freeze(r.aliases),terms:Object.freeze(r.terms)})));
+ const normalizeCategory=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ const containsTerm=(text,term)=>(" "+text+" ").includes(" "+normalizeCategory(term)+" ");
+ const availableCategories=(op,ctx)=>ctx.categories.filter(c=>(op.kind==="plan"||c.kind===op.kind)&&(!c.createdFrom||op.date.slice(0,7)>=c.createdFrom)&&!(c.hiddenMonths||[]).includes(op.date.slice(0,7)));
+ function classifyCategory(op,ctx,{hint=null,explicit=false,overrides={}}={}){
+  const label=normalizeCategory(op.label),available=availableCategories(op,ctx),supplied=available.find(c=>c.id===op.categoryId)||available.find(c=>normalizeCategory(c.name)===normalizeCategory(op.categoryId)&&op.categoryId!==null);
+  const remembered=Object.hasOwn(overrides,label)?available.find(c=>c.id===overrides[label]):null;
+  if(remembered&&op.kind!=="plan"&&!explicit)return {categoryId:remembered.id,ruleKey:null,source:"personal"};
+  if(supplied&&(explicit||normalizeCategory(supplied.name)===label))return {categoryId:supplied.id,ruleKey:null,source:"existing"};
+  const exact=available.filter(c=>normalizeCategory(c.name)===label);
+  if(exact.length===1)return {categoryId:exact[0].id,ruleKey:null,source:"existing"};
+  const compatible=categoryRules.filter(r=>op.kind==="plan"||r.kind===op.kind);
+  const scored=compatible.map(r=>({r,score:Math.max(0,...r.terms.filter(t=>containsTerm(label,t)).map(t=>normalizeCategory(t).length))})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  // Conflicting signals without a clear winner are left to the model's valid category.
+  const matched=scored.length&&(!scored[1]||scored[0].score>scored[1].score)?scored[0].r:null;
+  const modelHint=compatible.find(r=>r.key===hint);
+  const rule=matched||(!supplied?modelHint:null);
+  if(rule){
+   const names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
+   const candidates=available.filter(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
+   if(candidates.length===1)return {categoryId:candidates[0].id,ruleKey:rule.key,source:"rule"};
+   if(candidates.length>1){if(supplied&&candidates.some(c=>c.id===supplied.id))return {categoryId:supplied.id,ruleKey:rule.key,source:"existing"};return {categoryId:null,ruleKey:null,source:"ambiguous"}}
+   // Never manufacture an ID, or suggest duplicates of an unavailable category.
+   const exists=ctx.categories.some(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
+   if(!exists)return {categoryId:null,ruleKey:rule.key,source:"new"};
+   return {categoryId:null,ruleKey:null,source:"unavailable"};
+  }
+  return supplied?{categoryId:supplied.id,ruleKey:null,source:"model"}:{categoryId:null,ruleKey:null,source:"unknown"};
+ }
+ function normalizeModelDraft(v,c,command=""){
+  if(!exact(v,["kind","operations"])||v.kind!=="draft"||!Array.isArray(v.operations)||v.operations.length>12)return fail("Brouillon invalide.");
+  const explicit=/\b(?:catégorie|categorie|classer|classe|range)\b/i.test(command);
+  const operations=[],suggestions=[];
+  for(const [index,o] of v.operations.entries()){
+   if(!obj(o)||Object.keys(o).some(k=>!["kind","categoryId","owner","amountCents","date","label","frequency","planMode","categoryHint"].includes(k)))return fail("Champs invalides.");
+   const {categoryHint,planMode,...base}=o;
+   if(!exact(base,["kind","categoryId","owner","amountCents","date","label","frequency"])||!(base.categoryId===null||typeof base.categoryId==="string"))return fail("Champs invalides.");
+   if(!kinds.has(base.kind)||!validDate(base.date)||!clean(base.label,120))return fail("Type, date ou libellé invalide.");
+   if(categoryHint!==undefined&&categoryHint!==null&&!categoryRules.some(r=>r.key===categoryHint))return fail("Indication de catégorie invalide.");
+   if(planMode!==undefined&&planMode!==null&&!["set","increase","decrease"].includes(planMode))return fail("Mode de budget invalide.");
+   if(base.kind!=="plan"&&planMode&&planMode!=="set")return fail("Mode de budget inattendu.");
+   const match=classifyCategory(base,c,{hint:categoryHint,explicit});
+   const selected=availableCategories(base,c).find(x=>x.id===match.categoryId);
+   operations.push({...base,categoryId:match.categoryId,...(base.kind==="plan"?{owner:selected?.owner||base.owner,planMode:planMode||"set"}:{})});
+   if(match.source==="new")suggestions.push({index,ruleKey:match.ruleKey});
+  }
+  const checked=validateReview({kind:"draft",operations},c);
+  return checked.ok?{...checked,suggestions}:checked;
+ }
+ function draftCategorySuggestion(op,ctx,ruleKey){
+  const rule=categoryRules.find(r=>r.key===ruleKey&&(op.kind==="plan"||r.kind===op.kind));
+  if(!rule||op.categoryId!==null)return null;
+  const names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
+  if(ctx.categories.some(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name))))return null;
+  return rule;
+ }
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion});
 })(globalThis);

@@ -164,3 +164,6 @@ Plusieurs POST 200 vérifiés, 6 réservations et 917 unités le 18/11 UTC. Fonc
 
 ### V3.1 — proposition immédiate
 Prompt et contrat de revue assouplis, catégories absentes explicitement non affectées, variation de budget calculée côté serveur, confirmation locale simulée. Validation stricte d'écriture conservée. Pas de mutation financière.
+
+### V3.1 e — référentiel et cartes
+Catégorisation déterministe et indices contrôlés Gemma, propositions de catégories manquantes, revue design et mémoire locale opt-in. Tests de la taxonomie et normalisation ajoutés ; aucune écriture financière.
