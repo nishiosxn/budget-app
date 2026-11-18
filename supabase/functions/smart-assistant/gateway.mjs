@@ -48,7 +48,7 @@ export function makeModelRequest(command,context,history=[]){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[]}){
+export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
@@ -71,8 +71,8 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   // Only after authentication and context validation: exact known single expense, no provider call.
   const quick=quickExpense?.(body.command.trim(),auth.context);
   if(quick?.ok){
-   let previews;try{previews=await planPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
-   return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
+   let previews=[],report=null;try{if(quick.value.kind==="draft")previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
+   return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
   }
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
@@ -83,7 +83,8 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    const decoded=decodeModelResponse(raw),checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
    if(!checked.ok){console.warn("smart-assistant invalid model result");return response(422,{error:"invalid_model_result"})}
    const previews=checked.value.kind==="draft"?await planPreview(token,body.householdId,checked.value,auth.context):[];
-   return response(200,{result:checked.value,model,context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
+   const report=checked.value.kind==="query"?await queryPreview(token,body.householdId,checked.value,auth.context):null;
+   return response(200,{result:checked.value,model,context:auth.context,...(report?{categoryReport:report}:{}),...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
   }catch{return response(502,{error:"model_unavailable_or_invalid"})}
  };
 }

@@ -90,6 +90,7 @@
   "icon": "cart",
   "aliases": [
    "courses",
+   "course",
    "alimentation",
    "supermarché",
    "grande surface"
@@ -542,12 +543,12 @@
   const monthly=/(?: chaque mois| par mois| tous les mois)$/.test(text);
   if(monthly)text=text.replace(/(?: chaque mois| par mois| tous les mois)$/,"");
   const selected=ctx.selectedMonth||ctx.today.slice(0,7);if(!monthOK(selected,ctx))return null;
-  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve) ("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le) budget (?:de |d'|des |pour )?(.+)$"));
+  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le) budget (?:de |d'|des |pour )?(.+)$"));
   const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire) (?:le )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
   const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:le )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
   const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:le )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
   let name,raw,mode;
-  if(delta){[,mode,raw,name]=delta;mode=["retire","diminue","enleve"].includes(mode)?"decrease":"increase"}
+  if(delta){[,mode,raw,name]=delta;mode=["retire","diminue","enleve","baisse","reduis"].includes(mode)?"decrease":"increase"}
   else if(deltaAfter){[,mode,name,raw]=deltaAfter;mode=["retire","diminue","baisse","reduis"].includes(mode)?"decrease":"increase"}
   else if(target){[,name,raw]=target;mode="set"}
   else if(zero&&(text.startsWith("zero ")||text.endsWith(" a zero"))){name=zero[1];raw="zero";mode="set"}
@@ -582,6 +583,79 @@
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:out?"expense":"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Virement "+m[2],frequency:"once",categoryHint:out?"transfer":"extra"}]},ctx,command);
   return checked.ok?checked:null;
  }
- function quickCommand(command,ctx){return quickBudget(command,ctx)||quickExpense(command,ctx)||quickFamilyMovement(command,ctx)}
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand});
+
+ // Explicit category creation is a review-only command, not an invented database ID.
+ function validateCategoryDraft(v,c){
+  if(!contextOK(c)||!exact(v,["kind","name","owner","month","date","budgetCents","expenseCents"])||v.kind!=="categoryDraft"||!clean(v.name,60)||!/^[\p{L}\p{N}][\p{L}\p{N} /&'’_-]{0,59}$/u.test(v.name)||!ownerOK(v.owner,c)||v.owner!==c.actor||!monthOK(v.month,c)||!validDate(v.date)||v.date!==c.today)return fail("Création de catégorie invalide.");
+  if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(v.name)))return fail("Une catégorie de ce nom existe déjà.");
+  if(v.budgetCents!==null&&(!Number.isSafeInteger(v.budgetCents)||v.budgetCents<0||v.budgetCents>100000000))return fail("Budget invalide.");
+  if(v.expenseCents!==null&&(!Number.isSafeInteger(v.expenseCents)||v.expenseCents<=0||v.expenseCents>100000000))return fail("Dépense invalide.");
+  if(v.expenseCents!==null&&v.month!==v.date.slice(0,7))return fail("Les opérations ne concernent pas le même mois.");
+  return {ok:true,value:{...v,name:v.name.trim()}};
+ }
+ function quickCreateCategory(command,c){
+  if(!contextOK(c)||!ownerOK(c.actor,c)||typeof command!=="string"||command.length>1600)return null;
+  const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const head=t.match(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([^,;]+)(?:[,;] (.+))?$/iu);
+  if(!head)return null;
+  const name=head[1].trim();if(!/^[\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}$/u.test(name)||/\b(?:et|puis|avec)\b/i.test(name))return null;
+  let budgetCents=null,expenseCents=null;
+  if(head[2]){
+   const tail=head[2].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+   const m=tail.match(new RegExp("^(?:mets-y|mets y|fixe|ajoute|mets) (?:un |le )?budget (?:de |a )?("+amountPattern+")\\s*(?:€|euros?)(?:(?:,? et |, | puis )(?:ajoute-y|ajoute y|ajoute|enregistre) ("+amountPattern+")\\s*(?:€|euros?) (?:de depenses?|en depenses?))?$"));
+   if(!m)return null;budgetCents=centsFromText(m[1]);expenseCents=m[2]?centsFromText(m[2]):null;if(budgetCents===null||(m[2]&&(!expenseCents)))return null;
+  }
+  const month=c.selectedMonth||c.today.slice(0,7);
+  const matches=c.categories.filter(x=>normalizeCategory(x.name)===normalizeCategory(name));
+  if(matches.length){
+   if(matches.length!==1||matches[0].kind!=="expense")return {ok:true,value:{kind:"clarify",message:"Une catégorie nommée "+name+" existe déjà. Choisis-la dans les catégories."}};
+   const cat=matches[0],operations=[];
+   if(budgetCents!==null)operations.push({kind:"plan",categoryId:cat.id,owner:cat.owner,amountCents:budgetCents,date:month+"-01",label:cat.name,frequency:"once",planMode:"set"});
+   if(expenseCents!==null)operations.push({kind:"expense",categoryId:cat.id,owner:c.actor,amountCents:expenseCents,date:c.today,label:cat.name,frequency:"once"});
+   if(!operations.length)return {ok:true,value:{kind:"answer",message:"La catégorie "+cat.name+" existe déjà."}};
+   const checked=validateReview({kind:"draft",operations},c);return checked.ok?checked:null;
+  }
+  const checked=validateCategoryDraft({kind:"categoryDraft",name,owner:c.actor,month,date:c.today,budgetCents,expenseCents},c);return checked.ok?checked:null;
+ }
+ function quickCategoryQuery(command,c){
+  if(!contextOK(c)||typeof command!=="string"||command.length>1600)return null;
+  const t=normalizeCategory(command);
+  const m=t.match(/^(?:(?:de )?combien (?:etait|est|s elevait) (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|quel etait (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|combien (?:ai je|j ai) depense (?:en |dans |pour )?)(.+?) (le mois dernier|le mois precedent|ce mois ci)$/);
+  if(!m)return null;
+  const current=c.today.slice(0,7),[y,n]=current.split("-").map(Number),d=new Date(Date.UTC(y,n-2,1));
+  const month=m[2]==="ce mois ci"?current:d.toISOString().slice(0,7);
+  if(month<c.firstMonth)return {ok:true,value:{kind:"answer",message:"Aucune donnée de ce foyer n’est disponible pour "+month+"."}};
+  const key=m[1],op={kind:"expense",date:month+"-01",label:key,categoryId:null};
+  const available=availableCategories(op,c),exactMatches=available.filter(x=>normalizeCategory(x.name)===key);
+  const rule=categoryRules.filter(r=>r.kind==="expense"&&[r.name,...r.aliases,...r.terms].some(t=>normalizeCategory(t)===key));
+  const alias=rule.length===1?new Set([rule[0].name,...rule[0].aliases].map(normalizeCategory)):new Set();
+  const matched=exactMatches.length?exactMatches:available.filter(x=>alias.has(normalizeCategory(x.name)));
+  if(matched.length!==1)return {ok:true,value:{kind:"clarify",message:matched.length?"Plusieurs catégories correspondent. Indique leur nom exact.":"Aucune catégorie active ne correspond à « "+key+" » pour "+month+"."}};
+  return validateAssistantResult({kind:"query",query:"categories",month,compareMonth:null,categoryId:matched[0].id,owner:null},c);
+ }
+ // Mirror the app: exact month overrides latest forward, then the zero baseline.
+ function readBudgetCents(rows,month){
+  if(!Array.isArray(rows)||!validMonth(month))return null;
+  const eligible=rows.filter(r=>String(r.month).slice(0,7)<=month);
+  const exact=eligible.filter(r=>String(r.month).slice(0,7)===month&&r.scope==="month");
+  const forward=eligible.filter(r=>r.scope==="forward").sort((a,b)=>String(b.month).localeCompare(String(a.month)));
+  if(exact.length>1||forward.length>1&&String(forward[0].month)===String(forward[1].month))return null;
+  const r=exact[0]||forward[0];if(!r)return 0;
+  const amount=Number(r.planned_amount),n=Math.round(amount*100);return Number.isFinite(amount)&&Number.isSafeInteger(n)&&n>=0?n:null;
+ }
+ function categoryReport({month,categoryId,categoryUuid,budgets,transactions,recurrences}){
+  const plannedCents=readBudgetCents(budgets,month);if(plannedCents===null||!Array.isArray(transactions)||!Array.isArray(recurrences))return null;
+  let actualCents=0,recurringCents=0;
+  const toCents=v=>{const n=Math.round(Number(v)*100);return Number.isSafeInteger(n)?n:null};
+  for(const r of transactions){if(r.category_id!==categoryUuid||String(r.transaction_date).slice(0,7)!==month||(r.metadata?.type||"expense")!=="expense")continue;const a=toCents(r.amount);if(a===null)return null;actualCents+=a}
+  for(const r of recurrences){
+   if(String(r.start_month).slice(0,7)>month||(r.end_month&&String(r.end_month).slice(0,7)<month)||(r.excluded_months||[]).includes(month))continue;
+   const ov=r.overrides?.[month]||{},type=ov.type||r.metadata?.type||"expense",matches=Object.hasOwn(ov,"category")?ov.category===categoryId||ov.category===categoryUuid:r.category_id===categoryUuid;
+   if(!matches||type!=="expense")continue;const a=toCents(Object.hasOwn(ov,"amount")?ov.amount:r.amount);if(a===null)return null;recurringCents+=a;actualCents+=a;
+  }
+  if(!Number.isSafeInteger(actualCents)||!Number.isSafeInteger(recurringCents))return null;
+  return {plannedCents,actualCents,remainingCents:plannedCents-actualCents,recurringCents};
+ }
+ function quickCommand(command,ctx){return quickCreateCategory(command,ctx)||quickCategoryQuery(command,ctx)||quickBudget(command,ctx)||quickExpense(command,ctx)||quickFamilyMovement(command,ctx)}
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport});
 })(globalThis);

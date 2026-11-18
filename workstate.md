@@ -173,3 +173,6 @@ Chemin déterministe après autorisation, avant quota : dépenses simples et com
 
 ### 31g — moteur hybride
 Budget relatif/absolu/zéro et alias essence/carburant, opérations familiales simples, sans appel IA, prévisualisation du budget réel quand disponible. Tests ajoutés ; aucune écriture financière.
+
+### 31h — budget et lots
+Variantes de budget relatif (course), delta UI, création explicite groupée et consultation historique catégorie en lecture seule. Tests de régression ; aucune mutation financière.

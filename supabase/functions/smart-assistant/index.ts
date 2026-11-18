@@ -76,19 +76,35 @@ async function planPreview(token:string,householdId:string,result:any,context:an
   const month=o.date.slice(0,7)+"-01";
   const rows=await rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope",household_id:"eq."+householdId,category_id:"eq."+matches[0].id,archived_at:"is.null",month:"lte."+month,order:"month.desc",limit:"301"});
   if(!Array.isArray(rows)||rows.length>300)continue;
-  const exact=rows.find((r:any)=>r.month===month&&r.scope==="month"),forward=rows.find((r:any)=>r.scope==="forward");
-  const record=exact||forward;if(!record)continue;
-  const amount=Number(record.planned_amount);if(!Number.isFinite(amount)||amount<0)continue;
-  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,Math.round(amount*100));
+  const before=(globalThis as any).SmartBudgetAssistantCore.readBudgetCents(rows,month.slice(0,7));if(before===null)continue;
+  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,before);
   if(computed)previews.push({index:i,...computed});
  }
  return previews;
+}
+async function queryPreview(token:string,householdId:string,result:any,context:any){
+ if(result.query!=="categories"||!result.categoryId||result.owner!==null||result.month>context.today.slice(0,7))return null;
+ const cat=context.categories.find((c:any)=>c.id===result.categoryId&&c.kind==="expense");
+ if(!cat||result.month<cat.createdFrom||cat.hiddenMonths.includes(result.month))return null;
+ const cats=await rest(token,"/rest/v1/categories",{select:"id,legacy_id",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"});
+ if(!Array.isArray(cats)||cats.length>300)return null;
+ const matches=cats.filter((c:any)=>(c.legacy_id||c.id)===cat.id);if(matches.length!==1)return null;
+ const categoryUuid=matches[0].id,month=result.month+"-01";
+ const [y,m]=result.month.split("-").map(Number),next=new Date(Date.UTC(y,m,1)).toISOString().slice(0,10);
+ const [budgets,transactions,recurrences]=await Promise.all([
+  rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope",household_id:"eq."+householdId,category_id:"eq."+categoryUuid,archived_at:"is.null",month:"lte."+month,limit:"1000"}),
+  rest(token,"/rest/v1/transactions",{select:"category_id,transaction_date,amount,metadata",household_id:"eq."+householdId,category_id:"eq."+categoryUuid,archived_at:"is.null",and:"(transaction_date.gte."+month+",transaction_date.lt."+next+")",limit:"1000"}),
+  rest(token,"/rest/v1/recurrences",{select:"category_id,amount,start_month,end_month,excluded_months,overrides,metadata",household_id:"eq."+householdId,archived_at:"is.null",start_month:"lte."+month,limit:"1000"})
+ ]);
+ if([budgets,transactions,recurrences].some(r=>!Array.isArray(r)||r.length>=1000))return null;
+ const totals=(globalThis as any).SmartBudgetAssistantCore.categoryReport({month:result.month,categoryId:cat.id,categoryUuid,budgets,transactions,recurrences});
+ return totals?{name:cat.name,month:result.month,...totals}:null;
 }
 const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.quickCommand(command,context);
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
