@@ -167,3 +167,6 @@ Prompt et contrat de revue assouplis, catégories absentes explicitement non aff
 
 ### V3.1 e — référentiel et cartes
 Catégorisation déterministe et indices contrôlés Gemma, propositions de catégories manquantes, revue design et mémoire locale opt-in. Tests de la taxonomie et normalisation ajoutés ; aucune écriture financière.
+
+### 31f — Zara / raccourci sans IA
+Chemin déterministe après autorisation, avant quota : dépenses simples et commerces connus, prévisualisation uniquement. Tests ajoutés pour Zara, montant décimal, catégories manquantes et phrases complexes.

@@ -514,5 +514,19 @@
   if(ctx.categories.some(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name))))return null;
   return rule;
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion});
+ // Recognize only complete, unambiguous single-expense sentences. No partial matching.
+ const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDo","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","essence":"Essence","carburant":"Carburant"});
+ function quickExpense(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
+  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
+  if(!m)return null;
+  const merchant=normalizeCategory(m[2]),label=Object.hasOwn(quickMerchants,merchant)?quickMerchants[merchant]:null;
+  if(!label)return null;
+  const [whole,decimal=""]=m[1].replace(",",".").split("."),amountCents=Number(whole)*100+Number(decimal.padEnd(2,"0"));
+  if(!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>100000000)return null;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense});
 })(globalThis);

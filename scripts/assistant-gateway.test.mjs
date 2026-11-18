@@ -55,3 +55,10 @@ test("missing restaurant category remains a valid review preview after provider 
  const {handler}=setup({normalizeDraft:core.normalizeModelDraft,validateReview:core.validateReview,infer:async()=>({result:{response:{kind:"draft",operations:[{...valid.operations[0],label:"McDo",categoryId:"fast-food",categoryHint:"food",planMode:null}]}}})});
  const r=await handler(request);assert.equal(r.status,200);assert.equal(r.body.result.operations[0].categoryId,null);assert.equal(r.body.categorySuggestions[0].ruleKey,"food");
 });
+
+test("Zara bypasses provider and quota only after authenticated household verification",async()=>{
+ const {handler,calls}=setup({quickExpense:core.quickExpense,normalizeDraft:core.normalizeModelDraft,validateReview:core.validateReview});
+ const r=await handler({...request,body:{...request.body,command:"J’ai dépensé 20 € chez zara"}});
+ assert.equal(r.status,200);assert.equal(r.body.model,"local-rules");assert.equal(r.body.categorySuggestions[0].ruleKey,"clothing");assert.deepEqual(calls,["auth"]);
+ const denied=setup({quickExpense:core.quickExpense,authorize:async()=>null});assert.equal((await denied.handler({...request,body:{...request.body,command:"J’ai dépensé 20 € chez zara"}})).status,403);
+});

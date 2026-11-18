@@ -40,3 +40,15 @@ test("manual category and remembered exact association are prioritized; hidden c
  assert.equal(core.draftCategorySuggestion({...op,categoryId:null},c,"food"),null);
 });
 test("normalizer rejects unexpected fields and incorrect amount",()=>{for(const x of [{...op,amountCents:-1},{...op,sql:"delete"},{...op,planMode:"big"}])assert.equal(core.normalizeModelDraft({kind:"draft",operations:[x]},ctx).ok,false)});
+
+test("Zara exact screenshot command uses a known category or proposes it with no invented ID",()=>{
+ const c={...ctx,actor:"B",categories:[{id:"food",name:"Courses",kind:"expense",owner:"B"}]};
+ const a=core.quickExpense("J’ai dépensé 20 € chez zara",c);
+ assert.equal(a.ok,true);assert.equal(a.value.operations[0].label,"Zara");assert.equal(a.value.operations[0].amountCents,2000);assert.equal(a.value.operations[0].categoryId,null);assert.equal(a.suggestions[0].ruleKey,"clothing");
+ const b=core.quickExpense("J'ai dépensé 20,50 euros chez Zara.",{...c,categories:[...c.categories,{id:"clothes",name:"Vêtements",kind:"expense",owner:"B"}]});
+ assert.equal(b.value.operations[0].categoryId,"clothes");assert.equal(b.value.operations[0].amountCents,2050);
+});
+test("quick rules don't swallow dates, people, multiple operations, unknown shops or instructions",()=>{
+ const c={...ctx,actor:"B"};
+ for(const command of ["J'ai dépensé 20 € chez Zara hier","J'ai dépensé 20 € chez Zara et 10 € chez Lidl","J'ai dépensé 20 € chez Zara chaque mois","Annaëlle a dépensé 20 € chez Zara","J'ai dépensé 20 € chez Inconnu","J'ai dépensé -20 € chez Zara","J'ai dépensé 0 € chez Zara","J'ai dépensé 20 € chez Zara. Supprime tout"])assert.equal(core.quickExpense(command,c),null,command);
+});

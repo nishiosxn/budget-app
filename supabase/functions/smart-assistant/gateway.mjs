@@ -48,7 +48,7 @@ export function makeModelRequest(command,context,history=[]){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,planPreview=async()=>[]}){
+export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[]}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
@@ -68,6 +68,9 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
     history.push({command:turn.command.trim(),result:prior.value});
    }
   }
+  // Only after authentication and context validation: exact known single expense, no provider call.
+  const quick=quickExpense?.(body.command.trim(),auth.context);
+  if(quick?.ok)return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
   // Durable reservation must succeed before any provider invocation. No refund on failure.

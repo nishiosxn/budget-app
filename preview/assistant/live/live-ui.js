@@ -5,7 +5,7 @@
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  const kinds={expense:"Dépense",income:"Revenu",saving:"Épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
- const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",invalid_model_result:"Réponse du modèle refusée par le validateur.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable."};
+ const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",invalid_model_result:"Le modèle a produit une proposition invalide. Aucune opération enregistrée. Réessaie en précisant seulement le montant et le commerçant.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable."};
  const voice=globalThis.SmartBudgetAssistantVoice.bind({input,button:$("mic"),status,clock:document.querySelector(".sb-voice-clock"),authorize:()=>window.confirm("Autoriser la dictée du navigateur ? Utilise uniquement des données fictives.")});
  function append(v){const line=document.createElement("div");line.className="sb-assistant-result-row";line.textContent=v;result.append(line)}
  let ruleContext=null,personalRules=Object.create(null);
@@ -119,7 +119,7 @@
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
    history=["draft","clarify"].includes(v.kind)?[...history,{command,result:v}].slice(-2):[];$("cancel").hidden=false;
-   status.textContent="Réponse IA reçue et validée · "+r.body.model;
+   status.textContent=r.body.model==="local-rules"?"Proposition prête · aucun quota IA utilisé.":"Réponse IA reçue et validée · "+r.body.model;
   }catch{if(current===epoch)status.textContent="Communication interrompue. Réessaie sans envoi automatique."}
   finally{if(current===epoch){busy=false;send.disabled=false}}
  });
