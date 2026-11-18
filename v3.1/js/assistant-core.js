@@ -665,6 +665,94 @@
   if(!Number.isSafeInteger(actualCents)||!Number.isSafeInteger(recurringCents))return null;
   return {plannedCents,actualCents,remainingCents:plannedCents-actualCents,recurringCents};
  }
- function quickCommand(command,ctx){return quickCreateCategory(command,ctx)||quickCategoryQuery(command,ctx)||quickBudget(command,ctx)||quickExpense(command,ctx)||quickFamilyMovement(command,ctx)}
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport});
+
+ // Smart Engine: normalize only recognized monetary expressions and anchored synonyms.
+ const frenchUnits=["zero","un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix","onze","douze","treize","quatorze","quinze","seize"];
+ const frenchSmall=new Map(frenchUnits.map((v,i)=>[v,i]));
+ for(let i=17;i<20;i++)frenchSmall.set("dix "+frenchUnits[i-10],i);
+ for(const [t,n] of [["vingt",20],["trente",30],["quarante",40],["cinquante",50],["soixante",60],["septante",70],["huitante",80],["nonante",90]]){
+  frenchSmall.set(t,n);for(let u=1;u<10;u++){frenchSmall.set(t+(u===1?" et ":" ")+frenchUnits[u],n+u);if(u===1)frenchSmall.set(t+" un",n+u)}
+ }
+ for(let i=70;i<80;i++){const u=i-60;frenchSmall.set("soixante"+(u===11?" et ":" ")+([...frenchSmall].find(([k,v])=>v===u)?.[0]),i)}
+ frenchSmall.set("quatre vingt",80);frenchSmall.set("quatre vingts",80);
+ for(let i=81;i<100;i++){const u=i-80;frenchSmall.set("quatre vingt "+([...frenchSmall].find(([k,v])=>v===u)?.[0]),i)}
+ frenchSmall.set("une",1);
+ const foldMoney=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[-‑–]/g," ").replace(/\s+/g," ").trim();
+ function frenchNumber(text){
+  const s=foldMoney(text);if(frenchSmall.has(s))return frenchSmall.get(s);
+  function underThousand(v){
+   if(frenchSmall.has(v))return frenchSmall.get(v);
+   const m=v.match(/^(?:(deux|trois|quatre|cinq|six|sept|huit|neuf) )?cents?(?: (.+))?$/);if(!m)return null;
+   const rest=m[2]?frenchSmall.get(m[2]):0;if(rest===undefined||m[2]&&rest===0)return null;
+   return (m[1]?frenchSmall.get(m[1]):1)*100+rest;
+  }
+  const thousand=s.match(/^(?:(.+) )?mille(?: (.+))?$/);
+  if(thousand){const a=thousand[1]?underThousand(thousand[1]):1,b=thousand[2]?underThousand(thousand[2]):0;return a!==null&&a>0&&b!==null?a*1000+b:null}
+  return underThousand(s);
+ }
+ const numberWord="(?:z[eé]ro|une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|septante|huitante|nonante|cents?|mille)";
+ const spokenMoney=new RegExp("(?<![\\p{L}\\p{N}-])("+numberWord+"(?:(?:[\\s‑–-]+)(?:"+numberWord+"|et))*)\\s+(euros?|balles?)\\b","giu");
+ function normalizeLanguage(command){
+  if(typeof command!=="string"||command.length>1600)return command;
+  let t=command.normalize("NFC").replace(/’/g,"'").replace(/\s+/g," ").trim();
+  t=t.replace(spokenMoney,(all,words,currency,offset,source)=>{
+   if(foldMoney(words).endsWith(" et"))return all;
+   // Never partially convert a mixed numeral or a negative expression.
+   if(/(?:\d|[-−]|\bmoins)\s*$/iu.test(source.slice(0,offset)))return all;
+   const n=frenchNumber(words);return n===null?all:n+" euros";
+  });
+  t=t.replace(/(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?=\s*(?:€|euros?|balles?)\b|\s*€)/giu,m=>m.replace(/\s/g,""));
+  t=t.replace(/(\d+(?:[,.]\d{1,2})?)\s+balles?\b/giu,"$1 euros");
+  t=t.replace(/^(?:s'il te plaît[,.]?\s+|peux-tu\s+|stp[,.]?\s+)/iu,"").replace(/(?:[,.]?\s+(?:s'il te plaît|merci|stp))[.!?]?$/iu,"");
+  t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse) /iu,"J'ai reçu ");
+  t=t.replace(/^rajoute /iu,"Ajoute ").replace(/^réduis /iu,"Diminue ");
+  // A category bundle can be dictated without punctuation. Normalize only after explicit creation intent.
+  if(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie /iu.test(t)){
+   t=t.replace(/(?<=[\p{L}\p{N}])\s+(?:avec|(?:et )?(?:mets[- ]y|ajoute[- ]y|mets|fixe|ajoute))\s+(?=(?:un |le )?budget\b)/iu,", mets-y ");
+   t=t.replace(/,\s*,/g,",");
+   t=t.replace(/(?:\s+et|\s+puis|[,;.])\s+(?:une |la )?d[ée]pense\s+de\s+/iu," et ajoute une dépense de ");
+  }
+  return t;
+ }
+
+ function quickSingleMovement(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
+  let t=command.trim(),date=ctx.today;
+  // Dates only when explicitly stated, not inferred from a merchant name.
+  const suffix=t.match(/ (hier|aujourd'hui)[.!?]?$/iu);
+  if(suffix){t=t.slice(0,suffix.index).trim();if(suffix[1].toLowerCase()==="hier"){const day=new Date(ctx.today+"T12:00:00Z");day.setUTCDate(day.getUTCDate()-1);date=day.toISOString().slice(0,10)}}
+  const direct=quickExpense(t,ctx)||quickFamilyMovement(t,ctx);
+  let r=direct;
+  if(!r){
+   const m=t.match(/^j[' ]ai reçu (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:de |en |pour (?:mon |le )?)(salaire|paie|cadeau|remboursement)[.!?]?$/iu);
+   if(m){const amountCents=centsFromText(m[1]),hint=/salaire|paie/i.test(m[2])?"salary":"extra";if(amountCents>0)r=normalizeModelDraft({kind:"draft",operations:[{kind:"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:m[2],frequency:"once",categoryHint:hint}]},ctx,t)}
+  }
+  if(!r?.ok)return null;
+  if(date===ctx.today)return r;
+  const operations=r.value.operations.map(o=>({...o,date}));
+  const checked=validateReview({kind:"draft",operations},ctx);
+  return checked.ok?{...checked,suggestions:r.suggestions||[]}:null;
+ }
+ function quickMovementBatch(command,ctx){
+  // Commas between clauses, never decimal punctuation. Each clause must parse in full.
+  const segments=command.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:et|puis)\s+)(?=(?:j[' ]ai\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en)\s+))/iu);
+  if(segments.length<2||segments.length>12)return null;
+  const operations=[],suggestions=[];
+  for(let i=0;i<segments.length;i++){
+   let part=segments[i].trim();
+   if(/^\d/.test(part)){if(operations.at(-1)?.kind!=="expense")return null;part="J'ai dépensé "+part}
+   // Normalize synonyms in every clause, not only at the beginning of a batch.
+   const parsed=quickSingleMovement(normalizeLanguage(part),ctx);
+   if(!parsed?.ok||parsed.value.operations.length!==1)return null;
+   for(const s of parsed.suggestions||[])suggestions.push({...s,index:operations.length});
+   operations.push(parsed.value.operations[0]);
+  }
+  const checked=validateReview({kind:"draft",operations},ctx);return checked.ok?{...checked,suggestions}:null;
+ }
+ function quickCommand(command,ctx){
+  if(typeof command!=="string"||!contextOK(ctx))return null;
+  const normalized=normalizeLanguage(command);
+  return quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+ }
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch});
 })(globalThis);
