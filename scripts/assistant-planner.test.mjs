@@ -13,3 +13,14 @@ test("pure confirmed mixed plan",()=>{const old=JSON.stringify(snapshot),r=plann
 test("no approval, invalid id, or invalid category means no patch",()=>{for(const x of [{...make([base]),approval:false},{...make([base]),batchId:"bad"},{...make([{...base,categoryId:"unknown"}])}]){const r=planner.prepareBatch(x);assert.equal(r.ok,false);assert.equal(r.patch,undefined)}});
 test("duplicate recurrence occurrence and replay are blocked",()=>{const x=make([base]);assert.equal(planner.prepareBatch({...x,existingOccurrences:[base]}).ok,false);const first=planner.prepareBatch(x);assert.equal(planner.prepareBatch({...x,snapshot:first.patch}).ok,false)});
 test("one invalid item blocks entire batch",()=>{const old=JSON.stringify(snapshot),r=planner.prepareBatch(make([base,{...base,amountCents:-1}]));assert.equal(r.ok,false);assert.equal(JSON.stringify(snapshot),old)});
+
+test("monthly proposals are checked across future months, including clamped dates",()=>{
+ const series={...base,date:"2026-11-30",frequency:"monthly"};const args=make([series]);
+ assert.equal(planner.requiredMonths(args.result,ctx)[0],"2026-11");assert.equal(planner.requiredMonths(args.result,ctx).at(-1),"2028-12");
+ const future={...base,date:"2027-02-28"};assert.equal(planner.prepareBatch({...args,existingOccurrences:[future]}).ok,false);
+ assert.equal(planner.prepareBatch({...args,existingOccurrences:[{...future,date:"2027-02-27"}]}).ok,true);
+});
+test("series and one-time proposal overlap blocks entire batch",()=>{
+ const earlier={...base,date:"2026-10-17",frequency:"monthly"};const args=make([earlier,base]);
+ const result=planner.prepareBatch(args);assert.equal(result.ok,false);assert.equal(result.patch,undefined);
+});

@@ -158,3 +158,6 @@ Code de réservation conservative avant inférence et SQL de revue isolé, non a
 
 ### Pilote connecté — migration et interface
 Quota installé (`20261117235347`) ; garde permissions/plafonds et zéro résidu vérifiés. La page `preview/assistant/live/` se connecte au compte isolé sans sauvegarde de session, appelle la passerelle, reçoit un résultat revalidé, sans écriture financière. Activation explicite par deux secrets et test réel navigateur encore nécessaires.
+
+### Pilote IA — premières demandes réelles
+Plusieurs POST 200 vérifiés, 6 réservations et 917 unités le 18/11 UTC. Fonction v5 identique à la source f2326dd4. Préparation du contrôle des doublons futurs dans le planificateur, écriture toujours désactivée jusqu'à intégration et tests sur foyer isolé.
