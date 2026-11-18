@@ -79,3 +79,6 @@ Correction augmente de + singulier course, affichage montant précédent → nou
 
 ## 31i — demande visible et catégorie Gundam
 Le pilote conserve la demande envoyée au-dessus du statut et des réponses, y compris en cas d'erreur, en mémoire seulement. Le brouillon composé accepte plusieurs phrases, le préfixe « catégorie budget », les montants décimaux et « ajoute une dépense de ». Aucune interprétation partielle si une clause n'est pas reconnue. Carte de catégorie avec barre de consommation et reste. Tests Gundam 90/40/50 et absence de quota. Toujours en simulation.
+
+## 31j — Smart Engine
+Normalisation monétaire française (nombres en lettres, centaines, milliers, euros/balles), synonymes bornés, ponctuation de création dictée, dates hier/aujourd'hui, lots de dépenses et revenus familiaux reconnus intégralement. Texte original conservé. Le moteur refuse une correspondance partielle et utilise Gemma pour les autres commandes. 2 000 cas synthétiques distincts générés et vérifiés sémantiquement (montants, catégories, dates, intentions) ; tests de rejet supplémentaires. Ce n'est pas une mesure de couverture du français libre ni un benchmark réel de Gemma. Aucune écriture financière.

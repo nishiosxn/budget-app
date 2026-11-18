@@ -179,3 +179,6 @@ Variantes de budget relatif (course), delta UI, création explicite groupée et 
 
 ### 31i — demande et Gundam
 Correction de la grammaire de création groupée et affichage du texte envoyé en mémoire. Tests de régression et publication pilote à vérifier. Aucune mutation financière.
+
+### 31j — Smart Engine
+Normalisation et lot de mouvements déterministes, corpus synthétique 2 000 cas + refus, validation stricte conservée. Publication après CI. Aucun changement des données.
