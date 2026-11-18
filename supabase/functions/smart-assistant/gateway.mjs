@@ -70,7 +70,10 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   }
   // Only after authentication and context validation: exact known single expense, no provider call.
   const quick=quickExpense?.(body.command.trim(),auth.context);
-  if(quick?.ok)return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
+  if(quick?.ok){
+   let previews;try{previews=await planPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
+   return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
+  }
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
   // Durable reservation must succeed before any provider invocation. No refund on failure.
@@ -78,7 +81,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   try{
    const raw=await infer(model,payload);
    const decoded=decodeModelResponse(raw),checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
-   if(!checked.ok)return response(422,{error:"invalid_model_result"});
+   if(!checked.ok){console.warn("smart-assistant invalid model result");return response(422,{error:"invalid_model_result"})}
    const previews=checked.value.kind==="draft"?await planPreview(token,body.householdId,checked.value,auth.context):[];
    return response(200,{result:checked.value,model,context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
   }catch{return response(502,{error:"model_unavailable_or_invalid"})}

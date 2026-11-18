@@ -70,3 +70,6 @@ Taxonomie 19 familles dans assistant-core (même code partagé côté serveur), 
 
 ## Correctif 31f
 Le 18/11, POST 422 observé pour le pilote après signalement Zara. Le contenu exact de la réponse invalide n'est pas journalisé. Ajout d'un chemin déterministe strict pour les phrases complètes de dépense unique auprès d'enseignes connues, après vérification du foyer, avant réservation et inférence. Aucun appel IA ni quota pour ce chemin. Les formulations complexes passent toujours par Gemma. Proposition Zara → Vêtements (création simulée si absente). Tests de régression et refus des phrases composites. Aucun enregistrement réel.
+
+## 31g — moteur hybride étendu
+Commandes de budget intégrales avec alias exacts du catalogue et référentiel : augmenter/diminuer/fixer/zéro, mois sélectionné par défaut, récurrence explicite. Calcul côté serveur sur montant actuel et autorisation inchangée. Dépenses connues et virements maman/papa simples également avant quota. Commandes composites et inconnues restent au modèle. Les montants manquants, catégories ambiguës et opérations non reconnues ne sont pas inventés. Prévisualisation uniquement, aucun enregistrement. Plusieurs POST 422 constatés le 18/11 ; pas de réponse brute conservée, cause détaillée modèle non démontrée.

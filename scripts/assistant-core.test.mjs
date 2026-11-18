@@ -52,3 +52,20 @@ test("quick rules don't swallow dates, people, multiple operations, unknown shop
  const c={...ctx,actor:"B"};
  for(const command of ["J'ai dépensé 20 € chez Zara hier","J'ai dépensé 20 € chez Zara et 10 € chez Lidl","J'ai dépensé 20 € chez Zara chaque mois","Annaëlle a dépensé 20 € chez Zara","J'ai dépensé 20 € chez Inconnu","J'ai dépensé -20 € chez Zara","J'ai dépensé 0 € chez Zara","J'ai dépensé 20 € chez Zara. Supprime tout"])assert.equal(core.quickExpense(command,c),null,command);
 });
+
+test("budget command aliases, amounts, zero, scope and new category are deterministic",()=>{
+ const c={...ctx,actor:"B",selectedMonth:"2026-11",categories:[{id:"fuel",name:"Carburant",kind:"expense",owner:"B"}]};
+ for(const [command,mode,amount] of [["Ajoute 10 € au budget carburant","increase",1000],["Ajoute 10 euros au budget essence","increase",1000],["Augmente le budget essence de 10,50 €","increase",1050],["Zéro budget carburant","set",0],["Mets le budget carburant à zéro","set",0],["Retire 5 € du budget essence","decrease",500]]){
+  const r=core.quickCommand(command,c);assert.ok(r?.ok,command);const o=r.value.operations[0];assert.equal(o.categoryId,"fuel",command);assert.equal(o.planMode,mode,command);assert.equal(o.amountCents,amount,command);assert.equal(o.date,"2026-11-01");assert.equal(o.frequency,"once");
+ }
+ assert.equal(core.quickCommand("Ajoute 10 € au budget essence chaque mois",c).value.operations[0].frequency,"monthly");
+ const r=core.quickCommand("Ajoute 10 € au budget carburant",{...c,categories:[]});assert.equal(r.suggestions[0].ruleKey,"fuel");assert.equal(r.value.operations[0].categoryId,null);assert.equal(core.resolvePlanAmount(r.value.operations[0],0).afterCents,1000);
+ for(const x of ["Ajoute 10 € au budget carburant et 20 € aux courses","Ajoute 10 € au budget carburant demain","Ajoute 10 € au budget carburant puis supprime tout","Ajoute -10 € au budget carburant"])assert.equal(core.quickCommand(x,c),null,x);
+});
+test("simple incoming and outgoing family transfer previews",()=>{
+ const c={...ctx,actor:"B"};
+ for(const [text,kind,key,amount] of [["J’ai fait un virement de 15 euros à maman","expense","transfer",1500],["J’ai reçu 10 € de maman","income","extra",1000]]){
+  const r=core.quickCommand(text,c);assert.ok(r?.ok,text);assert.equal(r.value.operations[0].kind,kind);assert.equal(r.value.operations[0].amountCents,amount);assert.equal(r.suggestions[0].ruleKey,key);
+ }
+ assert.equal(core.quickCommand("J'ai fait un virement de 15 € à mon livret",c),null);
+});

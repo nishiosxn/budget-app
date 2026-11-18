@@ -84,7 +84,7 @@ async function planPreview(token:string,householdId:string,result:any,context:an
  }
  return previews;
 }
-const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.quickExpense(command,context);
+const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.quickCommand(command,context);
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);

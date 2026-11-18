@@ -528,5 +528,60 @@
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once"}]},ctx,command);
   return checked.ok?checked:null;
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense});
+ // Deterministic intents: match the entire utterance, never a fragment.
+ const amountPattern="(?:\\d{1,6}(?:[,.]\\d{1,2})?|zero)";
+ function centsFromText(v){
+  if(v==="zero")return 0;
+  const [whole,decimal=""]=v.replace(",",".").split(".");
+  const n=Number(whole)*100+Number(decimal.padEnd(2,"0"));
+  return Number.isSafeInteger(n)&&n>=0&&n<=100000000?n:null;
+ }
+ function quickBudget(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  let text=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const monthly=/(?: chaque mois| par mois| tous les mois)$/.test(text);
+  if(monthly)text=text.replace(/(?: chaque mois| par mois| tous les mois)$/,"");
+  const selected=ctx.selectedMonth||ctx.today.slice(0,7);if(!monthOK(selected,ctx))return null;
+  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve) ("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le) budget (?:de |d'|des |pour )?(.+)$"));
+  const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire) (?:le )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:le )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:le )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
+  let name,raw,mode;
+  if(delta){[,mode,raw,name]=delta;mode=["retire","diminue","enleve"].includes(mode)?"decrease":"increase"}
+  else if(deltaAfter){[,mode,name,raw]=deltaAfter;mode=["retire","diminue","baisse","reduis"].includes(mode)?"decrease":"increase"}
+  else if(target){[,name,raw]=target;mode="set"}
+  else if(zero&&(text.startsWith("zero ")||text.endsWith(" a zero"))){name=zero[1];raw="zero";mode="set"}
+  else return null;
+  const amountCents=centsFromText(raw);if(amountCents===null||mode!=="set"&&amountCents===0)return null;
+  const key=normalizeCategory(name);if(!key||key.length>120)return null;
+  const base={kind:"plan",categoryId:null,owner:ctx.actor,amountCents,date:selected+"-01",label:name.trim(),frequency:monthly?"monthly":"once",planMode:mode};
+  const available=availableCategories(base,ctx),exact=available.filter(c=>normalizeCategory(c.name)===key);
+  if(exact.length>1)return null;
+  if(exact.length===1){base.categoryId=exact[0].id;base.owner=exact[0].owner;base.label=exact[0].name;}
+  else{
+   // Budget aliases must be exact, rather than arbitrary substrings or a partial command.
+   const candidates=categoryRules.filter(r=>[r.name,...r.aliases,...r.terms].some(t=>normalizeCategory(t)===key));
+   if(candidates.length!==1)return null;
+   const rule=candidates[0],names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
+   const matches=available.filter(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
+   if(matches.length>1)return null;
+   if(matches.length===1){base.categoryId=matches[0].id;base.owner=matches[0].owner;base.label=matches[0].name;}
+   else if(ctx.categories.some(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name))))return null;
+   else{base.label=rule.name;const checked=validateReview({kind:"draft",operations:[base]},ctx);return checked.ok?{...checked,suggestions:[{index:0,ruleKey:rule.key}]}:null;}
+  }
+  const checked=validateReview({kind:"draft",operations:[base]},ctx);
+  return checked.ok?{...checked,suggestions:[]}:null;
+ }
+ function quickFamilyMovement(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  const text=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const out=text.match(new RegExp("^j'ai (?:fait un virement|envoye|verse|vire) (?:de )?("+amountPattern+")\\s*(?:€|euros?) (?:a|vers le compte de) (maman|papa)$"));
+  const incoming=text.match(new RegExp("^j'ai recu ("+amountPattern+")\\s*(?:€|euros?) de (maman|papa)$"));
+  if(!out&&!incoming)return null;
+  const m=out||incoming,amountCents=centsFromText(m[1]);if(amountCents===null||amountCents<=0)return null;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:out?"expense":"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Virement "+m[2],frequency:"once",categoryHint:out?"transfer":"extra"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ function quickCommand(command,ctx){return quickBudget(command,ctx)||quickExpense(command,ctx)||quickFamilyMovement(command,ctx)}
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand});
 })(globalThis);

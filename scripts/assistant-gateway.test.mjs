@@ -62,3 +62,10 @@ test("Zara bypasses provider and quota only after authenticated household verifi
  assert.equal(r.status,200);assert.equal(r.body.model,"local-rules");assert.equal(r.body.categorySuggestions[0].ruleKey,"clothing");assert.deepEqual(calls,["auth"]);
  const denied=setup({quickExpense:core.quickExpense,authorize:async()=>null});assert.equal((await denied.handler({...request,body:{...request.body,command:"J’ai dépensé 20 € chez zara"}})).status,403);
 });
+
+test("budget fast path uses current read-only preview without reserving quota",async()=>{
+ const c={...ctx,categories:[{id:"fuel",name:"Carburant",kind:"expense",owner:"B"}]};
+ let reads=0;const {handler,calls}=setup({authorize:async()=>({context:c}),quickExpense:core.quickCommand,planPreview:async(_token,_household,draft)=>{reads++;return [{index:0,...core.resolvePlanAmount(draft.operations[0],4500)}]}});
+ const r=await handler({...request,body:{...request.body,command:"Ajoute 10 € au budget essence"}});
+ assert.equal(r.status,200);assert.equal(r.body.model,"local-rules");assert.equal(r.body.planPreviews[0].afterCents,5500);assert.equal(reads,1);assert.deepEqual(calls,[]);
+});

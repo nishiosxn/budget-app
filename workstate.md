@@ -170,3 +170,6 @@ Catégorisation déterministe et indices contrôlés Gemma, propositions de cat�
 
 ### 31f — Zara / raccourci sans IA
 Chemin déterministe après autorisation, avant quota : dépenses simples et commerces connus, prévisualisation uniquement. Tests ajoutés pour Zara, montant décimal, catégories manquantes et phrases complexes.
+
+### 31g — moteur hybride
+Budget relatif/absolu/zéro et alias essence/carburant, opérations familiales simples, sans appel IA, prévisualisation du budget réel quand disponible. Tests ajoutés ; aucune écriture financière.
