@@ -30,7 +30,7 @@
   function row(label,cents,klass=""){const line=document.createElement("div");line.className="pilot-review-total";const name=document.createElement("span"),amount=document.createElement("strong");name.textContent=label;amount.textContent=euro(cents);amount.className=klass;line.append(name,amount);group.append(line)}
   if(v.budgetCents!==null)row("Budget prévu",v.budgetCents,"pilot-plan");
   if(v.expenseCents!==null)row("Dépense à enregistrer",v.expenseCents,"pilot-negative");
-  if(v.budgetCents!==null&&v.expenseCents!==null)row("Budget restant",v.budgetCents-v.expenseCents);
+  if(v.budgetCents!==null&&v.expenseCents!==null){if(v.budgetCents>0){const bar=document.createElement("div");bar.className="pilot-category-progress";const used=document.createElement("span");used.style.width=Math.min(100,v.expenseCents/v.budgetCents*100)+"%";bar.append(used);group.append(bar)}const remaining=v.budgetCents-v.expenseCents;row("Budget restant",remaining,remaining>=0?"pilot-positive":"pilot-negative");}
   const actions=document.createElement("div");actions.className="pilot-review-actions";
   const cancel=document.createElement("button");cancel.type="button";cancel.className="sb-assistant-secondary";cancel.textContent="Annuler";
   const ok=document.createElement("button");ok.type="button";ok.className="sb-assistant-send";ok.textContent="Confirmer";
@@ -108,7 +108,7 @@
   ok.addEventListener("click",()=>{if(busy||ok.disabled||pendingReview!==review)return;const validated=core.validateReview(review,ctx);if(!validated.ok){status.textContent=validated.error;return}pendingReview=null;history=[];for(const [label,id] of changes)if($("rememberRules").checked)setPersonal(label,id);ok.disabled=true;cancel.disabled=true;for(const x of cards)x.choose.disabled=true;note.textContent="Confirmé en simulation. Aucune catégorie ou opération créée dans Supabase.";status.textContent="Confirmation réussie · aucun appel IA supplémentaire."});
   actions.append(cancel,ok);group.append(note,actions);result.append(group);refresh();
  }
- function wipe(){pendingReview=null;history=[];result.replaceChildren();input.value="";$("cancel").hidden=true;voice.stop({discard:true})}
+ function wipe(){pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";$("cancel").hidden=true;voice.stop({discard:true})}
  function logout(){epoch++;session=null;ruleContext=null;personalRules=Object.create(null);$("rememberRules").checked=false;showRules();busy=false;send.disabled=false;wipe();consent.checked=false;$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
@@ -133,7 +133,7 @@
  form.addEventListener("submit",async e=>{
   e.preventDefault();if(!session||busy)return;voice.stop();
   const command=input.value.trim();if(!command)return;if(!consent.checked){status.textContent="Autorise d’abord le traitement par Cloudflare.";return;}
-  pendingReview=null;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
+  pendingReview=null;result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
    if(current!==epoch)return;
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
