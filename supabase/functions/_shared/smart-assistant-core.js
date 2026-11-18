@@ -691,7 +691,7 @@
   return underThousand(s);
  }
  const numberWord="(?:z[eé]ro|une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|septante|huitante|nonante|cents?|mille)";
- const spokenMoney=new RegExp("(?<![\\p{L}\\p{N}-])("+numberWord+"(?:(?:[\\s‑–-]+)(?:"+numberWord+"|et))*)\\s+(euros?|balles?|p[eé]t[eé]s?)\\b","giu");
+ const spokenMoney=new RegExp("(?<![\\p{L}\\p{N}-])("+numberWord+"(?:(?:[\\s‑–-]+)(?:"+numberWord+"|et))*)\\s+(euros?|balles?)\\b","giu");
  function normalizeLanguage(command){
   if(typeof command!=="string"||command.length>1600)return command;
   let t=command.normalize("NFC").replace(/’/g,"'").replace(/\s+/g," ").trim();
@@ -708,7 +708,7 @@
   t=t.replace(/^rajoute /iu,"Ajoute ").replace(/^réduis /iu,"Diminue ");
   // A category bundle can be dictated without punctuation. Normalize only after explicit creation intent.
   if(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie /iu.test(t)){
-   t=t.replace(/\s+(?:avec|(?:et )?(?:mets[- ]y|ajoute[- ]y|mets|fixe|ajoute))\s+(?=(?:un |le )?budget\b)/iu,", mets-y ");
+   t=t.replace(/(?<=[\p{L}\p{N}])\s+(?:avec|(?:et )?(?:mets[- ]y|ajoute[- ]y|mets|fixe|ajoute))\s+(?=(?:un |le )?budget\b)/iu,", mets-y ");
    t=t.replace(/,\s*,/g,",");
    t=t.replace(/(?:\s+et|\s+puis|[,;.])\s+(?:une |la )?d[ée]pense\s+de\s+/iu," et ajoute une dépense de ");
   }
