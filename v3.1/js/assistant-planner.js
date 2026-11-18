@@ -7,6 +7,23 @@
  const copy=v=>JSON.parse(JSON.stringify(v));
  const fail=error=>({ok:false,error});
  const uuid=v=>typeof v==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+ function expandProposal(op,lastMonth){
+  if(op.frequency!=="monthly")return [op];
+  const start=op.date.slice(0,7),day=Number(op.date.slice(8,10));
+  const [sy,sm]=start.split("-").map(Number),[ey,em]=lastMonth.split("-").map(Number);
+  const count=(ey-sy)*12+em-sm+1;
+  if(count<1||count>120)throw Error("Horizon de récurrence invalide.");
+  return Array.from({length:count},(_,i)=>{
+   const n=sy*12+sm-1+i,y=Math.floor(n/12),m=n%12+1;
+   const end=new Date(Date.UTC(y,m,0)).getUTCDate();
+   return {...op,date:String(y).padStart(4,"0")+"-"+String(m).padStart(2,"0")+"-"+String(Math.min(day,end)).padStart(2,"0")};
+  });
+ }
+ function requiredMonths(result,context){
+  const validated=root.SmartBudgetAssistantCore?.validateResult(result,context);
+  if(!validated?.ok||validated.value.kind!=="draft")return null;
+  try{return [...new Set(validated.value.operations.filter(o=>o.kind!=="plan").flatMap(o=>expandProposal(o,context.lastMonth).map(x=>x.date.slice(0,7))))].sort()}catch{return null}
+ }
  function prepareAssistantBatch({result,context,snapshot,existingOccurrences,approval,batchId}){
   const core=root.SmartBudgetAssistantCore;
   if(!core||approval!==true||!uuid(batchId))return fail("Confirmation obligatoire.");
@@ -16,9 +33,12 @@
   const ops=validated.value.operations;
   const ids=ops.map((_,i)=>"assistant-"+batchId+"-"+i);
   if(snapshot.transactions.some(t=>ids.includes(t.id)))return fail("Ce lot a déjà été préparé ou enregistré.");
-  // existingOccurrences must include recurrence expansions for every target month.
-  // Hidden, deleted, stale or ambiguous categories are rejected before this stage.
-  if(core.findDuplicates(ops,existingOccurrences).length)return fail("Doublon possible : vérifie le brouillon dans l’historique.");
+  // The integration must supply actual occurrences for every month returned by requiredMonths.
+  // Expand proposed series using the same month-end clamping as calculations.js.
+  let proposed;try{proposed=ops.filter(o=>o.kind!=="plan").flatMap(o=>expandProposal(o,context.lastMonth))}catch{return fail("Horizon de récurrence invalide.")}
+  if(core.findDuplicates(proposed,existingOccurrences).length)return fail("Doublon possible : vérifie le brouillon dans l’historique.");
+  const seen=new Set();
+  for(const o of proposed){const key=JSON.stringify([o.kind,o.categoryId,o.owner,o.amountCents,o.date]);if(seen.has(key))return fail("Deux opérations du brouillon se recouvrent.");seen.add(key);}
   const next={transactions:copy(snapshot.transactions),incomePlanChanges:copy(snapshot.incomePlanChanges||{}),expensePlanChanges:copy(snapshot.expensePlanChanges||{})};
   const changes=[];
   for(const [i,op] of ops.entries()){
@@ -41,5 +61,5 @@
   }
   return {ok:true,patch:next,changes};
  }
- root.SmartBudgetAssistantPlanner=Object.freeze({prepareBatch:prepareAssistantBatch});
+ root.SmartBudgetAssistantPlanner=Object.freeze({prepareBatch:prepareAssistantBatch,requiredMonths});
 })(globalThis);
