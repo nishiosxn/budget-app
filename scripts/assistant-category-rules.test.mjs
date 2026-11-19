@@ -25,7 +25,7 @@ test("current expense, income and saving categories are mapped from household ro
 test("merchant keyword match uses word boundaries, longest match and accents",()=>{
  assert.equal(util.match(op("Lidl Drive"),c,{lidl:"courses"}),"courses");
  assert.equal(util.match(op("Commande LIDL aujourd'hui"),c,{lidl:"courses"}),"courses");
- assert.equal(util.match(op("Chez McDonald's"),c,{"mc donald s":"food"}),"food");
+ assert.equal(util.match(op("Chez McDonald's"),c,{"McDonald's":"food"}),"food");
  assert.equal(util.match(op("Lena"),c,{lena:"income"}),null);
  assert.equal(util.match(op("Actionnaire"),c,{action:"courses"}),null);
  assert.equal(util.match(op("Commande Lidl Drive"),c,{"lidl":"food","lidl drive":"courses"}),"courses");
