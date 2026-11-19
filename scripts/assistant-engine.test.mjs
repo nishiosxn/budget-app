@@ -35,7 +35,7 @@ test("four-part mixed commands preserve income, expense and saving kinds and use
  const savingCtx={...ctx,categories:[...ctx.categories,{id:"saving",name:"Épargne",kind:"saving",owner:"B"}]};
  for(const text of ["J'ai dépensé 20 € chez Action, 15 euros chez McDo, j'ai reçu 15 euros de Lena et j'ai mis 100 euros en épargne",
  "J’ai dépensé 20 euro chez action, 15 euro chez mcdo, j’ai reçu 15 euro de léna et j’ai mis 100 euro en épargne"]){
-  const r=core.quickCommand(text,savingCtx);assert.ok(r?.ok,text);const ops=r.value.operations;assert.deepEqual(ops.map(o=>o.kind),["expense","expense","income","saving"]);assert.deepEqual(ops.map(o=>o.amountCents),[2000,1500,1500,10000]);assert.deepEqual(ops.map(o=>o.categoryId),["home","rest","extra","saving"]);assert.ok(ops.every(o=>o.owner==="B"));
+  const r=core.quickCommand(text,savingCtx);assert.ok(r?.ok,text);const ops=r.value.operations;assert.deepEqual(Array.from(ops,o=>o.kind),["expense","expense","income","saving"]);assert.deepEqual(Array.from(ops,o=>o.amountCents),[2000,1500,1500,10000]);assert.deepEqual(Array.from(ops,o=>o.categoryId),["home","rest","extra","saving"]);assert.ok(ops.every(o=>o.owner==="B"));
  }
 });
 test("unknown or unsafe financial phrases never produce partial local batches",()=>{
