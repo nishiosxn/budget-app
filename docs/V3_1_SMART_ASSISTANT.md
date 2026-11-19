@@ -88,3 +88,6 @@ Design compact aligné Smart Budget : textarea et boutons micro/envoyer sur la m
 
 ## 31l — Champ compact et hauteur automatique
 Textarea à une ligne, hauteur initiale 42px, aucune poignée de redimensionnement. Croissance selon `scrollHeight` sur frappe, collage, sélection de suggestion, dictée (callback optionnel de transcription) et remise à zéro, plafonnée à 180px avec défilement au-delà. Boutons inchangés en vis-à-vis du champ. Aucune modification des opérations ou du quota.
+
+## 31m — provenance et épargne distincte
+Après authentification, Smart Engine reconnaît les revenus simples de personnes nommées, les économies ponctuelles et les lots mixtes en une seule requête déterministe. Noms des personnes = libellés, jamais propriétaires déduits. Nouvelle famille catégorie Épargne ; catégorie existante prioritaire, création suggérée dans le pilote si absente. Source affichée visiblement sur la réponse (Smart Engine 0 token IA ou Gemma 4 + tokens mesurés). La mise en épargne est présentée en transfert positif vers l'épargne, séparée du net revenus / dépenses ; aucun virement bancaire réel. Reconnaissance partielle refusée et aucune écriture budgétaire.

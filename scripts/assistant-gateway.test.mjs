@@ -112,3 +112,10 @@ test("quota-reading RPC uses a server credential, never the caller bearer",()=>{
  assert.match(source,/Authorization:"Bearer "\+key/);
  assert.match(source,/getQuota\}\);/);
 });
+
+test("mixed savings and arbitrary named income bypass quota and Gemma",async()=>{
+ const c={...ctx,categories:[...ctx.categories,{id:"savings",name:"Épargne",kind:"saving",owner:"B"},{id:"home",name:"Maison",kind:"expense",owner:"B"},{id:"rest",name:"Restaurants",kind:"expense",owner:"B"},{id:"extra",name:"Revenus supplémentaires",kind:"income",owner:"B"}]};
+ const {handler,calls}=setup({authorize:async()=>({context:c}),quickExpense:core.quickCommand});
+ const r=await handler({...request,body:{...request.body,command:"J'ai dépensé 20 euros chez Action, 15 euros chez McDo, j'ai reçu 15 euros de Lena et j'ai mis 100 euros en épargne"}});
+ assert.equal(r.status,200);assert.equal(r.body.metering.source,"local-rules");assert.equal(r.body.metering.tokens.total,0);assert.deepEqual(r.body.result.operations.map(o=>o.kind),["expense","expense","income","saving"]);assert.deepEqual(calls,[]);
+});

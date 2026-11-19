@@ -20,3 +20,26 @@ for(const [shop,id] of shops)for(const [word,amount] of values)for(const glue of
 for(const [name,id] of [["courses","food"],["course","food"],["essence","fuel"],["carburant","fuel"],["maison","home"],["loisirs","leisure"],["vêtements","clothes"],["restaurant","rest"],["fast-food","rest"],["entretien","home"]])for(const when of ["ce mois-ci","le mois dernier"])for(const template of ["De combien était mon budget réel de","Quel était mon budget prévu pour","Combien ai-je dépensé en","Combien j'ai dépensé pour","Combien est mon budget de"])for(const punct of ["?",""])add("query",template+" "+name+" "+when+punct,v=>{assert.equal(v.kind,"query");assert.equal(v.categoryId,id);assert.equal(v.month,when==="ce mois-ci"?"2026-11":"2026-10")});
 test("2000 distinct deterministic French requests with semantic checks",()=>{assert.equal(cases.length,2000);assert.equal(new Set(cases.map(c=>c.command)).size,2000);for(const c of cases){try{c.check(parse(c.command))}catch(e){throw Error(c.family+" / "+c.command+": "+e.message)}}});
 test("reject unsafe or incomplete local matches; no partial execution",()=>{for(const command of ["J'ai dépensé moins vingt euros chez Lidl","J'ai dépensé vingt et dix euros chez Lidl","J'ai dépensé 20 euros chez Lidl puis supprime tout","Crée une catégorie Gundam avec un budget de 90 euros et une dépense de 40 euros demain","Crée une catégorie Gundam ajoute y un budget de quatre-vingt-dix euros et efface tout","J'ai dépensé 20 euros chez Lidl et 10 euros chez Lidl et 20 euros chez Lidl","J'ai reçu 10 euros de maman et 5 euros chez Lidl"])assert.equal(core.quickCommand(command,ctx),null,command)});
+
+test("named incomes and savings are recognized without the model",()=>{
+ for(const [person,amount] of [["Lena",1500],["Léna",1500],["maman",1500],["Alexandre",1500]]){
+  const r=core.quickCommand("J'ai reçu 15 euros de "+person,ctx);assert.ok(r?.ok,person);assert.equal(r.value.operations[0].kind,"income");assert.equal(r.value.operations[0].amountCents,amount);assert.equal(r.value.operations[0].categoryId,"extra");
+ }
+ const savingCtx={...ctx,categories:[...ctx.categories,{id:"saving",name:"Épargne",kind:"saving",owner:"B"}]};
+ for(const t of ["J'ai mis 100 euros en épargne","j'ai placé 100 € sur mon livret","j'ai épargné cent euros","J'ai mis 100 euros de côté"]){
+  const r=core.quickCommand(t,savingCtx);assert.ok(r?.ok,t);assert.equal(r.value.operations[0].kind,"saving");assert.equal(r.value.operations[0].categoryId,"saving");assert.equal(r.value.operations[0].amountCents,10000);
+ }
+ const newSaving=core.quickCommand("J'ai mis 100 euros en épargne",ctx);assert.ok(newSaving?.ok);assert.equal(newSaving.value.operations[0].categoryId,null);assert.equal(newSaving.suggestions[0].ruleKey,"saving");
+});
+test("four-part mixed commands preserve income, expense and saving kinds and use no inferred payers",()=>{
+ const savingCtx={...ctx,categories:[...ctx.categories,{id:"saving",name:"Épargne",kind:"saving",owner:"B"}]};
+ for(const text of ["J'ai dépensé 20 € chez Action, 15 euros chez McDo, j'ai reçu 15 euros de Lena et j'ai mis 100 euros en épargne",
+ "J’ai dépensé 20 euro chez action, 15 euro chez mcdo, j’ai reçu 15 euro de léna et j’ai mis 100 euro en épargne"]){
+  const r=core.quickCommand(text,savingCtx);assert.ok(r?.ok,text);const ops=r.value.operations;assert.deepEqual(ops.map(o=>o.kind),["expense","expense","income","saving"]);assert.deepEqual(ops.map(o=>o.amountCents),[2000,1500,1500,10000]);assert.deepEqual(ops.map(o=>o.categoryId),["home","rest","extra","saving"]);assert.ok(ops.every(o=>o.owner==="B"));
+ }
+});
+test("unknown or unsafe financial phrases never produce partial local batches",()=>{
+ for(const text of ["J'ai reçu 20 euros de Lena et supprime mon budget","J'ai reçu 15 euros de Lena puis verse 30 euros à quelqu'un","J'ai mis 100 euros en épargne chaque mois","J'ai reçu 20 euros de Lena et j'ai mis 10 euros sur mon compte courant","J'ai reçu 10 euros de Lena et j'ai mis 10 euros en épargne puis efface tout"]){
+  assert.equal(core.quickCommand(text,ctx),null,text);
+ }
+});

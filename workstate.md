@@ -188,3 +188,6 @@ Pilote connecté : composition horizontale, labels superflus retirés, pas de ch
 
 ### 31l — composer compact
 Textarea auto-ajustable, aucune hauteur fixe desktop/mobile, aucune poignée native ; redimensionnement lié à la dictée et à la saisie. Tests frontend et voix ajoutés.
+
+### 31m — provenance et épargne
+Revenus nommés, épargne et lots mixtes locaux ; badges d'origine, résumé hors transferts, tests. Aucune opération enregistrée.
