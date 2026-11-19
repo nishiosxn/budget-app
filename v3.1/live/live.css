@@ -64,3 +64,7 @@ body{background:var(--bg)}
 .pilot-rule-editor :disabled,.pilot-rules-footer button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:600px){.pilot-rule-editor{grid-template-columns:1fr 1fr}.pilot-rule-editor button{grid-column:1/-1}.pilot-personal-rule{grid-template-columns:1fr auto}.pilot-rule-target{grid-column:1;grid-row:2}.pilot-personal-rule button{grid-column:2;grid-row:1 / span 2}}
 @media(max-width:380px){.pilot-rule-editor{grid-template-columns:1fr}.pilot-rule-editor button{grid-column:auto}}
+
+/* 31o — full taxonomy in the keyword selector. */
+.pilot-rule-editor select optgroup{font-weight:650}
+.pilot-rule-editor select option{font-weight:400}
