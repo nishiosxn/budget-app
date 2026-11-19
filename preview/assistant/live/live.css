@@ -68,3 +68,6 @@ body{background:var(--bg)}
 /* 31o — full taxonomy in the keyword selector. */
 .pilot-rule-editor select optgroup{font-weight:650}
 .pilot-rule-editor select option{font-weight:400}
+
+/* 31q — merchant heading and contextual purchase label */
+.pilot-expense-detail{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere;margin-top:2px;margin-bottom:2px}

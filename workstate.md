@@ -200,3 +200,6 @@ Les cibles affichent le catalogue automatique intégral + catégories spécifiqu
 
 ### 31p — retours terrain
 Six captures analysées : catégories explicites produits, date préfixée, phrase dépenses composées, revenu + épargne anaphorique, transfert interne et solde bancaire non connecté. Parsing local, suggestion de catégorie canonique, tests de sécurité ; aucune écriture.
+
+### 31q — libellés contextualisés
+Extraction des descriptions explicites pour achats, courses et magasins, affichage séparé du magasin sans ajouter de champ de stockage. Libellé par défaut = magasin ; catégorie guidée par le produit, tests. Aucune écriture réelle.

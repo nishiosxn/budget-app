@@ -19,11 +19,11 @@ function interpret(command,c=ctx){const x=core.quickCommand(command,c);assert.ok
 test("screenshot 1: fuel at Total yesterday uses Carburant with correct date and zero AI",()=>{
  const v=interpret("Hier, j'ai mis 30 euros d'essence à Total.");
  assert.equal(v.kind,"draft");assert.equal(v.operations.length,1);
- const [o]=v.operations;assert.equal(o.kind,"expense");assert.equal(o.label,"Total");assert.equal(o.amountCents,3000);assert.equal(o.date,"2026-11-18");assert.equal(o.categoryId,"fuel");
+ const [o]=v.operations;assert.equal(o.kind,"expense");assert.equal(o.label,"Total · Essence");assert.equal(o.amountCents,3000);assert.equal(o.date,"2026-11-18");assert.equal(o.categoryId,"fuel");
 });
 test("screenshot 2: LEGO at King Jouet classifies as Loisirs",()=>{
  const [o]=interpret("J'ai acheté un LEGO à 39,99 euros chez King Jouet.").operations;
- assert.equal(o.amountCents,3999);assert.equal(o.label,"King jouet");assert.equal(o.categoryId,"leisure");
+ assert.equal(o.amountCents,3999);assert.equal(o.label,"King Jouet · LEGO");assert.equal(o.categoryId,"leisure");
 });
 test("screenshot 3: groceries and cleaning products parse as two separate expenses",()=>{
  const v=interpret("J'ai fait 28 euros de courses chez Lidl et acheté 12 euros de produits ménagers chez Action.");

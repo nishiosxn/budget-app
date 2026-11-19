@@ -161,11 +161,15 @@
    const guessed=personal.ruleKey&&core.categoryRules.find(r=>r.key===personal.ruleKey);
    iconBox.append(icon(rule?.icon||guessed?.icon||(o.kind==="income"?"income":o.kind==="saving"?"saving":o.kind==="plan"?"home":"card")));
    const info=document.createElement("div");info.className="pilot-op-info";
-   const name=document.createElement("strong");name.textContent=o.label;
+   const name=document.createElement("strong");
+   const parts=o.kind==="expense"?core.expenseLabelParts(o.label):{merchant:o.label,detail:null};
+   name.textContent=parts.merchant;
    const sub=document.createElement("div");sub.className="pilot-op-meta";
    const catLabel=document.createElement("span");
    sub.textContent=(ctx.members[o.owner]||"À deux")+" · ";sub.append(catLabel);
-   info.append(name,sub);const amount=document.createElement("strong");
+   info.append(name);
+   if(parts.detail){const detailLabel=document.createElement("div");detailLabel.className="pilot-expense-detail";detailLabel.textContent="Libellé : "+parts.detail;info.append(detailLabel)}
+   info.append(sub);const amount=document.createElement("strong");
    amount.className="pilot-op-money "+(o.kind==="income"?"pilot-positive":o.kind==="saving"?"pilot-plan":o.kind==="plan"?"pilot-plan":"pilot-negative");
    top.append(iconBox,info,amount);card.append(top);
    const detail=document.createElement("div");detail.className="pilot-op-detail";detail.textContent=o.date+(o.frequency==="monthly"?" · Mensuel":"")+(o.kind==="saving"?" · Transfert vers l’épargne, pas une dépense":"");
