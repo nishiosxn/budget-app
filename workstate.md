@@ -206,3 +206,6 @@ Extraction des descriptions explicites pour achats, courses et magasins, afficha
 
 ### 31r — retours tests avec payeurs et pharmacie
 Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres du foyer à deux ; le pilote solo retourne une explication au lieu d'une conversion invalide. Pharmacie : libellé contextuel, Santé, date exacte, sans IA. Pas de modification des accès, ni de la production.
+
+### 31s — éditeur de propositions
+Éditeur local de cartes et lots groupés, recalcul de budget/solde, retrait d'une ligne, lecture GET du budget si cible/mois modifié, validation et tests. Aucun enregistrement financier ni modification serveur.
