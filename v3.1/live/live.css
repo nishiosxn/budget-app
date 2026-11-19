@@ -71,3 +71,18 @@ body{background:var(--bg)}
 
 /* 31q — merchant heading and contextual purchase label */
 .pilot-expense-detail{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere;margin-top:2px;margin-bottom:2px}
+
+/* 31s — inline, local review editor */
+.pilot-operation-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:12px 0 3px;background:var(--panel-2);border:1px solid var(--line);padding:12px;border-radius:12px}
+.pilot-editor-field{display:grid;gap:5px;font-size:.78rem;color:var(--muted);min-width:0}
+.pilot-editor-wide{grid-column:1/-1}
+.pilot-editor-field input,.pilot-editor-field select{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px;min-width:0;width:100%;box-sizing:border-box;font:inherit;font-size:1rem}
+.pilot-editor-field :is(input,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pilot-editor-notice{margin:0;color:var(--muted);font-size:.78rem;overflow-wrap:anywhere}
+.pilot-editor-notice:empty{display:none}
+.pilot-editor-actions{display:flex;gap:8px}
+.pilot-editor-actions button{flex:1;min-height:40px}
+.pilot-op-controls{display:flex;gap:16px;align-items:center;margin:6px 0 0}
+.pilot-remove{color:#e1767c}
+.pilot-op-controls button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:380px){.pilot-operation-editor{grid-template-columns:1fr}}
