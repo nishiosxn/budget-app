@@ -194,3 +194,6 @@ Revenus nommés, épargne et lots mixtes locaux ; badges d'origine, résumé hor
 
 ### 31n — catégorisation personnalisée
 Lecture des catégories réelles du foyer à la connexion ; formulaire de règle persisté directement sur ajout, tri par type, correspondance de mots, suppression. Tests spécifiques ; aucune écriture Supabase ni changement moteur.
+
+### 31o — catalogue complet dans l'éditeur de mots-clés
+Les cibles affichent le catalogue automatique intégral + catégories spécifiques du foyer sans doublon ; correspondance locale vers catégorie active ou proposition de création lors de la revue. Confirmations simulées.

@@ -45,32 +45,33 @@
   }catch{return false}
  }
  function setPersonal(term,id){
-  const key=core.normalizeCategory(term),cat=ruleContext?.categories?.find(c=>c.id===id);
+  const key=core.normalizeCategory(term),target=ruleUtils.catalogOptions(ruleContext?.categories||[]).find(c=>c.value===id);
   if(!key||key.length>80)return {ok:false,message:"Entre un mot-clé ou une enseigne valide."};
-  if(!cat)return {ok:false,message:"Choisis une catégorie existante dans ce foyer."};
+  if(!target)return {ok:false,message:"Choisis une catégorie du catalogue ou du foyer."};
   if(Object.keys(personalRules).length>=200&&!Object.hasOwn(personalRules,key))return {ok:false,message:"Limite de 200 associations atteinte."};
   const updated=Object.hasOwn(personalRules,key);
   personalRules[key]=id;
   const saved=savePersonal();
   showRules();
-  return {ok:true,message:(updated?"Association mise à jour":"Association ajoutée")+" : "+key+" → "+cat.name+(saved?"":" (mémoire locale indisponible).")};
+  return {ok:true,message:(updated?"Association mise à jour":"Association ajoutée")+" : "+key+" → "+target.name+(saved?"":" (mémoire locale indisponible).")};
  }
  function showRules(){
   const list=$("rulePersonal"),def=$("ruleDefault"),sel=$("ruleCategory"),add=$("addRule"),previous=sel.value;
   list.replaceChildren();def.replaceChildren();sel.replaceChildren();
   const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Choisir une catégorie";sel.append(placeholder);
-  const categories=(ruleContext?.categories||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  const categories=(ruleContext?.categories||[]).slice();
+  const options=ruleUtils.catalogOptions(categories);
   for(const [kind,label] of [["expense","Dépenses"],["income","Revenus"],["saving","Épargne"]]){
    const group=document.createElement("optgroup");group.label=label;
-   for(const c of categories.filter(c=>c.kind===kind)){
-    const opt=document.createElement("option");opt.value=c.id;opt.textContent=c.name;group.append(opt);
+   for(const c of options.filter(c=>c.kind===kind)){
+    const opt=document.createElement("option");opt.value=c.value;opt.textContent=c.name;group.append(opt);
    }
    if(group.children.length)sel.append(group);
   }
-  sel.value=categories.some(c=>c.id===previous)?previous:"";
-  sel.disabled=!categories.length;add.disabled=!categories.length;
+  sel.value=options.some(c=>c.value===previous)?previous:"";
+  sel.disabled=!options.length;add.disabled=!options.length;
   for(const [term,id] of Object.entries(personalRules).sort((a,b)=>a[0].localeCompare(b[0],"fr"))){
-   const cat=categories.find(c=>c.id===id),row=document.createElement("div");row.className="pilot-personal-rule";
+   const cat=options.find(c=>c.value===id)||categories.find(c=>c.id===id),row=document.createElement("div");row.className="pilot-personal-rule";
    const name=document.createElement("strong");name.textContent=term;
    const target=document.createElement("span");target.className="pilot-rule-target";target.textContent="→ "+(cat?.name||"Catégorie indisponible");
    const del=document.createElement("button");del.type="button";del.className="pilot-link";del.textContent="Supprimer";del.setAttribute("aria-label","Supprimer la règle "+term);
@@ -147,10 +148,10 @@
   const group=document.createElement("div");group.className="pilot-review";
   for(const [i,o] of review.operations.entries()){
    const original=o.categoryId,personal=core.classifyCategory(o,ctx,{overrides:personalRules});
-   const remembered=ruleUtils.match(o,ctx.categories,personalRules);
-   if(remembered)o.categoryId=remembered;
+   const remembered=ruleUtils.resolve(o,ctx.categories,personalRules);
+   if(remembered){o.categoryId=remembered.categoryId}
    else if(o.kind!=="plan"&&personal.source==="personal")o.categoryId=personal.categoryId;
-   const suggestion=suggestions.find(s=>s.index===i),rule=core.draftCategorySuggestion(o,ctx,suggestion?.ruleKey);
+   const suggestion=suggestions.find(s=>s.index===i),rule=core.draftCategorySuggestion(o,ctx,remembered?.ruleKey||suggestion?.ruleKey);
    if(rule)newRules.set(i,rule);
    const p=previews.find(x=>x.index===i),oldLabel=core.normalizeCategory(o.label);
    const card=document.createElement("div");card.className="pilot-op";
