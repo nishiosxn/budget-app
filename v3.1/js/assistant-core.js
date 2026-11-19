@@ -864,6 +864,64 @@
   const scores=categoryRules.filter(r=>r.kind==="expense").map(r=>({key:r.key,score:Math.max(0,...r.terms.filter(t=>containsTerm(query,t)).map(t=>normalizeCategory(t).length))})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
   return scores.length&&(!scores[1]||scores[0].score>scores[1].score)?scores[0].key:null;
  }
+
+ // Only household members explicitly supplied by the authenticated server can be
+ // selected as payers. Never use an arbitrary named person as a guessed owner.
+ function ownerSlotForName(name,ctx){
+  if(ctx.solo||!obj(ctx.members))return null;
+  const wanted=normalizeCategory(name);
+  const names=Object.entries(ctx.members).filter(([slot,value])=>ownerOK(slot,ctx)&&typeof value==="string"&&normalizeCategory(value)===wanted);
+  return names.length===1?names[0][0]:null;
+ }
+ const householdItemKinds=Object.freeze({
+  "courses":{label:"Courses",hint:"groceries"},
+  "course":{label:"Courses",hint:"groceries"},
+  "bus":{label:"Bus",hint:"transport"},
+  "train":{label:"Train",hint:"transport"},
+  "metro":{label:"Métro",hint:"transport"},
+  "tram":{label:"Tram",hint:"transport"},
+  "essence":{label:"Essence",hint:"fuel"},
+  "medicaments":{label:"Médicaments",hint:"health"}
+ });
+ function householdItemOperation(item,owner,amount,ctx){
+  const category=householdItemKinds[normalizeCategory(item)],cents=centsFromText(amount);
+  if(!category||!cents||!ownerOK(owner,ctx))return null;
+  const normalized=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner,amountCents:cents,date:ctx.today,label:category.label,frequency:"once",categoryHint:category.hint}]},ctx,"");
+  return normalized.ok?normalized:null;
+ }
+ // Special-case two clearly attributed payments. Do not guess members in the
+ // one-person pilot or quietly reassign another person's expense to the actor.
+ function quickAttributedExpenses(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string")return null;
+  const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const m=t.match(/^([\p{L}][\p{L}' -]{0,49}?)\s+a (?:payé|paye|dépensé|depense)\s+(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+de\s+(courses?|bus|train|métro|metro|tram|essence|médicaments|medicaments)\s+et\s+(?:moi\s+)?j[' ]ai (?:payé|paye|dépensé|depense)\s+(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+de\s+(courses?|bus|train|métro|metro|tram|essence|médicaments|medicaments)$/iu);
+  if(!m)return null;
+  const member=ownerSlotForName(m[1],ctx);
+  if(!member){
+   return validateAssistantResult({kind:"answer",message:ctx.solo
+    ?"Ce foyer de test est individuel. Je ne peux pas attribuer une dépense à "+m[1]+". Aucun mouvement proposé ; il faut tester cette demande dans un foyer à deux."
+    :"Cette personne n'est pas identifiée sans ambiguïté parmi les membres autorisés du foyer. Aucun mouvement proposé."},ctx);
+  }
+  const one=householdItemOperation(m[3],member,m[2],ctx),two=householdItemOperation(m[5],ctx.actor,m[4],ctx);
+  if(!one||!two)return null;
+  const operations=[one.value.operations[0],two.value.operations[0]];
+  const checked=validateReview({kind:"draft",operations},ctx);
+  if(!checked.ok)return null;
+  const suggestions=[...(one.suggestions||[]).map(s=>({...s,index:0})),...(two.suggestions||[]).map(s=>({...s,index:1}))];
+  return {...checked,suggestions};
+ }
+ const frenchMonthNames=Object.freeze({janvier:1,fevrier:2,mars:3,avril:4,mai:5,juin:6,juillet:7,aout:8,septembre:9,octobre:10,novembre:11,decembre:12});
+ function quickMedicalNote(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string")return null;
+  const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const m=t.match(/^note (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) de medicaments achetes? a la pharmacie le (\d{1,2}) (janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)(?: (\d{4}))?$/u);
+  if(!m)return null;
+  const amountCents=centsFromText(m[1]),year=Number(m[4]||ctx.today.slice(0,4)),month=frenchMonthNames[m[3]],day=Number(m[2]);
+  const date=String(year).padStart(4,"0")+"-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+  if(!amountCents||!validDate(date)||date>ctx.today||!monthOK(date.slice(0,7),ctx))return null;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date,label:"Pharmacie · Médicaments",frequency:"once",categoryHint:"health"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
  function quickSingleMovement(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   let t=command.trim(),date=ctx.today;
@@ -917,7 +975,7 @@
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
-  return quickBankBalanceAnswer(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  return quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);
