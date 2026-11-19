@@ -249,10 +249,10 @@
     }else{const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=true;draw()}});content.append(edit)}
    }
    const safe=document.createElement("p");safe.className="pilot-review-message";safe.textContent=locked?"Confirmé en simulation.":"Mode test · aucun enregistrement.";group.append(safe);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Confirmer","sb-assistant-send");
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
    cancel.disabled=locked;ok.disabled=locked||editing||!core.validateCategoryDraft(draft,ctx).ok;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
-   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Confirmation réussie · aucun appel IA supplémentaire.";draw()});
+   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
    actions.append(cancel,ok);group.append(actions);
   }
   draw();
@@ -428,7 +428,7 @@
   draw();
  }
  function wipe(){pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true})}
- function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
+ function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
  const number=n=>new Intl.NumberFormat("fr-FR").format(n);
