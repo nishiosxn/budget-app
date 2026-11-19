@@ -487,6 +487,9 @@
    if(!r.ok){status.textContent=errorMessages[r.body.error]||"Erreur de la passerelle IA ("+r.status+").";return}
    const ctx=r.body.context,checked=r.body.result?.kind==="categoryDraft"?core.validateCategoryDraft(r.body.result,ctx):r.body.result?.kind==="draft"?core.validateReview(r.body.result,ctx):core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Brouillon refusé : "+checked.error;return;}
    pendingReview=null;result.replaceChildren();input.value="";resizeComposer();const v=checked.value;
+   // Analysis is complete. Render the review with its real interactive state.
+   // No await between this transition and rendering; send stays disabled until finally.
+   busy=false;
    if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx)}
    else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[]);}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}

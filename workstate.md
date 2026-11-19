@@ -218,3 +218,6 @@ Charte `docs/SMART_BUDGET_DESIGN_SYSTEM.md`, tokens `preview/assistant/live/desi
 
 ### 31v — enregistrement réel V1 pilote solo
 Lot ponctuel dépenses/revenus catégories existantes seulement ; confirmation insert-only avec JWT/RLS, clé de lot stable et vérification. Les autres transactions et types restent en simulation. Production inchangée.
+
+### 31w — correctif état de confirmation
+Libération de busy avant rendu du brouillon valide ; protection d'enregistrement conservée. Test d'exécution du callback, aucune modification Supabase.

@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31v/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31w/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -151,4 +151,34 @@ test("explicit pilot write only through authenticated confirm route; unsupported
  assert.match(js,/send\.disabled=true;\$\("cancel"\)\.disabled=true/);
  assert.match(js,/Enregistrement réel · foyer test uniquement/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
+});
+
+
+test("analysis releases busy before rendering a valid review, while saving remains guarded",async()=>{
+ const vm=await import("node:vm");
+ // Execute the actual submit callback in a controlled environment.
+ const begin=js.indexOf('form.addEventListener("submit",async e=>{'),end=js.lastIndexOf("\n})();");
+ assert.ok(begin>=0&&end>begin);
+ for(const kind of ["draft","categoryDraft"]){
+  const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const state={kind},observed=[];
+  const ctx={
+   session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
+   send:{disabled:false},input:{value:"test prompt"},status:{dataset:{}},result:{replaceChildren(){}},
+   form:{addEventListener(type,callback){assert.equal(type,"submit");ctx.submit=callback}},
+   $:node,voice:{stop(){}},resizeComposer(){},headers(){return {}},
+   json:async()=>({ok:true,status:200,body:{context:{},result:state,metering:{source:"local-rules"}}}),
+   core:{validateReview:()=>({ok:true,value:state}),validateCategoryDraft:()=>({ok:true,value:state})},
+   displayLastMeter(){},refreshQuota:async()=>{},
+   renderDraft(){observed.push({busy:ctx.busy,sendDisabled:ctx.send.disabled})},
+   renderCategoryDraft(){observed.push({busy:ctx.busy,sendDisabled:ctx.send.disabled})},
+   Intl
+  };
+  vm.runInNewContext(js.slice(begin,end),ctx);
+  await ctx.submit({preventDefault(){}});
+  assert.deepEqual(observed,[{busy:false,sendDisabled:true}],kind);
+  assert.equal(ctx.busy,false);assert.equal(ctx.send.disabled,false);
+ }
+ assert.match(js,/ok\.disabled=locked\|\|busy\|\|editing!==-1\|\|!checked\.ok/);
+ assert.match(js,/setSavingPilot\(true\);draw\(\)/);
 });
