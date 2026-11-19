@@ -212,3 +212,6 @@ Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres d
 
 ### 31t — aperçu budget
 Barre par dépense, calcul mensuel existant + lot en cours, nouvelle catégorie sans budget par défaut, définition explicite dans le lot, sélecteur groupé. Tests ; lecture seule et aucune écriture.
+
+### 31u — design system 1.0 et polish des réponses
+Charte `docs/SMART_BUDGET_DESIGN_SYSTEM.md`, tokens `preview/assistant/live/design-system.css`, structure minimale et responsive, suppression de bruit, informations critiques conservées, animations éditeur. Smart Engine, Gemma, données et production inchangés.

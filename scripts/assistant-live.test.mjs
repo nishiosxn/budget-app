@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and never writes financial data",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31t/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31u/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -46,8 +46,8 @@ test("visible source marker and savings transfer remain distinct from expenses",
  assert.match(css,/data-source="smart-engine"/);
  assert.match(css,/data-source="gemma"/);
  assert.match(js,/o\.kind==="saving"\?"pilot-plan"/);
- assert.match(js,/Transféré vers l’épargne · pas une dépense/);
- assert.match(js,/Net revenus \/ dépenses · hors épargne/);
+ assert.match(js,/if\(o\.kind==="saving"\)meta\.push\("Épargne"\)/);
+ assert.doesNotMatch(js,/Net revenus \/ dépenses · hors épargne|Variation du solde disponible/);
 });
 
 test("personal rules load real household categories on login without asking the AI",()=>{
@@ -82,7 +82,7 @@ test("selector uses all automatic categories plus unique household-specific cate
 test("merchant and optional explicit expense label render separately",()=>{
  const css=fs.readFileSync(base+"live.css","utf8");
  assert.match(js,/core\.expenseLabelParts\(o\.label\)/);
- assert.match(js,/Libellé : /);
+ assert.match(js,/detailLabel\.textContent=parts\.detail/);assert.doesNotMatch(js,/detailLabel\.textContent="Libellé : "/);
  assert.match(css,/\.pilot-expense-detail/);
 });
 
@@ -90,7 +90,7 @@ test("inline review edits are local, with read-only budget lookup and no write e
  assert.match(html,/review-editor\.js\?v=31t/);
  assert.match(js,/reviewEditor\.fromFields\(entry,values,ctx\)/);
  assert.match(js,/entries\.splice\(i,1\);sync\(\);draw\(\)/);
- assert.match(js,/reviewEditor\.totals\(entries\)/);
+ assert.match(js,/reviewEditor\.validate\(entries,ctx\)/);
  assert.match(js,/reviewEditor\.categoryFromFields\(draft,fields,ctx\)/);
  assert.match(js,/readEditedBudget\(next\.op\)/);
  assert.match(js,/ok\.disabled=locked\|\|editing!==-1\|\|!checked\.ok/);
@@ -111,4 +111,32 @@ test("expense budget uses signed-in household read-only data and local projectio
  assert.match(js,/Aucun budget défini/);
  assert.match(js,/if\(!pane\.isConnected\)return/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
+});
+
+test("31u design system is scoped to pilot, with concentric radii, responsive and accessible control tokens",()=>{
+ const design=fs.readFileSync(base+"design-system.css","utf8"),charter=fs.readFileSync("docs/SMART_BUDGET_DESIGN_SYSTEM.md","utf8");
+ assert.match(html,/design-system\.css\?v=31u/);
+ assert.ok(html.indexOf("design-system.css?v=31u")>html.indexOf("live.css?v=31t"));
+ assert.match(design,/--sb-brand:#5C29D6/);
+ assert.match(design,/--sb-card-radius:calc\(var\(--sb-shell-radius\) - var\(--sb-shell-pad\)\)/);
+ assert.match(design,/--sb-touch:44px/);
+ assert.match(design,/--sb-progress:6px/);
+ assert.match(design,/prefers-color-scheme:dark/);
+ assert.match(design,/prefers-reduced-motion:reduce/);
+ assert.match(design,/@media\(max-width:380px\)/);
+ assert.match(design,/\.pilot-expense-budget\{[^}]*border-top:1px solid var\(--sb-line\)/);
+ assert.match(design,/\.pilot-review\{[^}]*border:0/);
+ assert.match(charter,/R_int = max\(0, R_ext - inset\)/);
+ assert.match(js,/t\.textContent="Budget"/);
+ assert.match(js,/spent\.textContent="Utilisé : "/);
+ assert.match(js,/bar\.setAttribute\("aria-valuetext"/);
+ assert.match(js,/group\.append\(card\);renderExpenseBudget\(card,entry,i\)/);
+ assert.match(js,/compactReviewAction\("Modifier","edit"\)/);
+ assert.match(js,/compactReviewAction\("Retirer","remove"\)/);
+ assert.match(js,/creation\.textContent="À créer : "/);
+ assert.doesNotMatch(js,/tag\.textContent=" · Nouvelle"/);
+ assert.match(js,/closeReviewForm\(panel,after\)/);
+ assert.match(js,/duration:160/);
+ assert.match(js,/prefers-reduced-motion: reduce/);
+ assert.match(js,/if\(!active\(\)\|\|editing!==i\)return;entries\[i\]=next/);
 });
