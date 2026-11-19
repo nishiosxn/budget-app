@@ -1,9 +1,9 @@
 import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs";
 const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf8"),js=fs.readFileSync(base+"live-ui.js","utf8"),conf=fs.readFileSync(base+"config.js","utf8");
-test("pilot keeps ephemeral login and never writes financial data",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
+test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31u/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31v/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -93,7 +93,7 @@ test("inline review edits are local, with read-only budget lookup and no write e
  assert.match(js,/reviewEditor\.validate\(entries,ctx\)/);
  assert.match(js,/reviewEditor\.categoryFromFields\(draft,fields,ctx\)/);
  assert.match(js,/readEditedBudget\(next\.op\)/);
- assert.match(js,/ok\.disabled=locked\|\|editing!==-1\|\|!checked\.ok/);
+ assert.match(js,/ok\.disabled=locked\|\|busy\|\|editing!==-1\|\|!checked\.ok/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);
 });
 
@@ -105,7 +105,7 @@ test("expense budget uses signed-in household read-only data and local projectio
  assert.match(js,/household_id:"eq\."\+householdId,archived_at:"is.null",limit:"1000"/);
  assert.match(js,/r\.body\.length<1000/);
  assert.match(js,/method:"GET",headers:headers\(token\)/);
- assert.match(js,/reviewEditor\.expenseBudget\(entry,entries,report\)/);
+ assert.match(js,/reviewEditor\.expenseBudget\(entry,saved\?\[\]:entries,report\)/);
  assert.match(js,/reviewEditor\.newBudgetEntry\(entry,values\.budget,ctx\)/);
  assert.match(js,/fillReviewOptions\(controls\.category,opts\)/);
  assert.match(js,/Aucun budget défini/);
@@ -139,4 +139,16 @@ test("31u design system is scoped to pilot, with concentric radii, responsive an
  assert.match(js,/duration:160/);
  assert.match(js,/prefers-reduced-motion: reduce/);
  assert.match(js,/if\(!active\(\)\|\|editing!==i\)return;entries\[i\]=next/);
+});
+
+test("explicit pilot write only through authenticated confirm route; unsupported drafts are simulated",()=>{
+ assert.match(js,/action:"confirm",householdId:session\.householdId,requestId,draft/);
+ assert.match(js,/crypto\.randomUUID\(\)/);
+ assert.match(js,/function canSavePilot/);
+ assert.match(js,/if\(!real\)\{locked=true/);
+ assert.match(js,/r\.body\.commit\?\.requestId!==requestId/);
+ assert.match(js,/budgetReads\.clear\(\)/);
+ assert.match(js,/send\.disabled=true;\$\("cancel"\)\.disabled=true/);
+ assert.match(js,/Enregistrement réel · foyer test uniquement/);
+ assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
 });

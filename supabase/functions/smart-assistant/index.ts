@@ -1,5 +1,6 @@
 import "../_shared/smart-assistant-core.js";
 import {createAssistantGateway} from "./gateway.mjs";
+import {createTransactionCommit} from "./commit.mjs";
 
 const originAllowed="https://nishiosxn.github.io";
 const env=(name:string)=>Deno.env.get(name)||"";
@@ -112,7 +113,17 @@ const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBu
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota});
+// Same official sync contract as the application; authenticated JWT and RLS.
+const commitTransactions=createTransactionCommit({
+ validateReview,
+ readCategories:(token:string,householdId:string)=>rest(token,"/rest/v1/categories",{select:"id,legacy_id,type,is_saving",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"}),
+ readRows:(token:string,householdId:string,ids:string[])=>rest(token,"/rest/v1/transactions",{select:"id,household_id,category_id,legacy_id,owner_slot,amount,transaction_date,label,metadata,archived_at",household_id:"eq."+householdId,id:"in.("+ids.join(",")+")",limit:"13"}),
+ insertRows:async(token:string,rows:unknown[])=>{
+  const r=await fetch(supabaseUrl+"/rest/v1/transactions",{method:"POST",headers:{...headersFor(token),Prefer:"return=minimal","x-smart-budget-sync-version":"20261116-hf1"},body:JSON.stringify(rows),signal:timeout()});
+  if(!r.ok)throw Error("Insert rejected");
+ }
+});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }

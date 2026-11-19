@@ -266,9 +266,18 @@
   for(const [label,value,cls] of [["Budget prévu",r.plannedCents,"pilot-plan"],["Dépenses réelles",r.actualCents,"pilot-negative"],["Reste sur le budget",r.remainingCents,r.remainingCents>=0?"pilot-positive":"pilot-negative"]]){const line=document.createElement("div");line.className="pilot-review-total";const n=document.createElement("span"),a=document.createElement("strong");n.textContent=label;a.textContent=euro(value);a.className=cls;line.append(n,a);group.append(line)}
   const note=document.createElement("p");note.className="pilot-op-meta";note.textContent="Données enregistrées du foyer de test"+(r.recurringCents?" · dont récurrences : "+euro(r.recurringCents):"")+". Pas de modification ni de vérification bancaire.";group.append(note);result.append(group);return true;
  }
+ function canSavePilot(entries,ctx){
+  return ctx.solo&&ctx.actor==="B"&&entries.every(({op:o})=>["expense","income"].includes(o.kind)&&o.frequency==="once"&&o.categoryId!==null&&o.owner==="B");
+ }
+ async function savePilotDraft(requestId,draft){
+  return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm",householdId:session.householdId,requestId,draft})});
+ }
+ function setSavingPilot(value){
+  busy=value;send.disabled=value;$("cancel").disabled=value;$("pilotLogout").disabled=value;
+ }
  function renderDraft(v,ctx,previews,suggestions){
   ruleContext=ctx;showRules();
-  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false;
+  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false,saved=false,attempted=false,requestId=null,saveError="";
   const budgetReads=new Map();
   const entries=review.operations.map((o,i)=>{
    const original=o.categoryId,personal=core.classifyCategory(o,ctx,{overrides:personalRules});
@@ -337,7 +346,7 @@
    const name=ctx.categories.find(c=>c.id===op.categoryId)?.name||core.categoryRules.find(r=>r.key===entry.ruleKey)?.name||"Budget";
    function paint(report){
     if(!pane.isConnected)return;
-    pane.replaceChildren();const projection=reviewEditor.expenseBudget(entry,entries,report);
+    pane.replaceChildren();const projection=reviewEditor.expenseBudget(entry,saved?[]:entries,report);
     const title=document.createElement("div");title.className="pilot-exp-budget-head";
     const t=document.createElement("span");t.textContent="Budget";title.append(t);pane.setAttribute("aria-label","Budget "+name+" · "+month);pane.removeAttribute("aria-busy");
     const amount=document.createElement("strong");amount.textContent=projection?.budget!=null?euro(projection.budget):"—";title.append(amount);pane.append(title);
@@ -346,7 +355,7 @@
      const bar=document.createElement("div");bar.className="pilot-exp-budget-track";bar.setAttribute("role","progressbar");bar.setAttribute("aria-label","Budget utilisé après confirmation");bar.setAttribute("aria-valuemin","0");bar.setAttribute("aria-valuemax","100");bar.setAttribute("aria-valuenow",String(Math.round(projection.percent)));bar.setAttribute("aria-valuetext","Utilisé après confirmation : "+euro(projection.used)+" ; reste : "+euro(projection.remaining));const used=document.createElement("span");used.style.width=projection.percent+"%";if(projection.remaining<0)used.classList.add("pilot-budget-over");bar.append(used);pane.append(bar);
     }
     const row=document.createElement("div");row.className="pilot-exp-budget-foot";const spent=document.createElement("span");spent.textContent="Utilisé : "+euro(projection.used);row.append(spent);const remain=document.createElement("strong");remain.textContent=projection.remaining===null?"Aucun budget défini":"Reste : "+euro(projection.remaining);remain.className=projection.remaining===null?"":projection.remaining<0?"pilot-negative":"pilot-positive";row.append(remain);pane.append(row);
-    if(projection.budget===null&&target.startsWith("rule:")&&!locked&&editing===-1&&entries.length<12){
+    if(projection.budget===null&&target.startsWith("rule:")&&!locked&&!attempted&&editing===-1&&entries.length<12){
      const action=reviewButton("Définir un budget","pilot-link");
      action.addEventListener("click",()=>{
       if(!active()||editing!==-1)return;
@@ -383,7 +392,7 @@
     else amount.textContent=(o.kind==="income"||o.kind==="saving"?"+":o.kind==="plan"?(o.planMode==="decrease"?"−":o.planMode==="increase"?"+":""):"−")+euro(o.amountCents);
     top.append(iconBox,info,amount);card.append(top);
     group.append(card);renderExpenseBudget(card,entry,i);
-    if(!locked){
+    if(!locked&&!attempted){
      if(editing===i&&budgetEditing){const host=document.createElement("div");host.dataset.budgetEditor=String(i);card.append(host)}
      else if(editing===i)renderEdit(card,entry,i);
      else{
@@ -394,11 +403,26 @@
    }
    const checked=reviewEditor.validate(entries,ctx),creationKeys=[...new Set(entries.filter(e=>e.op.categoryId===null&&e.ruleKey).map(e=>e.ruleKey))];
    if(!locked&&creationKeys.length){const creation=document.createElement("p");creation.className="pilot-review-message";creation.dataset.creation="true";creation.textContent="À créer : "+creationKeys.map(k=>core.categoryRules.find(r=>r.key===k)?.name||k).join(", ");group.append(creation)}
-   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?"Confirmé en simulation.":editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:"Mode test · aucun enregistrement.";group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations","sb-assistant-send");
-   cancel.disabled=locked;ok.disabled=locked||editing!==-1||!checked.ok;
+   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)?"Enregistrement réel · foyer test uniquement.":"Simulation · création, budget, épargne ou récurrence pas encore enregistrés.");group.append(note);
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const real=canSavePilot(entries,ctx),cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
+   cancel.disabled=locked||attempted;ok.disabled=locked||busy||editing!==-1||!checked.ok;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
-   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!reviewEditor.validate(entries,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Confirmation réussie · aucun appel IA supplémentaire.";draw()});
+   ok.addEventListener("click",async()=>{
+    if(!active()||ok.disabled||!reviewEditor.validate(entries,ctx).ok)return;
+    if(!real){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return}
+    if(!requestId){if(typeof crypto.randomUUID!=="function"){saveError="Navigateur incompatible avec l’enregistrement sécurisé.";draw();return}requestId=crypto.randomUUID()}
+    attempted=true;saveError="";setSavingPilot(true);draw();status.textContent="Enregistrement…";
+    try{
+     const r=await savePilotDraft(requestId,{kind:"draft",operations:entries.map(e=>e.op)});
+     if(!r.ok||r.body.commit?.requestId!==requestId||r.body.commit?.count!==entries.length)throw Error("Unverified save");
+     saved=true;locked=true;pendingReview=null;history=[];budgetReads.clear();status.dataset.source="";status.textContent="Enregistré · aucun appel IA.";
+    }catch{
+     saveError="Enregistrement non vérifié. Réessaie le même lot ; ne le ressaisis pas.";
+     status.dataset.source="";status.textContent="Confirmation à vérifier.";
+    }finally{
+     setSavingPilot(false);if(!saved){send.disabled=true;$("cancel").disabled=true}draw();
+    }
+   });
    actions.append(cancel,ok);group.append(actions);
   }
   draw();
@@ -446,13 +470,13 @@
   }catch(e){$("pilotLoginStatus").textContent=e.message||"Connexion impossible."}
   finally{$("pilotSignIn").disabled=false}
  });
- $("pilotLogout").addEventListener("click",logout);
+ $("pilotLogout").addEventListener("click",()=>{if(busy)return;if(send.disabled&&pendingReview&&!window.confirm("Vérifie l’historique du foyer avant de ressaisir un lot dont l’enregistrement n’est pas vérifié. Se déconnecter ?"))return;logout()});
  $("cancel").addEventListener("click",()=>{epoch++;busy=false;send.disabled=false;wipe();status.textContent="Nouvelle demande."});
  document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",()=>{voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;resizeComposer();input.focus()}));
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
  
  form.addEventListener("submit",async e=>{
-  e.preventDefault();if(!session||busy)return;voice.stop();
+  e.preventDefault();if(!session||busy||send.disabled)return;voice.stop();
   const command=input.value.trim();if(!command)return;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});

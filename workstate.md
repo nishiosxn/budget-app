@@ -215,3 +215,6 @@ Barre par dépense, calcul mensuel existant + lot en cours, nouvelle catégorie 
 
 ### 31u — design system 1.0 et polish des réponses
 Charte `docs/SMART_BUDGET_DESIGN_SYSTEM.md`, tokens `preview/assistant/live/design-system.css`, structure minimale et responsive, suppression de bruit, informations critiques conservées, animations éditeur. Smart Engine, Gemma, données et production inchangés.
+
+### 31v — enregistrement réel V1 pilote solo
+Lot ponctuel dépenses/revenus catégories existantes seulement ; confirmation insert-only avec JWT/RLS, clé de lot stable et vérification. Les autres transactions et types restent en simulation. Production inchangée.

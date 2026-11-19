@@ -1,4 +1,4 @@
-/* No database mutations or model-controlled execution. Dependencies injected for tests. */
+/* Inference is read-only. Explicit authenticated confirmation is separate. */
 const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const uuid=v=>typeof v==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
 // Pilot permits only the model covered by our current reservation estimate.
@@ -55,18 +55,24 @@ export function decodeModelResponse(raw){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null}){
+export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
-  const usageOnly=obj(body)&&body.action==="usage";
-  if(usageOnly){
+  const usageOnly=obj(body)&&body.action==="usage",confirmOnly=obj(body)&&body.action==="confirm";
+  if(confirmOnly){
+   if(Object.keys(body).length!==4||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft))return response(400,{error:"invalid_request"});
+  }else if(usageOnly){
    if(Object.keys(body).length!==2||!uuid(body.householdId))return response(400,{error:"invalid_request"});
   }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context))return response(400,{error:"invalid_request"});
   let auth;
-  try{auth=await authorize(token,body.householdId,usageOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
+  try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
   if(!auth)return response(403,{error:"household_not_authorized"});
   if(!auth.context||auth.context.categories?.length>300)return response(400,{error:"invalid_context"});
+  if(confirmOnly){
+   if(!commitTransactions)return response(503,{error:"confirm_unavailable"});
+   return await commitTransactions({token,householdId:body.householdId,requestId:body.requestId,draft:body.draft,context:auth.context});
+  }
   if(usageOnly){try{const quota=await getQuota();return quota?response(200,{quota}):response(503,{error:"quota_unavailable"})}catch{return response(503,{error:"quota_unavailable"})}}
   // History is an untrusted, bounded UX aid, not authorization or a record of writes.
   const history=[];
