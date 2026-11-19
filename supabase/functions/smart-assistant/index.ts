@@ -59,6 +59,14 @@ async function reserve(_token:string,_householdId:string,units:number){
  if(!r.ok)throw Error("Quota RPC unavailable");
  return (await r.json())===true;
 }
+async function getQuota(){
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");if(!key)throw Error("Missing quota credential");
+ const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_quota_status_v1",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:"{}",signal:timeout()});
+ if(!r.ok)throw Error("Quota status RPC unavailable");
+ const q=await r.json();
+ if(!q||typeof q.utcDay!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(q.utcDay)||!Number.isSafeInteger(q.units)||q.units<0||q.units>8000||!Number.isSafeInteger(q.requests)||q.requests<0||q.requests>100)return null;
+ return {utcDay:q.utcDay,units:q.units,requests:q.requests,limit:8000,requestLimit:100};
+}
 async function infer(model:string,payload:unknown){
  if(!/^[a-f0-9]{32}$/i.test(cfg.account)||!cfg.token)throw Error("Provider not configured");
  const r=await fetch("https://api.cloudflare.com/client/v4/accounts/"+cfg.account+"/ai/run/"+model,{method:"POST",headers:{Authorization:"Bearer "+cfg.token,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(35000)});
@@ -104,7 +112,7 @@ const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBu
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }

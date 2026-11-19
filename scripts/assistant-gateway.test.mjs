@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
-import {createAssistantGateway,decodeModelResponse,makeModelRequest,estimateReservation} from "../supabase/functions/smart-assistant/gateway.mjs";
+import {createAssistantGateway,decodeModelResponse,makeModelRequest,estimateReservation,extractTokenUsage} from "../supabase/functions/smart-assistant/gateway.mjs";
 const box={};vm.createContext(box);vm.runInContext(fs.readFileSync("js/assistant-core.js","utf8"),box);
 const core=box.SmartBudgetAssistantCore, model="@cf/google/gemma-4-26b-a4b-it";
 const ctx={today:"2026-11-17",firstMonth:"2026-09",lastMonth:"2028-12",selectedMonth:"2026-11",solo:false,actor:"B",members:{B:"Membre 1",A:"Membre 2"},categories:[{id:"food",name:"Courses",kind:"expense",owner:"common",createdFrom:"2026-09"}]};
@@ -75,3 +75,40 @@ test("explicit grouped category draft and category query avoid provider calls",a
 test("Gundam compound request processed without provider or quota",async()=>{const c={...ctx,actor:"B"};const {handler,calls}=setup({authorize:async()=>({context:c}),quickExpense:core.quickCommand});const r=await handler({...request,body:{...request.body,command:"Crée la catégorie budget Gundam. Mets-y un budget de 90 euros et ajoute une dépense de 40 euros."}});assert.equal(r.status,200);assert.equal(r.body.result.kind,"categoryDraft");assert.equal(r.body.result.name,"Gundam");assert.equal(r.body.result.budgetCents-r.body.result.expenseCents,5000);assert.deepEqual(calls,[]);});
 
 test("spoken category bundle uses Smart Engine before the quota and provider",async()=>{const {handler,calls}=setup({quickExpense:core.quickCommand});const r=await handler({...request,body:{...request.body,command:"Créer la catégorie Gundam ajoute y un budget de quatre-vingt-dix euros et une dépense de quarante euros"}});assert.equal(r.status,200);assert.equal(r.body.model,"local-rules");assert.equal(r.body.result.kind,"categoryDraft");assert.equal(r.body.result.budgetCents,9000);assert.equal(r.body.result.expenseCents,4000);assert.deepEqual(calls,["auth"]);});
+
+test("authenticated usage-only requests are read-only and never call quota reservation or AI",async()=>{
+ const current={utcDay:"2026-11-19",units:917,requests:6,limit:8000,requestLimit:100};
+ let calls=0;const {handler}=setup({getQuota:async()=>{calls++;return current}});
+ const r=await handler({...request,body:{householdId:request.body.householdId,action:"usage"}});
+ assert.equal(r.status,200);assert.deepEqual(r.body.quota,current);assert.equal(calls,1);
+ const other=setup({getQuota:async()=>current,authorize:async()=>null});
+ assert.equal((await other.handler({...request,body:{householdId:request.body.householdId,action:"usage"}})).status,403);
+ const bad=await handler({...request,body:{householdId:request.body.householdId,action:"usage",evil:true}});assert.equal(bad.status,400);
+ const unavailable=setup({getQuota:async()=>{throw Error("offline")}});
+ assert.equal((await unavailable.handler({...request,body:{householdId:request.body.householdId,action:"usage"}})).status,503);
+});
+test("Cloudflare reported token counts are separate from reserved daily neurons",async()=>{
+ const metering={prompt_tokens:820,completion_tokens:130,total_tokens:950};
+ const {handler}=setup({infer:async()=>({result:{response:valid,usage:metering}})});
+ const r=await handler(request);
+ assert.equal(r.status,200);assert.equal(r.body.metering.source,"cloudflare");
+ assert.equal(r.body.metering.tokens.total,950);
+ assert.equal(r.body.metering.tokens.input,820);
+ assert.ok(r.body.metering.reservedNeurons>0);
+ assert.equal(extractTokenUsage({result:{usage:{prompt_tokens:5,completion_tokens:10,total_tokens:200}}}),null);
+ const invalid=setup({infer:async()=>({result:{response:{kind:"invalid"},usage:metering}})});
+ const e=await invalid.handler(request);assert.equal(e.status,422);assert.equal(e.body.metering.tokens.total,950);
+});
+test("deterministic commands consume zero AI tokens and no reserved units",async()=>{
+ const {handler,calls}=setup({quickExpense:core.quickCommand});
+ const r=await handler({...request,body:{...request.body,command:"Crée une catégorie Lego, mets-y un budget de 60 euros et ajoute-y 20 euros de dépenses."}});
+ assert.equal(r.status,200);assert.equal(r.body.metering.source,"local-rules");
+ assert.deepEqual(r.body.metering.tokens,{input:0,output:0,total:0});
+ assert.equal(r.body.metering.reservedNeurons,0);assert.deepEqual(calls,["auth"]);
+});
+test("quota-reading RPC uses a server credential, never the caller bearer",()=>{
+ const source=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");
+ assert.match(source,/\/rest\/v1\/rpc\/smart_assistant_quota_status_v1/);
+ assert.match(source,/Authorization:"Bearer "\+key/);
+ assert.match(source,/getQuota\}\);/);
+});

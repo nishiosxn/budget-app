@@ -182,3 +182,6 @@ Correction de la grammaire de création groupée et affichage du texte envoyé e
 
 ### 31j — Smart Engine
 Normalisation et lot de mouvements déterministes, corpus synthétique 2 000 cas + refus, validation stricte conservée. Publication après CI. Aucun changement des données.
+
+### 31k — DA + consommation
+Pilote connecté : composition horizontale, labels superflus retirés, pas de checkbox récurrente, barre quota neutrons estimés via RPC service_role et détail tokens retournés si disponibles. Sans écriture financière.

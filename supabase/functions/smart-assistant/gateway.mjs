@@ -37,7 +37,14 @@ export function makeModelRequest(command,context,history=[]){
   if(bytes>24000||payload.max_completion_tokens!==1400)return null;
   return Math.ceil(1.5*((bytes+2048)*9091+1400*27273)/1000000);
  }
- export function decodeModelResponse(raw){
+ export function extractTokenUsage(raw){
+ const data=raw?.result?.usage??raw?.usage??raw?.result?.choices?.[0]?.usage;
+ if(!obj(data))return null;
+ const input=data.prompt_tokens,output=data.completion_tokens,total=data.total_tokens;
+ if(![input,output,total].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=1000000)||input+output!==total)return null;
+ return {input,output,total};
+}
+export function decodeModelResponse(raw){
  const result=raw?.result??raw;
  const content=result?.choices?.[0]?.message?.content??result?.response;
  if(typeof content==="string"){
@@ -48,15 +55,19 @@ export function makeModelRequest(command,context,history=[]){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null}){
+export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
-  if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context))return response(400,{error:"invalid_request"});
+  const usageOnly=obj(body)&&body.action==="usage";
+  if(usageOnly){
+   if(Object.keys(body).length!==2||!uuid(body.householdId))return response(400,{error:"invalid_request"});
+  }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context))return response(400,{error:"invalid_request"});
   let auth;
-  try{auth=await authorize(token,body.householdId,body.context)}catch{return response(503,{error:"authorization_unavailable"})}
+  try{auth=await authorize(token,body.householdId,usageOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
   if(!auth)return response(403,{error:"household_not_authorized"});
   if(!auth.context||auth.context.categories?.length>300)return response(400,{error:"invalid_context"});
+  if(usageOnly){try{const quota=await getQuota();return quota?response(200,{quota}):response(503,{error:"quota_unavailable"})}catch{return response(503,{error:"quota_unavailable"})}}
   // History is an untrusted, bounded UX aid, not authorization or a record of writes.
   const history=[];
   if(Object.hasOwn(body,"history")){
@@ -72,7 +83,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   const quick=quickExpense?.(body.command.trim(),auth.context);
   if(quick?.ok){
    let previews=[],report=null;try{if(quick.value.kind==="draft")previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
-   return response(200,{result:quick.value,model:"local-rules",context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
+   return response(200,{result:quick.value,model:"local-rules",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}},context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
   }
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
@@ -80,11 +91,12 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   try{if(await reserve(token,body.householdId,units)!==true)return response(429,{error:"quota_exhausted"})}catch{return response(503,{error:"quota_unavailable"})}
   try{
    const raw=await infer(model,payload);
+   const metering={source:"cloudflare",reservedNeurons:units,tokens:extractTokenUsage(raw)};
    const decoded=decodeModelResponse(raw),checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
-   if(!checked.ok){console.warn("smart-assistant invalid model result");return response(422,{error:"invalid_model_result"})}
+   if(!checked.ok){console.warn("smart-assistant invalid model result");return response(422,{error:"invalid_model_result",metering})}
    const previews=checked.value.kind==="draft"?await planPreview(token,body.householdId,checked.value,auth.context):[];
    const report=checked.value.kind==="query"?await queryPreview(token,body.householdId,checked.value,auth.context):null;
-   return response(200,{result:checked.value,model,context:auth.context,...(report?{categoryReport:report}:{}),...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
-  }catch{return response(502,{error:"model_unavailable_or_invalid"})}
+   return response(200,{result:checked.value,model,metering,context:auth.context,...(report?{categoryReport:report}:{}),...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
+  }catch{return response(502,{error:"model_unavailable_or_invalid",metering:{source:"cloudflare",reservedNeurons:units,tokens:null}})}
  };
 }
