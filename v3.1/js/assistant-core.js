@@ -483,7 +483,7 @@
   // Conflicting signals without a clear winner are left to the model's valid category.
   const matched=scored.length&&(!scored[1]||scored[0].score>scored[1].score)?scored[0].r:null;
   const modelHint=compatible.find(r=>r.key===hint);
-  const rule=matched||(!supplied?modelHint:null);
+  const rule=(hint&&String(op.label).includes(" · ")?modelHint:null)||matched||(!supplied?modelHint:null);
   if(rule){
    const names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
    const candidates=available.filter(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
@@ -525,13 +525,13 @@
   return rule;
  }
  // Recognize only complete, unambiguous single-expense sentences. No partial matching.
- const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDo","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","essence":"Essence","carburant":"Carburant"});
+ const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","essence":"Essence","carburant":"Carburant"});
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
   const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
   if(!m)return null;
-  const merchant=normalizeCategory(m[2]),label=Object.hasOwn(quickMerchants,merchant)?quickMerchants[merchant]:null;
+  const merchant=normalizeCategory(m[2]),label=Object.hasOwn(quickMerchants,merchant)?createExpenseLabel(m[2]):null;
   if(!label)return null;
   const [whole,decimal=""]=m[1].replace(",",".").split("."),amountCents=Number(whole)*100+Number(decimal.padEnd(2,"0"));
   if(!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>100000000)return null;
@@ -750,6 +750,77 @@
 
  // Local, complete-sentence interpretation for category-bearing products/purchases.
  // Never infer the account holder from a shop or a sender.
+
+ // Full label remains the persisted financial label; the separator permits
+ // a compact "merchant + purchase description" preview without schema changes.
+ function expenseLabelParts(label){
+  const value=String(label||"").trim(),split=value.indexOf(" · ");
+  return split===-1?{merchant:value,detail:null}:{merchant:value.slice(0,split),detail:value.slice(split+3)};
+ }
+ function merchantName(raw){
+  const name=String(raw??"").trim().replace(/\s+/g," ");
+  const key=normalizeCategory(name);
+  if(key==="decathlon")return "Décathlon";
+  if(key==="king jouet")return "King Jouet";
+  return quickMerchants[key]||name;
+ }
+ function productDescription(raw){
+  const cleaned=String(raw??"").trim().replace(/\s+/g," ").replace(/^(?:(?:de la|de l'|une|des|les|du|un|le|la)\s+|l')/iu,"").trim();
+  if(!cleaned||cleaned.length>64||/[;.!?]/.test(cleaned)||/\b(?:et|puis|ensuite|supprime|efface|demain|hier|tous les mois)\b/iu.test(cleaned)||/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/iu.test(cleaned))return null;
+  if(!/^[\p{L}\p{N}][\p{L}\p{N}'’/ +&-]*$/u.test(cleaned))return null;
+  const key=normalizeCategory(cleaned);
+  if(key==="lego")return "LEGO";
+  if(key==="produits menagers")return "Produits ménagers";
+  if(key==="cours du mois"||key==="course du mois"||key==="courses du mois")return "Courses du mois";
+  if(key==="cours de la semaine"||key==="course de la semaine"||key==="courses de la semaine")return "Courses de la semaine";
+  return cleaned.slice(0,1).toLocaleUpperCase("fr-FR")+cleaned.slice(1);
+ }
+ function createExpenseLabel(merchant,description=null){
+  const name=merchantName(merchant);
+  if(!name||name.length>60||/[\r\n<>]/.test(name)||/\b(?:et|puis|supprime|efface|demain|hier)\b/iu.test(name))return null;
+  const detail=description===null?null:productDescription(description);
+  if(description!==null&&!detail)return null;
+  const result=detail?name+" · "+detail:name;
+  return result.length<=120?result:null;
+ }
+ function productCategoryHint(description){
+  const value=normalizeCategory(description);
+  if(/\b(?:courses?|supermarche|alimentation)\b/.test(value))return "groceries";
+  if(/\b(?:menagers?|lessive|entretien|nettoyant)\b/.test(value))return "home";
+  if(/\b(?:essence|gazole|diesel|carburant)\b/.test(value))return "fuel";
+  if(/\b(?:lego|jeux? videos?|escalade|figurines?|cinema)\b/.test(value))return "leisure";
+  if(/\b(?:chaussures?|vetements?|pull|pantalon|manteau)\b/.test(value))return "clothing";
+  if(/\b(?:cadeaux?|anniversaire)\b/.test(value))return "gifts";
+  if(/\b(?:medicaments?|pharmacie|dentiste)\b/.test(value))return "health";
+  return null;
+ }
+ // Semantic expense parsing must cover an entire clause, never an arbitrary
+ // fragment of a compound command. Multi-operation splitting happens upstream.
+ function quickDetailedExpense(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const money="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
+  const patterns=[
+   new RegExp("^j[' ]ai (?:acheté|achete|pris) (.+?) (?:chez|à) (.+?) (?:pour|à) "+money+"$","iu"),
+   new RegExp("^j[' ]ai (?:acheté|achete|pris) (.+?) (?:à|pour) "+money+" (?:chez|à) (.+)$","iu"),
+   new RegExp("^j[' ]ai (?:payé|paye|dépensé|depense) "+money+" (?:chez|à) (.+?) pour (.+)$","iu"),
+   new RegExp("^j[' ]ai (?:fait|dépensé|depense|payé|paye|mis) "+money+" (?:de |d'|en )(.+?) (?:chez|à) (.+)$","iu")
+  ];
+  let product=null,merchant=null,rawAmount=null;
+  for(let i=0;i<patterns.length;i++){
+   const m=text.match(patterns[i]);if(!m)continue;
+   if(i===0){product=m[1];merchant=m[2];rawAmount=m[3]}
+   else if(i===1){product=m[1];rawAmount=m[2];merchant=m[3]}
+   else if(i===2){rawAmount=m[1];merchant=m[2];product=m[3]}
+   else{rawAmount=m[1];product=m[2];merchant=m[3]}
+   break;
+  }
+  if(product===null)return null;
+  const amountCents=centsFromText(rawAmount),label=createExpenseLabel(merchant,product),hint=productCategoryHint(product);
+  if(!amountCents||!label||(!hint&&!Object.hasOwn(quickMerchants,normalizeCategory(merchant))))return null;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",...(hint?{categoryHint:hint}:{})}]},ctx,command);
+  return checked.ok?checked:null;
+ }
  function quickContextualExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
@@ -762,7 +833,8 @@
   const amountCents=centsFromText(rawAmount);
   if(!amountCents||!merchant||/\b(?:et|puis|supprime|efface|modifie|demain|hier|chaque mois)\b/u.test(merchant))return null;
   const kind=/^(?:essence|gazole|diesel|carburant)$/.test(item)?"fuel":item==="courses"?"groceries":/^(?:produits menagers|lessive|produits d'entretien)$/.test(item)?"home":"leisure";
-  const label=merchant.slice(0,1).toUpperCase()+merchant.slice(1);
+  const label=createExpenseLabel(merchant,item);
+  if(!label)return null;
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:kind}]},ctx,command);
   return checked.ok?checked:null;
  }
@@ -806,7 +878,7 @@
    const day=new Date(ctx.today+"T12:00:00Z");
    day.setUTCDate(day.getUTCDate()-(moment==="hier"?1:2));date=day.toISOString().slice(0,10);
   }
-  const direct=quickExpense(t,ctx)||quickContextualExpense(t,ctx)||quickInternalTransfer(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
+  const direct=quickDetailedExpense(t,ctx)||quickExpense(t,ctx)||quickContextualExpense(t,ctx)||quickInternalTransfer(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
   let r=direct;
   if(!r){
    const m=t.match(/^j[' ]ai reçu (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:de |en |pour (?:mon |le )?)(salaire|paie|cadeau|remboursement)[.!?]?$/iu);
@@ -847,5 +919,5 @@
   const normalized=normalizeLanguage(command);
   return quickBankBalanceAnswer(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense});
 })(globalThis);
