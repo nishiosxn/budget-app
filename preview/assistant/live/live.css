@@ -86,3 +86,13 @@ body{background:var(--bg)}
 .pilot-remove{color:#e1767c}
 .pilot-op-controls button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.pilot-operation-editor{grid-template-columns:1fr}}
+
+/* 31t — compact monthly budget projection under expense cards */
+.pilot-expense-budget{margin:10px 0 2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);font-size:.78rem;color:var(--muted);display:grid;gap:7px}
+.pilot-exp-budget-head,.pilot-exp-budget-foot{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.pilot-exp-budget-head strong{color:var(--text)}
+.pilot-exp-budget-track{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.pilot-exp-budget-track span{display:block;height:100%;background:#7041e7;border-radius:99px}
+.pilot-exp-budget-track .pilot-budget-over{background:#d85b6b}
+.pilot-exp-budget-note{font-size:.72rem}
+.pilot-expense-budget>.pilot-link{justify-self:start}

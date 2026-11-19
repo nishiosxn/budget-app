@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and never writes financial data",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31s/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31r/);assert.match(html,/live-ui\.js\?v=31t/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -87,7 +87,7 @@ test("merchant and optional explicit expense label render separately",()=>{
 });
 
 test("inline review edits are local, with read-only budget lookup and no write endpoints",()=>{
- assert.match(html,/review-editor\.js\?v=31s/);
+ assert.match(html,/review-editor\.js\?v=31t/);
  assert.match(js,/reviewEditor\.fromFields\(entry,values,ctx\)/);
  assert.match(js,/entries\.splice\(i,1\);sync\(\);draw\(\)/);
  assert.match(js,/reviewEditor\.totals\(entries\)/);
@@ -95,4 +95,20 @@ test("inline review edits are local, with read-only budget lookup and no write e
  assert.match(js,/readEditedBudget\(next\.op\)/);
  assert.match(js,/ok\.disabled=locked\|\|editing!==-1\|\|!checked\.ok/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);
+});
+
+test("expense budget uses signed-in household read-only data and local projection",()=>{
+ assert.match(js,/function readExpenseBudget\(op\)/);
+ assert.match(js,/read\("transactions",\{select:"category_id,transaction_date,amount,metadata"/);
+ assert.match(js,/read\("recurrences",\{select:"category_id,amount,start_month,end_month,excluded_months,overrides,metadata"/);
+ assert.match(js,/read\("budgets",\{select:"month,planned_amount,scope"/);
+ assert.match(js,/household_id:"eq\."\+householdId,archived_at:"is.null",limit:"1000"/);
+ assert.match(js,/r\.body\.length<1000/);
+ assert.match(js,/method:"GET",headers:headers\(token\)/);
+ assert.match(js,/reviewEditor\.expenseBudget\(entry,entries,report\)/);
+ assert.match(js,/reviewEditor\.newBudgetEntry\(entry,values\.budget,ctx\)/);
+ assert.match(js,/fillReviewOptions\(controls\.category,opts\)/);
+ assert.match(js,/Aucun budget défini/);
+ assert.match(js,/if\(!pane\.isConnected\)return/);
+ assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
 });

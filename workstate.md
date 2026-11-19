@@ -209,3 +209,6 @@ Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres d
 
 ### 31s — éditeur de propositions
 Éditeur local de cartes et lots groupés, recalcul de budget/solde, retrait d'une ligne, lecture GET du budget si cible/mois modifié, validation et tests. Aucun enregistrement financier ni modification serveur.
+
+### 31t — aperçu budget
+Barre par dépense, calcul mensuel existant + lot en cours, nouvelle catégorie sans budget par défaut, définition explicite dans le lot, sélecteur groupé. Tests ; lecture seule et aucune écriture.

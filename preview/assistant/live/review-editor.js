@@ -11,8 +11,8 @@
  const money=n=>n===null?"":(n/100).toFixed(2).replace(".",",");
  function choices(op,ctx){
   if(!core.validDate(op.date))return [];
-  const existing=core.availableCategories(op,ctx).map(c=>({value:"id:"+c.id,name:c.name,owner:c.owner}));
-  const missing=core.categoryRules.filter(r=>core.draftCategorySuggestion({...op,categoryId:null},ctx,r.key)).map(r=>({value:"rule:"+r.key,name:"Créer "+r.name,owner:ctx.actor}));
+  const existing=core.availableCategories(op,ctx).map(c=>({value:"id:"+c.id,name:c.name,owner:c.owner,group:"Catégories du foyer"}));
+  const missing=core.categoryRules.filter(r=>core.draftCategorySuggestion({...op,categoryId:null},ctx,r.key)).map(r=>({value:"rule:"+r.key,name:"Créer "+r.name,owner:ctx.actor,group:"Catégories à créer"}));
   return [...existing,...missing];
  }
  const selected=e=>e.op.categoryId?"id:"+e.op.categoryId:e.ruleKey?"rule:"+e.ruleKey:"";
@@ -62,5 +62,34 @@
   for(const {op:o} of entries){if(o.frequency!=="once")continue;if(o.kind==="income")income+=o.amountCents;else if(o.kind==="expense")expense+=o.amountCents;else if(o.kind==="saving")saving+=o.amountCents}
   return {income,expense,saving,net:income-expense,available:income-expense-saving};
  }
- root.SmartBudgetReviewEditor=Object.freeze({cents,money,choices,selected,key,planPreview,fromFields,categoryFromFields,validate,totals});
+
+ // Category/month projection includes the entire pending batch, never writes.
+ function expenseBudget(entry,entries,report){
+  const o=entry.op,target=selected(entry),month=String(o.date).slice(0,7);
+  if(o.kind!=="expense"||!target||!core.validMonth(month))return null;
+  const fresh=target.startsWith("rule:");
+  if(!fresh&&(!report||!Number.isSafeInteger(report.actualCents)||report.actualCents<0||!Number.isSafeInteger(report.plannedCents)||report.plannedCents<0||typeof report.hasBudget!=="boolean"))return null;
+  const actual=fresh?0:report.actualCents;
+  const same=entries.filter(e=>selected(e)===target);
+  const applies=e=>e.op.date.slice(0,7)===month||(e.op.frequency==="monthly"&&e.op.date.slice(0,7)<month);
+  const proposed=same.filter(e=>e.op.kind==="expense"&&applies(e)).reduce((sum,e)=>sum+e.op.amountCents,0);
+  const plans=same.filter(e=>e.op.kind==="plan"&&applies(e));
+  // Forward budget changes spanning different months need a full recurrence
+  // projection; do not reuse a baseline from another month.
+  if(plans.length>1||plans.some(e=>e.op.date.slice(0,7)!==month))return null;
+  const projected=plans.length?planPreview(plans[0]):null;
+  if(plans.length&&!projected)return null;
+  const budget=projected?projected.afterCents:fresh||!report.hasBudget?null:report.plannedCents;
+  const used=actual+proposed;
+  if(!Number.isSafeInteger(used)||!Number.isSafeInteger(proposed))return null;
+  return {month,budget,actual,proposed,used,remaining:budget===null?null:budget-used,hasPlan:plans.length>0,percent:budget===null?0:budget===0?(used>0?100:0):Math.min(100,Math.max(0,used/budget*100))};
+ }
+ function newBudgetEntry(entry,amount,ctx){
+  const o=entry.op,amountCents=cents(amount),rule=core.draftCategorySuggestion(o,ctx,entry.ruleKey);
+  if(o.kind!=="expense"||!rule||!Number.isSafeInteger(amountCents))return fail("Budget invalide.");
+  const op={kind:"plan",categoryId:null,owner:ctx.actor,amountCents,date:o.date.slice(0,7)+"-01",label:rule.name,frequency:"once",planMode:"set"};
+  const checked=core.validateReview({kind:"draft",operations:[op]},ctx);
+  return checked.ok?{ok:true,entry:{op:checked.value.operations[0],ruleKey:rule.key,baseline:null}}:checked;
+ }
+ root.SmartBudgetReviewEditor=Object.freeze({cents,money,choices,selected,key,planPreview,fromFields,categoryFromFields,validate,totals,expenseBudget,newBudgetEntry});
 })(globalThis);

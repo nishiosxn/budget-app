@@ -41,3 +41,39 @@ test("edit a grouped new category budget and expense without allowing duplicate 
  assert.equal(e.categoryFromFields(v,{name:"Courses",month:"2026-11",budget:"120",expense:"35"},ctx).ok,false);
  assert.equal(e.categoryFromFields(v,{name:"Lego",month:"2026-12",budget:"120",expense:"35"},ctx).ok,false);
 });
+
+test("expense budget projects total spent including existing and all pending matching operations",()=>{
+ const a={...entry,op:{...entry.op,amountCents:1500}};
+ const report={plannedCents:9000,actualCents:0,hasBudget:true};
+ let r=e.expenseBudget(a,[a],report);assert.equal(r.remaining,7500);assert.equal(r.used,1500);
+ const b={...a,op:{...a.op,amountCents:2000,label:"Other"}};
+ const unrelated={...b,op:{...b.op,categoryId:"rest"}};
+ r=e.expenseBudget(a,[a,b,unrelated],{...report,actualCents:1000});
+ assert.equal(r.used,4500);assert.equal(r.remaining,4500);
+ r=e.expenseBudget(a,[a,unrelated],{...report,actualCents:9500});assert.equal(r.remaining,-2000);assert.equal(r.percent,100);
+ assert.equal(e.expenseBudget(a,[a],null),null);
+ assert.equal(e.expenseBudget(a,[a],{...report,hasBudget:false}).budget,null);
+ assert.equal(e.expenseBudget(a,[a],{...report,plannedCents:0}).percent,100);
+});
+test("new category budget is explicit and never fabricated",()=>{
+ const a={op:{...entry.op,categoryId:null,amountCents:1500},ruleKey:"leisure",baseline:null};
+ const r=e.expenseBudget(a,[a],null);assert.equal(r.budget,null);assert.equal(r.used,1500);
+ const added=e.newBudgetEntry(a,"90",ctx);assert.equal(added.ok,true);assert.equal(added.entry.op.kind,"plan");
+ assert.equal(e.validate([a,added.entry],ctx).ok,true);
+ const projected=e.expenseBudget(a,[a,added.entry],null);assert.equal(projected.budget,9000);assert.equal(projected.remaining,7500);
+ assert.equal(e.newBudgetEntry(a,"-10",ctx).ok,false);
+ assert.equal(e.newBudgetEntry(entry,"90",ctx).ok,false);
+});
+test("budget changes and edits use the pending amount for same category and month only",()=>{
+ const a={...entry,op:{...entry.op,amountCents:1500}};
+ const plan={op:{...a.op,kind:"plan",owner:"common",date:"2026-11-01",amountCents:1000,planMode:"increase"},baseline:{key:"food|2026-11",beforeCents:9000},ruleKey:null};
+ const report={plannedCents:9000,actualCents:1000,hasBudget:true};
+ assert.equal(e.expenseBudget(a,[a,plan],report).remaining,7500);
+ assert.equal(e.expenseBudget(a,[a,{...plan,op:{...plan.op,date:"2026-12-01"}}],report).remaining,6500);
+ assert.equal(e.expenseBudget(a,[a,{...plan,baseline:null}],report),null);
+});
+test("category selector groups existing categories separately from proposed creations",()=>{
+ const opts=e.choices(entry.op,ctx);
+ assert.equal(opts.find(x=>x.value==="id:food").group,"Catégories du foyer");
+ assert.equal(opts.find(x=>x.value==="rule:leisure").group,"Catégories à créer");
+});
