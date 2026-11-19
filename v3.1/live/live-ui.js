@@ -3,7 +3,7 @@
  const core=globalThis.SmartBudgetAssistantCore;
  let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
- const kinds={expense:"Dépense",income:"Revenu",saving:"Épargne",plan:"Budget prévu"};
+ const kinds={expense:"Dépense",income:"Revenu",saving:"Mise en épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
  const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable."};
  // Single-line default. Expand only for actual line breaks or visual wrapping.
@@ -63,7 +63,7 @@
   ruleContext=ctx;showRules();
   const review=JSON.parse(JSON.stringify(v));pendingReview=review;
   const newRules=new Map(),changes=new Map(),cards=[];
-  const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0"};
+  const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
   function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
   const group=document.createElement("div");group.className="pilot-review";
   for(const [i,o] of review.operations.entries()){
@@ -77,16 +77,16 @@
    const iconBox=document.createElement("div");iconBox.className="pilot-op-icon";
    const category=ctx.categories.find(c=>c.id===o.categoryId);
    const guessed=personal.ruleKey&&core.categoryRules.find(r=>r.key===personal.ruleKey);
-   iconBox.append(icon(rule?.icon||guessed?.icon||(o.kind==="income"?"income":o.kind==="plan"?"home":"card")));
+   iconBox.append(icon(rule?.icon||guessed?.icon||(o.kind==="income"?"income":o.kind==="saving"?"saving":o.kind==="plan"?"home":"card")));
    const info=document.createElement("div");info.className="pilot-op-info";
    const name=document.createElement("strong");name.textContent=o.label;
    const sub=document.createElement("div");sub.className="pilot-op-meta";
    const catLabel=document.createElement("span");
    sub.textContent=(ctx.members[o.owner]||"À deux")+" · ";sub.append(catLabel);
    info.append(name,sub);const amount=document.createElement("strong");
-   amount.className="pilot-op-money "+(o.kind==="income"?"pilot-positive":o.kind==="plan"?"pilot-plan":"pilot-negative");
+   amount.className="pilot-op-money "+(o.kind==="income"?"pilot-positive":o.kind==="saving"?"pilot-plan":o.kind==="plan"?"pilot-plan":"pilot-negative");
    top.append(iconBox,info,amount);card.append(top);
-   const detail=document.createElement("div");detail.className="pilot-op-detail";detail.textContent=o.date+(o.frequency==="monthly"?" · Mensuel":"");
+   const detail=document.createElement("div");detail.className="pilot-op-detail";detail.textContent=o.date+(o.frequency==="monthly"?" · Mensuel":"")+(o.kind==="saving"?" · Transfert vers l’épargne, pas une dépense":"");
    card.append(detail);
    const choose=document.createElement("select");choose.setAttribute("aria-label","Catégorie de "+o.label);choose.className="pilot-category-select";
    const missing=document.createElement("option");missing.value="";missing.textContent="Choisir une catégorie";choose.append(missing);
@@ -103,14 +103,19 @@
     catLabel.textContent=chosen?.name||fresh?.name||"Catégorie à choisir";
     if(fresh){const newTag=document.createElement("span");newTag.className="pilot-new";newTag.textContent=" · Nouvelle";catLabel.append(newTag)}
     const base=o.kind==="plan"?(p&&o.categoryId===original?p:fresh?core.resolvePlanAmount(o,0):null):null;
-    amount.replaceChildren();if(o.kind==="plan"&&base){const old=document.createElement("span");old.className="pilot-old-amount";old.textContent=euro(base.beforeCents);amount.append(old,document.createTextNode(" → "+euro(base.afterCents)));const delta=base.afterCents-base.beforeCents;const variation=document.createElement("span");variation.className="pilot-budget-delta "+(delta>0?"pilot-positive":delta<0?"pilot-negative":"");variation.textContent=(delta>0?"+":delta<0?"−":"")+euro(Math.abs(delta));amount.append(variation)}else amount.textContent=(o.kind==="income"?"+":o.kind==="plan"?(o.planMode==="decrease"?"−":o.planMode==="increase"?"+":""):"−")+euro(o.amountCents);
+    amount.replaceChildren();if(o.kind==="plan"&&base){const old=document.createElement("span");old.className="pilot-old-amount";old.textContent=euro(base.beforeCents);amount.append(old,document.createTextNode(" → "+euro(base.afterCents)));const delta=base.afterCents-base.beforeCents;const variation=document.createElement("span");variation.className="pilot-budget-delta "+(delta>0?"pilot-positive":delta<0?"pilot-negative":"");variation.textContent=(delta>0?"+":delta<0?"−":"")+euro(Math.abs(delta));amount.append(variation)}else amount.textContent=(o.kind==="income"||o.kind==="saving"?"+":o.kind==="plan"?(o.planMode==="decrease"?"−":o.planMode==="increase"?"+":""):"−")+euro(o.amountCents);
     return o.kind!=="plan"||!!base;
    }
    choose.addEventListener("change",()=>{o.categoryId=choose.value&&choose.value!=="__new"?choose.value:null;if(o.kind==="plan"&&o.categoryId)o.owner=ctx.categories.find(c=>c.id===o.categoryId)?.owner||o.owner;if(o.kind!=="plan"&&o.categoryId&&o.categoryId!==original)changes.set(oldLabel,o.categoryId);else changes.delete(oldLabel);paint();refresh()});
    cards.push({o,choose,rule,paint});paint();group.append(card);
   }
-  const net=review.operations.filter(o=>o.kind!=="plan"&&o.frequency==="once").reduce((n,o)=>n+(o.kind==="income"?1:-1)*o.amountCents,0);
-  if(review.operations.length>1&&review.operations.some(o=>o.kind!=="plan"&&o.frequency==="once")){const sum=document.createElement("div");sum.className="pilot-review-total";const label=document.createElement("span"),money=document.createElement("strong");label.textContent="Variation du solde · opérations uniques";money.textContent=(net>0?"+":"")+euro(net);sum.append(label,money);group.append(sum)}
+  // Savings transfers are not expenses; display them separately from the income/expense balance.
+  const actual=review.operations.filter(o=>(o.kind==="income"||o.kind==="expense")&&o.frequency==="once");
+  const net=actual.reduce((n,o)=>n+(o.kind==="income"?1:-1)*o.amountCents,0);
+  const saved=review.operations.filter(o=>o.kind==="saving"&&o.frequency==="once").reduce((n,o)=>n+o.amountCents,0);
+  function summaryRow(label,value,cls){const sum=document.createElement("div");sum.className="pilot-review-total";const title=document.createElement("span"),money=document.createElement("strong");title.textContent=label;money.textContent=(value>0?"+":"")+euro(value);money.className=cls;sum.append(title,money);group.append(sum)}
+  if(review.operations.length>1&&actual.length)summaryRow("Net revenus / dépenses · hors épargne",net,net>=0?"pilot-positive":"pilot-negative");
+  if(saved>0)summaryRow("Transféré vers l’épargne · pas une dépense",saved,"pilot-plan");
   const note=document.createElement("p");note.className="pilot-op-meta";const actions=document.createElement("div");actions.className="pilot-review-actions";
   const cancel=document.createElement("button");cancel.type="button";cancel.className="sb-assistant-secondary";cancel.textContent="Annuler";
   const ok=document.createElement("button");ok.type="button";ok.className="sb-assistant-send";ok.textContent=review.operations.length===1?"Confirmer":"Confirmer les "+review.operations.length+" opérations";
@@ -170,7 +175,7 @@
  form.addEventListener("submit",async e=>{
   e.preventDefault();if(!session||busy)return;voice.stop();
   const command=input.value.trim();if(!command)return;
-  pendingReview=null;result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
+  pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
    if(current!==epoch)return;
    if(r.body.metering)displayLastMeter(r.body.metering);
@@ -185,7 +190,10 @@
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
    history=["draft","clarify"].includes(v.kind)?[...history,{command,result:v}].slice(-2):[];$("cancel").hidden=false;
-   status.textContent=r.body.model==="local-rules"?"Proposition prête · aucun quota IA utilisé.":"Réponse IA reçue et validée · "+r.body.model;
+   const local=r.body.metering?.source==="local-rules";
+   status.dataset.source=local?"smart-engine":"gemma";
+   const tokenCount=r.body.metering?.tokens?.total;
+   status.textContent=local?"Smart Engine · 0 token IA":("Gemma 4 · "+(Number.isSafeInteger(tokenCount)?new Intl.NumberFormat("fr-FR").format(tokenCount)+" tokens":"tokens non disponibles"));
   }catch{if(current===epoch){status.textContent="Communication interrompue. Réessaie sans envoi automatique.";void refreshQuota()}}
   finally{if(current===epoch){busy=false;send.disabled=false}}
  });

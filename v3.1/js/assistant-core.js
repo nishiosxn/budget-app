@@ -446,6 +446,14 @@
   ]
  },
  {
+  "key": "saving",
+  "kind": "saving",
+  "name": "Épargne",
+  "icon": "saving",
+  "aliases": ["épargne","epargne","économies","economies","livret","économies personnelles"],
+  "terms": ["épargne","économies","livret","économiser"]
+ },
+ {
   "key": "internet",
   "kind": "expense",
   "name": "Internet",
@@ -715,13 +723,36 @@
   return t;
  }
 
+ // Names of recipients are labels, never a second owner or a new category.
+ function quickNamedIncome(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
+  const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const m=t.match(/^j[' ]ai (?:reçu|recu|touché|touche|encaissé|encaisse) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:de |d'|par |venant de )([\p{L}][\p{L}' -]{0,49})$/iu);
+  if(!m)return null;
+  const name=m[2].trim().replace(/\s+/g," "),amountCents=centsFromText(m[1]);
+  if(!amountCents||name.length>50||/\b(?:et|puis|demain|hier|supprime|efface|ajoute|modifie|chaque|mensuel|tous|compte|transfert)\b/iu.test(name))return null;
+  const label="Reçu de "+name;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:"extra"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ function quickSaving(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
+  const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const m=t.match(/^j[' ]ai (?:mis|place|verse|epargne|economise) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: (?:en epargne|de cote|sur (?:mon |le )?(?:livret|compte epargne)))?$/u);
+  if(!m)return null;
+  // A generic "J'ai versé 100 euros" is ambiguous; require explicit saving destination.
+  if(!/(?:en epargne|de cote|livret|compte epargne)$/.test(t)&&!/^j[' ]ai (?:epargne|economise) /.test(t))return null;
+  const amountCents=centsFromText(m[1]);if(!amountCents)return null;
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"saving",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Mise en épargne",frequency:"once",categoryHint:"saving"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
  function quickSingleMovement(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   let t=command.trim(),date=ctx.today;
   // Dates only when explicitly stated, not inferred from a merchant name.
   const suffix=t.match(/ (hier|aujourd'hui)[.!?]?$/iu);
   if(suffix){t=t.slice(0,suffix.index).trim();if(suffix[1].toLowerCase()==="hier"){const day=new Date(ctx.today+"T12:00:00Z");day.setUTCDate(day.getUTCDate()-1);date=day.toISOString().slice(0,10)}}
-  const direct=quickExpense(t,ctx)||quickFamilyMovement(t,ctx);
+  const direct=quickExpense(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
   let r=direct;
   if(!r){
    const m=t.match(/^j[' ]ai reçu (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:de |en |pour (?:mon |le )?)(salaire|paie|cadeau|remboursement)[.!?]?$/iu);
@@ -754,5 +785,5 @@
   const normalized=normalizeLanguage(command);
   return quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving});
 })(globalThis);
