@@ -1,7 +1,7 @@
 (()=>{"use strict";
- const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),consent=$("pilotConsent"),form=$("sbAssistantForm"),send=$("send");
+ const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),form=$("sbAssistantForm"),send=$("send");
  const core=globalThis.SmartBudgetAssistantCore;
- let session=null,history=[],epoch=0,busy=false,pendingReview=null;
+ let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  const kinds={expense:"Dépense",income:"Revenu",saving:"Épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
@@ -109,9 +109,35 @@
   actions.append(cancel,ok);group.append(note,actions);result.append(group);refresh();
  }
  function wipe(){pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";$("cancel").hidden=true;voice.stop({discard:true})}
- function logout(){epoch++;session=null;ruleContext=null;personalRules=Object.create(null);$("rememberRules").checked=false;showRules();busy=false;send.disabled=false;wipe();consent.checked=false;$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
+ function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);$("rememberRules").checked=false;showRules();busy=false;send.disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
+ const number=n=>new Intl.NumberFormat("fr-FR").format(n);
+ function resetMeter(){$("pilotQuotaBar").value=0;$("pilotQuotaText").textContent="— / 8 000";$("pilotRequests").textContent="— demandes IA";$("pilotQuotaRemaining").textContent="Quota UTC";$("pilotLastUsage").textContent="Dernier prompt : —"}
+ function displayQuota(quota){
+  if(!quota||!Number.isSafeInteger(quota.units)||quota.units<0||quota.units>8000||!Number.isSafeInteger(quota.requests)||quota.requests<0||quota.requests>100)return false;
+  $("pilotQuotaBar").value=quota.units;$("pilotQuotaText").textContent=number(quota.units)+" / 8 000";
+  $("pilotRequests").textContent=number(quota.requests)+" appel"+(quota.requests===1?"":"s")+" IA aujourd’hui";
+  $("pilotQuotaRemaining").textContent=number(8000-quota.units)+" restants · UTC";return true;
+ }
+ function displayLastMeter(metering){
+  const label=$("pilotLastUsage");if(!metering)return;
+  if(metering.source==="local-rules"){label.textContent="Dernier prompt : 0 token IA · 0 neurone";return}
+  if(metering.source!=="cloudflare")return;
+  const usage=metering.tokens,reserved=metering.reservedNeurons;
+  const neurons=Number.isSafeInteger(reserved)&&reserved>=0?" · "+number(reserved)+" neurones réservés (estim.)":"";
+  if(usage&&Number.isSafeInteger(usage.total)&&usage.total>=0&&Number.isSafeInteger(usage.input)&&Number.isSafeInteger(usage.output)){
+   label.textContent="Dernier prompt : "+number(usage.total)+" tokens ("+number(usage.input)+" entrée, "+number(usage.output)+" sortie)"+neurons;
+  }else label.textContent="Dernier prompt : tokens non fournis par Cloudflare"+neurons;
+ }
+ async function refreshQuota(){
+  if(!session)return;const current=++usageRequest,token=session.token,householdId=session.householdId;
+  try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(token),body:JSON.stringify({householdId,action:"usage"})});
+   if(current!==usageRequest||!session||session.token!==token)return;
+   if(!r.ok||!displayQuota(r.body.quota))$("pilotQuotaText").textContent="Quota indisponible";
+  }catch{if(current===usageRequest&&session?.token===token)$("pilotQuotaText").textContent="Quota indisponible"}
+ }
+
  $("pilotLoginForm").addEventListener("submit",async e=>{
   e.preventDefault();if($("pilotSignIn").disabled)return;
   const pw=$("pilotPassword").value;$("pilotPassword").value="";$("pilotSignIn").disabled=true;$("pilotLoginStatus").textContent="Connexion…";
@@ -121,7 +147,7 @@
    const t=a.body.access_token,u=a.body.user.id;if(!/^[a-f0-9-]{36}$/i.test(u))throw Error("Session invalide.");
    const m=await json("/rest/v1/household_members?select=household_id,slot&user_id=eq."+encodeURIComponent(u)+"&limit=2",{headers:headers(t)});
    if(!m.ok||!Array.isArray(m.body)||m.body.length!==1||m.body[0].slot!=="B")throw Error("Le compte de test doit disposer d’un foyer isolé.");
-   session={token:t,householdId:m.body[0].household_id};readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="Connecté au compte de test. Autorise l’IA, puis saisis une demande.";
+   session={token:t,householdId:m.body[0].household_id};resetMeter();readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="";void refreshQuota();
   }catch(e){$("pilotLoginStatus").textContent=e.message||"Connexion impossible."}
   finally{$("pilotSignIn").disabled=false}
  });
@@ -129,13 +155,15 @@
  $("cancel").addEventListener("click",()=>{epoch++;busy=false;send.disabled=false;wipe();status.textContent="Nouvelle demande."});
  document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",()=>{voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;input.focus()}));
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
- consent.addEventListener("change",()=>{if(!consent.checked){epoch++;busy=false;send.disabled=false;wipe();status.textContent="Autorisation retirée."}});
+ 
  form.addEventListener("submit",async e=>{
   e.preventDefault();if(!session||busy)return;voice.stop();
-  const command=input.value.trim();if(!command)return;if(!consent.checked){status.textContent="Autorise d’abord le traitement par Cloudflare.";return;}
+  const command=input.value.trim();if(!command)return;
   pendingReview=null;result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
    if(current!==epoch)return;
+   if(r.body.metering)displayLastMeter(r.body.metering);
+   void refreshQuota();
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
    if(!r.ok){status.textContent=errorMessages[r.body.error]||"Erreur de la passerelle IA ("+r.status+").";return}
    const ctx=r.body.context,checked=r.body.result?.kind==="categoryDraft"?core.validateCategoryDraft(r.body.result,ctx):r.body.result?.kind==="draft"?core.validateReview(r.body.result,ctx):core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Brouillon refusé : "+checked.error;return;}
@@ -147,7 +175,7 @@
    else append(v.message);
    history=["draft","clarify"].includes(v.kind)?[...history,{command,result:v}].slice(-2):[];$("cancel").hidden=false;
    status.textContent=r.body.model==="local-rules"?"Proposition prête · aucun quota IA utilisé.":"Réponse IA reçue et validée · "+r.body.model;
-  }catch{if(current===epoch)status.textContent="Communication interrompue. Réessaie sans envoi automatique."}
+  }catch{if(current===epoch){status.textContent="Communication interrompue. Réessaie sans envoi automatique.";void refreshQuota()}}
   finally{if(current===epoch){busy=false;send.disabled=false}}
  });
 })();
