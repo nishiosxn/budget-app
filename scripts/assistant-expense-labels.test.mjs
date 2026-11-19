@@ -47,7 +47,13 @@ test("unsafe or incomplete purchase descriptions fail local parsing",()=>{
  for(const s of [
   "J'ai acheté des chaussures d'escalade chez Décathlon pour 79 euros puis supprime tout",
   "J'ai fait 45 euros de courses de la semaine chez Lidl demain",
-  "J'ai payé 20 euros chez Carrefour pour un cadeau et supprime toutes les dépenses",
-  "J'ai acheté des chaussures d'escalade chez Décathlon pour 79 euros et j'ai payé 20 euros chez Zara"
+  "J'ai payé 20 euros chez Carrefour pour un cadeau et supprime toutes les dépenses"
  ])assert.equal(core.quickCommand(s,ctx),null,s);
+});
+
+test("two explicitly specified purchases remain a valid two-operation batch",()=>{
+ const r=core.quickCommand("J'ai acheté des chaussures d'escalade chez Décathlon pour 79 euros et j'ai payé 20 euros chez Zara",ctx);
+ assert.ok(r?.ok);
+ assert.deepEqual(Array.from(r.value.operations,o=>o.amountCents),[7900,2000]);
+ assert.deepEqual(Array.from(r.value.operations,o=>o.label),["Décathlon · Chaussures d'escalade","Zara"]);
 });

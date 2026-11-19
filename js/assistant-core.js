@@ -483,7 +483,7 @@
   // Conflicting signals without a clear winner are left to the model's valid category.
   const matched=scored.length&&(!scored[1]||scored[0].score>scored[1].score)?scored[0].r:null;
   const modelHint=compatible.find(r=>r.key===hint);
-  const rule=(hint&&label.includes(" · ")?modelHint:null)||matched||(!supplied?modelHint:null);
+  const rule=(hint&&String(op.label).includes(" · ")?modelHint:null)||matched||(!supplied?modelHint:null);
   if(rule){
    const names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
    const candidates=available.filter(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
@@ -765,11 +765,12 @@
   return quickMerchants[key]||name;
  }
  function productDescription(raw){
-  const cleaned=String(raw??"").trim().replace(/\s+/g," ").replace(/^(?:un|une|des|du|de la|de l'|le|la|les|l')\s*/iu,"").trim();
+  const cleaned=String(raw??"").trim().replace(/\s+/g," ").replace(/^(?:(?:de la|de l'|une|des|les|du|un|le|la)\s+|l')/iu,"").trim();
   if(!cleaned||cleaned.length>64||/[;.!?]/.test(cleaned)||/\b(?:et|puis|ensuite|supprime|efface|demain|hier|tous les mois)\b/iu.test(cleaned)||/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/iu.test(cleaned))return null;
   if(!/^[\p{L}\p{N}][\p{L}\p{N}'’/ +&-]*$/u.test(cleaned))return null;
   const key=normalizeCategory(cleaned);
   if(key==="lego")return "LEGO";
+  if(key==="produits menagers")return "Produits ménagers";
   if(key==="cours du mois"||key==="course du mois"||key==="courses du mois")return "Courses du mois";
   if(key==="cours de la semaine"||key==="course de la semaine"||key==="courses de la semaine")return "Courses de la semaine";
   return cleaned.slice(0,1).toLocaleUpperCase("fr-FR")+cleaned.slice(1);
