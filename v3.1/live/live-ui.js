@@ -117,12 +117,22 @@
  const reviewEditor=globalThis.SmartBudgetReviewEditor;
  function reviewButton(label,classes="sb-assistant-secondary"){const b=document.createElement("button");b.type="button";b.className=classes;b.textContent=label;return b}
  function reviewRow(label,cents,klass=""){const line=document.createElement("div");line.className="pilot-review-total";const name=document.createElement("span"),amount=document.createElement("strong");name.textContent=label;amount.textContent=euro(cents);amount.className=klass;line.append(name,amount);return line}
+ function fillReviewOptions(select,options){
+  select.replaceChildren();const groups=new Map();
+  for(const option of options){
+   const el=document.createElement("option");el.value=option.value;el.textContent=option.name;
+   if(!option.group){select.append(el);continue}
+   let group=groups.get(option.group);
+   if(!group){group=document.createElement("optgroup");group.label=option.group;groups.set(option.group,group);select.append(group)}
+   group.append(el);
+  }
+ }
  function reviewForm(parent,fields,onSave,onCancel){
   const panel=document.createElement("form");panel.className="pilot-operation-editor";const controls=Object.create(null);
   for(const field of fields){
    const label=document.createElement("label");label.className="pilot-editor-field"+(field.wide?" pilot-editor-wide":"");const title=document.createElement("span");title.textContent=field.label;
    let el;
-   if(field.options){el=document.createElement("select");for(const option of field.options){const opt=document.createElement("option");opt.value=option.value;opt.textContent=option.name;el.append(opt)}}
+   if(field.options){el=document.createElement("select");fillReviewOptions(el,field.options)}
    else{el=document.createElement("input");el.type=field.type||"text";if(field.maxLength)el.maxLength=field.maxLength;if(field.money)el.inputMode="decimal";if(field.min)el.min=field.min;if(field.max)el.max=field.max;}
    el.value=field.value??"";if(field.required)el.required=true;if(field.disabled)el.disabled=true;
    label.append(title,el);panel.append(label);controls[field.key]=el;
@@ -157,6 +167,34 @@
   if(session?.token!==token||session.householdId!==householdId||!rows.ok||!Array.isArray(rows.body)||rows.body.length>300)return null;
   const before=core.readBudgetCents(rows.body,month.slice(0,7));
   return Number.isSafeInteger(before)&&before>=0?{key:reviewEditor.key(op),beforeCents:before}:null;
+ }
+
+ // Same monthly accounting as the server category report. Only GET requests,
+ // limited by the signed-in household's existing RLS policies.
+ async function readExpenseBudget(op){
+  if(!session||!op.categoryId||!core.validDate(op.date))return null;
+  const {token,householdId}=session,month=op.date.slice(0,7)+"-01", [y,m]=month.split("-").map(Number),next=new Date(Date.UTC(y,m,1)).toISOString().slice(0,10);
+  const still=()=>session?.token===token&&session.householdId===householdId;
+  const read=async(table,params)=>{
+   const q=new URLSearchParams({...params,household_id:"eq."+householdId,archived_at:"is.null",limit:"1000"});
+   const r=await json("/rest/v1/"+table+"?"+q.toString(),{method:"GET",headers:headers(token)});
+   return still()&&r.ok&&Array.isArray(r.body)&&r.body.length<1000?r.body:null;
+  };
+  const cats=await read("categories",{select:"id,legacy_id,type,is_saving"});
+  if(!cats||!still())return null;
+  const matches=cats.filter(c=>(c.legacy_id||c.id)===op.categoryId&&c.type!=="income"&&c.is_saving!==true);
+  if(matches.length!==1||typeof matches[0].id!=="string")return null;
+  const uuid=matches[0].id;
+  const [budgets,transactions,recurrences]=await Promise.all([
+   read("budgets",{select:"month,planned_amount,scope",category_id:"eq."+uuid,month:"lte."+month}),
+   read("transactions",{select:"category_id,transaction_date,amount,metadata",category_id:"eq."+uuid,and:"(transaction_date.gte."+month+",transaction_date.lt."+next+")"}),
+   read("recurrences",{select:"category_id,amount,start_month,end_month,excluded_months,overrides,metadata",start_month:"lte."+month})
+  ]);
+  if(!still()||!budgets||!transactions||!recurrences)return null;
+  const totals=core.categoryReport({month:month.slice(0,7),categoryId:op.categoryId,categoryUuid:uuid,budgets,transactions,recurrences});
+  if(!totals)return null;
+  const hasBudget=budgets.some(r=>r.scope==="forward"&&String(r.month).slice(0,7)<=month.slice(0,7)||r.scope==="month"&&String(r.month).slice(0,7)===month.slice(0,7));
+  return {...totals,hasBudget};
  }
  function renderCategoryDraft(v,ctx){
   const draft={...v};pendingReview=draft;let editing=false,locked=false;
@@ -201,7 +239,8 @@
  }
  function renderDraft(v,ctx,previews,suggestions){
   ruleContext=ctx;showRules();
-  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,locked=false;
+  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false;
+  const budgetReads=new Map();
   const entries=review.operations.map((o,i)=>{
    const original=o.categoryId,personal=core.classifyCategory(o,ctx,{overrides:personalRules});
    const remembered=ruleUtils.resolve(o,ctx.categories,personalRules);
@@ -247,8 +286,7 @@
    },()=>{if(active()){editing=-1;draw()}});
    function updateCategories(){
     const before=controls.category.value,op={...o,date:o.kind==="plan"?controls.date.value+"-01":controls.date.value};
-    const opts=options(op);controls.category.replaceChildren();
-    for(const option of opts){const el=document.createElement("option");el.value=option.value;el.textContent=option.name;controls.category.append(el)}
+    const opts=options(op);fillReviewOptions(controls.category,opts);
     controls.category.value=opts.some(p=>p.value===before)?before:"";showLivePlan();
    }
    function showLivePlan(){
@@ -261,6 +299,45 @@
    }
    controls.date.addEventListener("change",updateCategories);
    if(o.kind==="plan"){for(const field of ["category","amount","planMode"])controls[field].addEventListener("input",showLivePlan);showLivePlan()}
+  }
+
+  function renderExpenseBudget(card,entry,i){
+   if(entry.op.kind!=="expense"||!reviewEditor.selected(entry))return;
+   const pane=document.createElement("div");pane.className="pilot-expense-budget";card.append(pane);
+   const op=entry.op,target=reviewEditor.selected(entry),month=op.date.slice(0,7);
+   const name=ctx.categories.find(c=>c.id===op.categoryId)?.name||core.categoryRules.find(r=>r.key===entry.ruleKey)?.name||"Budget";
+   function paint(report){
+    if(!pane.isConnected)return;
+    pane.replaceChildren();const projection=reviewEditor.expenseBudget(entry,entries,report);
+    const title=document.createElement("div");title.className="pilot-exp-budget-head";
+    const t=document.createElement("span");t.textContent="Budget "+name+" · "+new Intl.DateTimeFormat("fr-FR",{month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(month+"-01T12:00:00Z"));title.append(t);
+    const amount=document.createElement("strong");amount.textContent=projection?.budget!=null?euro(projection.budget):"—";title.append(amount);pane.append(title);
+    if(!projection){const p=document.createElement("p");p.className="pilot-op-meta";p.textContent="Aperçu du budget indisponible.";pane.append(p);return}
+    if(projection.budget!==null){
+     const bar=document.createElement("div");bar.className="pilot-exp-budget-track";bar.setAttribute("role","progressbar");bar.setAttribute("aria-label","Budget utilisé après confirmation");bar.setAttribute("aria-valuemin","0");bar.setAttribute("aria-valuemax","100");bar.setAttribute("aria-valuenow",String(Math.round(projection.percent)));const used=document.createElement("span");used.style.width=projection.percent+"%";if(projection.remaining<0)used.classList.add("pilot-budget-over");bar.append(used);pane.append(bar);
+    }
+    const row=document.createElement("div");row.className="pilot-exp-budget-foot";const spent=document.createElement("span");spent.textContent="Utilisé après ajout : "+euro(projection.used);row.append(spent);const remain=document.createElement("strong");remain.textContent=projection.remaining===null?"Aucun budget défini":"Reste : "+euro(projection.remaining);remain.className=projection.remaining===null?"":projection.remaining<0?"pilot-negative":"pilot-positive";row.append(remain);pane.append(row);
+    if(projection.actual||projection.proposed!==entry.op.amountCents){const note=document.createElement("div");note.className="pilot-exp-budget-note";note.textContent="Déjà utilisé : "+euro(projection.actual)+" · Lot proposé : "+euro(projection.proposed);pane.append(note)}
+    if(projection.budget===null&&target.startsWith("rule:")&&!locked&&editing===-1&&entries.length<12){
+     const action=reviewButton("Définir un budget","pilot-link");
+     action.addEventListener("click",()=>{
+      if(!active()||editing!==-1)return;
+      editing=i;budgetEditing=true;draw();
+      const host=group.querySelector('[data-budget-editor="'+i+'"]');
+      if(!host){editing=-1;budgetEditing=false;draw();return}
+      host.replaceChildren();
+      reviewForm(host,[{key:"budget",label:"Budget prévu (€)",money:true,value:"",required:true,wide:true}],
+       values=>{if(!active()||editing!==i)return "Proposition périmée.";const checked=reviewEditor.newBudgetEntry(entry,values.budget,ctx);if(!checked.ok)return checked.error;if(entries.length>=12||entries.some(e=>e.op.kind==="plan"&&reviewEditor.selected(e)===target&&e.op.date.slice(0,7)===month))return "Un budget est déjà proposé ou le lot est complet.";entries.push(checked.entry);sync();editing=-1;budgetEditing=false;draw();return null},
+       ()=>{if(active()){editing=-1;budgetEditing=false;draw()}});
+     });pane.append(action);
+    }
+   }
+   // Attach before painting so isConnected is reliable (card is appended by draw).
+   if(!op.categoryId){queueMicrotask(()=>paint(null));return}
+   pane.textContent="Chargement du budget…";
+   const key=reviewEditor.key(op);
+   if(!budgetReads.has(key))budgetReads.set(key,readExpenseBudget(op).catch(()=>null));
+   budgetReads.get(key).then(paint);
   }
   function draw(){
    group.replaceChildren();
@@ -279,13 +356,14 @@
     top.append(iconBox,info,amount);card.append(top);
     const detail=document.createElement("div");detail.className="pilot-op-detail";detail.textContent=o.date+(o.frequency==="monthly"?" · Mensuel":"")+(o.kind==="saving"?" · Transfert vers l’épargne, pas une dépense":"");card.append(detail);
     if(!locked){
-     if(editing===i)renderEdit(card,entry,i);
+     if(editing===i&&budgetEditing){const host=document.createElement("div");host.dataset.budgetEditor=String(i);card.append(host)}
+     else if(editing===i)renderEdit(card,entry,i);
      else{
       const edit=reviewButton("Modifier","pilot-link");edit.disabled=editing!==-1;edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=i;draw()}});const actions=document.createElement("div");actions.className="pilot-op-controls";actions.append(edit);
       if(entries.length>1){const remove=reviewButton("Retirer","pilot-link pilot-remove");remove.disabled=editing!==-1;remove.addEventListener("click",()=>{if(active()&&editing===-1&&entries.length>1){entries.splice(i,1);sync();draw()}});actions.append(remove)}card.append(actions);
      }
     }
-    group.append(card);
+    group.append(card);renderExpenseBudget(card,entry,i);
    }
    const totals=reviewEditor.totals(entries);
    if(entries.length>1&&(totals.income||totals.expense))group.append(reviewRow("Net revenus / dépenses · hors épargne",totals.net,totals.net>=0?"pilot-positive":"pilot-negative"));
