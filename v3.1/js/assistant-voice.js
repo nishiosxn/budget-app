@@ -1,11 +1,11 @@
 /* Shared browser dictation. No app-side audio storage, no automatic submit. */
 (function(root){
-function bind({input,button,status,clock,authorize=()=>true}){
+function bind({input,button,status,clock,authorize=()=>true,onTextChange=()=>{}}){
  const Speech=root.SpeechRecognition||root.webkitSpeechRecognition;
  if(!Speech){button.disabled=true;button.title="Utilise la dictée du clavier.";return {stop(){}}}
  let wanted=false,current=null,retry=null,ticker=null,started=0,base="",committed="",partial="",retries=0;
  const join=(...a)=>a.filter(Boolean).join(" ").replace(/\s+/g," ").trim();
- function display(){input.value=join(base,committed,partial).slice(0,input.maxLength>0?input.maxLength:1600)}
+ function display(){input.value=join(base,committed,partial).slice(0,input.maxLength>0?input.maxLength:1600);onTextChange(input.value)}
  function assistantVoiceTick(){if(!clock)return;const s=Math.floor((Date.now()-started)/1000);clock.textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
  function paint(active){button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",active?"Arrêter la dictée":"Dicter");button.title=active?"Arrêter la dictée":"Dicter";if(clock)clock.hidden=!active}
  function stop({discard=false}={}){if(!wanted&&!current)return;wanted=false;clearTimeout(retry);clearInterval(ticker);retry=ticker=null;if(discard){base=committed=partial="";}else{committed=join(committed,partial);partial="";display()}const r=current;current=null;try{r?.abort()}catch{}paint(false)}
