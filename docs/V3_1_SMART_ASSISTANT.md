@@ -85,3 +85,6 @@ Normalisation monétaire française (nombres en lettres, centaines, milliers, eu
 
 ## Pilot UX 31k — 19 novembre 2026
 Design compact aligné Smart Budget : textarea et boutons micro/envoyer sur la même ligne, sans case de consentement récurrente. Une information concise sur le traitement par Cloudflare reste visible, et aucun prompt n'est envoyé automatiquement. Quota persistant affiché sous foyer connecté : suivi serveur des neurones réservés / 8000 par jour UTC, lecture protégée par JWT, allowlist foyer et RPC service_role invoker exclusivement. Dernier prompt : tokens exacts si Cloudflare retourne usage, sinon indisponibles ; quota interne en neurones estimés, distinct des tokens et de la facturation Cloudflare. Les commandes Smart Engine affichent 0 token IA et 0 neurone. Aucun enregistrement financier.
+
+## 31l — Champ compact et hauteur automatique
+Textarea à une ligne, hauteur initiale 42px, aucune poignée de redimensionnement. Croissance selon `scrollHeight` sur frappe, collage, sélection de suggestion, dictée (callback optionnel de transcription) et remise à zéro, plafonnée à 180px avec défilement au-delà. Boutons inchangés en vis-à-vis du champ. Aucune modification des opérations ou du quota.

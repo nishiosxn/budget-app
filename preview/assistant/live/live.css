@@ -14,8 +14,8 @@ body{background:var(--bg)}
 #pilotAssistant{margin-top:14px}
 #pilotAssistant .sb-assistant-hero{padding-top:.3rem}
 #sbAssistantForm{gap:0}
-#pilotAssistant .sb-assistant-composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:8px 10px;border-radius:16px}
-#pilotAssistant .sb-assistant-composer #sbAssistantInput{width:100%;height:90px;min-height:75px;max-height:180px;margin:0;padding:8px 6px;resize:vertical;border:0;line-height:1.5;box-shadow:none;background:transparent}
+#pilotAssistant .sb-assistant-composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 9px;border-radius:16px}
+#pilotAssistant .sb-assistant-composer #sbAssistantInput{display:block;width:100%;height:42px;min-height:42px;max-height:180px;overflow-y:hidden;margin:0;padding:10px 6px;resize:none;line-height:22px;box-shadow:none;background:transparent;border:0;outline:0;box-sizing:border-box}
 #pilotAssistant .sb-assistant-composer .sb-assistant-actions{align-self:center;display:flex;align-items:center;gap:7px;flex-wrap:nowrap;position:relative}
 #pilotAssistant .sb-assistant-iconbtn{width:42px;height:42px;min-height:42px;flex:none;padding:0;border-radius:50%}
 #pilotAssistant .sb-assistant-send{background:#5C29D6}
@@ -39,5 +39,5 @@ body{background:var(--bg)}
 .pilot-meter .pilot-meter-foot span:last-child{text-align:right}
 .pilot-review{border-color:var(--line)}
 .pilot-rules{background:var(--panel)}
-@media(max-width:430px){#pilotAssistant .sb-assistant-composer{padding:7px;gap:2px}#pilotAssistant .sb-assistant-iconbtn{width:38px;height:38px;min-height:38px}#pilotAssistant .sb-assistant-composer .sb-assistant-actions{gap:4px}#pilotAssistant .sb-assistant-composer #sbAssistantInput{padding:8px 3px;height:85px}}
+@media(max-width:430px){#pilotAssistant .sb-assistant-composer{padding:7px;gap:2px}#pilotAssistant .sb-assistant-iconbtn{width:38px;height:38px;min-height:38px}#pilotAssistant .sb-assistant-composer .sb-assistant-actions{gap:4px}#pilotAssistant .sb-assistant-composer #sbAssistantInput{padding:10px 3px}}
 @media(prefers-reduced-motion:reduce){.pilot-meter progress::-webkit-progress-value{transition:none}}

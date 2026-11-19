@@ -185,3 +185,6 @@ Normalisation et lot de mouvements déterministes, corpus synthétique 2 000 cas
 
 ### 31k — DA + consommation
 Pilote connecté : composition horizontale, labels superflus retirés, pas de checkbox récurrente, barre quota neutrons estimés via RPC service_role et détail tokens retournés si disponibles. Sans écriture financière.
+
+### 31l — composer compact
+Textarea auto-ajustable, aucune hauteur fixe desktop/mobile, aucune poignée native ; redimensionnement lié à la dictée et à la saisie. Tests frontend et voix ajoutés.

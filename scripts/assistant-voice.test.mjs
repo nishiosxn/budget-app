@@ -17,3 +17,9 @@ test("interim transcript is replaced, restarts retain text, manual stop prevents
  const next=x.instances[1];next.onresult({results:[result("chez Lidl")]});assert.equal(x.input.value,"Bonjour vingt euros chez Lidl");x.voice.stop();assert.equal(x.input.value,"Bonjour vingt euros chez Lidl");assert.equal(x.timers.length,0);
 });
 test("permission failure stops recording and prevents automatic retry",()=>{const x=setup();x.button.handlers.click();x.instances[0].onerror({error:"not-allowed"});assert.equal(x.button.attrs["aria-pressed"],"false");assert.equal(x.timers.length,0)});
+
+test("voice exposes optional text-change callback for live multiline autoresize",()=>{
+ const source=fs.readFileSync("js/assistant-voice.js","utf8");
+ assert.match(source,/onTextChange=\(\)=>\{\}/);
+ assert.match(source,/onTextChange\(input\.value\)/);
+});
