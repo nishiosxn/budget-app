@@ -46,3 +46,21 @@ body{background:var(--bg)}
 .pilot-rules{background:var(--panel)}
 @media(max-width:430px){#pilotAssistant .sb-assistant-composer{padding:7px;gap:2px}#pilotAssistant .sb-assistant-iconbtn{width:38px;height:38px;min-height:38px}#pilotAssistant .sb-assistant-composer .sb-assistant-actions{gap:4px}#pilotAssistant .sb-assistant-composer #sbAssistantInput{padding:10px 3px}}
 @media(prefers-reduced-motion:reduce){.pilot-meter progress::-webkit-progress-value{transition:none}}
+
+/* 31n — Personal category rules */
+.pilot-rule-editor{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(150px,1.1fr) auto;gap:8px;align-items:stretch;margin:12px 0 8px}
+.pilot-rule-editor input,.pilot-rule-editor select{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2);color:var(--text);font:inherit;min-height:40px}
+.pilot-rule-editor button{min-height:40px;padding:8px 14px;white-space:nowrap}
+.pilot-rule-editor :is(input,select,button):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pilot-rule-status{color:var(--muted);font-size:.78rem;min-height:1.2em}
+.pilot-custom-rules{margin:12px 0;display:grid;gap:5px}
+.pilot-personal-rule{display:grid;grid-template-columns:minmax(70px,1fr) minmax(80px,1.2fr) auto;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel-2)}
+.pilot-personal-rule strong,.pilot-rule-target{overflow-wrap:anywhere}
+.pilot-rule-target{color:var(--muted)}
+.pilot-rule-empty{font-size:.78rem;color:var(--muted);margin:0}
+.pilot-rules-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.72rem}
+.pilot-standard-rules{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.pilot-standard-rules summary{cursor:pointer;color:var(--muted)}
+.pilot-rule-editor :disabled,.pilot-rules-footer button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:600px){.pilot-rule-editor{grid-template-columns:1fr 1fr}.pilot-rule-editor button{grid-column:1/-1}.pilot-personal-rule{grid-template-columns:1fr auto}.pilot-rule-target{grid-column:1;grid-row:2}.pilot-personal-rule button{grid-column:2;grid-row:1 / span 2}}
+@media(max-width:380px){.pilot-rule-editor{grid-template-columns:1fr}.pilot-rule-editor button{grid-column:auto}}

@@ -191,3 +191,6 @@ Textarea auto-ajustable, aucune hauteur fixe desktop/mobile, aucune poignée nat
 
 ### 31m — provenance et épargne
 Revenus nommés, épargne et lots mixtes locaux ; badges d'origine, résumé hors transferts, tests. Aucune opération enregistrée.
+
+### 31n — catégorisation personnalisée
+Lecture des catégories réelles du foyer à la connexion ; formulaire de règle persisté directement sur ajout, tri par type, correspondance de mots, suppression. Tests spécifiques ; aucune écriture Supabase ni changement moteur.
