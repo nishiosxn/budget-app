@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "df2a571c80966313234bbdcc2e5987607b47a950",
-  "mode": "isolated-demo-and-connected-pilot",
+  "sourceCommit": "49810e298650fed5910bae8cd480a2576f53e5db",
+  "mode": "isolated-connected-pilot-confirmation-v1",
   "production": false
 }
