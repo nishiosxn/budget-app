@@ -825,7 +825,7 @@
   const operations=[],suggestions=[];
   for(const raw of pieces){
    let part=normalizeLanguage(raw.trim()),parsed=null;
-   const linked=part.match(/^mets[- ]en (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)? (?:de cote|en epargne)[.!?]?$/iu);
+   const linked=part.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().match(/^mets[- ]en (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)? (?:de cote|en epargne)[.!?]?$/u);
    if(linked){
     const previous=operations.at(-1),amountCents=centsFromText(linked[1]);
     if(!previous||previous.kind!=="income"||!amountCents||amountCents>previous.amountCents)return null;
