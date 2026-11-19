@@ -97,3 +97,10 @@ Le sélecteur charge dès la connexion toutes les catégories autorisées du foy
 
 ## 31o — Sélecteur identique aux règles automatiques
 Le menu de création d'association affiche désormais **toutes les familles de `SmartBudgetAssistantCore.categoryRules`**, même lorsque le foyer test ne les a pas activées, et ajoute sans doublon les catégories personnalisées existantes du foyer. L'association conserve un identifiant sémantique `rule:<key>` ou `id:<category>` en mémoire locale (avec rétrocompatibilité des anciens IDs). Lors de la prévisualisation, un mot-clé résout d'abord vers la catégorie correspondante active ; si elle n'existe pas, il propose la création canonique sans inventer d'ID ni enregistrer quoi que ce soit. Aucun changement des opérations réelles ou de la passerelle IA. Les règles sont locales au navigateur.
+
+## 31p — six retours de tests terrain (19/11)
+- Reconnaissance déterministe et sans IA des dépenses contextuelles : `Hier, j’ai mis 30 € d’essence à Total` (Carburant, J-1), `J’ai acheté un LEGO à 39,99 € chez King Jouet` (Loisirs), phrases mixtes `J’ai fait 28 € de courses chez Lidl et acheté 12 € de produits ménagers chez Action`.
+- Référence à un revenu dans une même phrase : `J’ai reçu 75 € de mon père, mets-en 25 de côté` → revenu + mise en épargne, sans consommation IA. Le montant épargné ne peut pas excéder le revenu immédiatement cité par « en ».
+- `J’ai transféré 200 € de mon compte courant vers mon livret A` → catégorie Épargne, transfert interne, jamais une dépense. Questions sur le solde bancaire réel → réponse explicite sans appel IA et sans chiffres inventés.
+- En repli Gemma, suggestion sémantique sur une seule opération et un seul montant si l'indice de catégorie est omis. Priorité aux catégories déjà existantes via alias. Ne pas inventer de catégorie au nom du magasin ; proposer une nouvelle catégorie uniquement si la famille canonique n’existe pas dans le foyer.
+- Les données financières et la version principale ne sont pas modifiées ; pilote et confirmations simulés. Tests automatisés séparés, pas de preuve de couverture exhaustive du langage naturel.

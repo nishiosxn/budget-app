@@ -508,7 +508,8 @@
    if(categoryHint!==undefined&&categoryHint!==null&&!categoryRules.some(r=>r.key===categoryHint))return fail("Indication de catégorie invalide.");
    if(planMode!==undefined&&planMode!==null&&!["set","increase","decrease"].includes(planMode))return fail("Mode de budget invalide.");
    if(base.kind!=="plan"&&planMode&&planMode!=="set")return fail("Mode de budget inattendu.");
-   const match=classifyCategory(base,c,{hint:categoryHint,explicit});
+   const effectiveHint=categoryHint||(v.operations.length===1&&base.categoryId===null?contextualCategoryHint(command,base):null);
+   const match=classifyCategory(base,c,{hint:effectiveHint,explicit});
    const selected=availableCategories(base,c).find(x=>x.id===match.categoryId);
    operations.push({...base,categoryId:match.categoryId,...(base.kind==="plan"?{owner:selected?.owner||base.owner,planMode:planMode||"set"}:{})});
    if(match.source==="new")suggestions.push({index,ruleKey:match.ruleKey});
@@ -746,13 +747,66 @@
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"saving",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Mise en épargne",frequency:"once",categoryHint:"saving"}]},ctx,command);
   return checked.ok?checked:null;
  }
+
+ // Local, complete-sentence interpretation for category-bearing products/purchases.
+ // Never infer the account holder from a shop or a sender.
+ function quickContextualExpense(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const monetary="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
+  const byProduct=t.match(new RegExp("^j'ai (?:mis|fait|paye|achete) "+monetary+" (?:d'|de |en )(?:(?:l'|la |les )?)(essence|gazole|diesel|carburant|courses|produits menagers|lessive|produits d'entretien) (?:a|chez) (?:la station )?([\\p{L}\\p{N}&' .-]{2,55})$","u"));
+  const bought=t.match(new RegExp("^j'ai (?:achete|pris) (?:un|une|des) (lego|jeu video|jeux video|figurine|figurines) (?:a|pour) "+monetary+" chez ([\\p{L}\\p{N}&' .-]{2,55})$","u"));
+  if(!byProduct&&!bought)return null;
+  const rawAmount=byProduct?byProduct[1]:bought[2],merchant=(byProduct?byProduct[3]:bought[3]).trim();
+  const item=byProduct?byProduct[2]:bought[1];
+  const amountCents=centsFromText(rawAmount);
+  if(!amountCents||!merchant||/\b(?:et|puis|supprime|efface|modifie|demain|hier|chaque mois)\b/u.test(merchant))return null;
+  const kind=/^(?:essence|gazole|diesel|carburant)$/.test(item)?"fuel":item==="courses"?"groceries":/^(?:produits menagers|lessive|produits d'entretien)$/.test(item)?"home":"leisure";
+  const label=merchant.slice(0,1).toUpperCase()+merchant.slice(1);
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:kind}]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ function quickInternalTransfer(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string")return null;
+  const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const m=t.match(/^j'ai (?:transfere|vire|deplace) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) de (?:mon|le) compte courant vers (?:mon|le) (livret a|livret|compte epargne)$/u);
+  if(!m)return null;
+  const amountCents=centsFromText(m[1]);if(!amountCents)return null;
+  const label="Transfert interne vers "+(m[2]==="livret a"?"Livret A":m[2]==="livret"?"livret":"compte épargne");
+  const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"saving",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:"saving"}]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ function quickBankBalanceAnswer(command,ctx){
+  if(!contextOK(ctx)||typeof command!=="string")return null;
+  const t=normalizeCategory(command);
+  if(!/^(?:combien (?:d argent |d euros )?(?:ai je|j ai) (?:reellement )?(?:sur|dans) (?:mon |le )?compte (?:bancaire|courant)(?: actuellement| en ce moment)?|quel est (?:mon |le )?solde (?:bancaire|de mon compte bancaire|de mon compte courant)(?: actuellement| en ce moment)?)$/.test(t))return null;
+  return validateAssistantResult({kind:"answer",message:"Je ne peux pas consulter ton solde bancaire réel en temps réel. Je peux seulement analyser les opérations enregistrées dans Smart Budget."},ctx);
+ }
+ // Preserve a contextual product (e.g. LEGO, essence) when Gemma omitted a category.
+ // Restrict to one-operation prompts with one amount to avoid cross-contaminating batches.
+ function contextualCategoryHint(command,op){
+  if(op?.kind!=="expense"||typeof command!=="string")return null;
+  const amounts=command.match(/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/giu);
+  if(amounts?.length!==1)return null;
+  const query=normalizeCategory(command);
+  const scores=categoryRules.filter(r=>r.kind==="expense").map(r=>({key:r.key,score:Math.max(0,...r.terms.filter(t=>containsTerm(query,t)).map(t=>normalizeCategory(t).length))})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  return scores.length&&(!scores[1]||scores[0].score>scores[1].score)?scores[0].key:null;
+ }
  function quickSingleMovement(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   let t=command.trim(),date=ctx.today;
-  // Dates only when explicitly stated, not inferred from a merchant name.
-  const suffix=t.match(/ (hier|aujourd'hui)[.!?]?$/iu);
-  if(suffix){t=t.slice(0,suffix.index).trim();if(suffix[1].toLowerCase()==="hier"){const day=new Date(ctx.today+"T12:00:00Z");day.setUTCDate(day.getUTCDate()-1);date=day.toISOString().slice(0,10)}}
-  const direct=quickExpense(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
+  // Recognize date adverbs at the beginning OR end, never both.
+  const leading=t.match(/^(hier|avant-hier|aujourd'hui)[,;:]?\s+/iu);
+  if(leading)t=t.slice(leading[0].length).trim();
+  const suffix=t.match(/ (hier|avant-hier|aujourd'hui)[.!?]?$/iu);
+  if(leading&&suffix)return null;
+  if(suffix)t=t.slice(0,suffix.index).trim();
+  const moment=(leading?.[1]||suffix?.[1]||"").toLowerCase();
+  if(moment==="hier"||moment==="avant-hier"){
+   const day=new Date(ctx.today+"T12:00:00Z");
+   day.setUTCDate(day.getUTCDate()-(moment==="hier"?1:2));date=day.toISOString().slice(0,10);
+  }
+  const direct=quickExpense(t,ctx)||quickContextualExpense(t,ctx)||quickInternalTransfer(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
   let r=direct;
   if(!r){
    const m=t.match(/^j[' ]ai reçu (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:de |en |pour (?:mon |le )?)(salaire|paie|cadeau|remboursement)[.!?]?$/iu);
@@ -765,25 +819,33 @@
   return checked.ok?{...checked,suggestions:r.suggestions||[]}:null;
  }
  function quickMovementBatch(command,ctx){
-  // Commas between clauses, never decimal punctuation. Each clause must parse in full.
-  const segments=command.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:et|puis)\s+)(?=(?:j[' ]ai\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en)\s+))/iu);
-  if(segments.length<2||segments.length>12)return null;
+  // Full clause matching. Decimal commas in amounts are not separators.
+  const pieces=command.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:et|puis)\s+)(?=(?:j[' ]ai\s+|achet[ée]\s+|mets[- ]en\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en)\s+))/iu);
+  if(pieces.length<2||pieces.length>12)return null;
   const operations=[],suggestions=[];
-  for(let i=0;i<segments.length;i++){
-   let part=segments[i].trim();
-   if(/^\d/.test(part)){if(operations.at(-1)?.kind!=="expense")return null;part="J'ai dépensé "+part}
-   // Normalize synonyms in every clause, not only at the beginning of a batch.
-   const parsed=quickSingleMovement(normalizeLanguage(part),ctx);
-   if(!parsed?.ok||parsed.value.operations.length!==1)return null;
+  for(const raw of pieces){
+   let part=normalizeLanguage(raw.trim()),parsed=null;
+   const linked=part.match(/^mets[- ]en (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)? (?:de cote|en epargne)[.!?]?$/iu);
+   if(linked){
+    const previous=operations.at(-1),amountCents=centsFromText(linked[1]);
+    if(!previous||previous.kind!=="income"||!amountCents||amountCents>previous.amountCents)return null;
+    parsed=quickSaving("J'ai mis "+linked[1]+" euros de côté",ctx);
+   }else{
+    if(/^achet[ée]\s/iu.test(part))part="J'ai "+part;
+    else if(/^\d/.test(part)){if(operations.at(-1)?.kind!=="expense")return null;part="J'ai dépensé "+part}
+    parsed=quickSingleMovement(part,ctx);
+   }
+   if(!parsed?.ok||parsed.value.kind!=="draft"||parsed.value.operations.length!==1)return null;
    for(const s of parsed.suggestions||[])suggestions.push({...s,index:operations.length});
    operations.push(parsed.value.operations[0]);
   }
-  const checked=validateReview({kind:"draft",operations},ctx);return checked.ok?{...checked,suggestions}:null;
+  const checked=validateReview({kind:"draft",operations},ctx);
+  return checked.ok?{...checked,suggestions}:null;
  }
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
-  return quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  return quickBankBalanceAnswer(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint});
 })(globalThis);

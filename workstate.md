@@ -197,3 +197,6 @@ Lecture des catégories réelles du foyer à la connexion ; formulaire de règle
 
 ### 31o — catalogue complet dans l'éditeur de mots-clés
 Les cibles affichent le catalogue automatique intégral + catégories spécifiques du foyer sans doublon ; correspondance locale vers catégorie active ou proposition de création lors de la revue. Confirmations simulées.
+
+### 31p — retours terrain
+Six captures analysées : catégories explicites produits, date préfixée, phrase dépenses composées, revenu + épargne anaphorique, transfert interne et solde bancaire non connecté. Parsing local, suggestion de catégorie canonique, tests de sécurité ; aucune écriture.
