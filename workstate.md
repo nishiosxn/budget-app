@@ -203,3 +203,6 @@ Six captures analysées : catégories explicites produits, date préfixée, phra
 
 ### 31q — libellés contextualisés
 Extraction des descriptions explicites pour achats, courses et magasins, affichage séparé du magasin sans ajouter de champ de stockage. Libellé par défaut = magasin ; catégorie guidée par le produit, tests. Aucune écriture réelle.
+
+### 31r — retours tests avec payeurs et pharmacie
+Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres du foyer à deux ; le pilote solo retourne une explication au lieu d'une conversion invalide. Pharmacie : libellé contextuel, Santé, date exacte, sans IA. Pas de modification des accès, ni de la production.
