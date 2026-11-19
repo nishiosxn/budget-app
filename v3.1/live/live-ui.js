@@ -20,20 +20,99 @@
  resizeComposer();
  function append(v){const line=document.createElement("div");line.className="sb-assistant-result-row";line.textContent=v;result.append(line)}
  let ruleContext=null,personalRules=Object.create(null);
+ const ruleUtils=globalThis.SmartBudgetCategoryRules;
  const ruleStorageKey=()=>session?"smart-budget-v31-test-category-rules:"+session.householdId:null;
- function readPersonal(){try{const raw=localStorage.getItem(ruleStorageKey());const parsed=JSON.parse(raw||"null");if(!parsed||parsed.enabled!==true||!Array.isArray(parsed.rules))return; $("rememberRules").checked=true;for(const [label,id] of parsed.rules.slice(0,200)){if(typeof label==="string"&&label.length<=80&&typeof id==="string"&&id.length<=120)personalRules[label]=id}}catch{}}
- function savePersonal(){try{const key=ruleStorageKey();if(!key)return;if($("rememberRules").checked)localStorage.setItem(key,JSON.stringify({enabled:true,rules:Object.entries(personalRules).slice(0,200)}));else localStorage.removeItem(key)}catch{}}
- function setPersonal(label,id){const normalized=core.normalizeCategory(label);if(!normalized||normalized.length>80||!ruleContext?.categories.some(c=>c.id===id))return; if(Object.keys(personalRules).length>=200&&!Object.hasOwn(personalRules,normalized))return;personalRules[normalized]=id;savePersonal();showRules()}
- function showRules(){
-  const list=$("rulePersonal"),def=$("ruleDefault"),sel=$("ruleCategory");list.replaceChildren();def.replaceChildren();sel.replaceChildren();
-  const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Choisir une catégorie";sel.append(placeholder);
-  for(const c of ruleContext?.categories||[]){const opt=document.createElement("option");opt.value=c.id;opt.textContent=c.name;sel.append(opt)}
-  for(const [label,id] of Object.entries(personalRules)){const c=ruleContext?.categories.find(x=>x.id===id);const row=document.createElement("div");row.className="pilot-rule-row";const text=document.createElement("span");text.textContent=label+" → "+(c?.name||"Catégorie indisponible");const del=document.createElement("button");del.type="button";del.className="pilot-link";del.textContent="Supprimer";del.addEventListener("click",()=>{delete personalRules[label];savePersonal();showRules()});row.append(text,del);list.append(row)}
-  for(const r of core.categoryRules){const row=document.createElement("div");row.className="pilot-rule-row";const name=document.createElement("strong"),example=document.createElement("span");name.textContent=r.name;example.textContent=r.terms.slice(0,7).join(", ");row.append(name,example);def.append(row)}
+ function ruleNotice(message){$("ruleStatus").textContent=message}
+ function readPersonal(){
+  personalRules=Object.create(null);
+  try{
+   const key=ruleStorageKey();if(!key)return;
+   const parsed=JSON.parse(localStorage.getItem(key)||"null");
+   if(!parsed||parsed.enabled!==true||!Array.isArray(parsed.rules))return;
+   for(const entry of parsed.rules.slice(0,200)){
+    if(!Array.isArray(entry)||entry.length!==2)continue;
+    const [term,id]=entry,normalized=core.normalizeCategory(term);
+    if(normalized&&normalized.length<=80&&typeof id==="string"&&id.length<=120)personalRules[normalized]=id;
+   }
+  }catch{ruleNotice("Mémoire locale inaccessible : tes associations ne seront pas conservées après fermeture.")}
  }
- $("rememberRules").addEventListener("change",savePersonal);
- $("addRule").addEventListener("click",()=>{const label=$("ruleMerchant").value.trim(),id=$("ruleCategory").value;if(label&&id){setPersonal(label,id);$("ruleMerchant").value=""}});
- $("clearRules").addEventListener("click",()=>{personalRules=Object.create(null);savePersonal();showRules()});
+ function savePersonal(){
+  const key=ruleStorageKey();if(!key)return false;
+  try{
+   if(Object.keys(personalRules).length)localStorage.setItem(key,JSON.stringify({enabled:true,rules:Object.entries(personalRules).slice(0,200)}));
+   else localStorage.removeItem(key);
+   return true;
+  }catch{return false}
+ }
+ function setPersonal(term,id){
+  const key=core.normalizeCategory(term),cat=ruleContext?.categories?.find(c=>c.id===id);
+  if(!key||key.length>80)return {ok:false,message:"Entre un mot-clé ou une enseigne valide."};
+  if(!cat)return {ok:false,message:"Choisis une catégorie existante dans ce foyer."};
+  if(Object.keys(personalRules).length>=200&&!Object.hasOwn(personalRules,key))return {ok:false,message:"Limite de 200 associations atteinte."};
+  const updated=Object.hasOwn(personalRules,key);
+  personalRules[key]=id;
+  const saved=savePersonal();
+  showRules();
+  return {ok:true,message:(updated?"Association mise à jour":"Association ajoutée")+" : "+key+" → "+cat.name+(saved?"":" (mémoire locale indisponible).")};
+ }
+ function showRules(){
+  const list=$("rulePersonal"),def=$("ruleDefault"),sel=$("ruleCategory"),add=$("addRule"),previous=sel.value;
+  list.replaceChildren();def.replaceChildren();sel.replaceChildren();
+  const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Choisir une catégorie";sel.append(placeholder);
+  const categories=(ruleContext?.categories||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  for(const [kind,label] of [["expense","Dépenses"],["income","Revenus"],["saving","Épargne"]]){
+   const group=document.createElement("optgroup");group.label=label;
+   for(const c of categories.filter(c=>c.kind===kind)){
+    const opt=document.createElement("option");opt.value=c.id;opt.textContent=c.name;group.append(opt);
+   }
+   if(group.children.length)sel.append(group);
+  }
+  sel.value=categories.some(c=>c.id===previous)?previous:"";
+  sel.disabled=!categories.length;add.disabled=!categories.length;
+  for(const [term,id] of Object.entries(personalRules).sort((a,b)=>a[0].localeCompare(b[0],"fr"))){
+   const cat=categories.find(c=>c.id===id),row=document.createElement("div");row.className="pilot-personal-rule";
+   const name=document.createElement("strong");name.textContent=term;
+   const target=document.createElement("span");target.className="pilot-rule-target";target.textContent="→ "+(cat?.name||"Catégorie indisponible");
+   const del=document.createElement("button");del.type="button";del.className="pilot-link";del.textContent="Supprimer";del.setAttribute("aria-label","Supprimer la règle "+term);
+   del.addEventListener("click",()=>{delete personalRules[term];const saved=savePersonal();showRules();ruleNotice(saved?"Association supprimée.":"Association supprimée de la session ; mémoire locale indisponible.")});
+   row.append(name,target,del);list.append(row);
+  }
+  if(!Object.keys(personalRules).length){
+   const empty=document.createElement("p");empty.className="pilot-rule-empty";empty.textContent="Aucune association personnelle pour le moment.";list.append(empty);
+  }
+  $("clearRules").disabled=!Object.keys(personalRules).length;
+  for(const r of core.categoryRules){
+   const row=document.createElement("div");row.className="pilot-rule-row";
+   const name=document.createElement("strong"),example=document.createElement("span");name.textContent=r.name;example.textContent=r.terms.slice(0,7).join(", ");
+   row.append(name,example);def.append(row);
+  }
+ }
+ async function loadRuleCategories(){
+  if(!session)return;
+  const {token,householdId}=session;
+  ruleContext=null;showRules();ruleNotice("Chargement des catégories du foyer…");
+  const path="/rest/v1/categories?select=id,legacy_id,name,type,is_saving,owner_slot,created_from,excluded_months&household_id=eq."+encodeURIComponent(householdId)+"&archived_at=is.null&limit=301";
+  try{
+   const r=await json(path,{method:"GET",headers:headers(token)});
+   if(session?.token!==token||session.householdId!==householdId)return;
+   if(!r.ok||!Array.isArray(r.body)||r.body.length>300)throw Error("Catalogue indisponible");
+   const categories=ruleUtils.fromRows(r.body);
+   ruleContext={categories};showRules();
+   ruleNotice(categories.length?categories.length+" catégorie"+(categories.length===1?"":"s")+" disponible"+(categories.length===1?"":"s")+" dans ton foyer.":"Aucune catégorie disponible dans ce foyer.");
+  }catch{
+   if(session?.token===token){ruleContext=null;showRules();ruleNotice("Impossible de charger les catégories. Reconnecte-toi pour réessayer.")}
+  }
+ }
+ $("ruleEditor").addEventListener("submit",e=>{
+  e.preventDefault();
+  const term=$("ruleMerchant").value.trim(),id=$("ruleCategory").value;
+  const saved=setPersonal(term,id);ruleNotice(saved.message);
+  if(saved.ok){$("ruleMerchant").value="";$("ruleCategory").value="";$("ruleMerchant").focus()}
+ });
+ $("clearRules").addEventListener("click",()=>{
+  personalRules=Object.create(null);const saved=savePersonal();showRules();
+  ruleNotice(saved?"Toutes les associations ont été effacées.":"Associations effacées de la session ; mémoire locale indisponible.");
+ });
  function renderCategoryDraft(v,ctx){
   const group=document.createElement("div");group.className="pilot-review";pendingReview=v;
   const heading=document.createElement("strong");heading.textContent=v.name;heading.className="pilot-category-heading";group.append(heading);
@@ -68,7 +147,9 @@
   const group=document.createElement("div");group.className="pilot-review";
   for(const [i,o] of review.operations.entries()){
    const original=o.categoryId,personal=core.classifyCategory(o,ctx,{overrides:personalRules});
-   if(o.kind!=="plan"&&personal.source==="personal")o.categoryId=personal.categoryId;
+   const remembered=ruleUtils.match(o,ctx.categories,personalRules);
+   if(remembered)o.categoryId=remembered;
+   else if(o.kind!=="plan"&&personal.source==="personal")o.categoryId=personal.categoryId;
    const suggestion=suggestions.find(s=>s.index===i),rule=core.draftCategorySuggestion(o,ctx,suggestion?.ruleKey);
    if(rule)newRules.set(i,rule);
    const p=previews.find(x=>x.index===i),oldLabel=core.normalizeCategory(o.label);
@@ -121,11 +202,11 @@
   const ok=document.createElement("button");ok.type="button";ok.className="sb-assistant-send";ok.textContent=review.operations.length===1?"Confirmer":"Confirmer les "+review.operations.length+" opérations";
   function refresh(){const missing=cards.some(({o,choose,rule,paint})=>(!o.categoryId&&!(choose.value==="__new"&&rule))||!paint());ok.disabled=missing;const count=new Set(cards.filter(x=>x.choose.value==="__new").map(x=>x.rule?.key)).size;note.textContent=missing?"Complète la proposition sans relancer l’IA.":(count?count+" catégorie(s) à créer · ":"")+"Confirmation de test, aucune écriture Supabase."}
   cancel.addEventListener("click",()=>{if(pendingReview!==review||busy)return;wipe();status.textContent="Brouillon annulé."});
-  ok.addEventListener("click",()=>{if(busy||ok.disabled||pendingReview!==review)return;const validated=core.validateReview(review,ctx);if(!validated.ok){status.textContent=validated.error;return}pendingReview=null;history=[];for(const [label,id] of changes)if($("rememberRules").checked)setPersonal(label,id);ok.disabled=true;cancel.disabled=true;for(const x of cards)x.choose.disabled=true;note.textContent="Confirmé en simulation. Aucune catégorie ou opération créée dans Supabase.";status.textContent="Confirmation réussie · aucun appel IA supplémentaire."});
+  ok.addEventListener("click",()=>{if(busy||ok.disabled||pendingReview!==review)return;const validated=core.validateReview(review,ctx);if(!validated.ok){status.textContent=validated.error;return}pendingReview=null;history=[];for(const [label,id] of changes)setPersonal(label,id);ok.disabled=true;cancel.disabled=true;for(const x of cards)x.choose.disabled=true;note.textContent="Confirmé en simulation. Aucune catégorie ou opération créée dans Supabase.";status.textContent="Confirmation réussie · aucun appel IA supplémentaire."});
   actions.append(cancel,ok);group.append(note,actions);result.append(group);refresh();
  }
  function wipe(){pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true})}
- function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);$("rememberRules").checked=false;showRules();busy=false;send.disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
+ function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
  const number=n=>new Intl.NumberFormat("fr-FR").format(n);
@@ -163,7 +244,7 @@
    const t=a.body.access_token,u=a.body.user.id;if(!/^[a-f0-9-]{36}$/i.test(u))throw Error("Session invalide.");
    const m=await json("/rest/v1/household_members?select=household_id,slot&user_id=eq."+encodeURIComponent(u)+"&limit=2",{headers:headers(t)});
    if(!m.ok||!Array.isArray(m.body)||m.body.length!==1||m.body[0].slot!=="B")throw Error("Le compte de test doit disposer d’un foyer isolé.");
-   session={token:t,householdId:m.body[0].household_id};resetMeter();readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="";void refreshQuota();
+   session={token:t,householdId:m.body[0].household_id};resetMeter();readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="";void refreshQuota();void loadRuleCategories();
   }catch(e){$("pilotLoginStatus").textContent=e.message||"Connexion impossible."}
   finally{$("pilotSignIn").disabled=false}
  });

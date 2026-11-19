@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="color-scheme" content="light dark"><title>Smart Budget V3.1 — pilote IA</title>
-<link rel="icon" href="../icons/icon.svg"><link rel="stylesheet" href="../css/assistant.css"><link rel="stylesheet" href="../preview.css"><link rel="stylesheet" href="live.css?v=31m">
-<script src="../js/assistant-core.js?v=31m" defer></script><script src="../js/assistant-voice.js?v=31l" defer></script><script src="config.js" defer></script><script src="live-ui.js?v=31m" defer></script></head>
+<link rel="icon" href="../icons/icon.svg"><link rel="stylesheet" href="../css/assistant.css"><link rel="stylesheet" href="../preview.css"><link rel="stylesheet" href="live.css?v=31n">
+<script src="../js/assistant-core.js?v=31m" defer></script><script src="category-rules.js?v=31n" defer></script><script src="../js/assistant-voice.js?v=31l" defer></script><script src="config.js" defer></script><script src="live-ui.js?v=31n" defer></script></head>
 <body><main><header><a class="brand" href="../"><img src="../icons/icon.svg" alt="" width="42" height="42">Smart Budget</a></header>
 <section id="pilotLogin" class="card ledger"><h2>Compte de test</h2><form id="pilotLoginForm" class="pilot-login"><label for="pilotUser">Identifiant</label><input id="pilotUser" value="testtest" readonly autocomplete="username"><label for="pilotPassword">Mot de passe</label><input id="pilotPassword" type="password" required autocomplete="current-password"><button id="pilotSignIn" class="sb-assistant-send" type="submit">Se connecter</button></form><p id="pilotLoginStatus" role="status"></p></section>
 <section id="pilotSession" class="card ledger" hidden><div class="sb-assistant-header"><h2>Foyer de test connecté</h2><button id="pilotLogout" type="button" class="sb-assistant-secondary">Déconnexion</button></div>
@@ -16,6 +16,17 @@
 <form id="sbAssistantForm"><label class="sb-sr-only" for="sbAssistantInput">Ta demande</label><div class="sb-assistant-composer"><textarea id="sbAssistantInput" rows="1" maxlength="1600" placeholder="Pose une question ou ajoute une opération…"></textarea><div class="sb-assistant-actions"><span class="sb-voice-clock" hidden aria-hidden="true">00:00</span><button id="mic" type="button" class="sb-assistant-secondary sb-assistant-iconbtn" aria-label="Dicter" title="Dicter"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11v1a7 7 0 0 0 14 0v-1M12 19v3"/></svg></button><button id="send" type="submit" class="sb-assistant-send sb-assistant-iconbtn" aria-label="Envoyer" title="Envoyer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div></div></form>
 <section id="pilotSubmitted" class="pilot-submitted" hidden aria-label="Demande envoyée"><span>Ta demande</span><p id="pilotSubmittedText"></p></section>
 <div id="sbAssistantStatus" role="status" aria-live="polite"></div><div id="sbAssistantResult" aria-live="polite"></div>
-<details id="pilotRules" class="pilot-rules"><summary>Règles de catégorisation</summary><p>Associations personnalisées, mémorisées uniquement si tu le choisis.</p><label class="sb-assistant-consent"><input id="rememberRules" type="checkbox"> Mémoriser les associations sur cet appareil</label><div id="rulePersonal"></div><div class="pilot-rule-editor"><input id="ruleMerchant" maxlength="80" placeholder="Commerçant (ex. Lidl)" aria-label="Commerçant"><select id="ruleCategory" aria-label="Catégorie"></select><button id="addRule" type="button" class="sb-assistant-secondary">Ajouter</button></div><div id="ruleDefault"></div><button id="clearRules" type="button" class="sb-assistant-secondary">Effacer mes associations</button></details>
+<details id="pilotRules" class="pilot-rules"><summary>Règles de catégorisation</summary>
+<p>Associe une enseigne ou un mot-clé à une catégorie de ton foyer.</p>
+<form id="ruleEditor" class="pilot-rule-editor">
+<input id="ruleMerchant" maxlength="80" required placeholder="Enseigne ou mot-clé (ex. Lidl)" aria-label="Enseigne ou mot-clé" autocomplete="off">
+<select id="ruleCategory" required aria-label="Catégorie du foyer"></select>
+<button id="addRule" type="submit" class="sb-assistant-secondary">Associer</button>
+</form>
+<div id="ruleStatus" class="pilot-rule-status" role="status" aria-live="polite"></div>
+<div id="rulePersonal" class="pilot-custom-rules"></div>
+<div class="pilot-rules-footer"><span>Associations enregistrées dans ce navigateur.</span><button id="clearRules" type="button" class="pilot-link">Tout effacer</button></div>
+<details class="pilot-standard-rules"><summary>Voir les règles automatiques</summary><div id="ruleDefault"></div></details>
+</details>
 <div class="sb-assistant-actions"><button id="cancel" type="button" class="sb-assistant-secondary" hidden>Nouvelle demande</button></div></section>
 </main></body></html>
