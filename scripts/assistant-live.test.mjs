@@ -115,7 +115,7 @@ test("expense budget uses signed-in household read-only data and local projectio
 
 test("31u design system is scoped to pilot, with concentric radii, responsive and accessible control tokens",()=>{
  const design=fs.readFileSync(base+"design-system.css","utf8"),charter=fs.readFileSync("docs/SMART_BUDGET_DESIGN_SYSTEM.md","utf8");
- assert.match(html,/design-system\.css\?v=31u/);
+ assert.match(html,/design-system\.css\?v=31x/);
  assert.ok(html.indexOf("design-system.css?v=31u")>html.indexOf("live.css?v=31t"));
  assert.match(design,/--sb-brand:#5C29D6/);
  assert.match(design,/--sb-card-radius:calc\(var\(--sb-shell-radius\) - var\(--sb-shell-pad\)\)/);
@@ -181,4 +181,22 @@ test("analysis releases busy before rendering a valid review, while saving remai
  }
  assert.match(js,/ok\.disabled=locked\|\|busy\|\|editing!==-1\|\|!checked\.ok/);
  assert.match(js,/setSavingPilot\(true\);draw\(\)/);
+});
+
+test("31x quota and rules panel have one optical inset, controlled markers, mobile and focus states",()=>{
+ const css=fs.readFileSync(base+"design-system.css","utf8");
+ assert.match(html,/design-system\\.css\\?v=31x/);
+ assert.match(html,/class="pilot-meter-disclaimer"/);
+ assert.match(css,/#pilotSession\\.card\\.ledger,#pilotAssistant\\.card\\.sb-assistant\\{/);
+ assert.match(css,/#pilotSession #pilotMeter\\{/);
+ assert.match(css,/#pilotAssistant #pilotRules\\{[^}]*padding:0/);
+ assert.match(css,/#pilotAssistant #pilotRules > summary\\{[^}]*padding:var\\(--sb-s12\\) var\\(--sb-shell-pad\\)/);
+ assert.match(css,/#pilotAssistant #pilotRules > :not\\(summary\\)\\{[^}]*margin-inline:var\\(--sb-shell-pad\\)/);
+ assert.match(css,/#pilotAssistant #pilotRules > summary::-webkit-details-marker/);
+ assert.match(css,/#pilotAssistant #pilotRules\\[open\\] > summary::after/);
+ assert.match(css,/#pilotMeter #pilotQuotaBar\\{[^}]*height:var\\(--sb-progress\\)/);
+ assert.match(css,/#pilotMeter #pilotLastUsage\\{[^}]*background:transparent/);
+ assert.match(css,/#pilotAssistant #pilotRules :is\\(summary,input,select,button\\):focus-visible/);
+ assert.match(css,/@media\\(max-width:380px\\)\\{[\\s\\S]*?#pilotAssistant #pilotRules > \\.pilot-rule-editor/);
+ assert.match(css,/@media\\(prefers-reduced-motion:reduce\\)\\{[\\s\\S]*?#pilotMeter #pilotQuotaBar/);
 });
