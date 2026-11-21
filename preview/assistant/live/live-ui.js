@@ -262,9 +262,36 @@
 
  // Compound previews are deliberately review-only: category creation never
  // mutates a parent budget or gets sent to the transaction commit endpoint.
+ // The 31z budget bar is reused for all mixed proposals; no inferred spending.
+ function mixedBudgetBar(host,plannedCents,actualCents,{name="",month="",isNew=false}={}){
+  const pane=document.createElement("div");pane.className="pilot-expense-budget";
+  const head=document.createElement("div");head.className="pilot-exp-budget-head";
+  const title=document.createElement("span");title.textContent="Budget prévu";
+  const amount=document.createElement("strong");amount.textContent=euro(plannedCents);head.append(title,amount);pane.append(head);
+  if(actualCents!==null){
+   const remain=plannedCents-actualCents;
+   const percent=plannedCents===0?(actualCents>0?100:0):Math.min(100,Math.max(0,actualCents/plannedCents*100));
+   pane.setAttribute("aria-label","Budget "+name+" · "+month);
+   const track=document.createElement("div");track.className="pilot-exp-budget-track";
+   track.setAttribute("role","progressbar");track.setAttribute("aria-label","Utilisation du budget");
+   track.setAttribute("aria-valuemin","0");track.setAttribute("aria-valuemax","100");track.setAttribute("aria-valuenow",String(Math.round(percent)));
+   track.setAttribute("aria-valuetext","Utilisé : "+euro(actualCents)+" ; reste : "+euro(remain));
+   const fill=document.createElement("span");fill.style.width=percent+"%";if(remain<0)fill.classList.add("pilot-budget-over");
+   track.append(fill);pane.append(track);
+   const foot=document.createElement("div");foot.className="pilot-exp-budget-foot";
+   const used=document.createElement("span");used.textContent="Utilisé : "+euro(actualCents)+(isNew?" (nouvelle catégorie)":"");
+   const left=document.createElement("strong");left.className=remain<0?"pilot-negative":"pilot-positive";left.textContent="Reste : "+euro(remain);
+   foot.append(used,left);pane.append(foot);
+  }else{
+   const fallback=document.createElement("p");fallback.className="pilot-exp-budget-note";
+   fallback.textContent="Utilisation indisponible · aucune valeur inventée.";pane.append(fallback);
+  }
+  host.append(pane);
+ }
  function renderMixedDraft(v,ctx,previews){
   const draft=JSON.parse(JSON.stringify(v));pendingReview=draft;
   let locked=false,editing=-1;
+  const budgetReads=new Map();
   const baselines=draft.operations.map((op,i)=>{
    const p=previews.find(p=>p.index===i);
    return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents}:null;
@@ -276,17 +303,38 @@
    for(const [i,op] of draft.operations.entries()){
     const cat=ctx.categories.find(c=>c.id===op.categoryId);
     const projection=reviewEditor.planPreview({op,baseline:baselines[i]});
-    const card=document.createElement("div");card.className="pilot-category-card";
-    const heading=document.createElement("strong");heading.className="pilot-category-heading";
-    heading.textContent=(op.planMode==="increase"?"Augmentation de budget":op.planMode==="decrease"?"Diminution de budget":"Budget fixé")+" · "+(cat?.name||"Catégorie à choisir");
-    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Budget existant · "+monthReviewDate(op.date,ctx);
-    card.append(heading,meta);
+    const card=document.createElement("div");card.className="pilot-op";
+    const top=document.createElement("div");top.className="pilot-op-top";
+    const rule=core.categoryRules.find(r=>r.kind==="expense"&&[r.name,...r.aliases].some(n=>core.normalizeCategory(n)===core.normalizeCategory(cat?.name)));
+    const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon(rule?.icon||"home"));
+    const info=document.createElement("div");info.className="pilot-op-info";
+    const heading=document.createElement("strong");
+    heading.textContent=(op.planMode==="increase"?"Ajout budget ":op.planMode==="decrease"?"Réduction budget ":"Budget ")+(cat?.name||op.label);
+    const meta=document.createElement("div");meta.className="pilot-op-meta";
+    meta.textContent=(cat?.name||"Catégorie à préciser")+" · "+monthReviewDate(op.date,ctx)+(op.frequency==="monthly"?" · Mensuel":" · Ce mois")+" · "+(op.planMode==="increase"?"Augmenter":op.planMode==="decrease"?"Diminuer":"Fixer");
+    info.append(heading,meta);
+    const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
     if(projection){
-     card.append(reviewRow("Budget actuel",projection.beforeCents));
-     card.append(reviewRow("Variation demandée",op.amountCents,op.planMode==="decrease"?"pilot-negative":"pilot-positive"));
-     card.append(reviewRow("Nouveau budget",projection.afterCents,"pilot-plan"));
+     const previous=document.createElement("span");previous.className="pilot-old-amount";previous.textContent=euro(projection.beforeCents);
+     const after=document.createElement("span");after.textContent=euro(projection.afterCents);
+     const diff=projection.afterCents-projection.beforeCents,delta=document.createElement("span");
+     delta.className="pilot-budget-delta "+(diff>=0?"pilot-positive":"pilot-negative");
+     delta.textContent=(diff>=0?"+":"−")+euro(Math.abs(diff));
+     money.setAttribute("aria-label","Nouveau budget "+euro(projection.afterCents));
+     money.append(previous,after,delta);
+    }else money.textContent="—";
+    top.append(symbol,info,money);card.append(top);
+    if(projection){
+     const key=reviewEditor.key(op),holder=document.createElement("div");card.append(holder);
+     if(!budgetReads.has(key))budgetReads.set(key,readExpenseBudget(op).catch(()=>null));
+     budgetReads.get(key).then(report=>{
+      if(!holder.isConnected||pendingReview!==draft)return;
+      holder.replaceChildren();
+      mixedBudgetBar(holder,projection.afterCents,Number.isSafeInteger(report?.actualCents)?report.actualCents:null,{name:cat?.name||"",month:op.date.slice(0,7)});
+     });
     }else{
-     const warning=document.createElement("p");warning.className="pilot-review-message";warning.textContent="Budget actuel indisponible : simulation bloquée pour éviter un calcul inventé.";card.append(warning);
+     const warning=document.createElement("p");warning.className="pilot-review-message";
+     warning.textContent="Budget actuel indisponible · simulation bloquée.";card.append(warning);
     }
     if(!locked){
      if(editing===i){
@@ -302,17 +350,24 @@
        await finish(()=>{if(!active())return;draft.operations[i]=next;editing=-1;draw()});return null;
       },()=>{if(active()){editing=-1;draw()}});
      }else{
-      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=i;draw()}});card.append(edit);
+      const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=i;draw()}});actions.append(edit);card.append(actions);
      }
     }
     group.append(card);
    }
    for(const [i,cat] of draft.categories.entries()){
-    const pos=draft.operations.length+i,card=document.createElement("div");card.className="pilot-category-card";
-    const heading=document.createElement("strong");heading.className="pilot-category-heading";heading.textContent="Création de catégorie · "+cat.name;
-    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Nouvelle catégorie indépendante · "+cat.month+" · aucun budget parent modifié";
-    card.append(heading,meta);
-    if(cat.budgetCents!==null)card.append(reviewRow("Budget initial",cat.budgetCents,"pilot-plan"));
+    const pos=draft.operations.length+i,card=document.createElement("div");card.className="pilot-op";
+    const top=document.createElement("div");top.className="pilot-op-top";
+    const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon("game"));
+    const info=document.createElement("div");info.className="pilot-op-info";
+    const heading=document.createElement("strong");heading.textContent=cat.name;
+    const meta=document.createElement("div");meta.className="pilot-op-meta";
+    meta.textContent="Création de catégorie · "+cat.month+" · Budget initial";
+    info.append(heading,meta);
+    const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
+    money.textContent=cat.budgetCents===null?"Sans budget":euro(cat.budgetCents);
+    top.append(symbol,info,money);card.append(top);
+    if(cat.budgetCents!==null)mixedBudgetBar(card,cat.budgetCents,0,{name:cat.name,month:cat.month,isNew:true});
     if(!locked){
      if(editing===pos){
       reviewForm(card,[
@@ -328,7 +383,7 @@
        await finish(()=>{if(!active())return;draft.categories[i]=checked.value;editing=-1;draw()});return null;
       },()=>{if(active()){editing=-1;draw()}});
      }else{
-      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=pos;draw()}});card.append(edit);
+      const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=pos;draw()}});actions.append(edit);card.append(actions);
      }
     }
     group.append(card);
