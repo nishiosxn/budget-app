@@ -671,3 +671,61 @@ main .brand:focus-visible {
     flex-basis: 2.5rem;
   }
 }
+
+
+/* 31am: inline missing-category recovery follows the same card anatomy. */
+#pilotAssistant .pilot-missing-category { gap: 1rem; }
+#pilotAssistant .pilot-missing-question {
+  margin: 0;
+  padding-top: .875rem;
+  border-top: 1px solid var(--sb-line-soft);
+  color: var(--sb-muted);
+  font-size: .875rem;
+  line-height: 1.55;
+}
+#pilotAssistant .pilot-missing-modes {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: .625rem;
+}
+#pilotAssistant .pilot-missing-modes > button {
+  min-width: 0;
+  min-height: var(--sb-touch);
+  padding: .625rem;
+  border-radius: var(--sb-action-radius);
+  border: 1px solid var(--sb-control-line);
+  background: var(--sb-secondary);
+  color: var(--sb-ink);
+  font-size: .8125rem;
+  font-weight: 600;
+}
+#pilotAssistant .pilot-missing-modes > button.pilot-missing-active {
+  border-color: var(--sb-accent);
+  background: var(--sb-tint);
+  color: var(--sb-ink);
+}
+#pilotAssistant .pilot-missing-modes > button:disabled { opacity: .45; cursor: not-allowed; }
+#pilotAssistant .pilot-missing-editor {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  padding-top: .875rem;
+}
+#pilotAssistant .pilot-missing-category > .pilot-editor-field {
+  display: grid;
+  gap: .375rem;
+}
+#pilotAssistant .pilot-missing-category > .pilot-editor-field select {
+  min-height: var(--sb-touch);
+  width: 100%;
+  padding: .625rem .75rem;
+  border: 1px solid var(--sb-control-line);
+  border-radius: var(--sb-control-radius);
+  background: var(--sb-secondary);
+  color: var(--sb-ink);
+  font-size: 1rem;
+}
+#pilotAssistant .pilot-missing-projection { min-width: 0; }
+#pilotAssistant .pilot-missing-projection > .pilot-expense-budget { border-top: 0; padding-top: 0; }
+@media (max-width: 28rem) {
+  #pilotAssistant .pilot-missing-modes { grid-template-columns: minmax(0,1fr); }
+}
