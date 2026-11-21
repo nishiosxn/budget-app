@@ -142,3 +142,31 @@ test("31ac: same-household categories block case-insensitive duplicate creation"
   assert.equal(core.validateCategoryDraft({kind:"categoryDraft",name:"Lego",owner:"B",month:"2026-11",date:c.today,budgetCents:6000,expenseCents:null},c).ok,false);
  }
 });
+
+
+test("31ad: ambiguous category creation uses generic guidance or existing household name, never Lego example",()=>{
+ const c={...ctx,solo:true,actor:"B",selectedMonth:"2026-11",categories:[
+  {id:"rest",name:"Restaurants / fast-food",kind:"expense",owner:"B",createdFrom:"2026-09"},
+  {id:"home",name:"Maison",kind:"expense",owner:"B",createdFrom:"2026-09"}
+ ]};
+ const duplicate=core.quickCommand("Créer la catégorie Restauration, Fast Food avec une valeur de cent euros",c);
+ assert.equal(duplicate?.ok,true);
+ assert.equal(duplicate.value.kind,"clarify");
+ assert.match(duplicate.value.message,/Cette catégorie existe déjà dans le foyer/);
+ assert.match(duplicate.value.message,/Restaurants \/ fast-food/);
+ assert.doesNotMatch(duplicate.value.message,/Lego/);
+ const unknown=core.quickCommand("Créer la catégorie Illustrations, Affiches avec une valeur de cent euros",c);
+ assert.equal(unknown?.ok,true);
+ assert.equal(unknown.value.kind,"clarify");
+ assert.match(unknown.value.message,/Veuillez reformuler/);
+ assert.match(unknown.value.message,/nom de la catégorie et son budget en euros/);
+ assert.doesNotMatch(unknown.value.message,/Lego|60 euros/i);
+ const unclear=core.quickCommand("Crée une catégorie Test spécial et fais n'importe quoi",c);
+ assert.equal(unclear?.ok,true);
+ assert.equal(unclear.value.kind,"clarify");
+ assert.doesNotMatch(unclear.value.message,/Lego/);
+ const newCategory=core.quickCommand("Crée une catégorie Gundam avec un budget de 90 euros",c);
+ assert.equal(newCategory?.ok,true);
+ assert.equal(newCategory.value.kind,"categoryDraft");
+ assert.equal(newCategory.value.budgetCents,9000);
+});
