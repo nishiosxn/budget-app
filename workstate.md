@@ -2,6 +2,16 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ae — refonte deep-dark de tout le pilote Smart Assistant (21 novembre 2026)
+- Couche `preview/assistant/live/native-dark.css` chargée **après** les styles historiques uniquement dans `preview/assistant/live/index.html` ; aucun changement des pages principales Smart Budget ni de la logique financière.
+- Système de design unifié, inspiré du rendu des cartes de la conversation et reconstruit en CSS standard (composants ChatGPT non directement exportables) : fond nuit bleuté `#0a0c13`, surfaces `#161a24` / `#1f2430` / `#252b39`, bordures `#343a49`, texte `#f4f5fb`, accent de marque conservé `#5c29d6`, indicateurs positifs `#79d6a8` et négatifs `#ff929e`.
+- Application cohérente au bandeau de marque, formulaire de connexion, carte du foyer/quota, hero, suggestions, compositeur/micro/envoi, texte soumis et réponses, toutes les opérations (dépenses, revenus, budgets, catégories et mélanges), jauges, contrôles de confirmation/édition et panneau des règles.
+- Alignements centraux, grilles icône / libellés / montant, barre et labels symétriques, rythme d'espacement relatif en rem, breakpoints mobiles, contraste, focus clavier et respect de `prefers-reduced-motion`. Pas de font externe, pas de nouvelle dépendance JavaScript.
+- Validation : suite `App integrity` de la branche réussie (run 44933775815) après test de couverture du thème/contrastes. Revue visuelle manuelle en navigateur encore nécessaire ; fichier CSS de démonstration publié uniquement sous `/v3.1/live/`.
+- `main`, le foyer personnel et Supabase inchangés. Actions catégories/budgets toujours en simulation ; transactions ponctuelles existantes inchangées. Prochaine étape : comparer captures utilisateur sur desktop et mobile puis affiner avant d'étudier une migration à tout Smart Budget.
+
+
+
 ### 31ad — clarification sans exemple fictif et rafraîchissement du pilote (21 novembre 2026)
 - Retrait de la phrase de repli « Crée une catégorie Lego avec un budget de 60 euros ». Quand la demande de création est ambiguë, réponse générique demandant le **nom de la catégorie** et le **budget en euros**, sans proposition d'écriture.
 - Pour « Créer la catégorie Restauration, Fast Food avec une valeur de cent euros », recherche stricte sur le catalogue du foyer authentifié ; si la catégorie « Restaurants / fast-food » y existe, retour « Cette catégorie existe déjà dans le foyer ». Synonymie limitée à cette dénomination composée, sans fusion de catégories arbitraires.
