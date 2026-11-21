@@ -734,7 +734,17 @@
  const spokenMoney=new RegExp("(?<![\\p{L}\\p{N}-])("+numberWord+"(?:(?:[\\s‑–-]+)(?:"+numberWord+"|et))*)\\s+(euros?|balles?)\\b","giu");
  function normalizeLanguage(command){
   if(typeof command!=="string"||command.length>1600)return command;
-  let t=command.normalize("NFC").replace(/’/g,"'").replace(/\s+/g," ").trim();
+  let t=command.normalize("NFC").replace(/\s+/g," ").trim();
+  // Voice transcription, copy/paste and chat often wrap the entire request
+  // in quotation marks. Remove ONE balanced outer pair only, never interior
+  // quotes or partial quotes; the financial parsers remain fully anchored.
+  for(const [open,close] of [["«","»"],["“","”"],["„","“"],["‹","›"],['"','"']]){
+   if(t.startsWith(open)&&t.endsWith(close)){
+    t=t.slice(open.length,t.length-close.length).trim();
+    break;
+   }
+  }
+  t=t.replace(/’/g,"'");
   t=t.replace(spokenMoney,(all,words,currency,offset,source)=>{
    if(foldMoney(words).endsWith(" et"))return all;
    // Never partially convert a mixed numeral or a negative expression.
