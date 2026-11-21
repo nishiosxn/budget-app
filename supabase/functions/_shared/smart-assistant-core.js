@@ -993,8 +993,8 @@
    const note=validateAssistantResult({kind:"clarify",message:exact.length>1
     ?"Plusieurs catégories portent ce nom. Choisis la catégorie exacte avant d’enregistrer la dépense."
     :"La catégorie « "+name+" » n’existe pas parmi les catégories de dépenses disponibles. Souhaites-tu créer cette catégorie ou utiliser une catégorie existante ? Aucune opération n’a été enregistrée."},ctx);
-   const safeName=name.length<=60&&/^[\\p{L}\\p{N}][\\p{L}\\p{N} \/&'’_-]{0,59}$/u.test(name)&&
-    !/\\b(?:et|puis|ensuite|ajoute|crée|cree|supprime|efface|modifie|transfère|transfere)\\b/iu.test(name);
+   const safeName=name.length<=60&&/^[\p{L}\p{N}][\p{L}\p{N} /&'’_-]{0,59}$/u.test(name)&&
+    !/\b(?:et|puis|ensuite|ajoute|crée|cree|supprime|efface|modifie|transfère|transfere)\b/iu.test(name);
    const trulyAbsent=!ctx.categories.some(c=>normalizeCategory(c.name)===key);
    return note.ok&&exact.length===0&&safeName&&trulyAbsent&&ctx.solo&&ctx.actor==="B"
     ?{...note,missingCategory:{name,amountCents,date:ctx.today,month:ctx.today.slice(0,7),owner:ctx.actor}}
