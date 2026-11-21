@@ -531,9 +531,9 @@
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
-  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
+  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye|réglé|regle) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|à|au|de|en)\s+([^.!?;]+)[.!?]?$/iu);
   if(!m)return null;
-  const merchant=normalizeCategory(m[2]),known=Object.hasOwn(quickMerchants,merchant);
+  const merchant=normalizeCategory(m[3]),known=Object.hasOwn(quickMerchants,merchant);
   // A merchant-only payment does not need AI to extract the exact amount.
   // For unknown shops, leave the category unset and require review instead
   // of guessing. Only a fully bounded "chez NAME" clause is accepted.
@@ -562,10 +562,10 @@
   const monthly=/(?: chaque mois| par mois| tous les mois)$/.test(text);
   if(monthly)text=text.replace(/(?: chaque mois| par mois| tous les mois)$/,"");
   const selected=ctx.selectedMonth||ctx.today.slice(0,7);if(!monthOK(selected,ctx))return null;
-  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le) budget (?:de |d'|des |pour )?(.+)$"));
-  const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire) (?:le )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
-  const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:le )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
-  const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:le )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
+  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le|a mon|a notre|dans mon|sur mon) budget (?:de |d'|des |pour )?(.+)$"));
+  const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire|enleve) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:(?:le|mon|notre) )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
   let name,raw,mode;
   if(delta){[,mode,raw,name]=delta;mode=["retire","diminue","enleve","baisse","reduis"].includes(mode)?"decrease":"increase"}
   else if(deltaAfter){[,mode,name,raw]=deltaAfter;mode=["retire","diminue","baisse","reduis"].includes(mode)?"decrease":"increase"}
@@ -754,7 +754,7 @@
   t=t.replace(/(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?=\s*(?:€|euros?|balles?)\b|\s*€)/giu,m=>m.replace(/\s/g,""));
   t=t.replace(/(\d+(?:[,.]\d{1,2})?)\s+balles?\b/giu,"$1 euros");
   t=t.replace(/^(?:s'il te plaît[,.]?\s+|peux-tu\s+|stp[,.]?\s+)/iu,"").replace(/(?:[,.]?\s+(?:s'il te plaît|merci|stp))[.!?]?$/iu,"");
-  t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse) /iu,"J'ai reçu ");
+  t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache|réglé|regle) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne) /iu,"J'ai reçu ");
   t=t.replace(/^rajoute /iu,"Ajoute ").replace(/^réduis /iu,"Diminue ");
   // A category bundle can be dictated without punctuation. Normalize only after explicit creation intent.
   if(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie /iu.test(t)){
@@ -769,10 +769,24 @@
  function quickNamedIncome(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"");
-  const m=t.match(/^j[' ]ai (?:reçu|recu|touché|touche|encaissé|encaisse) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:de |d'|par |venant de )([\p{L}][\p{L}' -]{0,49})$/iu);
-  if(!m)return null;
-  const name=m[2].trim().replace(/\s+/g," "),amountCents=centsFromText(m[1]);
-  if(!amountCents||name.length>50||/\b(?:et|puis|demain|hier|supprime|efface|ajoute|modifie|chaque|mensuel|tous|compte|transfert)\b/iu.test(name))return null;
+  // A sender is a transaction label, never an inferred household member.
+  const money="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
+  const person="([\\p{L}][\\p{L}' -]{0,49})";
+  const incoming="(?:reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne)";
+  const options=[
+   {re:new RegExp("^j[' ]ai "+incoming+" "+money+" (?:de |d'|par |venant de )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^je viens de recevoir "+money+" (?:de |d'|par )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^j[' ]ai "+incoming+" (?:un |le )?(?:virement|remboursement) de "+money+" (?:de |d'|par )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^j[' ]ai "+incoming+" (?:de |d')"+person+" "+money+"$","iu"),amount:2,sender:1},
+   {re:new RegExp("^"+person+" m[' ]a (?:viré|vire|envoyé|envoye|donné|donne|remboursé|rembourse) "+money+"$","iu"),amount:2,sender:1},
+   {re:new RegExp("^"+person+" m[' ]a fait un virement de "+money+"$","iu"),amount:2,sender:1}
+  ];
+  let name="",amountCents=null;
+  for(const {re,amount,sender} of options){
+   const m=t.match(re);if(!m)continue;
+   name=m[sender].trim().replace(/\s+/g," ");amountCents=centsFromText(m[amount]);break;
+  }
+  if(!amountCents||!name||name.length>50||/\b(?:et|puis|ensuite|demain|hier|supprime|efface|ajoute|modifie|chaque|mensuel|tous|compte|transfert|annule|prêt|pret)\b/iu.test(name))return null;
   const label="Reçu de "+name;
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:"extra"}]},ctx,command);
   return checked.ok?checked:null;
@@ -780,10 +794,10 @@
  function quickSaving(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
-  const m=t.match(/^j[' ]ai (?:mis|place|verse|epargne|economise) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: (?:en epargne|de cote|sur (?:mon |le )?(?:livret|compte epargne)))?$/u);
+  const m=t.match(/^j[' ]ai (?:mis|place|verse|epargne|economise) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: (?:en epargne|de cote|sur (?:mon |le )?(?:livret(?: a)?|compte epargne)|dans (?:mon |le )?epargne))?$/u);
   if(!m)return null;
   // A generic "J'ai versé 100 euros" is ambiguous; require explicit saving destination.
-  if(!/(?:en epargne|de cote|livret|compte epargne)$/.test(t)&&!/^j[' ]ai (?:epargne|economise) /.test(t))return null;
+  if(!/(?:en epargne|de cote|livret(?: a)?|compte epargne|dans (?:mon |le )?epargne)$/.test(t)&&!/^j[' ]ai (?:epargne|economise) /.test(t))return null;
   const amountCents=centsFromText(m[1]);if(!amountCents)return null;
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"saving",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Mise en épargne",frequency:"once",categoryHint:"saving"}]},ctx,command);
   return checked.ok?checked:null;
@@ -818,7 +832,7 @@
  }
  function createExpenseLabel(merchant,description=null){
   const name=merchantName(merchant);
-  if(!name||name.length>60||/[\r\n<>]/.test(name)||/\b(?:et|puis|supprime|efface|demain|hier)\b/iu.test(name))return null;
+  if(!name||name.length>60||/[\r\n<>,;!?]/.test(name)||/\b(?:et|puis|ensuite|supprime|efface|demain|hier|reçu|recu|touché|touche|encaissé|encaisse|virement)\b/iu.test(name)||/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/iu.test(name))return null;
   const detail=description===null?null:productDescription(description);
   if(description!==null&&!detail)return null;
   const result=detail?name+" · "+detail:name;
@@ -1017,6 +1031,13 @@
    const day=new Date(ctx.today+"T12:00:00Z");
    day.setUTCDate(day.getUTCDate()-(moment==="hier"?1:2));date=day.toISOString().slice(0,10);
   }
+  // Bounded natural-language shortcuts, no unqualified amount is accepted.
+  const passive=t.match(/^(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:reçus?|recus?|touchés?|touches?)\s+(de |d')([\p{L}][\p{L}' -]{0,49})$/iu);
+  if(passive)t="J'ai reçu "+passive[1]+" euros "+passive[2]+passive[3];
+  else if(/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+chez\s+/iu.test(t))t="J'ai dépensé "+t;
+  else if(/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:de |d')(?:(?:l'|la |les )?)(?:courses|essence|carburant|gazole|diesel|produits ménagers|lessive)\s+(?:chez|à)\s+/iu.test(t))t="J'ai fait "+t;
+  t=t.replace(/^j[' ]ai (?:acheté|achete|pris) pour (?=\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?))/iu,"J'ai dépensé ");
+  t=t.replace(/^j[' ]ai (?:(?:fait|effectué|effectue) une dépense de|(?:effectué|effectue) un achat de) /iu,"J'ai dépensé ");
   const direct=quickDetailedExpense(t,ctx)||quickExpense(t,ctx)||quickContextualExpense(t,ctx)||quickInternalTransfer(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
   let r=direct;
   if(!r){
@@ -1031,7 +1052,12 @@
  }
  function quickMovementBatch(command,ctx){
   // Full clause matching. Decimal commas in amounts are not separators.
-  const pieces=command.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:et|puis)\s+)(?=(?:j[' ]ai\s+|achet[ée]\s+|mets[- ]en\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en)\s+))/iu);
+  // Separate only explicitly introduced actions, never decimal commas.
+  // Invalid individual clauses invalidate the entire local proposal.
+  const clean=command.replace(/[,;]\s*(?=(?:et\s+)?(?:puis|ensuite|et)\b)/giu," ");
+  const pieces=clean.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:(?:et\s+)?ensuite|et|puis)\s+)(?=(?:j[' ]ai\s+|(?:achet[ée]|pris|payé|paye|réglé|regle|dépensé|depense|reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne|envoyé|envoye|viré|vire|versé|verse|mis|placé|place|épargné|epargne|économisé|economise)\s+|mets[- ]en\s+|[\p{Lu}][\p{L}' -]{0,35}\s+m[' ]a\s+(?:viré|vire|envoyé|envoye|donné|donne|remboursé|rembourse|fait)\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en|reçus?|recus?|touchés?|touches?)\s+))/iu);
+  // A shared temporal prefix must not apply only to the first line.
+  if(pieces.length>1&&/^(?:hier|avant-hier|aujourd'hui)[,;:]?\s+/iu.test(command))return null;
   if(pieces.length<2||pieces.length>12)return null;
   const operations=[],suggestions=[];
   for(const raw of pieces){
@@ -1042,8 +1068,16 @@
     if(!previous||previous.kind!=="income"||!amountCents||amountCents>previous.amountCents)return null;
     parsed=quickSaving("J'ai mis "+linked[1]+" euros de côté",ctx);
    }else{
-    if(/^achet[ée]\s/iu.test(part))part="J'ai "+part;
-    else if(/^\d/.test(part)){if(operations.at(-1)?.kind!=="expense")return null;part="J'ai dépensé "+part}
+    // Recover an omitted "j'ai" only when the action verb is still explicit.
+    if(/^(?:achet[ée]|pris|payé|paye|réglé|regle|dépensé|depense|reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne|envoyé|envoye|viré|vire|versé|verse|mis|placé|place|épargné|epargne|économisé|economise)\s+/iu.test(part))part="J'ai "+part;
+    else if(/^\d/.test(part)){
+     const shop=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+chez\s+/iu.test(part);
+     const item=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:de |d')(?:(?:l'|la |les )?)(?:courses|essence|carburant|gazole|diesel|produits ménagers|lessive)\s+(?:chez|à)\s+/iu.test(part);
+     const receipt=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:reçus?|recus?|touchés?|touches?)\s+/iu.test(part);
+     if(operations.length===0&&!(shop||item||receipt))return null;
+     if(operations.length>0&&!receipt&&operations.at(-1)?.kind!=="expense")return null;
+     if(!receipt)part=(item?"J'ai fait ":"J'ai dépensé ")+part;
+    }
     parsed=quickSingleMovement(part,ctx);
    }
    if(!parsed?.ok||parsed.value.kind!=="draft"||parsed.value.operations.length!==1)return null;
