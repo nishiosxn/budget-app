@@ -122,7 +122,7 @@
     '<span>'+esc(c.name)+'</span><span>'+esc(money(c.before))+' → <strong>'+esc(money(c.after))+'</strong></span>'+
     '</div>').join("")+'</div>':"")+'</div>';
  }
- function render(){
+ function renderBudgetCard(){
   if(typeof document==="undefined")return;
   const host=document.getElementById("categoryDistribution");if(!host)return;
   const resolved=modelFromApp();if(!resolved)return;
@@ -152,9 +152,9 @@
    '<p class="bd-footnote">Ces montants sont des enveloppes prévues, pas des dépenses effectuées.</p>';
  }
  function updateGrid(){if(typeof renderCategories==="function"&&typeof metrics==="function")renderCategories(metrics())}
- function choose(key){
+ function chooseBudgetSegment(key){
   if(!ui.items.some(item=>item.key===key))return;
-  ui.selected=ui.selected===key?null:key;ui.hovered=null;render();updateGrid();
+  ui.selected=ui.selected===key?null:key;ui.hovered=null;renderBudgetCard();updateGrid();
  }
  function tooltipFor(key){
   if(typeof document==="undefined")return;
@@ -195,12 +195,12 @@
   host.dataset.bound="1";
   host.addEventListener("click",event=>{
    const b=event.target.closest("button");if(!b||!host.contains(b))return;
-   if(b.dataset.bdScope){ui.scope=b.dataset.bdScope;ui.selected=null;ui.showChanges=false;render();updateGrid();return}
-   if(b.dataset.bdLevel){ui.level=b.dataset.bdLevel;ui.selected=null;render();updateGrid();return}
-   if(b.dataset.bdKey){choose(b.dataset.bdKey);return}
+   if(b.dataset.bdScope){ui.scope=b.dataset.bdScope;ui.selected=null;ui.showChanges=false;renderBudgetCard();updateGrid();return}
+   if(b.dataset.bdLevel){ui.level=b.dataset.bdLevel;ui.selected=null;renderBudgetCard();updateGrid();return}
+   if(b.dataset.bdKey){chooseBudgetSegment(b.dataset.bdKey);return}
    const action=b.dataset.bdAction;
-   if(action==="clear"){ui.selected=null;render();updateGrid()}
-   else if(action==="changes"){ui.showChanges=!ui.showChanges;render()}
+   if(action==="clear"){ui.selected=null;renderBudgetCard();updateGrid()}
+   else if(action==="changes"){ui.showChanges=!ui.showChanges;renderBudgetCard()}
    else if(action==="view"){scrollToCategories()}
    else if(action==="edit"){
     const selected=selection(),id=selected?.ids.length===1?selected.ids[0]:null;
@@ -209,7 +209,7 @@
   });
   host.addEventListener("change",event=>{
    if(event.target.matches("[data-bd-sort]")){
-    ui.sort=event.target.value==="order"?"order":"amount";render();updateGrid();
+    ui.sort=event.target.value==="order"?"order":"amount";renderBudgetCard();updateGrid();
    }
   });
   host.addEventListener("pointerover",event=>{
@@ -235,8 +235,8 @@
    if(event.key==="Escape"&&ui.hovered){ui.hovered=null;tooltipFor(null)}
   });
  }
- root.SmartBudgetCategoryDistribution=Object.freeze({buildModel,render(){attach();render()},filter,clear(){
-  ui.selected=null;render();updateGrid();
+ root.SmartBudgetCategoryDistribution=Object.freeze({buildModel,render(){attach();renderBudgetCard()},filter,clear(){
+  ui.selected=null;renderBudgetCard();updateGrid();
  },__state:ui});
  attach();
 })(globalThis);
