@@ -2,6 +2,7 @@ import "../_shared/smart-assistant-core.js";
 import {createAssistantGateway} from "./gateway.mjs";
 import {createTransactionCommit} from "./commit.mjs";
 import {createCategoryCommit} from "./category-commit.mjs";
+import {createBatchCommit} from "./batch-commit.mjs";
 
 const originAllowed="https://nishiosxn.github.io";
 const env=(name:string)=>Deno.env.get(name)||"";
@@ -144,7 +145,32 @@ const commitCategory=createCategoryCommit({
   return await r.json();
  }
 });
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory});
+// All monetary changes in one SQL transaction. The Edge server never grants
+// its service credential to a user, and both allowlists are checked again.
+const commitBatch=createBatchCommit({
+ validateReview,
+ validateMixedDraft:(v:unknown,c:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateMixedDraft(v,c),
+ recognize:quickExpense,
+ readCategories:(token:string,householdId:string)=>rest(token,"/rest/v1/categories",{
+  select:"id,legacy_id,type,is_saving,owner_slot",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"
+ }),
+ writeBatch:async ({householdId,userId,requestId,actions}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!key||!uuidPattern.test(householdId)||!uuidPattern.test(userId)
+    ||!allowlist.has(householdId)||!allowedUsers.has(userId))
+   throw Error("Batch authorization unavailable");
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_commit_batch_pilot_v1",{
+   method:"POST",
+   headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},
+   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,
+    p_request_id:requestId,p_actions:actions}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic batch rejected");
+  return await r.json();
+ }
+});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
