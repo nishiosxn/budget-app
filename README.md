@@ -2,6 +2,12 @@
 
 Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 
+## Refonte Catégories V3.1 — prototype isolé
+
+- [Démo interactive fictive de la nouvelle carte](https://nishiosxn.github.io/budget-app/previews/pr-49/) (aucune authentification, aucune écriture financière).
+- [PR #49](https://github.com/nishiosxn/budget-app/pull/49) : branche `work/v3.1-category-repartition` créée depuis `develop`, en brouillon pour validation UX.
+- Remplacement de la carte d'échéances dans Catégories par une répartition interactive des budgets prévus, sans toucher aux abonnements ni aux récurrences. La branche `main` et Smart Assistant restent inchangés.
+
 ## Accès
 
 - **Production actuelle avant promotion V3.0 : V2.8.1** : https://nishiosxn.github.io/budget-app/
