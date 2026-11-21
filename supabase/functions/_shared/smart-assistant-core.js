@@ -1031,6 +1031,13 @@
    const day=new Date(ctx.today+"T12:00:00Z");
    day.setUTCDate(day.getUTCDate()-(moment==="hier"?1:2));date=day.toISOString().slice(0,10);
   }
+  // Bounded natural-language shortcuts, no unqualified amount is accepted.
+  const passive=t.match(/^(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:reçus?|recus?|touchés?|touches?)\s+(de |d')([\p{L}][\p{L}' -]{0,49})$/iu);
+  if(passive)t="J'ai reçu "+passive[1]+" euros "+passive[2]+passive[3];
+  else if(/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+chez\s+/iu.test(t))t="J'ai dépensé "+t;
+  else if(/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:de |d')(?:(?:l'|la |les )?)(?:courses|essence|carburant|gazole|diesel|produits ménagers|lessive)\s+(?:chez|à)\s+/iu.test(t))t="J'ai fait "+t;
+  t=t.replace(/^j[' ]ai (?:acheté|achete|pris) pour (?=\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?))/iu,"J'ai dépensé ");
+  t=t.replace(/^j[' ]ai (?:(?:fait|effectué|effectue) une dépense de|(?:effectué|effectue) un achat de) /iu,"J'ai dépensé ");
   const direct=quickDetailedExpense(t,ctx)||quickExpense(t,ctx)||quickContextualExpense(t,ctx)||quickInternalTransfer(t,ctx)||quickFamilyMovement(t,ctx)||quickNamedIncome(t,ctx)||quickSaving(t,ctx);
   let r=direct;
   if(!r){
@@ -1045,7 +1052,12 @@
  }
  function quickMovementBatch(command,ctx){
   // Full clause matching. Decimal commas in amounts are not separators.
-  const pieces=command.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:et|puis)\s+)(?=(?:j[' ]ai\s+|achet[ée]\s+|mets[- ]en\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en)\s+))/iu);
+  // Separate only explicitly introduced actions, never decimal commas.
+  // Invalid individual clauses invalidate the entire local proposal.
+  const clean=command.replace(/[,;]\s*(?=(?:et\s+)?(?:puis|ensuite|et)\b)/giu," ");
+  const pieces=clean.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:(?:et\s+)?ensuite|et|puis)\s+)(?=(?:j[' ]ai\s+|(?:achet[ée]|pris|payé|paye|réglé|regle|dépensé|depense|reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne|envoyé|envoye|viré|vire|versé|verse|mis|placé|place|épargné|epargne|économisé|economise)\s+|mets[- ]en\s+|[\p{Lu}][\p{L}' -]{0,35}\s+m[' ]a\s+(?:viré|vire|envoyé|envoye|donné|donne|remboursé|rembourse|fait)\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en|reçus?|recus?|touchés?|touches?)\s+))/iu);
+  // A shared temporal prefix must not apply only to the first line.
+  if(pieces.length>1&&/^(?:hier|avant-hier|aujourd'hui)[,;:]?\s+/iu.test(command))return null;
   if(pieces.length<2||pieces.length>12)return null;
   const operations=[],suggestions=[];
   for(const raw of pieces){
@@ -1056,8 +1068,16 @@
     if(!previous||previous.kind!=="income"||!amountCents||amountCents>previous.amountCents)return null;
     parsed=quickSaving("J'ai mis "+linked[1]+" euros de côté",ctx);
    }else{
-    if(/^achet[ée]\s/iu.test(part))part="J'ai "+part;
-    else if(/^\d/.test(part)){if(operations.at(-1)?.kind!=="expense")return null;part="J'ai dépensé "+part}
+    // Recover an omitted "j'ai" only when the action verb is still explicit.
+    if(/^(?:achet[ée]|pris|payé|paye|réglé|regle|dépensé|depense|reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne|envoyé|envoye|viré|vire|versé|verse|mis|placé|place|épargné|epargne|économisé|economise)\s+/iu.test(part))part="J'ai "+part;
+    else if(/^\d/.test(part)){
+     const shop=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+chez\s+/iu.test(part);
+     const item=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:de |d')(?:(?:l'|la |les )?)(?:courses|essence|carburant|gazole|diesel|produits ménagers|lessive)\s+(?:chez|à)\s+/iu.test(part);
+     const receipt=/^\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:reçus?|recus?|touchés?|touches?)\s+/iu.test(part);
+     if(operations.length===0&&!(shop||item||receipt))return null;
+     if(operations.length>0&&!receipt&&operations.at(-1)?.kind!=="expense")return null;
+     if(!receipt)part=(item?"J'ai fait ":"J'ai dépensé ")+part;
+    }
     parsed=quickSingleMovement(part,ctx);
    }
    if(!parsed?.ok||parsed.value.kind!=="draft"||parsed.value.operations.length!==1)return null;
