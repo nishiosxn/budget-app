@@ -2,6 +2,12 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ab — correction affichage du pilote (21 novembre 2026)
+
+- Revue mixte de nouveau conforme à la DA 31z : icônes, montants, variations, jauge d'utilisation, contrôles d'édition et simulation ; aucun composant parallèle.
+- Correction d'une exception JavaScript qui masquait le bouton de simulation et affichait à tort « Communication interrompue » après réception du résultat.
+- Tests automatisés du rendu et de la simulation, CI App integrity. Modifications financières réelles toujours limitées aux transactions simples déjà validées, pas aux budgets/créations de catégories.
+
 ### 31aa — correction Smart Assistant (pilote uniquement, 21 novembre 2026)
 
 - Découpe sûre d'une demande mixte : augmentation du budget existant + création de catégorie indépendante, sans réinterprétation silencieuse par Gemma.
