@@ -368,7 +368,7 @@ test("31af: explicit category confirmation has unique retry token and never crea
  assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
  assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
  assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
- assert.match(js,/category, son budget et la dépense initiale ensemble/);
+ assert.match(js,/catégorie, son budget et la dépense initiale ensemble/);
  assert.match(js,/canWrite\?"Confirmer":"Simuler"/);
  assert.match(js,/r\.body\.commit\.requestId===requestId/);
  assert.match(js,/renderCategoryDraft\(v,ctx,command\)/);
