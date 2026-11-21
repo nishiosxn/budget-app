@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31aa/);assert.match(html,/live-ui\.js\?v=31aa/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31aa/);assert.match(html,/live-ui\.js\?v=31ab/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Confirmé en simulation/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -208,4 +208,54 @@ test("31aa: mixed review stays simulation-only and validates category creation s
  assert.match(js,/Nouveau budget/);
  assert.match(js,/Simulation uniquement : les catégories et budgets ne sont pas enregistrés/);
  assert.match(js,/else if\(v\.kind==="mixedDraft"\)\{renderMixedDraft/);
+});
+
+
+test("31ab: mixed review renders the 31z card structure, controls and no runtime error",async()=>{
+ const vm=await import("node:vm"),source=js;
+ const helperStart=source.indexOf(" const iconPaths=");
+ const helperEnd=source.indexOf(" function renderCategoryDraft(",helperStart);
+ const begin=source.indexOf(" function mixedBudgetBar("),end=source.indexOf(" function renderCategoryReport(",begin);
+ assert.ok(helperStart>=0&&begin>=0&&end>begin);
+ const events=[];
+ class Node{
+  constructor(tag="div"){this.tag=tag;this.children=[];this.dataset={};this.style={};this.attrs={};this.isConnected=true;this.disabled=false;this.className="";this.textContent="";this.listeners={};}
+  append(...children){this.children.push(...children)}
+  replaceChildren(...children){this.children=children}
+  setAttribute(name,value){this.attrs[name]=String(value)}
+  addEventListener(type,callback){this.listeners[type]=callback}
+  click(){this.listeners.click?.()}
+ }
+ const nodes=[];
+ const context={
+  document:{createElement(tag){const n=new Node(tag);nodes.push(n);return n},createElementNS(_,tag){return new Node(tag)}},
+  result:new Node(),ctx:null,core:{categoryRules:[{key:"home",name:"Maison / entretien",kind:"expense",aliases:["Maison"],icon:"home"}],normalizeCategory:s=>String(s).toLowerCase(),validateMixedDraft:v=>({ok:true,value:v}),validateReview:v=>({ok:true,value:v})},
+  reviewEditor:{key:o=>o.categoryId+"|"+o.date.slice(0,7),planPreview:e=>e.baseline?{beforeCents:e.baseline.beforeCents,afterCents:e.baseline.beforeCents+e.op.amountCents}:null,cents:()=>1000,money:v=>String(v/100),categoryFromFields:()=>({ok:false,error:"non testé"})},
+  euro:n=>(n/100).toFixed(2)+" €",busy:false,pendingReview:null,history:[],status:{dataset:{},textContent:""},
+  readExpenseBudget:async()=>({actualCents:1200}),monthReviewDate:()=> "nov.",
+  reviewButton:label=>{const n=new Node("button");n.textContent=label;events.push(n);return n},
+  compactReviewAction:label=>{const n=new Node("button");n.textContent=label;return n},
+  reviewForm:()=>{},wipe:()=>{}
+ };
+ vm.createContext(context);
+ vm.runInContext(source.slice(helperStart,helperEnd)+"\n"+source.slice(begin,end),context);
+ const ctx={categories:[{id:"home",name:"Maison / entretien",kind:"expense",owner:"B"}],firstMonth:"2026-01",lastMonth:"2028-12",today:"2026-11-21",solo:true,actor:"B"};
+ const draft={kind:"mixedDraft",operations:[{kind:"plan",categoryId:"home",owner:"B",amountCents:1000,date:"2026-11-01",label:"Maison",frequency:"once",planMode:"increase"}],categories:[{kind:"categoryDraft",name:"Lego",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:6000,expenseCents:null}]};
+ context.renderMixedDraft(draft,ctx,[{index:0,beforeCents:5000,afterCents:6000}]);
+ assert.equal(context.result.children.length,1);
+ const group=context.result.children[0];
+ assert.equal(group.children.length,4,"two cards, note, actions");
+ assert.equal(group.children[0].className,"pilot-op");
+ assert.equal(group.children[1].className,"pilot-op");
+ assert.equal(group.children[0].children[0].className,"pilot-op-top");
+ assert.equal(group.children[1].children[0].className,"pilot-op-top");
+ assert.ok(group.children[0].children.some(n=>n.className==="pilot-op-controls"));
+ assert.ok(group.children[1].children.some(n=>n.className==="pilot-op-controls"));
+ assert.ok(events.some(n=>n.textContent==="Simuler"));
+ await Promise.resolve();await Promise.resolve();
+ const gauge=nodes.some(n=>n.attrs.role==="progressbar");assert.equal(gauge,true);
+ const sim=events.find(n=>n.textContent==="Simuler");
+ assert.equal(sim.disabled,false);sim.click();
+ assert.equal(context.status.textContent,"Simulation terminée · aucune écriture.");
+ assert.equal(group.children.length,4);
 });
