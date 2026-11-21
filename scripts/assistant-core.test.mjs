@@ -259,3 +259,39 @@ test("31ai: category starts in the requested month; forward budget persists, spe
  assert.equal(core.readBudgetCents([...budget,{month:"2026-12-01",planned_amount:80,scope:"month"}],"2026-12"),8000);
  assert.equal(core.readBudgetCents([...budget,{month:"2026-12-01",planned_amount:80,scope:"month"}],"2027-01"),9000);
 });
+
+
+test("31ak: voice phrasing for exact household categories stays local and never invents categories",()=>{
+ const c={...ctx,solo:true,actor:"B",today:"2026-11-21",selectedMonth:"2026-11",categories:[
+  {id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"},
+  {id:"courses",name:"Courses",kind:"expense",owner:"B",createdFrom:"2026-09"}
+ ]};
+ for(const command of [
+  "J'ai dépensé 50 euros dans la catégorie Gundam",
+  "J'ai payé 50 € en Gundam",
+  "J'ai fait une dépense de 50 euros dans Gundam",
+  "50 euros de dépense en Gundam",
+  "Ajoute une dépense de 50 euros dans la catégorie Gundam"
+ ]){
+  const parsed=core.quickCommand(command,c);
+  assert.equal(parsed?.ok,true,command);
+  assert.equal(parsed.value.kind,"draft",command);
+  assert.equal(parsed.value.operations.length,1,command);
+  assert.equal(parsed.value.operations[0].categoryId,"gundam",command);
+  assert.equal(parsed.value.operations[0].amountCents,5000,command);
+ }
+ for(const command of ["J'ai dépensé 50 euros dans la catégorie Inconnue","50 euros de dépense en Inconnue"]){
+  const parsed=core.quickCommand(command,c);
+  assert.equal(parsed?.ok,true,command);
+  assert.equal(parsed.value.kind,"clarify",command);
+  assert.match(parsed.value.message,/aucune catégorie ne sera créée automatiquement/i);
+ }
+ for(const dangerous of [
+  "J'ai dépensé 50 euros dans la catégorie Gundam puis crée Courses",
+  "50 euros de dépense en Gundam et 30 euros en Courses",
+  "J'ai dépensé -50 euros dans la catégorie Gundam"
+ ]){
+  const parsed=core.quickCommand(dangerous,c);
+  assert.notEqual(parsed?.value?.kind,"draft",dangerous);
+ }
+});
