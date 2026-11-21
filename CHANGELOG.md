@@ -6,7 +6,7 @@
 - Confirmation des budgets existants (montant fixe, hausse ou baisse), avec portée `month` ou `forward` ; calcul et vérification du budget précédent côté PostgreSQL.
 - Une seule confirmation pour les propositions multiples validées, incluant les créations explicites de catégories et les transactions ponctuelles si compatibles. Refus des lots ambigus, sans catégorie existante ou sans référence budgétaire fiable.
 - Lot SQL atomique avec reçu idempotent, verrou et protection contre les doublons, les baselines obsolètes et les écritures partielles. Migration isolée au foyer test et RPC service-only, fonction de pilote v26.
-- CI : 212 tests applicatifs et 2 contrôles complémentaires réussis. Vérification manuelle des confirmations réelles encore nécessaire ; aucune modification de `main` ni de la DA.
+- CI : 213 tests applicatifs et 2 contrôles complémentaires réussis. La correction de rétablissement du budget `forward` après une modification temporaire du mois initial est déployée côté RPC. Vérification manuelle des confirmations réelles encore nécessaire ; aucune modification de `main` ni de la DA.
 
 
 
