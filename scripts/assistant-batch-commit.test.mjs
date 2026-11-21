@@ -25,7 +25,7 @@ const op=(categoryId,amountCents,planMode="increase",frequency="once")=>({
 function setup(impl=async a=>({status:"created",count:a.actions.length,categoriesCreated:a.actions.filter(x=>x.kind==="create_category").length})){
  const calls=[];
  const commit=createBatchCommit({validateReview:core.validateReview,validateMixedDraft:core.validateMixedDraft,
-  recognize:core.quickCommand,readCategories:async()=>dbCats,writeBatch:async a=>{calls.push(a);return impl(a)}});
+  recognize:core.quickCommand,normalizeCategory:core.normalizeCategory,readCategories:async()=>dbCats,writeBatch:async a=>{calls.push(a);return impl(a)}});
  return {commit,calls};
 }
 const base={token:"authenticated-token-for-testing",householdId,userId,requestId,context:ctx,
@@ -167,4 +167,61 @@ test("31aj: a month-only override at the start of a forward budget preserves lat
  assert.equal(core.readBudgetCents(novemberOverride,"2026-11"),6000);
  assert.equal(core.readBudgetCents(novemberOverride,"2026-12"),5000);
  assert.equal(core.readBudgetCents(novemberOverride,"2027-01"),5000);
+});
+
+
+test("31ak: a mixed request is replay-safe after the first category becomes visible",async()=>{
+ const command="Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros.";
+ const draft=core.quickCommand(command,ctx)?.value;
+ assert.equal(draft?.kind,"mixedDraft");
+ const requests=[];
+ const response=async a=>{
+  requests.push(a);
+  return {status:requests.length===1?"created":"same",count:a.actions.length,
+   categoriesCreated:a.actions.filter(v=>v.kind==="create_category").length};
+ };
+ const {commit}=setup(response);
+ const options={...base,command,draft,expectedPlans:[{index:0,beforeCents:5000}]};
+ const first=await commit(options);
+ assert.equal(first.status,200);assert.equal(first.body.commit.created,true);
+ const visible={...ctx,categories:[...ctx.categories,
+  {id:"lego-existing",name:"LEGO",kind:"expense",owner:"B",createdFrom:"2026-11",hiddenMonths:[]}]};
+ const retry=await commit({...options,context:visible});
+ assert.equal(retry.status,200,"retry must reach SQL receipt despite refreshed catalogue");
+ assert.equal(retry.body.commit.created,false);
+ assert.equal(requests.length,2);
+ assert.equal(requests[0].requestId,requests[1].requestId);
+ assert.deepEqual(requests[0].actions,requests[1].actions,"same request uses exact same SQL payload");
+ const fresh=await commit({...options,context:visible,requestId:"66666666-6666-4666-8666-666666666666"});
+ // SQL's active duplicate guard remains the final authority for a new request.
+ assert.equal(fresh.status,200,"mock SQL is deliberately permissive; duplicate is tested separately");
+});
+test("31ak: lost response followed by retry recovers the same committed batch",async()=>{
+ const command="Ajoute 10 euros au budget maison et crée une catégorie Test Lot avec un budget de 60 euros.";
+ const draft=core.quickCommand(command,ctx)?.value;
+ assert.equal(draft?.kind,"mixedDraft");
+ let persisted=false,writes=0;
+ const {commit,calls}=setup(async a=>{
+  if(!persisted){persisted=true;writes++;throw Error("Response lost AFTER atomic SQL commit")}
+  return {status:"same",count:a.actions.length,categoriesCreated:1};
+ });
+ const args={...base,command,draft,expectedPlans:[{index:0,beforeCents:5000}]};
+ const first=await commit(args);
+ assert.equal(first.status,503);
+ const nextCtx={...ctx,categories:[...ctx.categories,
+  {id:"test-existing",name:"Test Lot",kind:"expense",owner:"B",createdFrom:"2026-11",hiddenMonths:[]}]};
+ const second=await commit({...args,context:nextCtx});
+ assert.equal(second.status,200);
+ assert.equal(second.body.commit.created,false);
+ assert.equal(writes,1,"only one backend write was simulated");
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].requestId,calls[1].requestId);
+});
+test("31ak: mixed creation still needs an explicit command, not a mere expense",async()=>{
+ const draft=core.quickCommand("Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros.",ctx).value;
+ const {commit,calls}=setup();
+ const result=await commit({...base,draft,command:"J'ai dépensé 10 euros chez Lego"});
+ assert.equal(result.status,422);
+ assert.equal(result.body.error,"confirm_creation_not_requested");
+ assert.equal(calls.length,0);
 });
