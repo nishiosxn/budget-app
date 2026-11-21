@@ -119,3 +119,27 @@ test("mixed savings and arbitrary named income bypass quota and Gemma",async()=>
  const r=await handler({...request,body:{...request.body,command:"J'ai dépensé 20 euros chez Action, 15 euros chez McDo, j'ai reçu 15 euros de Lena et j'ai mis 100 euros en épargne"}});
  assert.equal(r.status,200);assert.equal(r.body.metering.source,"local-rules");assert.equal(r.body.metering.tokens.total,0);assert.deepEqual(Array.from(r.body.result.operations,o=>o.kind),["expense","expense","income","saving"]);assert.deepEqual(calls,[]);
 });
+
+test("31ag: expense using the exact named existing category skips AI and quota",async()=>{
+ const present={...ctx,solo:true,actor:"B",today:"2026-11-21",selectedMonth:"2026-11",categories:[{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"}]};
+ let reserved=0,inferred=0;
+ const {handler}=setup({
+  authorize:async()=>({context:present}),
+  quickExpense:core.quickCommand,
+  reserve:async()=>{reserved++;return true},
+  infer:async()=>{inferred++;throw Error("Gemma must not run")}
+ });
+ const requestText="ajoute 50 euro de depense en gundam";
+ const r=await handler({...request,body:{...request.body,command:requestText}});
+ assert.equal(r.status,200);
+ assert.equal(r.body.model,"local-rules");
+ assert.equal(r.body.result.kind,"draft");
+ assert.equal(r.body.result.operations[0].categoryId,"gundam");
+ assert.equal(r.body.result.operations[0].amountCents,5000);
+ assert.equal(r.body.metering.tokens.total,0);
+ assert.equal(r.body.metering.reservedNeurons,0);
+ assert.equal(reserved,0);assert.equal(inferred,0);
+ const absent=await handler({...request,body:{...request.body,command:requestText},token:request.token});
+ assert.equal(absent.status,200);
+ assert.equal(reserved,0);
+});
