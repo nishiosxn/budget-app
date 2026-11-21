@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31al — correction des guillemets dans les commandes Smart Engine (21 novembre 2026)
+- Une dépense citée telle que `« J’ai payé 50 € en Gundam. »` est désormais interprétée localement : **0 token IA** au lieu de 2 208 tokens Gemma observés sur la capture.
+- Les enveloppes équilibrées `« »`, `“ ”`, `„ “`, `‹ ›` et `" "` sont retirées une seule fois avant le parsing. Les guillemets intérieurs ne sont pas touchés. Catégorie inconnue ou formulation ambiguë = aucune création implicite.
+- Scénarios de non-régression pour dépenses, budgets, créations et lots mixtes cités ; garde-fous de confirmation et d'accès Supabase vérifiés sans écrire de transactions.
+- CI réussie : **222 tests applicatifs + 2 contrôles complémentaires**. Backend pilote v28, cache frontend `31al`, DA et production inchangées. Recette utilisateur authentifiée et responsive encore nécessaire.
+
+
+
 ### 31ak — fiabilité de la confirmation et commandes vocales à 0 token (21 novembre 2026)
 - Correctif du rejeu après réponse perdue pour les lots qui créent une catégorie : l'apparition de celle-ci dans le foyer ne bloque plus le même `requestId`, tout en préservant les refus SQL des nouveaux doublons.
 - Reconnaissance déterministe de plusieurs formulations vocales de dépenses dans une catégorie **déjà existante** ; nom inconnu = clarification, jamais de création implicite ou de dépense devinée.
