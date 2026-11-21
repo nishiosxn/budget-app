@@ -622,7 +622,7 @@
    const month=c.selectedMonth||c.today.slice(0,7),amount=centsFromText(direct[2]);
    if(amount===null)return null;
    const draft={kind:"categoryDraft",name:direct[1].trim(),owner:c.actor,month,date:c.today,budgetCents:amount,expenseCents:null};
-   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"La catégorie "+draft.name+" existe déjà. Précise si tu souhaites modifier son budget."},c);
+   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+draft.name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
    return validateCategoryDraft(draft,c);
   }
   // Split clauses only at sentence punctuation or a conjunction followed by an action.
@@ -646,12 +646,9 @@
   const month=c.selectedMonth||c.today.slice(0,7);
   const matches=c.categories.filter(x=>normalizeCategory(x.name)===normalizeCategory(name));
   if(matches.length){
-   if(matches.length!==1||matches[0].kind!=="expense")return {ok:true,value:{kind:"clarify",message:"Une catégorie nommée "+name+" existe déjà. Choisis-la dans les catégories."}};
-   const cat=matches[0],operations=[];
-   if(budgetCents!==null)operations.push({kind:"plan",categoryId:cat.id,owner:cat.owner,amountCents:budgetCents,date:month+"-01",label:cat.name,frequency:"once",planMode:"set"});
-   if(expenseCents!==null)operations.push({kind:"expense",categoryId:cat.id,owner:c.actor,amountCents:expenseCents,date:c.today,label:cat.name,frequency:"once"});
-   if(!operations.length)return {ok:true,value:{kind:"answer",message:"La catégorie "+cat.name+" existe déjà."}};
-   const checked=validateReview({kind:"draft",operations},c);return checked.ok?checked:null;
+   // A CREATE request must never silently become a SET-budget or expense on
+   // an existing category, even when the spoken command contains both.
+   return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
   }
   const checked=validateCategoryDraft({kind:"categoryDraft",name,owner:c.actor,month,date:c.today,budgetCents,expenseCents},c);return checked.ok?checked:null;
  }
