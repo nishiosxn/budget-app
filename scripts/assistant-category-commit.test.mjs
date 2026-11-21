@@ -45,11 +45,9 @@ test("31af: only an explicit creation request is accepted; expenses and category
  }
  assert.equal(calls.length,0);
 });
-test("31af: invalid, duplicate, mixed and category-with-expense requests are rejected before writes",async()=>{
+test("31af: invalid, mixed and category-with-expense requests are rejected before writes",async()=>{
  const {commit,calls}=create();
- const anotherCtx={...ctx,categories:[...ctx.categories,{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-09"}]};
  for(const bad of [
-  {...base,context:anotherCtx},
   {...base,context:{...ctx,solo:false}},
   {...base,draft:{...draft,expenseCents:4000}},
   {...base,draft:{...draft,budgetCents:null}},
@@ -106,4 +104,24 @@ test("31af: SQL RPC remains service-only, atomic and contains duplicate/replay g
  assert.match(server,/\/rest\/v1\/rpc\/smart_assistant_create_category_pilot_v1/);
  assert.match(server,/allowlist\.has\(householdId\)/);
  assert.match(server,/allowedUsers\.has\(userId\)/);
+});
+
+test("31ag: category replay uses the same requestId even after household catalog refresh",async()=>{
+ const refreshed={...ctx,categories:[...ctx.categories,{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"}]};
+ const calls=[];
+ const {commit}=create(async payload=>{calls.push(payload);
+  return {status:calls.length===1?"created":"same",name:payload.name,categoryId};
+ });
+ const first=await commit(base);assert.equal(first.status,200);assert.equal(first.body.commit.created,true);
+ const repeated=await commit({...base,context:refreshed});
+ assert.equal(repeated.status,200);assert.equal(repeated.body.commit.created,false);
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].requestId,calls[1].requestId);
+ assert.equal(calls[0].name,calls[1].name);
+ // A fresh request for an already-present name still reaches the database's
+ // duplicate constraint, but can never create or silently modify it.
+ const different=create(()=>({status:"duplicate"}));
+ const other=await different.commit({...base,requestId:"55555555-5555-4555-8555-555555555555",context:refreshed});
+ assert.equal(other.status,409);assert.equal(other.body.error,"confirm_category_exists");
+ assert.equal(different.calls.length,1);
 });
