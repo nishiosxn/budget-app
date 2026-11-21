@@ -225,6 +225,8 @@
   const hasBudget=budgets.some(r=>r.scope==="forward"&&String(r.month).slice(0,7)<=month.slice(0,7)||r.scope==="month"&&String(r.month).slice(0,7)===month.slice(0,7));
   return {...totals,hasBudget};
  }
+ const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
+ function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
  function renderCategoryDraft(v,ctx){
   const draft={...v};pendingReview=draft;let editing=false,locked=false;
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
@@ -335,7 +337,7 @@
    const note=document.createElement("p");note.className="pilot-review-message";
    note.textContent=locked?"Simulation terminée · aucune écriture.":editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : simulation désactivée.":"Simulation uniquement : les catégories et budgets ne sont pas enregistrés.";
    group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions",cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
    cancel.disabled=locked;ok.disabled=locked||editing!==-1||!ready;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
@@ -374,8 +376,7 @@
    const p=previews.find(x=>x.index===i),baseline=o.kind==="plan"&&original===o.categoryId&&o.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(o),beforeCents:p.beforeCents}:null;
    return {op:o,ruleKey:rule?.key||null,baseline};
   });
-  const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
-  function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
+
 
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&pendingReview===review&&!locked}
@@ -565,8 +566,10 @@
   e.preventDefault();if(!session||busy||send.disabled)return;voice.stop();
   const command=input.value.trim();if(!command)return;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
+  let receivedResponse=false;
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
    if(current!==epoch)return;
+   receivedResponse=true;
    if(r.body.metering)displayLastMeter(r.body.metering);
    void refreshQuota();
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
@@ -587,7 +590,7 @@
    status.dataset.source=local?"smart-engine":"gemma";
    const tokenCount=r.body.metering?.tokens?.total;
    status.textContent=local?"Smart Engine · 0 token IA":("Gemma 4 · "+(Number.isSafeInteger(tokenCount)?new Intl.NumberFormat("fr-FR").format(tokenCount)+" tokens":"tokens non disponibles"));
-  }catch{if(current===epoch){status.textContent="Communication interrompue. Réessaie sans envoi automatique.";void refreshQuota()}}
+  }catch{if(current===epoch){status.textContent=receivedResponse?"Impossible d’afficher la proposition. Aucune opération enregistrée.":"Communication interrompue. Réessaie sans envoi automatique.";if(!receivedResponse)void refreshQuota()}}
   finally{if(current===epoch){busy=false;send.disabled=false}}
  });
 })();
