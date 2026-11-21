@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "a2e49ac8903a7f4f3a156fd042b7c66607f0e3a6",
+  "sourceCommit": "dc2d39f6801f9f3459c06a40dbfbbd546f8ff744",
   "mode": "isolated-connected-pilot-confirmation-v1",
   "production": false,
   "pilotEdgeVersion": 20,
-  "pilotVersion": "31aa"
+  "pilotVersion": "31ab"
 }
