@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31am — proposition interactive pour une catégorie absente (21 novembre 2026)
+- Une dépense qui nomme une catégorie absente affiche une carte Deep Dark intégrée : choisir une catégorie existante ou saisir nom et budget de la nouvelle catégorie, avec dépense et mois préremplis. Aucune catégorie n'est créée par défaut.
+- Seul le clic « Créer et enregistrer » déclenche la création atomique catégorie + budget mensuel reconduit + dépense initiale. Le choix existant utilise la confirmation transactionnelle classique. Le serveur contrôle la demande d'origine et refuse les montants/dates modifiés.
+- Confirmation JWT isolée au foyer test, anti-doublon SQL et rejeu sûr après coupure réseau. Aucun appel Gemma sur la proposition locale.
+- **231 contrôles automatisés réussis**, Edge Function pilote v29 active et six sources vérifiées. Aucun changement de production, SQL ou DA hors carte. Rendu réel et écriture authentifiée à valider dans le navigateur.
+
+
+
 ### 31al — correction des guillemets dans les commandes Smart Engine (21 novembre 2026)
 - Une dépense citée telle que `« J’ai payé 50 € en Gundam. »` est désormais interprétée localement : **0 token IA** au lieu de 2 208 tokens Gemma observés sur la capture.
 - Les enveloppes équilibrées `« »`, `“ ”`, `„ “`, `‹ ›` et `" "` sont retirées une seule fois avant le parsing. Les guillemets intérieurs ne sont pas touchés. Catégorie inconnue ou formulation ambiguë = aucune création implicite.
