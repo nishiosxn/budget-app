@@ -451,8 +451,19 @@
   for(const [label,value,cls] of [["Budget prévu",r.plannedCents,"pilot-plan"],["Dépenses réelles",r.actualCents,"pilot-negative"],["Reste sur le budget",r.remainingCents,r.remainingCents>=0?"pilot-positive":"pilot-negative"]]){const line=document.createElement("div");line.className="pilot-review-total";const n=document.createElement("span"),a=document.createElement("strong");n.textContent=label;a.textContent=euro(value);a.className=cls;line.append(n,a);group.append(line)}
   const note=document.createElement("p");note.className="pilot-op-meta";note.textContent="Données enregistrées du foyer de test"+(r.recurringCents?" · dont récurrences : "+euro(r.recurringCents):"")+". Pas de modification ni de vérification bancaire.";group.append(note);result.append(group);return true;
  }
+ function canSaveBatch(entries,ctx){
+  const operations=entries.map(e=>e.op);
+  return ctx.solo&&ctx.actor==="B"&&operations.some(o=>o.kind==="plan")&&
+   operations.every(o=>["plan","expense","income"].includes(o.kind)&&o.categoryId!==null&&o.owner==="B"&&
+    (o.kind==="plan"||o.frequency==="once"))&&
+   entries.filter(e=>e.op.kind==="plan").every(e=>!!reviewEditor.planPreview(e))&&
+   new Set(entries.filter(e=>e.op.kind==="plan").map(e=>e.op.categoryId)).size===entries.filter(e=>e.op.kind==="plan").length;
+ }
  function canSavePilot(entries,ctx){
   return ctx.solo&&ctx.actor==="B"&&entries.every(({op:o})=>["expense","income"].includes(o.kind)&&o.frequency==="once"&&o.categoryId!==null&&o.owner==="B");
+ }
+ async function saveBatchDraft(requestId,command,draft,expectedPlans){
+  return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm_batch",householdId:session.householdId,requestId,command,draft,expectedPlans})});
  }
  async function savePilotDraft(requestId,draft){
   return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm",householdId:session.householdId,requestId,draft})});
@@ -460,7 +471,7 @@
  function setSavingPilot(value){
   busy=value;send.disabled=value;$("cancel").disabled=value;$("pilotLogout").disabled=value;
  }
- function renderDraft(v,ctx,previews,suggestions){
+ function renderDraft(v,ctx,previews,suggestions,sourceCommand){
   ruleContext=ctx;showRules();
   const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false,saved=false,attempted=false,requestId=null,saveError="";
   const budgetReads=new Map();
@@ -587,8 +598,8 @@
    }
    const checked=reviewEditor.validate(entries,ctx),creationKeys=[...new Set(entries.filter(e=>e.op.categoryId===null&&e.ruleKey).map(e=>e.ruleKey))];
    if(!locked&&creationKeys.length){const creation=document.createElement("p");creation.className="pilot-review-message";creation.dataset.creation="true";creation.textContent="À créer : "+creationKeys.map(k=>core.categoryRules.find(r=>r.key===k)?.name||k).join(", ");group.append(creation)}
-   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)?"Enregistrement réel · foyer test uniquement.":"Simulation · création, budget, épargne ou récurrence pas encore enregistrés.");group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const real=canSavePilot(entries,ctx),cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
+   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)||canSaveBatch(entries,ctx)?"Confirmation atomique · foyer test uniquement.":"Simulation · catégorie non attribuée, épargne ou récurrence non enregistrable.");group.append(note);
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const batch=canSaveBatch(entries,ctx),real=canSavePilot(entries,ctx)||batch,cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
    cancel.disabled=locked||attempted;ok.disabled=locked||busy||editing!==-1||!checked.ok;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async()=>{
@@ -597,8 +608,11 @@
     if(!requestId){if(typeof crypto.randomUUID!=="function"){saveError="Navigateur incompatible avec l’enregistrement sécurisé.";draw();return}requestId=crypto.randomUUID()}
     attempted=true;saveError="";setSavingPilot(true);draw();status.textContent="Enregistrement…";
     try{
-     const r=await savePilotDraft(requestId,{kind:"draft",operations:entries.map(e=>e.op)});
-     if(!r.ok||r.body.commit?.requestId!==requestId||r.body.commit?.count!==entries.length)throw Error("Unverified save");
+     const batchDraft={kind:"draft",operations:entries.map(e=>e.op)};
+     const expectation=entries.flatMap((entry,i)=>entry.op.kind==="plan"?[{index:i,beforeCents:entry.baseline?.beforeCents}]:[]);
+     const r=batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft);
+     if(!r.ok||r.body.commit?.requestId!==requestId||r.body.commit?.count!==entries.length||
+       (batch&&r.body.commit?.kind!=="batch"))throw Error("Unverified save");
      saved=true;locked=true;pendingReview=null;history=[];budgetReads.clear();status.dataset.source="";status.textContent="Enregistré · aucun appel IA.";
     }catch{
      saveError="Enregistrement non vérifié. Réessaie le même lot ; ne le ressaisis pas.";
@@ -677,8 +691,8 @@
    // No await between this transition and rendering; send stays disabled until finally.
    busy=false;
    if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx,command)}
-   else if(v.kind==="mixedDraft"){renderMixedDraft(v,ctx,r.body.planPreviews||[])}
-   else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[]);}
+   else if(v.kind==="mixedDraft"){renderMixedDraft(v,ctx,r.body.planPreviews||[],command)}
+   else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[],command);}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
