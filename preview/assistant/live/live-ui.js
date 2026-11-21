@@ -329,16 +329,16 @@
   }
   host.append(pane);
  }
- function renderMixedDraft(v,ctx,previews){
+ function renderMixedDraft(v,ctx,previews,sourceCommand){
   const draft=JSON.parse(JSON.stringify(v));pendingReview=draft;
-  let locked=false,editing=-1;
+  let locked=false,editing=-1,attempted=false,saving=false,saveError="",requestId=null,saved=false;
   const budgetReads=new Map();
   const baselines=draft.operations.map((op,i)=>{
    const p=previews.find(p=>p.index===i);
    return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents}:null;
   });
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
-  function active(){return !busy&&pendingReview===draft&&!locked}
+  function active(){return !busy&&!saving&&pendingReview===draft&&!locked}
   function draw(){
    group.replaceChildren();
    for(const [i,op] of draft.operations.entries()){
@@ -378,7 +378,7 @@
      const warning=document.createElement("p");warning.className="pilot-review-message";
      warning.textContent="Budget actuel indisponible · simulation bloquée.";card.append(warning);
     }
-    if(!locked){
+    if(!locked&&!attempted){
      if(editing===i){
       reviewForm(card,[
        {key:"amount",label:"Montant (€)",value:reviewEditor.money(op.amountCents),money:true,required:true},
@@ -410,7 +410,7 @@
     money.textContent=cat.budgetCents===null?"Sans budget":euro(cat.budgetCents);
     top.append(symbol,info,money);card.append(top);
     if(cat.budgetCents!==null)mixedBudgetBar(card,cat.budgetCents,0,{name:cat.name,month:cat.month,isNew:true});
-    if(!locked){
+    if(!locked&&!attempted){
      if(editing===pos){
       reviewForm(card,[
        {key:"name",label:"Nom de la catégorie",value:cat.name,wide:true,maxLength:60,required:true},
@@ -430,14 +430,35 @@
     }
     group.append(card);
    }
-   const checked=core.validateMixedDraft(draft,ctx),ready=checked.ok&&draft.operations.every((op,i)=>op.kind==="plan"&&reviewEditor.planPreview({op,baseline:baselines[i]}));
+   const checked=core.validateMixedDraft(draft,ctx),ready=checked.ok&&draft.operations.every((op,i)=>op.kind==="plan"&&!!reviewEditor.planPreview({op,baseline:baselines[i]}));
+   const real=ready&&ctx.solo&&ctx.actor==="B"&&draft.operations.every(op=>op.owner==="B"&&op.categoryId!==null)&&
+    draft.categories.every(c=>c.owner==="B"&&c.budgetCents!==null)&&
+    new Set(draft.operations.map(op=>op.categoryId)).size===draft.operations.length;
    const note=document.createElement("p");note.className="pilot-review-message";
-   note.textContent=locked?"Simulation terminée · aucune écriture.":editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : simulation désactivée.":"Simulation uniquement : les catégories et budgets ne sont pas enregistrés.";
+   note.textContent=locked?(saved?"Opérations enregistrées ensemble dans le foyer de test.":"Simulation terminée · aucune écriture."):
+    saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : confirmation indisponible.":
+    real?"Confirmer enregistre toutes les opérations ou aucune. Budget de nouvelle catégorie reconduit chaque mois.":"Simulation uniquement · aucune écriture.");
    group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
-   cancel.disabled=locked;ok.disabled=locked||editing!==-1||!ready;
+   const actions=document.createElement("div");actions.className="pilot-review-actions";
+   const cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?"Confirmer les "+(draft.operations.length+draft.categories.length)+" opérations":"Simuler","sb-assistant-send");
+   cancel.disabled=locked||saving||attempted;ok.disabled=locked||saving||editing!==-1||!ready;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
-   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
+   ok.addEventListener("click",async()=>{
+    if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;
+    if(!real){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return;}
+    if(!requestId){if(typeof crypto.randomUUID!=="function"){saveError="Navigateur incompatible avec la confirmation sécurisée.";draw();return;}requestId=crypto.randomUUID()}
+    attempted=true;saving=true;saveError="";setSavingPilot(true);draw();status.textContent="Enregistrement atomique…";
+    try{
+     const expectation=draft.operations.map((op,i)=>({index:i,beforeCents:baselines[i]?.beforeCents}));
+     const r=await saveBatchDraft(requestId,sourceCommand,draft,expectation);
+     if(!r.ok||r.body.commit?.kind!=="batch"||r.body.commit?.requestId!==requestId||
+       r.body.commit?.count!==draft.operations.length+draft.categories.length||
+       r.body.commit?.categoriesCreated!==draft.categories.length)throw Error("Confirmation non vérifiée.");
+     saved=true;locked=true;pendingReview=null;history=[];status.dataset.source="";
+     status.textContent="Lot enregistré dans le foyer de test.";void loadRuleCategories();
+    }catch{saveError="Confirmation non vérifiée. Réessaie le même lot sans le ressaisir.";status.dataset.source="";status.textContent="Confirmation à vérifier."}
+    finally{saving=false;setSavingPilot(false);draw()}
+   });
    actions.append(cancel,ok);group.append(actions);
   }
   draw();
