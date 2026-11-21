@@ -13,7 +13,7 @@ function render(){
  document.getElementById("accountBalanceB").textContent=euro(m.accountBalanceB);document.getElementById("accountBalanceA").textContent=euro(m.accountBalanceA);
  document.getElementById("personBDetail").textContent=`Départ ${euro(m.openingB)} · +${euro(m.incomeB)} · −${euro(m.expenseB+m.savingBShare)}`;
  document.getElementById("personADetail").textContent=`Départ ${euro(m.openingA)} · +${euro(m.incomeA)} · −${euro(m.expenseA+m.savingAShare)}`;
- renderSections(m);renderTop(m);renderRecent(m);renderCategories(m);if(typeof renderSubscriptionsOverview==="function")renderSubscriptionsOverview(m);renderHistory(m);renderTracking();
+ renderSections(m);renderTop(m);renderRecent(m);globalThis.SmartBudgetCategoryDistribution?.render();renderCategories(m);renderHistory(m);renderTracking();
  window.SmartBudgetMotion?.afterRender();
  document.getElementById("transactionCount").textContent=`${m.tx.length} opération${m.tx.length>1?"s":""}`;
 }
@@ -147,13 +147,55 @@ function categoryBulkButtons(type,section,label){
  </div>`;
 }
 function renderCategories(m){
- const incomeCats=visibleIncomeCategories(),incomeActual=m.income,incomePlanned=sum(incomeCats.map(c=>c.budget));
- const incomeArchived=archivedCategoriesFor("income","",m),incomeCard=`<article class="card cat-section income-card"><div class="cat-section-head"><div class="cat-section-title">Revenus<div class="cat-section-total">${euro(incomeActual)} réel · ${euro(incomePlanned)} prévu</div></div>${categoryBulkButtons("income","","Revenus")}</div><div class="income-list">${incomeCats.map(c=>categoryRow(c,m.incMap[c.id]||0,"income",m)).join("")}</div>${archivedBlock(incomeArchived,m.incMap,"income")}${restorableBlock(restorableCategoriesFor("income",""),"income")}<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un champ</button></article>`;
+ const filter=globalThis.SmartBudgetCategoryDistribution?.filter()||null;
+ const ids=filter?new Set(filter.ids):null;
+ const showExtras=!filter;
+ const selected=(categories,type)=>filter?(filter.type===type?categories.filter(c=>ids.has(c.id)):[]):categories;
+ const incomeCats=selected(visibleIncomeCategories(),"income");
+ const incomeActual=filter?sum(incomeCats.map(c=>m.incMap[c.id]||0)):m.income;
+ const incomePlanned=sum(incomeCats.map(c=>c.budget));
+ const incomeArchived=showExtras?archivedCategoriesFor("income","",m):[];
+ const incomeCard='<article class="card cat-section income-card"><div class="cat-section-head"><div class="cat-section-title">Revenus<div class="cat-section-total">'+
+  euro(incomeActual)+' réel · '+euro(incomePlanned)+' prévu</div></div>'+(showExtras?categoryBulkButtons("income","","Revenus"):"")+
+  '</div><div class="income-list">'+incomeCats.map(c=>categoryRow(c,m.incMap[c.id]||0,"income",m)).join("")+'</div>'+
+  (showExtras?archivedBlock(incomeArchived,m.incMap,"income")+restorableBlock(restorableCategoriesFor("income",""),"income")+
+   '<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un champ</button>':"")+'</article>';
  const sections=["Obligatoires","Abonnements","Vie courante"];
- const expenseCards=sections.map(section=>{const cats=visibleExpenseCategories().filter(c=>c.section===section),archived=archivedCategoriesFor("expense",section,m),actual=sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===section).map(c=>m.expMap[c.id]||0))+sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===section).map(c=>m.expMap[c.id]||0)),planned=sum(cats.map(c=>c.budget));return `<article class="card cat-section"><div class="cat-section-head"><div class="cat-section-title">${section}<div class="cat-section-total">${euro(actual)} réel · ${euro(planned)} prévu</div></div>${categoryBulkButtons("expense",section,section)}</div>${cats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")}${archivedBlock(archived,m.expMap,"expense")}${restorableBlock(restorableCategoriesFor("expense",section),"expense")}<button class="add-category" type="button" data-add-category="${section}" data-category-type="expense">＋ Ajouter un champ</button></article>`}).join("");
- const savingCats=visibleSavingCategories(),savingArchived=archivedCategoriesFor("expense","__savings__",m),savingActual=m.saving,savingPlanned=sum(savingCats.map(c=>c.budget));
- const savingCard=`<article class="card cat-section saving-card"><div class="cat-section-head"><div class="cat-section-title">Épargne<div class="cat-section-total">${euro(savingActual)} réel · ${euro(savingPlanned)} prévu</div></div>${categoryBulkButtons("expense","__savings__","Épargne")}</div><div class="income-list">${savingCats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")}</div>${archivedBlock(savingArchived,m.expMap,"expense")}${restorableBlock(restorableCategoriesFor("expense","__savings__"),"expense")}<button class="add-category saving-add" type="button" data-add-saving="1">＋ Ajouter une épargne</button></article>`;
- document.getElementById("categoryGrid").innerHTML=`<section class="category-group"><div class="category-group-head"><h2>Revenus</h2><span>Entrées d’argent · réel / prévu</span></div><div class="category-cards income-cards">${incomeCard}</div></section><section class="category-group"><div class="category-group-head"><h2>Dépenses</h2><span>Argent réellement consommé · hors épargne</span></div><div class="category-cards">${expenseCards}</div></section><section class="category-group saving-group"><div class="category-group-head"><h2>Épargne</h2><span>Argent mis de côté · déduit du disponible</span></div><div class="category-cards income-cards">${savingCard}</div></section>`;
+ const expenseVisible=visibleExpenseCategories();
+ const expenseCards=sections.map(section=>{
+  const cats=selected(expenseVisible.filter(c=>c.section===section),"expense");
+  if(filter&&!cats.length)return "";
+  const archived=showExtras?archivedCategoriesFor("expense",section,m):[];
+  const actual=filter?sum(cats.map(c=>m.expMap[c.id]||0)):
+   sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===section).map(c=>m.expMap[c.id]||0))+
+   sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===section).map(c=>m.expMap[c.id]||0));
+  const planned=sum(cats.map(c=>c.budget));
+  return '<article class="card cat-section"><div class="cat-section-head"><div class="cat-section-title">'+escapeHtml(section)+
+   '<div class="cat-section-total">'+euro(actual)+' réel · '+euro(planned)+' prévu</div></div>'+
+   (showExtras?categoryBulkButtons("expense",section,section):"")+'</div>'+
+   cats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")+
+   (showExtras?archivedBlock(archived,m.expMap,"expense")+restorableBlock(restorableCategoriesFor("expense",section),"expense")+
+    '<button class="add-category" type="button" data-add-category="'+escapeHtml(section)+'" data-category-type="expense">＋ Ajouter un champ</button>':"")+'</article>';
+ }).join("");
+ const savingCats=visibleSavingCategories(),savingArchived=archivedCategoriesFor("expense","__savings__",m);
+ const savingActual=m.saving,savingPlanned=sum(savingCats.map(c=>c.budget));
+ const savingCard='<article class="card cat-section saving-card"><div class="cat-section-head"><div class="cat-section-title">Épargne<div class="cat-section-total">'+
+  euro(savingActual)+' réel · '+euro(savingPlanned)+' prévu</div></div>'+categoryBulkButtons("expense","__savings__","Épargne")+
+  '</div><div class="income-list">'+savingCats.map(c=>categoryRow(c,m.expMap[c.id]||0,"expense",m)).join("")+
+  '</div>'+archivedBlock(savingArchived,m.expMap,"expense")+restorableBlock(restorableCategoriesFor("expense","__savings__"),"expense")+
+  '<button class="add-category saving-add" type="button" data-add-saving="1">＋ Ajouter une épargne</button></article>';
+ const banner=filter?'<div class="category-filter-banner" role="status"><span>Filtre actif : <strong>'+escapeHtml(filter.label)+
+  '</strong></span><button type="button" data-clear-category-filter>Tout afficher</button></div>':"";
+ const incomeGroup='<section class="category-group"><div class="category-group-head"><h2>Revenus</h2><span>Entrées d’argent · réel / prévu</span></div>'+
+  '<div class="category-cards income-cards">'+incomeCard+'</div></section>';
+ const expenseGroup='<section class="category-group"><div class="category-group-head"><h2>Dépenses</h2><span>Argent réellement consommé · hors épargne</span></div>'+
+  '<div class="category-cards">'+expenseCards+'</div></section>';
+ const savingGroup='<section class="category-group saving-group"><div class="category-group-head"><h2>Épargne</h2><span>Argent mis de côté · déduit du disponible</span></div>'+
+  '<div class="category-cards income-cards">'+savingCard+'</div></section>';
+ document.getElementById("categoryGrid").innerHTML=banner+
+  ((!filter||filter.type==="income")?incomeGroup:"")+
+  ((!filter||filter.type==="expense")?expenseGroup:"")+
+  (!filter?savingGroup:"");
 }
 function personName(owner){return owner==="B"?(state.household?.personB||"Personne 1"):owner==="A"?(state.household?.personA||"Personne 2"):"À deux"}
 function ownerLabel(o){return o==="common"?(householdIsSolo()?personName("B"):"À deux"):personName(o)}
