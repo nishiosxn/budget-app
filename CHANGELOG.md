@@ -2,6 +2,16 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31af — design graphite et création explicite de catégorie test (21 novembre 2026)
+- Palette noire/neutre profonde sur l'ensemble du pilote, sans halo violet derrière les cartes ; violets réservés à l'identité et aux actions.
+- Micro et bouton Envoyer carrés, icônes parfaitement centrées malgré les styles hérités.
+- Correction du chargement cache des règles IA pour la création avec un montant en toutes lettres (« quatre-vingt-dix euros »).
+- Bouton **Confirmer** uniquement sur une catégorie sans dépense explicitement demandée, permettant l'enregistrement atomique de la catégorie et de son budget dans le foyer de test. Dépenses ordinaires, modifications de budgets et demandes multiples restent distinctes et sans création implicite.
+- RPC Supabase service-only, idempotente, dédoublonnage SQL transactionnel et vérification des droits du foyer pilote. Edge Function v23, aucun changement de production.
+- Tests automatisés : 194 + 2 réussis. Confirmation navigateur authentifiée encore à valider.
+
+
+
 ### 31ae — direction artistique deep-dark du pilote (21 novembre 2026)
 - Nouvelle palette profonde à plusieurs surfaces et bordures, avec violet Smart Budget conservé, états verts/rouges explicites et typographie système.
 - Harmonisation globale de l'interface du pilote : connexion/quota, hero, suggestions, composer, propositions, budgets/jauges, éditions, validations et règles.
