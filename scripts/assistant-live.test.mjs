@@ -347,3 +347,29 @@ test("31ae: pilot-wide native-style deep-dark layer is isolated, coherent and ac
  assert.ok(contrast("sb-positive","sb-surface")>=4.5);
  assert.ok(contrast("sb-negative","sb-surface")>=4.5);
 });
+
+
+test("31af: neutral dark surfaces and fixed square composer actions",()=>{
+ const css=fs.readFileSync(base+"native-dark.css","utf8");
+ for(const token of ["--sb-bg: #0d0e10;","--sb-surface: #181a1d;","--sb-secondary: #222428;","--sb-elevated: #2b2e33;","--sb-brand: #5c29d6;"])
+  assert.ok(css.includes(token),token);
+ assert.match(css,/background:\s*linear-gradient\(180deg,\s*#101115/);
+ assert.doesNotMatch(css,/radial-gradient\(ellipse 55rem 30rem at 50% -15rem/);
+ assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*box-sizing:\s*border-box/s);
+ assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*place-items:\s*center/s);
+ assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*aspect-ratio:\s*1 \/ 1/s);
+ assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\) svg\s*\{[^}]*margin:\s*auto/s);
+ assert.match(html,/assistant-core\.js\?v=31af/);
+ assert.match(html,/native-dark\.css\?v=31af/);
+});
+test("31af: explicit category confirmation has unique retry token and never creates through a spending card",()=>{
+ assert.match(js,/function categoryExplicitIntent\(command\)/);
+ assert.match(js,/action:"confirm_category"/);
+ assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
+ assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
+ assert.match(js,/draft\.expenseCents===null&&draft\.budgetCents!==null/);
+ assert.match(js,/canWrite\?"Confirmer":"Simuler"/);
+ assert.match(js,/r\.body\.commit\.requestId===requestId/);
+ assert.match(js,/renderCategoryDraft\(v,ctx,command\)/);
+ assert.match(js,/void loadRuleCategories\(\)/);
+});
