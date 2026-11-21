@@ -64,10 +64,10 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
-  const usageOnly=obj(body)&&body.action==="usage",confirmOnly=obj(body)&&body.action==="confirm",confirmCategoryOnly=obj(body)&&body.action==="confirm_category",confirmBatchOnly=obj(body)&&body.action==="confirm_batch";
+  const usageOnly=obj(body)&&body.action==="usage",confirmOnly=obj(body)&&body.action==="confirm",confirmCategoryOnly=obj(body)&&body.action==="confirm_category",confirmMissingOnly=obj(body)&&body.action==="confirm_missing_category",confirmBatchOnly=obj(body)&&body.action==="confirm_batch";
   if(confirmBatchOnly){
    if(Object.keys(body).length!==6||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!Array.isArray(body.expectedPlans))return response(400,{error:"invalid_request"});
-  }else if(confirmCategoryOnly){
+  }else if(confirmCategoryOnly||confirmMissingOnly){
    if(Object.keys(body).length!==5||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600)
     return response(400,{error:"invalid_request"});
   }else if(confirmOnly){
@@ -76,7 +76,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    if(Object.keys(body).length!==2||!uuid(body.householdId))return response(400,{error:"invalid_request"});
   }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context))return response(400,{error:"invalid_request"});
   let auth;
-  try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly||confirmCategoryOnly||confirmBatchOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
+  try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly||confirmCategoryOnly||confirmMissingOnly||confirmBatchOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
   if(!auth)return response(403,{error:"household_not_authorized"});
   if(!auth.context||auth.context.categories?.length>300)return response(400,{error:"invalid_context"});
   if(confirmBatchOnly){
@@ -84,9 +84,9 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    return await commitBatch({token,householdId:body.householdId,userId:auth.userId,requestId:body.requestId,
     command:body.command,draft:body.draft,expectedPlans:body.expectedPlans,context:auth.context});
   }
-  if(confirmCategoryOnly){
+  if(confirmCategoryOnly||confirmMissingOnly){
    if(!commitCategory)return response(503,{error:"confirm_unavailable"});
-   return await commitCategory({token,householdId:body.householdId,userId:auth.userId,requestId:body.requestId,command:body.command,draft:body.draft,context:auth.context});
+   return await commitCategory({token,householdId:body.householdId,userId:auth.userId,requestId:body.requestId,command:body.command,draft:body.draft,context:auth.context,missingIntent:confirmMissingOnly});
   }
   if(confirmOnly){
    if(!commitTransactions)return response(503,{error:"confirm_unavailable"});
@@ -108,7 +108,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   const quick=quickExpense?.(body.command.trim(),auth.context);
   if(quick?.ok){
    let previews=[],report=null;try{if(["draft","mixedDraft"].includes(quick.value.kind))previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
-   return response(200,{result:quick.value,model:"local-rules",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}},context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
+   return response(200,{result:quick.value,model:"local-rules",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}},context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{}),...(quick.missingCategory?{missingCategory:quick.missingCategory}:{})});
   }
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
