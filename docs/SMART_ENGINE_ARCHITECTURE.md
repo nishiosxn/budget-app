@@ -1,6 +1,6 @@
 # Smart Engine — fonctionnement et intégration dans Smart Budget
 
-État : lot 31ap, **source de travail uniquement**. Aucune nouvelle Edge Function publiée dans ce lot, aucun schéma ou contenu financier modifié.
+État : lot 31ap, fonction pilote Supabase **smart-assistant v30** mise à jour le 22 novembre 2026, JWT conservé. Source du moteur alignée avec le navigateur 31ap. **Aucun schéma SQL ni contenu financier modifié**, aucune publication Smart Budget principale.
 
 ## Ce qu'est Smart Engine
 
@@ -31,7 +31,7 @@ Reconnaître une expression **ne vaut pas autorisation d'exécuter**. Ne jamais 
 - Budgets : `augmente mon budget…`, `ajoute 10 euros à mon budget…`, `remets mon budget à zéro`.
 - Épargne : `sur mon livret A`, `dans mon épargne`.
 - Sécurité : distinction commerçant connu / bénéficiaire inconnu, refus des commandes de suppression mélangées, des montants négatifs, des dates qui risquent de ne s'appliquer qu'à une partie du lot, des récurrences non explicites et des résultats partiels.
-- Les fichiers client/serveur et les tests ont été mis à jour conjointement. **Le pilote connecté ne profitera réellement de ce nouveau vocabulaire qu'après déploiement séparé de sa fonction Edge et des ressources client alignées.**
+- Les fichiers client/serveur et les tests ont été mis à jour conjointement. Déploiement isolé du backend pilote v30, puis des seules ressources navigateur `v3.1/js/assistant-core.js` et `v3.1/live/index.html` sur GitHub Pages (commit `17ca4dd`). La CI source `44962165968` est passée ; le test authentifié en navigateur reste à effectuer.
 
 ## Limites
 
