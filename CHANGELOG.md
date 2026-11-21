@@ -1,5 +1,16 @@
 # Changelog
 
+### V3.1 — Catégories : répartition interactive des budgets (21 novembre 2026)
+
+- Retrait visuel de la carte « Échéances du mois / Abonnements et récurrences » de Catégories, sans supprimer les séries, échéances ni transactions existantes.
+- Total budgété par mois et répartition par familles ou par catégories, vues dépenses/revenus, tri et regroupement des petites parts ; montants prévus uniquement, pas de dépenses réelles.
+- Barre, infobulles et légende interactives avec filtrage direct de la liste Catégories, bouton de réinitialisation, navigation vers la catégorie et éditeur de budget existant.
+- Comparaison contextuelle avec le budget du mois précédent, masquée en l'absence de changement. Budgets mensuels et reconduits, catégories masquées, postes à 0 € et enveloppes communes respectés.
+- CSS isolé, interactions clavier/mobile et animations compatibles avec la réduction des mouvements. Aucun code d'écriture financière ni changement Supabase.
+- Tests et audit intégrés à App integrity ; PR brouillon [#49](https://github.com/nishiosxn/budget-app/pull/49). Démo indépendante et fictive sur https://nishiosxn.github.io/budget-app/previews/pr-49/ . Production inchangée.
+
+
+
 ### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)
 
 - Sur écran tactile ou fenêtre au format tablette, tous les champs éditables natifs (texte, nombre, recherche, email, dates, selects, textarea et champs du builder) utilisent une police minimale de 16 px : évite le zoom automatique Safari au focus.
