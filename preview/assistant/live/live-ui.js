@@ -257,6 +257,92 @@
   }
   draw();
  }
+
+ // Compound previews are deliberately review-only: category creation never
+ // mutates a parent budget or gets sent to the transaction commit endpoint.
+ function renderMixedDraft(v,ctx,previews){
+  const draft=JSON.parse(JSON.stringify(v));pendingReview=draft;
+  let locked=false,editing=-1;
+  const baselines=draft.operations.map((op,i)=>{
+   const p=previews.find(p=>p.index===i);
+   return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents}:null;
+  });
+  const group=document.createElement("div");group.className="pilot-review";result.append(group);
+  function active(){return !busy&&pendingReview===draft&&!locked}
+  function draw(){
+   group.replaceChildren();
+   for(const [i,op] of draft.operations.entries()){
+    const cat=ctx.categories.find(c=>c.id===op.categoryId);
+    const projection=reviewEditor.planPreview({op,baseline:baselines[i]});
+    const card=document.createElement("div");card.className="pilot-category-card";
+    const heading=document.createElement("strong");heading.className="pilot-category-heading";
+    heading.textContent=(op.planMode==="increase"?"Augmentation de budget":op.planMode==="decrease"?"Diminution de budget":"Budget fixé")+" · "+(cat?.name||"Catégorie à choisir");
+    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Budget existant · "+monthReviewDate(op.date,ctx);
+    card.append(heading,meta);
+    if(projection){
+     card.append(reviewRow("Budget actuel",projection.beforeCents));
+     card.append(reviewRow("Variation demandée",op.amountCents,op.planMode==="decrease"?"pilot-negative":"pilot-positive"));
+     card.append(reviewRow("Nouveau budget",projection.afterCents,"pilot-plan"));
+    }else{
+     const warning=document.createElement("p");warning.className="pilot-review-message";warning.textContent="Budget actuel indisponible : simulation bloquée pour éviter un calcul inventé.";card.append(warning);
+    }
+    if(!locked){
+     if(editing===i){
+      reviewForm(card,[
+       {key:"amount",label:"Montant (€)",value:reviewEditor.money(op.amountCents),money:true,required:true},
+       {key:"planMode",label:"Opération",value:op.planMode||"set",options:[{value:"set",name:"Fixer"},{value:"increase",name:"Augmenter"},{value:"decrease",name:"Diminuer"}]}
+      ],async(fields,notice,finish)=>{
+       if(!active())return "Proposition périmée.";
+       const next={...op,amountCents:reviewEditor.cents(fields.amount),planMode:fields.planMode};
+       const valid=core.validateReview({kind:"draft",operations:[next]},ctx);
+       if(!valid.ok)return valid.error;
+       if(!reviewEditor.planPreview({op:next,baseline:baselines[i]}))return "Variation impossible.";
+       await finish(()=>{if(!active())return;draft.operations[i]=next;editing=-1;draw()});return null;
+      },()=>{if(active()){editing=-1;draw()}});
+     }else{
+      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=i;draw()}});card.append(edit);
+     }
+    }
+    group.append(card);
+   }
+   for(const [i,cat] of draft.categories.entries()){
+    const pos=draft.operations.length+i,card=document.createElement("div");card.className="pilot-category-card";
+    const heading=document.createElement("strong");heading.className="pilot-category-heading";heading.textContent="Création de catégorie · "+cat.name;
+    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Nouvelle catégorie indépendante · "+cat.month+" · aucun budget parent modifié";
+    card.append(heading,meta);
+    if(cat.budgetCents!==null)card.append(reviewRow("Budget initial",cat.budgetCents,"pilot-plan"));
+    if(!locked){
+     if(editing===pos){
+      reviewForm(card,[
+       {key:"name",label:"Nom de la catégorie",value:cat.name,wide:true,maxLength:60,required:true},
+       {key:"budget",label:"Budget (€)",value:reviewEditor.money(cat.budgetCents),money:true,required:true},
+       {key:"month",label:"Mois",type:"month",value:cat.month,min:ctx.firstMonth,max:ctx.lastMonth,required:true}
+      ],async(fields,notice,finish)=>{
+       if(!active())return "Proposition périmée.";
+       const checked=reviewEditor.categoryFromFields(cat,{...fields,expense:""},ctx);
+       if(!checked.ok)return checked.error;
+       const combined=core.validateMixedDraft({...draft,categories:draft.categories.map((x,j)=>j===i?checked.value:x)},ctx);
+       if(!combined.ok)return combined.error;
+       await finish(()=>{if(!active())return;draft.categories[i]=checked.value;editing=-1;draw()});return null;
+      },()=>{if(active()){editing=-1;draw()}});
+     }else{
+      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=pos;draw()}});card.append(edit);
+     }
+    }
+    group.append(card);
+   }
+   const checked=core.validateMixedDraft(draft,ctx),ready=checked.ok&&draft.operations.every((op,i)=>op.kind==="plan"&&reviewEditor.planPreview({op,baseline:baselines[i]}));
+   const note=document.createElement("p");note.className="pilot-review-message";
+   note.textContent=locked?"Simulation terminée · aucune écriture.":editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : simulation désactivée.":"Simulation uniquement : les catégories et budgets ne sont pas enregistrés.";
+   group.append(note);
+   const actions=document.createElement("div");actions.className="pilot-review-actions",cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
+   cancel.disabled=locked;ok.disabled=locked||editing!==-1||!ready;
+   cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
+   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
+   actions.append(cancel,ok);group.append(actions);
+  }
+  draw();
+ }
  function renderCategoryReport(r){
   const amounts=[r.plannedCents,r.actualCents,r.remainingCents,r.recurringCents];if(!amounts.every(Number.isSafeInteger))return false;
   const group=document.createElement("div");group.className="pilot-category-card";
@@ -485,12 +571,13 @@
    void refreshQuota();
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
    if(!r.ok){status.textContent=errorMessages[r.body.error]||"Erreur de la passerelle IA ("+r.status+").";return}
-   const ctx=r.body.context,checked=r.body.result?.kind==="categoryDraft"?core.validateCategoryDraft(r.body.result,ctx):r.body.result?.kind==="draft"?core.validateReview(r.body.result,ctx):core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Brouillon refusé : "+checked.error;return;}
+   const ctx=r.body.context,checked=r.body.result?.kind==="categoryDraft"?core.validateCategoryDraft(r.body.result,ctx):r.body.result?.kind==="mixedDraft"?core.validateMixedDraft(r.body.result,ctx):r.body.result?.kind==="draft"?core.validateReview(r.body.result,ctx):core.validateResult(r.body.result,ctx);if(!checked.ok){status.textContent="Brouillon refusé : "+checked.error;return;}
    pendingReview=null;result.replaceChildren();input.value="";resizeComposer();const v=checked.value;
    // Analysis is complete. Render the review with its real interactive state.
    // No await between this transition and rendering; send stays disabled until finally.
    busy=false;
    if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx)}
+   else if(v.kind==="mixedDraft"){renderMixedDraft(v,ctx,r.body.planPreviews||[])}
    else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[]);}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
