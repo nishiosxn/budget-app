@@ -27,3 +27,8 @@ Préserver les formules financières, les migrations non destructives, l'isolati
 Mettre à jour `workstate.md` avec le lot, son état, les preuves de validation et la prochaine action. Conserver les détails durables dans la documentation et les changements livrés dans `CHANGELOG.md`. Aligner le champ « Version du code » du README et du workstate avec l'interface ; la version du cache ou du schéma peut être différente.
 
 Publier seulement si la demande le prévoit. Utiliser un checkout séparé de `gh-pages`, conserver la racine de production et les previews antérieures, publier les seuls fichiers applicatifs nécessaires dans le répertoire prévu et enregistrer le SHA source. Ne pas recopier les scripts, migrations ou documents de travail dans une preview. Voir la checklist de publication dans la méthode.
+
+
+## UI/UX — Unslop
+
+Pour Smart Budget, lire `.agents/skills/unslop/SKILL.md` et les références pertinentes avant une modification UI/UX. Conserver les crédits de Damir Sokolovsky et la licence CC BY 4.0. Examiner le rendu réel, présenter l’audit et la direction avant une refonte majeure, puis suivre les neuf passes. Le violet #5C29D6 et le logo font partie de la marque. Préserver données, synchronisation, fonctionnalités, responsive et thèmes. Le lot Smart Assistant 31an est limité au pilote ; voir `docs/SMART_ASSISTANT_UNSLOP_QA.md` pour les vérifications et limites. Aucun merge ni déploiement n’est impliqué par l’installation du skill.

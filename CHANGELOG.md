@@ -1,5 +1,12 @@
 # Changelog
 
+## Non publié — Smart Assistant 31an
+
+- Corrections Unslop limitées au pilote : saisie mobile, hiérarchie compacte, focus clavier, confirmation d’abandon, projections et récurrences explicites, thèmes clair/sombre/système, géométrie et motion harmonisées.
+- Skill original Unslop avec attribution CC BY 4.0 disponible dans `.agents/skills/unslop` ; aucune modification des fonctions financières ou de la synchronisation.
+- Tests et limites consignés dans `docs/SMART_ASSISTANT_UNSLOP_QA.md`. Aucun déploiement.
+
+
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
 ### 31am — proposition interactive pour une catégorie absente (21 novembre 2026)

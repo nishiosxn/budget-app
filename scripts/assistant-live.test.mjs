@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31am/);assert.match(html,/live-ui\.js\?v=31am/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31am/);assert.match(html,/live-ui\.js\?v=31an/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -31,7 +31,7 @@ test("composer starts on one line and grows without manual resize",()=>{
  assert.doesNotMatch(css,/#pilotAssistant \.sb-assistant-composer #sbAssistantInput\{[^}]*height:85px/);
  assert.match(js,/const contentHeight=input\.scrollHeight/);
  assert.match(js,/input\.style\.height="auto"/);
- assert.match(js,/input\.style\.overflowY=contentHeight>180\?"auto":"hidden"/);
+ assert.match(js,/input\.style\.overflowY=contentHeight>base\*11\.25\?"auto":"hidden"/);
  assert.match(js,/input\.addEventListener\("input",resizeComposer\)/);
  assert.match(js,/onTextChange:resizeComposer/);
  assert.match(js,/input\.value=b\.dataset\.assistantSuggestion;resizeComposer\(\)/);
@@ -127,7 +127,7 @@ test("31u design system is scoped to pilot, with concentric radii, responsive an
  assert.match(design,/\.pilot-expense-budget\{[^}]*border-top:1px solid var\(--sb-line\)/);
  assert.match(design,/\.pilot-review\{[^}]*border:0/);
  assert.match(charter,/R_int = max\(0, R_ext - inset\)/);
- assert.match(js,/t\.textContent="Budget"/);
+ assert.match(js,/t\.textContent=saved\?"Budget actuel":"Budget après ajout"/);
  assert.match(js,/spent\.textContent="Utilisé : "/);
  assert.match(js,/bar\.setAttribute\("aria-valuetext"/);
  assert.match(js,/group\.append\(card\);renderExpenseBudget\(card,entry,i\)/);
@@ -149,7 +149,7 @@ test("explicit pilot write only through authenticated confirm route; unsupported
  assert.match(js,/r\.body\.commit\?\.requestId!==requestId/);
  assert.match(js,/budgetReads\.clear\(\)/);
  assert.match(js,/send\.disabled=true;\$\("cancel"\)\.disabled=true/);
- assert.match(js,/Confirmation atomique · foyer test uniquement/);
+ assert.match(js,/Ces opérations seront enregistrées ensemble dans le foyer de test/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
 });
 
@@ -160,7 +160,7 @@ test("analysis releases busy before rendering a valid review, while saving remai
  const begin=js.indexOf('form.addEventListener("submit",async e=>{'),end=js.lastIndexOf("\n})();");
  assert.ok(begin>=0&&end>begin);
  for(const kind of ["draft","categoryDraft"]){
-  const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{}});return nodes.get(id)};
   const state={kind},observed=[];
   const ctx={
    session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
@@ -169,7 +169,7 @@ test("analysis releases busy before rendering a valid review, while saving remai
    $:node,voice:{stop(){}},resizeComposer(){},headers(){return {}},
    json:async()=>({ok:true,status:200,body:{context:{},result:state,metering:{source:"local-rules"}}}),
    core:{validateReview:()=>({ok:true,value:state}),validateCategoryDraft:()=>({ok:true,value:state})},
-   displayLastMeter(){},refreshQuota:async()=>{},
+   askDiscard:()=>true,requestAnimationFrame:()=>{},displayLastMeter(){},refreshQuota:async()=>{},
    renderDraft(){observed.push({busy:ctx.busy,sendDisabled:ctx.send.disabled})},
    renderCategoryDraft(){observed.push({busy:ctx.busy,sendDisabled:ctx.send.disabled})},
    Intl
@@ -385,7 +385,7 @@ test("31ai: explicit category with initial expense is confirmable and monthly fo
  assert.match(js,/r\.body\.commit\.expenseCreated/);
  assert.match(js,/edit\.disabled=requestId!==null/);
  assert.match(html,/review-editor\.js\?v=31ai/);
- assert.match(html,/live-ui\.js\?v=31am/);
+ assert.match(html,/live-ui\.js\?v=31an/);
 });
 
 
@@ -399,7 +399,7 @@ test("31aj: budget and mixed category batches remain reviewed, atomic and replay
  assert.match(js,/saveBatchDraft\(requestId,sourceCommand,draft,expectation\)/);
  assert.match(js,/r\.body\.commit\?\.categoriesCreated!==draft\.categories\.length/);
  assert.match(js,/requestId=crypto\.randomUUID\(\)/);
- assert.match(html,/live-ui\.js\?v=31am/);
+ assert.match(html,/live-ui\.js\?v=31an/);
 });
 
 
@@ -438,6 +438,6 @@ test("31am: inline interactive missing-category card uses the same financial sur
  assert.match(css,/\.pilot-missing-category/);
  assert.match(css,/\.pilot-missing-modes/);
  assert.match(css,/@media \(max-width: 28rem\)/);
- assert.match(html,/live-ui\.js\?v=31am/);
+ assert.match(html,/live-ui\.js\?v=31an/);
  assert.match(html,/native-dark\.css\?v=31am/);
 });

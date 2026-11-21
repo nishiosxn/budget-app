@@ -185,3 +185,14 @@ Dans une grille ou un flex à gap, un conteneur vide demeure un élément partic
 Standard à appliquer sur toutes les pages Smart Budget : les actions isolées peuvent être des enfants directs du layout et sont elles-mêmes masquées avec l'attribut hidden ; les groupes d'actions indispensables sont masqués en entier lorsqu'ils sont vides. Les régions de statut, résultat ou erreur restent dans le DOM pour l'accessibilité, mais ne génèrent aucune piste lorsqu'elles sont réellement vides (sélecteur :empty et display:none). Elles reviennent naturellement dans la mise en page dès qu'elles contiennent un message.
 
 Le padding du conteneur reste identique sur les quatre faces : 16 px desktop et 12 px mobile dans le pilote. On ne masque pas le problème par une réduction arbitraire du padding inférieur. Vérifier les états initial, message, brouillon, chargement, confirmation et erreur ; vérifier dark/light, 320/375/390/768/1440 px et zoom 200 %. Le bouton Nouvelle demande conserve son action, son identifiant et son accessibilité.
+
+
+## 19. Smart Assistant 31an — application Unslop
+
+Le pilote charge `unslop.css` après les couches historiques. Cette couche utilise les mêmes tokens `--sb-*` ; elle ne s’applique à aucun autre écran. `appearance.js` résout la préférence Système/Clair/Sombre sur `data-assistant-theme`, sans modifier les paramètres du foyer. Le CSS historique est conservé pour limiter les régressions ; sa consolidation globale est hors périmètre.
+
+Rayon du shell 1.25rem, carte 1rem, champ .75rem ; padding shell clamp(.75rem, 2.5vw, 1.5rem), carte 1rem. Les contrôles gardent 2.75rem de hauteur minimale. Le titre est à clamp(1.375rem,2.5vw,1.625rem), graisse 600 ; noms et montants à 600, chiffres tabulaires. Le violet #5C29D6 et le logo sont conservés ; l’étoile décorative du hero disparaît. Les surfaces sont neutres et plates.
+
+Le quota est un details natif fermé initialement, avec compteur visible et métriques accessibles au dépliage. Les trois exemples restent accessibles dans un details : ouverts initialement, repliés après envoi. La proposition reçoit le focus après analyse ; l’éditeur reçoit le focus à l’ouverture et le rend à Modifier à la fermeture. Une nouvelle demande rend le focus à la saisie. Un dialog natif HTML, avec Continuer la saisie comme choix initial et Échap pour conserver, protège l’abandon. Aucun brouillon financier n’est écrit dans un stockage persistant.
+
+La projection visible porte « Budget après ajout » avant enregistrement et « Budget actuel » ensuite. La reconduction mensuelle et le mois localisé sont explicites. Les états réellement enregistrés restent conditionnés à la vérification serveur existante. La fermeture de l’éditeur utilise seulement opacité et translation courte, sans animation de hauteur. Les règles de réduction des mouvements sont conservées. Voir `SMART_ASSISTANT_UNSLOP_QA.md` pour les preuves et les limites ; aucune conformité complète WCAG ou iOS n’est annoncée.

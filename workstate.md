@@ -1,5 +1,14 @@
 # Workstate — Budget foyer
 
+## Lot 31an — Unslop Smart Assistant (audit validé)
+
+- Branche conservée : `work/v3.1-smart-assistant`, base distante `a6f7f34eb78b545bf0065954a1d86c9392a0f859`. Le skill original est repris depuis `work/v3.1-unslop` dans `.agents/skills/unslop` sans modification des fichiers source ni de leur attribution.
+- Pilote seulement : composer mobile mesuré à nouveau après affichage/redimensionnement, quota et exemples dépliables, hiérarchie après analyse, focus d’édition/restitution, abandon explicite avec dialog clavier, protection avant fermeture, dates et récurrences lisibles, thèmes système/clair/sombre. Marque et moteur conservés.
+- Vérification locale : 237 tests Node réussis, validateur de l’application réussi. Huit rendus 1280/1440/390/320 × clair/sombre, absence de débordement dans la proposition testée, cibles >=44px et saisie 16px. Parcours d’édition, recalcul et abandon/refus testés dans un navigateur avec serveur de données fictives utilisant le vrai moteur local.
+- Limites : le pilote hébergé refuse les appels Edge depuis localhost ; aucun test d’écriture réelle ni déploiement backend. Zoom navigateur 200% non vérifié (raccourcis in-app sans effet, Firefox Windows bloqué par la politique URL). Réduction de mouvement vérifiée par tests de branche JS et règles CSS, pas par émulation visuelle. iOS/Safari et lecteur d’écran indisponibles. Voir le rapport QA pour le périmètre exact.
+- Aucun merge, aucune publication, aucune modification des données financières ou de la synchronisation. Prochaine étape : revue de la PR et tests manuels restants, puis décision explicite de publication de préversion.
+
+
 ## V3.1 — Smart Assistant, chantier isolé
 
 ### 31am — résolution interactive d'une catégorie manquante (21 novembre 2026)
