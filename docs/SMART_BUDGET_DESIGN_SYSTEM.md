@@ -177,3 +177,11 @@ Test de référence aux largeurs 320, 375, 390, 430, 599, 600, 768, 1024 et 1440
 La cible est WCAG AA : au moins 4,5:1 pour le texte courant, 3:1 pour les grands textes et les contours essentiels des composants. Tester les cas avec lecteur d'écran (VoiceOver/NVDA), tabulation et focus sur les boutons et summary, ainsi que reduced-motion. Les assertions CSS automatiques ne remplacent pas ces contrôles visuels ni un audit d'accessibilité.
 
 Le pilote charge encore des feuilles historiques avant design-system.css : les règles propriétaires de la version 1.1 sont volontairement bornées à pilotSession et pilotRules afin d'éviter d'affecter Smart Budget en production. La refonte globale devra supprimer progressivement ces couches héritées et normaliser la cascade avec les couches reset, tokens, base, components, utilities. Toute migration se fera par composants avec tests de non-régression des écritures financières et validations d'écrans, sans fusion prématurée dans main.
+
+## 18. Règle des éléments vides dans les layouts (31y)
+
+Dans une grille ou un flex à gap, un conteneur vide demeure un élément participant à la mise en page même si son unique bouton enfant est masqué. Il ajoute un gap non désiré et provoque un retrait optiquement excessif, notamment en bas du dernier panneau.
+
+Standard à appliquer sur toutes les pages Smart Budget : les actions isolées peuvent être des enfants directs du layout et sont elles-mêmes masquées avec l'attribut hidden ; les groupes d'actions indispensables sont masqués en entier lorsqu'ils sont vides. Les régions de statut, résultat ou erreur restent dans le DOM pour l'accessibilité, mais ne génèrent aucune piste lorsqu'elles sont réellement vides (sélecteur :empty et display:none). Elles reviennent naturellement dans la mise en page dès qu'elles contiennent un message.
+
+Le padding du conteneur reste identique sur les quatre faces : 16 px desktop et 12 px mobile dans le pilote. On ne masque pas le problème par une réduction arbitraire du padding inférieur. Vérifier les états initial, message, brouillon, chargement, confirmation et erreur ; vérifier dark/light, 320/375/390/768/1440 px et zoom 200 %. Le bouton Nouvelle demande conserve son action, son identifiant et son accessibilité.
