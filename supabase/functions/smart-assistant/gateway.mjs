@@ -93,7 +93,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
   // Only after authentication and context validation: exact known single expense, no provider call.
   const quick=quickExpense?.(body.command.trim(),auth.context);
   if(quick?.ok){
-   let previews=[],report=null;try{if(quick.value.kind==="draft")previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
+   let previews=[],report=null;try{if(["draft","mixedDraft"].includes(quick.value.kind))previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
    return response(200,{result:quick.value,model:"local-rules",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}},context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{})});
   }
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
