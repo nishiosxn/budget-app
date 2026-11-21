@@ -233,6 +233,134 @@
  function categoryExplicitIntent(command){
   return typeof command==="string"&&/^(?:crée|cree|créer|creer|ajoute)\s+(?:(?:une|la)\s+)?cat[ée]gorie\b/iu.test(command.trim());
  }
+ // 31am: missing category is only a suggestion. No write happens until
+ // the user intentionally chooses one of the two explicit confirmation paths.
+ function renderMissingCategory(offer,ctx,sourceCommand){
+  if(!ctx.solo||ctx.actor!=="B"||offer?.owner!=="B")return append("La catégorie est introuvable. Aucune écriture effectuée.");
+  const state={kind:"missingCategory",...offer};pendingReview=state;
+  const available=core.availableCategories({kind:"expense",date:offer.date,owner:"B"},ctx)
+   .filter(c=>c.kind==="expense"&&c.owner==="B").sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  let mode="create",name=offer.name,budget="",selected=available[0]?.id||"",
+   attempted=false,saving=false,locked=false,requestId=null,error="",saved=false;
+  const group=document.createElement("div");group.className="pilot-review";result.append(group);
+  const active=()=>!busy&&!saving&&!locked&&pendingReview===state;
+  function buildDraft(){
+   const amount=reviewEditor.cents(budget);
+   const draft={kind:"categoryDraft",name:name.trim(),owner:"B",month:offer.month,
+    date:offer.date,budgetCents:amount,expenseCents:offer.amountCents};
+   if(!Number.isSafeInteger(amount))return {ok:false,error:"Indique un budget mensuel valide en euros."};
+   return core.validateCategoryDraft(draft,ctx);
+  }
+  function existingDraft(){
+   const target=available.find(c=>c.id===selected);
+   if(!target)return {ok:false,error:"Choisis une catégorie existante."};
+   return core.validateReview({kind:"draft",operations:[{kind:"expense",categoryId:target.id,
+    owner:"B",amountCents:offer.amountCents,date:offer.date,label:offer.name,frequency:"once"}]},ctx);
+  }
+  function draw(){
+   group.replaceChildren();
+   const card=document.createElement("div");card.className="pilot-op pilot-missing-category";group.append(card);
+   const top=document.createElement("div");top.className="pilot-op-top";
+   const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon("game"));
+   const info=document.createElement("div");info.className="pilot-op-info";
+   const title=document.createElement("strong");title.textContent="Catégorie introuvable";
+   const detail=document.createElement("div");detail.className="pilot-op-meta";detail.textContent="« "+offer.name+" » · "+offer.month+" · Dépense ponctuelle";
+   info.append(title,detail);
+   const amount=document.createElement("strong");amount.className="pilot-op-money pilot-negative";amount.textContent="−"+euro(offer.amountCents);
+   top.append(symbol,info,amount);card.append(top);
+   const prompt=document.createElement("p");prompt.className="pilot-missing-question";
+   prompt.textContent="Souhaites-tu créer la catégorie « "+offer.name+" » ou enregistrer cette dépense dans une catégorie existante ?";
+   card.append(prompt);
+   if(!locked){
+    const modes=document.createElement("div");modes.className="pilot-missing-modes";
+    const create=reviewButton("Créer la catégorie",mode==="create"?"pilot-missing-active":"sb-assistant-secondary");
+    const existing=reviewButton("Catégorie existante",mode==="existing"?"pilot-missing-active":"sb-assistant-secondary");
+    create.setAttribute("aria-pressed",String(mode==="create"));
+    existing.setAttribute("aria-pressed",String(mode==="existing"));
+    existing.disabled=!available.length||attempted||saving;create.disabled=attempted||saving;
+    create.addEventListener("click",()=>{if(active()&&!attempted){mode="create";requestId=null;error="";draw()}});
+    existing.addEventListener("click",()=>{if(active()&&!attempted){mode="existing";requestId=null;error="";draw()}});
+    modes.append(create,existing);card.append(modes);
+    if(mode==="create"){
+     const form=document.createElement("div");form.className="pilot-operation-editor pilot-missing-editor";
+     const nameLabel=document.createElement("label");nameLabel.className="pilot-editor-field pilot-editor-wide";
+     const nameTitle=document.createElement("span");nameTitle.textContent="Nom de la catégorie";
+     const nameInput=document.createElement("input");nameInput.type="text";nameInput.maxLength=60;nameInput.required=true;nameInput.value=name;nameInput.disabled=attempted||saving;
+     nameLabel.append(nameTitle,nameInput);
+     const budgetLabel=document.createElement("label");budgetLabel.className="pilot-editor-field pilot-editor-wide";
+     const budgetTitle=document.createElement("span");budgetTitle.textContent="Budget mensuel (€)";
+     const budgetInput=document.createElement("input");budgetInput.type="text";budgetInput.inputMode="decimal";budgetInput.placeholder="Ex. 90";budgetInput.value=budget;budgetInput.required=true;budgetInput.disabled=attempted||saving;
+     budgetLabel.append(budgetTitle,budgetInput);form.append(nameLabel,budgetLabel);card.append(form);
+     const projection=document.createElement("div");projection.className="pilot-missing-projection";card.append(projection);
+     const sync=()=>{
+      name=nameInput.value;budget=budgetInput.value;
+      projection.replaceChildren();
+      const checked=buildDraft();
+      if(Number.isSafeInteger(reviewEditor.cents(budget))&&reviewEditor.cents(budget)>=0)
+       mixedBudgetBar(projection,reviewEditor.cents(budget),offer.amountCents,{name,month:offer.month,isNew:true});
+      else projection.append(reviewRow("Dépense à enregistrer",offer.amountCents,"pilot-negative"));
+      if(confirmButton)confirmButton.disabled=!active()||!checked.ok;
+     };
+     nameInput.addEventListener("input",sync);budgetInput.addEventListener("input",sync);
+     // The first draw shows the expense and leaves budget unset, never invented.
+     var confirmButton;sync();
+    }else{
+     const field=document.createElement("label");field.className="pilot-editor-field";
+     const caption=document.createElement("span");caption.textContent="Catégorie à utiliser";
+     const select=document.createElement("select");select.disabled=attempted||saving;
+     fillReviewOptions(select,available.map(c=>({value:c.id,name:c.name})));
+     select.value=selected;select.addEventListener("change",()=>{if(active()){selected=select.value;error=""}});
+     field.append(caption,select);card.append(field);
+     card.append(reviewRow("Dépense à enregistrer",offer.amountCents,"pilot-negative"));
+    }
+   }else{
+    card.append(reviewRow("Dépense enregistrée",offer.amountCents,"pilot-negative"));
+   }
+   const note=document.createElement("p");note.className="pilot-review-message";
+   note.setAttribute("role","status");
+   note.textContent=locked?(saved?"Opération enregistrée dans le foyer de test.":"Aucune écriture."):
+    error||(mode==="create"?"Le budget mensuel sera reconduit à partir de "+offer.month+". La catégorie et la dépense seront enregistrées ensemble après confirmation.":"La dépense sera affectée uniquement à la catégorie sélectionnée.");
+   group.append(note);
+   if(!locked){
+    const actions=document.createElement("div");actions.className="pilot-review-actions";
+    const cancel=reviewButton("Annuler"),confirm=reviewButton(attempted?"Réessayer":mode==="create"?"Créer et enregistrer":"Enregistrer la dépense","sb-assistant-send");
+    cancel.disabled=attempted||saving;
+    confirm.disabled=attempted?saving:!active()||(mode==="create"?!buildDraft().ok:!existingDraft().ok);
+    if(mode==="create")confirmButton=confirm;
+    cancel.addEventListener("click",()=>{if(active()&&!attempted){wipe();status.textContent="Proposition annulée. Aucune écriture."}});
+    confirm.addEventListener("click",async()=>{
+     if(!active()||confirm.disabled)return;
+     const checked=mode==="create"?buildDraft():existingDraft();
+     if(!checked.ok){error=checked.error;draw();return;}
+     if(!requestId)requestId=crypto.randomUUID();
+     attempted=true;saving=true;setSavingPilot(true);draw();
+     status.dataset.source="";status.textContent="Confirmation du foyer de test…";
+     try{
+      const req=mode==="create"?{action:"confirm_missing_category",householdId:session.householdId,
+       requestId,command:sourceCommand,draft:checked.value}:{action:"confirm",householdId:session.householdId,
+       requestId,draft:checked.value};
+      const response=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify(req)});
+      const committed=response.body?.commit;
+      if(response.ok&&committed?.requestId===requestId&&
+         (mode==="create"?committed.kind==="category"&&committed.expenseCreated===true:committed.count===1)){
+       locked=true;saved=true;pendingReview=null;history=[];error="";status.textContent=mode==="create"?"Catégorie créée avec son budget et sa dépense.":"Dépense enregistrée dans la catégorie choisie.";
+       void loadRuleCategories();
+      }else if([400,403,409,422].includes(response.status)){
+       attempted=false;requestId=null;
+       error=errorMessages[response.body?.error]||"Enregistrement refusé. Vérifie la catégorie et le budget.";
+       status.textContent=error;
+      }else throw Error("Unverified confirmation");
+     }catch{
+      error="Réponse réseau non vérifiée. Réessaie cette confirmation sans changer les valeurs : aucun doublon ne sera créé.";
+      status.textContent=error;
+     }finally{saving=false;setSavingPilot(false);draw()}
+    });
+    actions.append(cancel,confirm);group.append(actions);
+   }
+  }
+  draw();
+ }
+
  function renderCategoryDraft(v,ctx,sourceCommand){
   const draft={...v};pendingReview=draft;let editing=false,locked=false,saving=false,created=false,requestId=null,saveError="";
   const canWrite=ctx.solo&&ctx.actor==="B"&&categoryExplicitIntent(sourceCommand);
@@ -722,6 +850,7 @@
    if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx,command)}
    else if(v.kind==="mixedDraft"){renderMixedDraft(v,ctx,r.body.planPreviews||[],command)}
    else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[],command);}
+   else if(v.kind==="clarify"&&r.body.missingCategory){renderMissingCategory(r.body.missingCategory,ctx,command)}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}
    else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
