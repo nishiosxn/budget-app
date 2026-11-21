@@ -2,6 +2,15 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ak — durcissement des confirmations et commandes vocales (21 novembre 2026)
+- **Reprise idempotente des lots mixtes après coupure réseau :** si une création de catégorie a été effectivement enregistrée, la réponse perdue ne doit plus transformer le même `requestId` en refus à cause de l'apparition de la catégorie dans le catalogue actualisé. La validation du brouillon exclut temporairement les catégories créées par la demande ; les opérations sur les catégories existantes restent contrôlées et **le reçu SQL atomique reste l'autorité finale**. Un nouvel `requestId` pour le même nom reste soumis au contrôle anti-doublons.
+- **Interprétation locale étendue aux expressions vocales non ambiguës**, notamment « J'ai dépensé 50 euros dans la catégorie Gundam », « J'ai payé 50 € en Gundam », « J'ai fait une dépense de 50 euros en Gundam », « 50 euros de dépense en Gundam » : résolution stricte d'une catégorie du foyer déjà disponible, aucun appel IA, aucune création implicite.
+- **Sécurité des confirmations côté navigateur :** cas de double clic, édition pendant confirmation, réutilisation du même identifiant de reprise et erreurs définitives vs réseau couverts par tests de non-régression. Pas de nouvelle écriture SQL ni de migration ; aucune création de données fictives pendant cette phase.
+- **Preuves :** CI App integrity `44942562477` sur branche `work/v3.1-smart-assistant` : **219 tests applicatifs + 2 contrôles complémentaires, 0 échec**. Les validations de simulation couvrent le rejeu d'un lot lorsque la catégorie apparaît ensuite et une réponse perdue après commit.
+- Backend pilote uniquement à synchroniser depuis les sources de cette branche, avec maintien de l'allowlist, du JWT et des six fichiers exacts. Les clics manuels en navigateur (notamment coupure réseau et deux confirmations rapides) restent à réaliser ; `main`, le foyer personnel et la DA Deep Dark sont inchangés.
+
+
+
 ### 31aj — confirmations atomiques de budgets et lots mixtes (21 novembre 2026)
 - Confirmations réelles limitées au foyer test individuel autorisé : **fixer**, **augmenter**, **diminuer** un budget en conservant la portée `month` (uniquement ce mois) ou `forward` (à partir de ce mois), ainsi que des lots contenant plusieurs changements financiers.
 - Prise en charge d'un lot mixte déjà reconnu par Smart Engine, par exemple « Ajoute 10 € au budget Maison et crée une catégorie Lego avec 60 € » : une seule confirmation enregistre les budgets, créations explicites et éventuelles dépenses/revenus uniques, ou rien.
