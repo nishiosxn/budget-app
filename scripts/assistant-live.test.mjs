@@ -415,3 +415,29 @@ test("31ak: repeated confirmation cannot create a fresh request or allow editing
  assert.match(js,/Confirmation non vérifiée\. Réessaie le même lot/);
  assert.match(js,/saveBatchDraft\(requestId,sourceCommand,draft,expectation\)/);
 });
+
+
+
+test("31am: inline interactive missing-category card uses the same financial surface, explicit consent and safe paths",()=>{
+ const css=fs.readFileSync(base+"native-dark.css","utf8");
+ assert.match(js,/function renderMissingCategory\(offer,ctx,sourceCommand\)/);
+ assert.match(js,/renderMissingCategory\(r\.body\.missingCategory,ctx,command\)/);
+ assert.match(js,/categoryDraft",name:name\.trim\(\)/);
+ assert.match(js,/action:"confirm_missing_category"/);
+ assert.match(js,/action:"confirm"/);
+ assert.match(js,/Créer et enregistrer/);
+ assert.match(js,/Catégorie existante/);
+ assert.match(js,/Budget mensuel \(€\)/);
+ assert.match(js,/budgetInput\.required=true/);
+ assert.match(js,/reviewEditor\.cents\(budget\)/);
+ assert.match(js,/core\.validateCategoryDraft\(draft,ctx\)/);
+ assert.match(js,/core\.validateReview\(\{kind:"draft",operations:/);
+ assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
+ assert.match(js,/attempted=true;saving=true;setSavingPilot\(true\)/);
+ assert.match(js,/mixedBudgetBar\(projection/);
+ assert.match(css,/\.pilot-missing-category/);
+ assert.match(css,/\.pilot-missing-modes/);
+ assert.match(css,/@media \(max-width: 28rem\)/);
+ assert.match(html,/live-ui\.js\?v=31am/);
+ assert.match(html,/native-dark\.css\?v=31am/);
+});
