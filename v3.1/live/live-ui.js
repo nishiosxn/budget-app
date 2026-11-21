@@ -225,6 +225,8 @@
   const hasBudget=budgets.some(r=>r.scope==="forward"&&String(r.month).slice(0,7)<=month.slice(0,7)||r.scope==="month"&&String(r.month).slice(0,7)===month.slice(0,7));
   return {...totals,hasBudget};
  }
+ const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
+ function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
  function renderCategoryDraft(v,ctx){
   const draft={...v};pendingReview=draft;let editing=false,locked=false;
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
@@ -260,9 +262,36 @@
 
  // Compound previews are deliberately review-only: category creation never
  // mutates a parent budget or gets sent to the transaction commit endpoint.
+ // The 31z budget bar is reused for all mixed proposals; no inferred spending.
+ function mixedBudgetBar(host,plannedCents,actualCents,{name="",month="",isNew=false}={}){
+  const pane=document.createElement("div");pane.className="pilot-expense-budget";
+  const head=document.createElement("div");head.className="pilot-exp-budget-head";
+  const title=document.createElement("span");title.textContent="Budget prévu";
+  const amount=document.createElement("strong");amount.textContent=euro(plannedCents);head.append(title,amount);pane.append(head);
+  if(actualCents!==null){
+   const remain=plannedCents-actualCents;
+   const percent=plannedCents===0?(actualCents>0?100:0):Math.min(100,Math.max(0,actualCents/plannedCents*100));
+   pane.setAttribute("aria-label","Budget "+name+" · "+month);
+   const track=document.createElement("div");track.className="pilot-exp-budget-track";
+   track.setAttribute("role","progressbar");track.setAttribute("aria-label","Utilisation du budget");
+   track.setAttribute("aria-valuemin","0");track.setAttribute("aria-valuemax","100");track.setAttribute("aria-valuenow",String(Math.round(percent)));
+   track.setAttribute("aria-valuetext","Utilisé : "+euro(actualCents)+" ; reste : "+euro(remain));
+   const fill=document.createElement("span");fill.style.width=percent+"%";if(remain<0)fill.classList.add("pilot-budget-over");
+   track.append(fill);pane.append(track);
+   const foot=document.createElement("div");foot.className="pilot-exp-budget-foot";
+   const used=document.createElement("span");used.textContent="Utilisé : "+euro(actualCents)+(isNew?" (nouvelle catégorie)":"");
+   const left=document.createElement("strong");left.className=remain<0?"pilot-negative":"pilot-positive";left.textContent="Reste : "+euro(remain);
+   foot.append(used,left);pane.append(foot);
+  }else{
+   const fallback=document.createElement("p");fallback.className="pilot-exp-budget-note";
+   fallback.textContent="Utilisation indisponible · aucune valeur inventée.";pane.append(fallback);
+  }
+  host.append(pane);
+ }
  function renderMixedDraft(v,ctx,previews){
   const draft=JSON.parse(JSON.stringify(v));pendingReview=draft;
   let locked=false,editing=-1;
+  const budgetReads=new Map();
   const baselines=draft.operations.map((op,i)=>{
    const p=previews.find(p=>p.index===i);
    return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents}:null;
@@ -274,17 +303,38 @@
    for(const [i,op] of draft.operations.entries()){
     const cat=ctx.categories.find(c=>c.id===op.categoryId);
     const projection=reviewEditor.planPreview({op,baseline:baselines[i]});
-    const card=document.createElement("div");card.className="pilot-category-card";
-    const heading=document.createElement("strong");heading.className="pilot-category-heading";
-    heading.textContent=(op.planMode==="increase"?"Augmentation de budget":op.planMode==="decrease"?"Diminution de budget":"Budget fixé")+" · "+(cat?.name||"Catégorie à choisir");
-    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Budget existant · "+monthReviewDate(op.date,ctx);
-    card.append(heading,meta);
+    const card=document.createElement("div");card.className="pilot-op";
+    const top=document.createElement("div");top.className="pilot-op-top";
+    const rule=core.categoryRules.find(r=>r.kind==="expense"&&[r.name,...r.aliases].some(n=>core.normalizeCategory(n)===core.normalizeCategory(cat?.name)));
+    const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon(rule?.icon||"home"));
+    const info=document.createElement("div");info.className="pilot-op-info";
+    const heading=document.createElement("strong");
+    heading.textContent=(op.planMode==="increase"?"Ajout budget ":op.planMode==="decrease"?"Réduction budget ":"Budget ")+(cat?.name||op.label);
+    const meta=document.createElement("div");meta.className="pilot-op-meta";
+    meta.textContent=(cat?.name||"Catégorie à préciser")+" · "+monthReviewDate(op.date,ctx)+(op.frequency==="monthly"?" · Mensuel":" · Ce mois")+" · "+(op.planMode==="increase"?"Augmenter":op.planMode==="decrease"?"Diminuer":"Fixer");
+    info.append(heading,meta);
+    const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
     if(projection){
-     card.append(reviewRow("Budget actuel",projection.beforeCents));
-     card.append(reviewRow("Variation demandée",op.amountCents,op.planMode==="decrease"?"pilot-negative":"pilot-positive"));
-     card.append(reviewRow("Nouveau budget",projection.afterCents,"pilot-plan"));
+     const previous=document.createElement("span");previous.className="pilot-old-amount";previous.textContent=euro(projection.beforeCents);
+     const after=document.createElement("span");after.textContent=euro(projection.afterCents);
+     const diff=projection.afterCents-projection.beforeCents,delta=document.createElement("span");
+     delta.className="pilot-budget-delta "+(diff>=0?"pilot-positive":"pilot-negative");
+     delta.textContent=(diff>=0?"+":"−")+euro(Math.abs(diff));
+     money.setAttribute("aria-label","Nouveau budget "+euro(projection.afterCents));
+     money.append(previous,after,delta);
+    }else money.textContent="—";
+    top.append(symbol,info,money);card.append(top);
+    if(projection){
+     const key=reviewEditor.key(op),holder=document.createElement("div");card.append(holder);
+     if(!budgetReads.has(key))budgetReads.set(key,readExpenseBudget(op).catch(()=>null));
+     budgetReads.get(key).then(report=>{
+      if(!holder.isConnected||pendingReview!==draft)return;
+      holder.replaceChildren();
+      mixedBudgetBar(holder,projection.afterCents,Number.isSafeInteger(report?.actualCents)?report.actualCents:null,{name:cat?.name||"",month:op.date.slice(0,7)});
+     });
     }else{
-     const warning=document.createElement("p");warning.className="pilot-review-message";warning.textContent="Budget actuel indisponible : simulation bloquée pour éviter un calcul inventé.";card.append(warning);
+     const warning=document.createElement("p");warning.className="pilot-review-message";
+     warning.textContent="Budget actuel indisponible · simulation bloquée.";card.append(warning);
     }
     if(!locked){
      if(editing===i){
@@ -300,17 +350,24 @@
        await finish(()=>{if(!active())return;draft.operations[i]=next;editing=-1;draw()});return null;
       },()=>{if(active()){editing=-1;draw()}});
      }else{
-      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=i;draw()}});card.append(edit);
+      const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=i;draw()}});actions.append(edit);card.append(actions);
      }
     }
     group.append(card);
    }
    for(const [i,cat] of draft.categories.entries()){
-    const pos=draft.operations.length+i,card=document.createElement("div");card.className="pilot-category-card";
-    const heading=document.createElement("strong");heading.className="pilot-category-heading";heading.textContent="Création de catégorie · "+cat.name;
-    const meta=document.createElement("p");meta.className="pilot-op-meta";meta.textContent="Nouvelle catégorie indépendante · "+cat.month+" · aucun budget parent modifié";
-    card.append(heading,meta);
-    if(cat.budgetCents!==null)card.append(reviewRow("Budget initial",cat.budgetCents,"pilot-plan"));
+    const pos=draft.operations.length+i,card=document.createElement("div");card.className="pilot-op";
+    const top=document.createElement("div");top.className="pilot-op-top";
+    const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon("game"));
+    const info=document.createElement("div");info.className="pilot-op-info";
+    const heading=document.createElement("strong");heading.textContent=cat.name;
+    const meta=document.createElement("div");meta.className="pilot-op-meta";
+    meta.textContent="Création de catégorie · "+cat.month+" · Budget initial";
+    info.append(heading,meta);
+    const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
+    money.textContent=cat.budgetCents===null?"Sans budget":euro(cat.budgetCents);
+    top.append(symbol,info,money);card.append(top);
+    if(cat.budgetCents!==null)mixedBudgetBar(card,cat.budgetCents,0,{name:cat.name,month:cat.month,isNew:true});
     if(!locked){
      if(editing===pos){
       reviewForm(card,[
@@ -326,7 +383,7 @@
        await finish(()=>{if(!active())return;draft.categories[i]=checked.value;editing=-1;draw()});return null;
       },()=>{if(active()){editing=-1;draw()}});
      }else{
-      const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=pos;draw()}});card.append(edit);
+      const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=pos;draw()}});actions.append(edit);card.append(actions);
      }
     }
     group.append(card);
@@ -335,7 +392,7 @@
    const note=document.createElement("p");note.className="pilot-review-message";
    note.textContent=locked?"Simulation terminée · aucune écriture.":editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : simulation désactivée.":"Simulation uniquement : les catégories et budgets ne sont pas enregistrés.";
    group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions",cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
    cancel.disabled=locked;ok.disabled=locked||editing!==-1||!ready;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
@@ -374,8 +431,7 @@
    const p=previews.find(x=>x.index===i),baseline=o.kind==="plan"&&original===o.categoryId&&o.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(o),beforeCents:p.beforeCents}:null;
    return {op:o,ruleKey:rule?.key||null,baseline};
   });
-  const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
-  function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
+
 
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&pendingReview===review&&!locked}
@@ -565,8 +621,10 @@
   e.preventDefault();if(!session||busy||send.disabled)return;voice.stop();
   const command=input.value.trim();if(!command)return;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
+  let receivedResponse=false;
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
    if(current!==epoch)return;
+   receivedResponse=true;
    if(r.body.metering)displayLastMeter(r.body.metering);
    void refreshQuota();
    if(r.status===401){logout();$("pilotLoginStatus").textContent="Session expirée. Reconnecte-toi.";return}
@@ -587,7 +645,7 @@
    status.dataset.source=local?"smart-engine":"gemma";
    const tokenCount=r.body.metering?.tokens?.total;
    status.textContent=local?"Smart Engine · 0 token IA":("Gemma 4 · "+(Number.isSafeInteger(tokenCount)?new Intl.NumberFormat("fr-FR").format(tokenCount)+" tokens":"tokens non disponibles"));
-  }catch{if(current===epoch){status.textContent="Communication interrompue. Réessaie sans envoi automatique.";void refreshQuota()}}
+  }catch{if(current===epoch){status.textContent=receivedResponse?"Impossible d’afficher la proposition. Aucune opération enregistrée.":"Communication interrompue. Réessaie sans envoi automatique.";if(!receivedResponse)void refreshQuota()}}
   finally{if(current===epoch){busy=false;send.disabled=false}}
  });
 })();
