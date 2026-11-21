@@ -1,11 +1,11 @@
 # Workstate — Budget foyer
 
-## Lot 31ao — transfert des finitions Unslop au pilote connecté (non publié)
+## Lot 31ao — transfert des finitions Unslop au pilote connecté (préversion publiée)
 
 - Comparaison ciblée de `gh-pages:/v3.1/unslop/` avec `preview/assistant/live/` : le pilote possédait déjà le design Unslop 31an. Seules les finitions 31ao ont été reprises : actions masquées une fois la proposition verrouillée (3 parcours), demande soumise plus compacte, métadonnées lisibles à 13px et contrôles cohérents en clair/sombre.
 - Le pilote **conserve** ses appels Supabase/Cloudflare, ses contrôles d'autorisation, ses confirmations idempotentes, son moteur hybride et sa dictée. Aucun fichier du simulateur fictif (`fixture.js`, CSP bloquant les API ou chemins de simulation) n'est injecté dans le pilote connecté.
 - Tests de non-régression et références de ressources `?v=31ao` mis à jour. CI `App integrity` réussie sur le commit `3bfec9f` (run `44960147266`, après adaptation du scénario qui attendait à tort les actions après simulation).
-- Changements uniquement sur `work/v3.1-smart-assistant` / PR #47. **Aucune modification de `gh-pages`, de `main`, de `develop`, des fonctions Supabase, ni des données financières.** Étape suivante : validation dans un navigateur et décision de publication isolée du pilote connecté.
+- Source uniquement sur `work/v3.1-smart-assistant` / PR #47 ; publication isolée `v3.1/live/` sur `gh-pages` au commit `02cd38c` (source `ce97c98`), cinq fichiers seulement. Le workflow GitHub Pages `44960809191` a terminé ses trois jobs avec succès. **Aucune modification de `main`, `develop`, des fonctions Supabase ni des données financières.** Étape suivante : vérifier les parcours connectés dans un vrai navigateur PC/iPhone, y compris la confirmation dans le foyer de test.
 
 ## Lot 31an — Unslop Smart Assistant (audit validé)
 
