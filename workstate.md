@@ -2,6 +2,18 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31af — noir graphite, boutons carrés et création explicite dans le foyer de test (21 novembre 2026)
+- Correction du micro et de l'envoi : boîtes `2.75rem × 2.75rem`, `box-sizing:border-box`, `display:grid;place-items:center`, padding nul, SVG centré, réduction cohérente sur très petit mobile.
+- Design « gris graphite » (pas de fond violet) dans `native-dark.css` : fond `#0d0e10`, surface `#181a1d`, secondaire `#222428`, surélévation `#2b2e33`, bordures `#373a3f`, violet de marque `#5c29d6` réservé aux accents. Suppression du halo violet dans le fond.
+- Cache revu : `assistant-core.js?v=31af`, `live-ui.js?v=31af` et `native-dark.css?v=31af` pour charger les règles réelles et éviter la copie 31aa qui appelait Gemma pour « quatre-vingt-dix euros ». Le moteur courant reconnaît la formulation orale avec 0 token IA.
+- Activation **conditionnelle** d'une création réelle de catégorie (budget initial compris), uniquement après demande explicite de création et clic `Confirmer` dans le foyer pilote solo autorisé. Une dépense simple ne crée jamais de catégorie ; les demandes mixtes, catégories + dépense et modifications de budgets restent en simulation.
+- La fonction `smart_assistant_create_category_pilot_v1` est `SECURITY DEFINER` **révoquée à `anon` et `authenticated`**, exécutable seulement par `service_role`, et vérifie qu'il s'agit d'un foyer individuel à un seul membre B. Verrou transactionnel par foyer, refus des catégories actives homonymes, idempotence par `requestId` et insertion atomique catégorie + budget `forward`.
+- Migration `20261121183000_smart_assistant_pilot_category_creation.sql` appliquée au projet Supabase Budget, rôles vérifiés (anon=false, authenticated=false, service_role=true). Edge Function `smart-assistant` v23 active, JWT requis, cinq sources comparées aux fichiers déployés.
+- Tests : App integrity sur la branche : **194 tests applicatifs + 2 complémentaires réussis**, dont 31af catégorisation explicite/verbale, refus d'une création implicite, RPC et rappel idempotent, géométrie icônes et thème sombre. Pas de test navigateur authentifié de confirmation réelle effectué par l'agent.
+- Production `main` et foyer personnel inchangés. La publication `/v3.1/live/` est isolée ; validation manuelle de l'apparence et de la création réelle par l'utilisateur avant toute extension.
+
+
+
 ### 31ae — refonte deep-dark de tout le pilote Smart Assistant (21 novembre 2026)
 - Couche `preview/assistant/live/native-dark.css` chargée **après** les styles historiques uniquement dans `preview/assistant/live/index.html` ; aucun changement des pages principales Smart Budget ni de la logique financière.
 - Système de design unifié, inspiré du rendu des cartes de la conversation et reconstruit en CSS standard (composants ChatGPT non directement exportables) : fond nuit bleuté `#0a0c13`, surfaces `#161a24` / `#1f2430` / `#252b39`, bordures `#343a49`, texte `#f4f5fb`, accent de marque conservé `#5c29d6`, indicateurs positifs `#79d6a8` et négatifs `#ff929e`.
