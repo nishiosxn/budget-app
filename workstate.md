@@ -2,6 +2,13 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ad — clarification sans exemple fictif et rafraîchissement du pilote (21 novembre 2026)
+- Retrait de la phrase de repli « Crée une catégorie Lego avec un budget de 60 euros ». Quand la demande de création est ambiguë, réponse générique demandant le **nom de la catégorie** et le **budget en euros**, sans proposition d'écriture.
+- Pour « Créer la catégorie Restauration, Fast Food avec une valeur de cent euros », recherche stricte sur le catalogue du foyer authentifié ; si la catégorie « Restaurants / fast-food » y existe, retour « Cette catégorie existe déjà dans le foyer ». Synonymie limitée à cette dénomination composée, sans fusion de catégories arbitraires.
+- Capture utilisateur Gundam affichait un composant antérieur sans jauge : le rendu 31ac contient déjà `mixedBudgetBar` et `pilot-exp-budget-track` pour les créations isolées, mais le navigateur montrait l'ancienne version ; mise à jour de l'empreinte du script `live-ui.js?v=31ad` et fournir une URL de page versionnée pour purger l'HTML en cache.
+- CI avec 184 tests applicatifs + 2 complémentaires passés (run 44932687150) ; nouveau test de refus explicite et reformulation générique.
+- Edge Function pilote Supabase `smart-assistant` v22 active `verify_jwt=true`; quatre fichiers vérifiés identiques aux sources. Maintien du mode simulation pour budgets et catégories, sans toucher `main` ni au profil personnel.
+
 ### 31ac — cartes de nouvelles catégories et refus strict des doublons (21 novembre 2026)
 - Le pilote rend une création de catégorie seule (ex. Gundam 90 €) dans une carte `pilot-op` identique aux dépenses habituelles, avec icône à gauche, montant à droite, barre de budget initial et 0 € utilisés si aucune dépense n'est demandée. Une dépense explicitement prévue est reflétée dans l'aperçu.
 - Correctif de sécurité sémantique : une demande « Crée une catégorie Lego » ne peut plus être transformée en modification du budget d'une catégorie existante. Le moteur répond qu'elle existe déjà et refuse toute action, en comparant les noms normalisés du catalogue du foyer récupéré sous JWT/RLS.
