@@ -1,5 +1,128 @@
 # Changelog
 
+
+## Pilote V3.1 — Smart Engine 31ap (22 novembre 2026)
+
+- Compréhension locale d'expressions françaises abrégées, ponctuées et dictées : clauses « et reçu », « puis touché », montants reçus avec expéditeur, achats chez commerçant, budgets possessifs et épargne explicitement indiquée.
+- Sécurisation de la grammaire : délimitation complète des opérations, noms d'enseignes et de personnes, dates, rejets des clauses incomprises et aucune confirmation implicite.
+- Tests : 242 applicatifs + 2 documentaires réussis (`44962165968`), dont cas exact « McDo et recu 10 euros de Lena » en traitement serveur local à 0 token et 0 quota.
+- Fonction Edge pilote `smart-assistant` v30 mise à jour sans SQL ni modification des données ; GitHub Pages `17ca4dd` publiées uniquement sous `/v3.1/live/` (`31ap`). Application principale et `/v3.1/unslop/` inchangées.
+- Documentation : `docs/SMART_ENGINE_ARCHITECTURE.md`. Validation réelle PC/iPhone avec session de test à faire avant toute intégration dans Smart Budget.
+
+
+## Préversion publiée — Smart Assistant 31ao (intégration Unslop)
+
+- Report des dernières finitions de la démonstration dans le pilote **connecté** : boutons de confirmation masqués après un état terminé, rappel de demande compact, métadonnées à 13px, meilleure cohérence des champs et états désactivés.
+- Pas de copie du moteur fictif : Smart Engine, appels Cloudflare, confirmation serveur, anti-doublons, synchronisation et authentification sont conservés.
+- Test d'interface actualisé pour l'absence d'actions après confirmation ; nouvelles assertions de sécurité vérifiant le maintien du chemin connecté. Publication isolée `/v3.1/live/` sur GitHub Pages (`02cd38c`, source `ce97c98`) ; trois jobs Pages réussis. **Aucune fusion PR #47, aucune publication de l'application principale, aucun changement backend.**
+
+## Non publié — Smart Assistant 31an
+
+- Corrections Unslop limitées au pilote : saisie mobile, hiérarchie compacte, focus clavier, confirmation d’abandon, projections et récurrences explicites, thèmes clair/sombre/système, géométrie et motion harmonisées.
+- Skill original Unslop avec attribution CC BY 4.0 disponible dans `.agents/skills/unslop` ; aucune modification des fonctions financières ou de la synchronisation.
+- Tests et limites consignés dans `docs/SMART_ASSISTANT_UNSLOP_QA.md`. Aucun déploiement.
+
+
+## V3.1 — Smart Assistant (chantier expérimental, non publié)
+
+### 31am — proposition interactive pour une catégorie absente (21 novembre 2026)
+- Une dépense qui nomme une catégorie absente affiche une carte Deep Dark intégrée : choisir une catégorie existante ou saisir nom et budget de la nouvelle catégorie, avec dépense et mois préremplis. Aucune catégorie n'est créée par défaut.
+- Seul le clic « Créer et enregistrer » déclenche la création atomique catégorie + budget mensuel reconduit + dépense initiale. Le choix existant utilise la confirmation transactionnelle classique. Le serveur contrôle la demande d'origine et refuse les montants/dates modifiés.
+- Confirmation JWT isolée au foyer test, anti-doublon SQL et rejeu sûr après coupure réseau. Aucun appel Gemma sur la proposition locale.
+- **231 contrôles automatisés réussis**, Edge Function pilote v29 active et six sources vérifiées. Aucun changement de production, SQL ou DA hors carte. Rendu réel et écriture authentifiée à valider dans le navigateur.
+
+
+
+### 31al — correction des guillemets dans les commandes Smart Engine (21 novembre 2026)
+- Une dépense citée telle que `« J’ai payé 50 € en Gundam. »` est désormais interprétée localement : **0 token IA** au lieu de 2 208 tokens Gemma observés sur la capture.
+- Les enveloppes équilibrées `« »`, `“ ”`, `„ “`, `‹ ›` et `" "` sont retirées une seule fois avant le parsing. Les guillemets intérieurs ne sont pas touchés. Catégorie inconnue ou formulation ambiguë = aucune création implicite.
+- Scénarios de non-régression pour dépenses, budgets, créations et lots mixtes cités ; garde-fous de confirmation et d'accès Supabase vérifiés sans écrire de transactions.
+- CI réussie : **222 tests applicatifs + 2 contrôles complémentaires**. Backend pilote v28, cache frontend `31al`, DA et production inchangées. Recette utilisateur authentifiée et responsive encore nécessaire.
+
+
+
+### 31ak — fiabilité de la confirmation et commandes vocales à 0 token (21 novembre 2026)
+- Correctif du rejeu après réponse perdue pour les lots qui créent une catégorie : l'apparition de celle-ci dans le foyer ne bloque plus le même `requestId`, tout en préservant les refus SQL des nouveaux doublons.
+- Reconnaissance déterministe de plusieurs formulations vocales de dépenses dans une catégorie **déjà existante** ; nom inconnu = clarification, jamais de création implicite ou de dépense devinée.
+- Tests anti-doubles clics, identifiant stable et confirmation en cours, plus tests de non-régression des lots financiers et absence d'appel Gemma pour ces commandes.
+- **219 tests applicatifs et 2 contrôles complémentaires réussis** ; Edge Function pilote v27 active et six fichiers vérifiés. Aucune migration ni modification de `main`, du foyer personnel ou de la DA.
+
+
+
+### 31aj — budgets et lots financiers atomiques, pilote exclusivement (21 novembre 2026)
+- Confirmation des budgets existants (montant fixe, hausse ou baisse), avec portée `month` ou `forward` ; calcul et vérification du budget précédent côté PostgreSQL.
+- Une seule confirmation pour les propositions multiples validées, incluant les créations explicites de catégories et les transactions ponctuelles si compatibles. Refus des lots ambigus, sans catégorie existante ou sans référence budgétaire fiable.
+- Lot SQL atomique avec reçu idempotent, verrou et protection contre les doublons, les baselines obsolètes et les écritures partielles. Migration isolée au foyer test et RPC service-only, fonction de pilote v26.
+- CI : 213 tests applicatifs et 2 contrôles complémentaires réussis. La correction de rétablissement du budget `forward` après une modification temporaire du mois initial est déployée côté RPC. Vérification manuelle des confirmations réelles encore nécessaire ; aucune modification de `main` ni de la DA.
+
+
+
+### 31ai — catégories reconduites, dépense initiale et préservation historique (21 novembre 2026)
+- Création d'une catégorie à partir d'un mois déterminé, budget mensuel reconduit grâce à `scope=forward` (sans multiplier les lignes par mois).
+- Confirmation explicite d'une catégorie avec budget **et dépense initiale** en une seule transaction PostgreSQL idempotente. Aucune création implicite lors d'une simple dépense.
+- Sécurisation des rejouements, doublons, pannes réseau et interdiction de transformer des dépenses futures en écritures présentes. CI réussie (203 tests + 2 contrôles) ; migration appliquée au seul projet pilote et Edge Function v25 vérifiée.
+- Archivage et masquage historiques préservés ; opérations rattachées non supprimées. Aucun changement de DA ni de production.
+
+
+
+### 31ag — interprétation rapide et reprise sûre après panne (21 novembre 2026)
+- Dépenses dans les catégories existantes reconnues localement : « ajoute 50 euro de dépense en Gundam », 0 token IA ; catégorie absente = demande de précision, jamais de création automatique.
+- Reprise des confirmations de création de catégorie avec le même identifiant après réponse réseau perdue. Contrôle atomique et anti-doublon conservé côté base.
+- Tests moteur, serveur et cas de sécurité étendus. Fichiers de préversion actualisés, sans toucher au design ni à la production.
+
+
+
+### 31af — design graphite et création explicite de catégorie test (21 novembre 2026)
+- Palette noire/neutre profonde sur l'ensemble du pilote, sans halo violet derrière les cartes ; violets réservés à l'identité et aux actions.
+- Micro et bouton Envoyer carrés, icônes parfaitement centrées malgré les styles hérités.
+- Correction du chargement cache des règles IA pour la création avec un montant en toutes lettres (« quatre-vingt-dix euros »).
+- Bouton **Confirmer** uniquement sur une catégorie sans dépense explicitement demandée, permettant l'enregistrement atomique de la catégorie et de son budget dans le foyer de test. Dépenses ordinaires, modifications de budgets et demandes multiples restent distinctes et sans création implicite.
+- RPC Supabase service-only, idempotente, dédoublonnage SQL transactionnel et vérification des droits du foyer pilote. Edge Function v23, aucun changement de production.
+- Tests automatisés : 194 + 2 réussis. Confirmation navigateur authentifiée encore à valider.
+
+
+
+### 31ae — direction artistique deep-dark du pilote (21 novembre 2026)
+- Nouvelle palette profonde à plusieurs surfaces et bordures, avec violet Smart Budget conservé, états verts/rouges explicites et typographie système.
+- Harmonisation globale de l'interface du pilote : connexion/quota, hero, suggestions, composer, propositions, budgets/jauges, éditions, validations et règles.
+- Grille centrée à trois zones pour toutes les cartes ; espacements relatifs et responsive, contrastes contrôlés, focus et mouvements réduits.
+- Feuille de style `native-dark.css` dédiée à `/v3.1/live/` et chargée en dernier ; aucune modification de JavaScript métier, Supabase ou production.
+- Test automatisé du contrat visuel et CI App integrity ; validation visuelle utilisateur à confirmer.
+
+
+
+### 31ad — messages de création et rafraîchissement (21 novembre 2026)
+- Suppression de l'exemple Lego et des montants arbitraires dans les demandes de reformulation. Message désormais neutre et descriptif.
+- Catégorie « Restauration, Fast Food » reconnue comme variante de « Restaurants / fast-food » uniquement si elle existe réellement dans le catalogue du foyer ; aucune modification autorisée sur une commande de création.
+- Empreinte JS de préversion renouvelée pour éviter l'affichage d'anciennes cartes dépourvues de jauge. Pilot Supabase v22 et tests de régression.
+
+### 31ac — harmonisation création de catégorie (21 novembre 2026)
+- Carte de catégorie nouvellement créée conforme à la DA des dépenses : icône, nom, budget initial à droite, jauge de budget 0/90 € pour une catégorie Gundam de 90 € sans dépenses, montant utilisé et reste sous la jauge.
+- Nouvelle garantie : une création explicite visant le nom d'une catégorie déjà active renvoie un refus clair, sans remplacer son budget ni générer une dépense.
+- Tests de rendu/validation et suite CI réussis ; Edge Function test v21, aucune écriture sur budgets ou catégories et aucune modification de production.
+
+### 31ab — correction affichage du pilote (21 novembre 2026)
+
+- Revue mixte de nouveau conforme à la DA 31z : icônes, montants, variations, jauge d'utilisation, contrôles d'édition et simulation ; aucun composant parallèle.
+- Correction d'une exception JavaScript qui masquait le bouton de simulation et affichait à tort « Communication interrompue » après réception du résultat.
+- Tests automatisés du rendu et de la simulation, CI App integrity. Modifications financières réelles toujours limitées aux transactions simples déjà validées, pas aux budgets/créations de catégories.
+
+### 31aa — correction Smart Assistant (pilote uniquement, 21 novembre 2026)
+
+- Découpe sûre d'une demande mixte : augmentation du budget existant + création de catégorie indépendante, sans réinterprétation silencieuse par Gemma.
+- Proposition `mixedDraft` non committable : validation stricte, ancien/nouveau montant du budget, carte séparée pour la catégorie à créer, simulation uniquement.
+- Catégorisation locale enrichie : Boulangerie → Courses, Décathlon → Vêtements par défaut, matériel d'escalade → Loisirs, commerçant inconnu non forcé.
+- CI et tests de non-régression ; Edge Function test v20. Production `main` non modifiée, aucun enregistrement réel de budgets ou catégories.
+
+
+- Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
+- Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
+- Contexte conversationnel court et réinitialisable, sans enregistrement ; historique revalidé côté passerelle.
+- Laboratoire web autonome à données fictives : démo guidée, validation et confirmation locale, sans connexion à Supabase.
+- Interface assistant centrée, trois suggestions horizontales et dictée continue avec transcription intermédiaire (selon navigateur).
+- IA distante, confirmation connectée, mémoire et validation réelle à finaliser.
+
+
 ### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)
 
 - Sur écran tactile ou fenêtre au format tablette, tous les champs éditables natifs (texte, nombre, recherche, email, dates, selects, textarea et champs du builder) utilisent une police minimale de 16 px : évite le zoom automatique Safari au focus.

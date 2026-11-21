@@ -26,5 +26,6 @@ jobs:
 
       - name: Run application audit
         run: |
-          node --test scripts/validate-docs.test.mjs scripts/cloud-sync-roundtrip.test.mjs scripts/subscriptions-overview.test.mjs scripts/backup-sql.test.mjs scripts/offsite-backup.test.mjs scripts/motion-v3.test.mjs
+          node --test scripts/validate-docs.test.mjs scripts/cloud-sync-roundtrip.test.mjs scripts/subscriptions-overview.test.mjs scripts/backup-sql.test.mjs scripts/offsite-backup.test.mjs scripts/motion-v3.test.mjs scripts/assistant-core.test.mjs scripts/assistant-gateway.test.mjs scripts/assistant-planner.test.mjs scripts/assistant-benchmark.test.mjs scripts/assistant-brand.test.mjs scripts/assistant-demo.test.mjs scripts/assistant-voice.test.mjs scripts/assistant-live.test.mjs scripts/assistant-engine.test.mjs scripts/assistant-category-rules.test.mjs scripts/assistant-field-regressions.test.mjs scripts/assistant-expense-labels.test.mjs scripts/assistant-owners-medical.test.mjs scripts/assistant-review-editor.test.mjs scripts/assistant-confirm.test.mjs scripts/assistant-category-commit.test.mjs scripts/assistant-batch-commit.test.mjs scripts/assistant-cost-guard.test.mjs scripts/assistant-unslop.test.mjs
+          node --test scripts/admin-cors.test.mjs
           node scripts/validate.mjs

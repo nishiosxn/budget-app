@@ -1,0 +1,98 @@
+.pilot-login{display:grid;gap:.55rem;padding-top:1rem}.pilot-login label{font-size:.82rem;color:var(--muted)}.pilot-login input{width:100%;box-sizing:border-box;min-height:45px;border:1px solid var(--line);border-radius:.7rem;background:var(--panel-2);color:var(--text);font:inherit;padding:.65rem}.pilot-login button{margin-top:.35rem}#pilotLogin,#pilotSession{margin:1rem 0}.notice a{color:var(--accent)}[hidden]{display:none!important}
+.pilot-op{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:6px;background:var(--panel-2)}.pilot-op-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.pilot-op-meta{font-size:12px;color:var(--muted);margin:0}.pilot-positive{color:#23814d}.pilot-negative{color:#c04444}.pilot-plan{color:var(--accent)}.pilot-op select{min-height:36px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--text);background:var(--panel);padding:5px 8px;width:100%}@media(prefers-color-scheme:dark){.pilot-positive{color:#77d6a0}.pilot-negative{color:#ff9595}}
+
+/* V3.1 m — compact provenance markers */
+#sbAssistantStatus[data-source="smart-engine"],#sbAssistantStatus[data-source="gemma"]{display:inline-flex;width:fit-content;align-items:center;border-radius:999px;padding:5px 10px;font-size:.78rem;font-weight:650}
+#sbAssistantStatus[data-source="smart-engine"]{background:rgba(38,155,101,.12);color:#65c997}
+#sbAssistantStatus[data-source="gemma"]{background:rgba(92,41,214,.16);color:#b89cff}
+@media(prefers-contrast:more){#sbAssistantStatus[data-source]{border:1px solid currentColor}}
+/* V3.1 e — review design, aligned with approved mockup */
+.pilot-review{border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--panel);display:grid;gap:10px}.pilot-op{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:9px 0 12px;background:transparent;gap:5px}.pilot-op-top{align-items:center;gap:12px}.pilot-op-icon{display:grid;place-items:center;width:44px;height:44px;flex:none;background:var(--accent-soft);color:var(--accent);border-radius:12px}.pilot-op-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.pilot-op-info{flex:1;min-width:0;overflow-wrap:anywhere}.pilot-op-info>strong{font-size:.96rem;display:block}.pilot-op-money{font-size:1.03rem;white-space:nowrap;font-variant-numeric:tabular-nums}.pilot-old-amount{color:var(--muted);font-weight:500}.pilot-op-detail{padding-left:56px;font-size:.73rem;color:var(--muted)}.pilot-edit-row{padding-left:56px;display:flex;gap:8px;align-items:center}.pilot-link{background:none;border:0;padding:4px 0;color:var(--accent);font:inherit;font-size:.78rem;cursor:pointer}.pilot-new{color:var(--accent);font-weight:600}.pilot-review-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pilot-review-total{display:flex;justify-content:space-between;gap:10px;font-size:.83rem}.pilot-rules{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:.8rem}.pilot-rules summary{cursor:pointer;font-weight:650}.pilot-rules p{color:var(--muted)}.pilot-rule-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,1.4fr);gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}.pilot-rule-row>span{color:var(--muted);overflow-wrap:anywhere}.pilot-rule-editor{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin:10px 0}.pilot-rule-editor input,.pilot-rule-editor select{min-width:0;width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:8px;font:inherit}.pilot-rule-editor button{font-size:.75rem;padding:6px}.pilot-rules #clearRules{margin-top:12px}.pilot-rules #ruleDefault{margin-top:12px}@media(max-width:430px){.pilot-op-top{gap:8px}.pilot-op-icon{width:36px;height:36px}.pilot-op-money{font-size:.9rem}.pilot-op-detail,.pilot-edit-row{padding-left:44px}.pilot-rule-editor{grid-template-columns:1fr 1fr}.pilot-rule-editor button{grid-column:1/-1}.pilot-review{padding:10px}}
+
+.pilot-budget-delta{display:block;text-align:right;font-size:.78rem;font-weight:600;margin-top:3px}.pilot-category-heading{font-size:1.05rem}.pilot-review-total strong{font-variant-numeric:tabular-nums}
+
+.pilot-submitted{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;overflow-wrap:anywhere}.pilot-submitted>span{color:var(--muted);font-size:.75rem;font-weight:600}.pilot-submitted>p{white-space:pre-wrap;margin:4px 0 0;font-size:.88rem;color:var(--text)}.pilot-category-progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.pilot-category-progress>span{display:block;height:100%;background:#5C29D6;border-radius:99px}.pilot-edit-row>.pilot-link{flex-shrink:0;white-space:nowrap}
+
+/* V3.1 k · aligned composer + compact meter, using Smart Budget tokens. */
+:root{--accent:#8D65F5;--accent-soft:#322453}
+body{background:var(--bg)}
+#pilotAssistant{margin-top:14px}
+#pilotAssistant .sb-assistant-hero{padding-top:.3rem}
+#sbAssistantForm{gap:0}
+#pilotAssistant .sb-assistant-composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 9px;border-radius:16px}
+#pilotAssistant .sb-assistant-composer #sbAssistantInput{display:block;width:100%;height:42px;min-height:42px;max-height:180px;overflow-y:hidden;margin:0;padding:10px 6px;resize:none;line-height:22px;box-shadow:none;background:transparent;border:0;outline:0;box-sizing:border-box}
+#pilotAssistant .sb-assistant-composer .sb-assistant-actions{align-self:center;display:flex;align-items:center;gap:7px;flex-wrap:nowrap;position:relative}
+#pilotAssistant .sb-assistant-iconbtn{width:42px;height:42px;min-height:42px;flex:none;padding:0;border-radius:50%}
+#pilotAssistant .sb-assistant-send{background:#5C29D6}
+#pilotAssistant .sb-assistant-iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#pilotAssistant .sb-voice-clock:not([hidden]){position:absolute;top:calc(100% + 5px);right:0;min-width:50px;text-align:center;font-size:11px}
+#sbAssistantStatus:empty{display:none}
+#pilotSession{padding:16px 18px}
+#pilotSession .sb-assistant-header{align-items:center}
+#pilotSession .sb-assistant-header h2{font-size:.93rem;margin:0}
+#pilotSession .sb-assistant-secondary{padding:.42rem .7rem;min-height:36px}
+.pilot-meter{padding-top:15px;display:grid;gap:8px}
+.pilot-meter-head,.pilot-meter-foot{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+.pilot-meter-head{font-size:.84rem;font-weight:650}
+.pilot-meter-head strong{font-weight:700}
+.pilot-subtle,.pilot-meter-foot{color:var(--muted);font-size:.72rem;font-weight:400}
+.pilot-meter progress{appearance:none;-webkit-appearance:none;width:100%;height:9px;border:0;border-radius:99px;overflow:hidden;background:var(--line)}
+.pilot-meter progress::-webkit-progress-bar{background:var(--line);border-radius:99px}
+.pilot-meter progress::-webkit-progress-value{background:#7041E7;border-radius:99px;transition:width .25s ease}
+.pilot-meter progress::-moz-progress-bar{background:#7041E7;border-radius:99px}
+.pilot-meter-last{padding:9px 11px;background:var(--panel-2);border-radius:10px;font-size:.77rem;color:var(--text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pilot-meter .pilot-meter-foot span:last-child{text-align:right}
+.pilot-review{border-color:var(--line)}
+.pilot-rules{background:var(--panel)}
+@media(max-width:430px){#pilotAssistant .sb-assistant-composer{padding:7px;gap:2px}#pilotAssistant .sb-assistant-iconbtn{width:38px;height:38px;min-height:38px}#pilotAssistant .sb-assistant-composer .sb-assistant-actions{gap:4px}#pilotAssistant .sb-assistant-composer #sbAssistantInput{padding:10px 3px}}
+@media(prefers-reduced-motion:reduce){.pilot-meter progress::-webkit-progress-value{transition:none}}
+
+/* 31n — Personal category rules */
+.pilot-rule-editor{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(150px,1.1fr) auto;gap:8px;align-items:stretch;margin:12px 0 8px}
+.pilot-rule-editor input,.pilot-rule-editor select{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2);color:var(--text);font:inherit;min-height:40px}
+.pilot-rule-editor button{min-height:40px;padding:8px 14px;white-space:nowrap}
+.pilot-rule-editor :is(input,select,button):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pilot-rule-status{color:var(--muted);font-size:.78rem;min-height:1.2em}
+.pilot-custom-rules{margin:12px 0;display:grid;gap:5px}
+.pilot-personal-rule{display:grid;grid-template-columns:minmax(70px,1fr) minmax(80px,1.2fr) auto;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel-2)}
+.pilot-personal-rule strong,.pilot-rule-target{overflow-wrap:anywhere}
+.pilot-rule-target{color:var(--muted)}
+.pilot-rule-empty{font-size:.78rem;color:var(--muted);margin:0}
+.pilot-rules-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.72rem}
+.pilot-standard-rules{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.pilot-standard-rules summary{cursor:pointer;color:var(--muted)}
+.pilot-rule-editor :disabled,.pilot-rules-footer button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:600px){.pilot-rule-editor{grid-template-columns:1fr 1fr}.pilot-rule-editor button{grid-column:1/-1}.pilot-personal-rule{grid-template-columns:1fr auto}.pilot-rule-target{grid-column:1;grid-row:2}.pilot-personal-rule button{grid-column:2;grid-row:1 / span 2}}
+@media(max-width:380px){.pilot-rule-editor{grid-template-columns:1fr}.pilot-rule-editor button{grid-column:auto}}
+
+/* 31o — full taxonomy in the keyword selector. */
+.pilot-rule-editor select optgroup{font-weight:650}
+.pilot-rule-editor select option{font-weight:400}
+
+/* 31q — merchant heading and contextual purchase label */
+.pilot-expense-detail{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere;margin-top:2px;margin-bottom:2px}
+
+/* 31s — inline, local review editor */
+.pilot-operation-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:12px 0 3px;background:var(--panel-2);border:1px solid var(--line);padding:12px;border-radius:12px}
+.pilot-editor-field{display:grid;gap:5px;font-size:.78rem;color:var(--muted);min-width:0}
+.pilot-editor-wide{grid-column:1/-1}
+.pilot-editor-field input,.pilot-editor-field select{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px;min-width:0;width:100%;box-sizing:border-box;font:inherit;font-size:1rem}
+.pilot-editor-field :is(input,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pilot-editor-notice{margin:0;color:var(--muted);font-size:.78rem;overflow-wrap:anywhere}
+.pilot-editor-notice:empty{display:none}
+.pilot-editor-actions{display:flex;gap:8px}
+.pilot-editor-actions button{flex:1;min-height:40px}
+.pilot-op-controls{display:flex;gap:16px;align-items:center;margin:6px 0 0}
+.pilot-remove{color:#e1767c}
+.pilot-op-controls button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:380px){.pilot-operation-editor{grid-template-columns:1fr}}
+
+/* 31t — compact monthly budget projection under expense cards */
+.pilot-expense-budget{margin:10px 0 2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);font-size:.78rem;color:var(--muted);display:grid;gap:7px}
+.pilot-exp-budget-head,.pilot-exp-budget-foot{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.pilot-exp-budget-head strong{color:var(--text)}
+.pilot-exp-budget-track{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.pilot-exp-budget-track span{display:block;height:100%;background:#7041e7;border-radius:99px}
+.pilot-exp-budget-track .pilot-budget-over{background:#d85b6b}
+.pilot-exp-budget-note{font-size:.72rem}
+.pilot-expense-budget>.pilot-link{justify-self:start}

@@ -23,7 +23,7 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 ## État actuel
 
 - **Production du code** : V2.8.1 sur `main`.
-- Version du code : `V3.0`
+- Version du code : `V3.1`
 - **Branche de développement de référence** : `develop`.
 - **Version stable publiée** : V2.8.1 à la racine ; previews historiques conservées.
 - **État de release** : V3.0 approuvée sur la préversion, PR #40 prête pour intégration vers `develop` puis PR de release séparée vers `main`. La production demeure V2.8.1 tant que la release n'est pas publiée.
