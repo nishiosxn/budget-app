@@ -224,3 +224,22 @@ test("31am: gateway returns a safe sidecar for missing category with zero provid
  assert.equal(r.body.missingCategory.amountCents,5000);
  assert.equal(quota,0);assert.equal(gemma,0);
 });
+
+
+test("31ap: exact photographed mixed utterance skips AI and quota after authorization",async()=>{
+ const c={...ctx,categories:[
+  ...ctx.categories,
+  {id:"rest",name:"Restaurants / fast-food",kind:"expense",owner:"common"},
+  {id:"extra",name:"Revenus supplémentaires",kind:"income",owner:"B"}
+ ]};
+ const {handler,calls}=setup({authorize:async()=>({context:c}),quickExpense:core.quickCommand});
+ const result=await handler({...request,body:{...request.body,command:"J'ai dépensé 20 euros chez McDo et recu 10 euros de Lena"}});
+ assert.equal(result.status,200);
+ assert.equal(result.body.model,"local-rules");
+ assert.equal(result.body.metering.source,"local-rules");
+ assert.equal(result.body.metering.tokens.total,0);
+ assert.equal(result.body.metering.reservedNeurons,0);
+ assert.deepEqual(Array.from(result.body.result.operations,o=>o.kind),["expense","income"]);
+ assert.deepEqual(Array.from(result.body.result.operations,o=>o.amountCents),[2000,1000]);
+ assert.deepEqual(calls,[]);
+});
