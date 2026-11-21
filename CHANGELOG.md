@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ai — catégories reconduites, dépense initiale et préservation historique (21 novembre 2026)
+- Création d'une catégorie à partir d'un mois déterminé, budget mensuel reconduit grâce à `scope=forward` (sans multiplier les lignes par mois).
+- Confirmation explicite d'une catégorie avec budget **et dépense initiale** en une seule transaction PostgreSQL idempotente. Aucune création implicite lors d'une simple dépense.
+- Sécurisation des rejouements, doublons, pannes réseau et interdiction de transformer des dépenses futures en écritures présentes.
+- Archivage et masquage historiques préservés ; opérations rattachées non supprimées. Aucun changement de DA ni de production.
+
+
+
 ### 31ag — interprétation rapide et reprise sûre après panne (21 novembre 2026)
 - Dépenses dans les catégories existantes reconnues localement : « ajoute 50 euro de dépense en Gundam », 0 token IA ; catégorie absente = demande de précision, jamais de création automatique.
 - Reprise des confirmations de création de catégorie avec le même identifiant après réponse réseau perdue. Contrôle atomique et anti-doublon conservé côté base.
