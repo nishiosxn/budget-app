@@ -2,6 +2,16 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ag — fiabilité des écritures et interprétation locale (21 novembre 2026)
+- Interprétation locale stricte des dépenses dans une **catégorie nommée et existante** : « ajoute 50 euro de dépense en Gundam » → dépense de 50 €, catégorie exacte Gundam si elle existe et est active ; 0 token Gemma / 0 neurone. Aucune création implicite, aucune catégorisation approximative ; si le nom n'existe pas, réponse de clarification.
+- Correction du rappel idempotent des créations après réponse réseau perdue : le texte explicite de création et le brouillon sont vérifiés indépendamment du catalogue actualisé, puis le RPC atomique fait foi pour `same`, `duplicate` ou `conflict` selon l'identifiant de demande. Une création d'un nom déjà présent reste refusée avec un **nouvel** identifiant.
+- Les confirmations de transactions existantes conservent l'identifiant déterministe de lot et le contrôle de lecture après écriture. Aucun comportement d'écriture élargi aux budgets, opérations mixtes ou catégories implicites.
+- Audit lecture seule de la base Budget : **3 transactions actives** portant une signature Smart Assistant et **0 catégorie / 0 budget** portant `smart-assistant-cat-%` à l'instant de la vérification. Les captures d'aperçu ne démontrent donc pas une création réelle confirmée. Aucune donnée ajoutée ou modifiée pour l'audit.
+- Tests ajoutés : expressions exactes, catégories absentes/masquées, rejet des actions enchaînées, zéro appel IA côté passerelle, même `requestId` après actualisation du catalogue et refus des doublons par le RPC. Contrôle navigateur authentifié des confirmations réelles restant à réaliser.
+- Ressources du pilote : `assistant-core.js?v=31ag`. Pas de changement de DA, de `main` ni de données personnelles.
+
+
+
 ### 31af — noir graphite, boutons carrés et création explicite dans le foyer de test (21 novembre 2026)
 - Correction du micro et de l'envoi : boîtes `2.75rem × 2.75rem`, `box-sizing:border-box`, `display:grid;place-items:center`, padding nul, SVG centré, réduction cohérente sur très petit mobile.
 - Design « gris graphite » (pas de fond violet) dans `native-dark.css` : fond `#0d0e10`, surface `#181a1d`, secondaire `#222428`, surélévation `#2b2e33`, bordures `#373a3f`, violet de marque `#5c29d6` réservé aux accents. Suppression du halo violet dans le fond.
