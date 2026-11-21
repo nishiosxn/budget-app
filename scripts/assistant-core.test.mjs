@@ -127,3 +127,18 @@ test("31aa: merchant taxonomy prefers product meaning over shop default",()=>{
  assert.equal(unknown?.ok,true);
  assert.equal(unknown.value.operations[0].categoryId,null);
 });
+
+
+test("31ac: same-household categories block case-insensitive duplicate creation",()=>{
+ const c={...ctx,actor:"B",selectedMonth:"2026-11",solo:true,categories:[
+  {id:"old",name:"LEGO",kind:"expense",owner:"B",createdFrom:"2026-09"},
+  {id:"home",name:"Maison / entretien",kind:"expense",owner:"B",createdFrom:"2026-09"}
+ ]};
+ for(const prompt of ["Crée une catégorie Lego avec un budget de 60 euros.","Crée une catégorie lego avec un budget de 60 €"]){
+  const r=core.quickCommand(prompt,c);
+  assert.equal(r?.ok,true,prompt);
+  assert.equal(r.value.kind,"clarify",prompt);
+  assert.match(r.value.message,/existe déjà/i);
+  assert.equal(core.validateCategoryDraft({kind:"categoryDraft",name:"Lego",owner:"B",month:"2026-11",date:c.today,budgetCents:6000,expenseCents:null},c).ok,false);
+ }
+});
