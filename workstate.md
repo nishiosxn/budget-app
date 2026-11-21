@@ -9,7 +9,7 @@
 - UI : « Confirmer » disponible aussi pour une catégorie + dépense, aperçu de jauge et texte explicite « budget mensuel reconduit », modification désactivée après première tentative de confirmation pour préserver l'identifiant de reprise. DA Deep Dark inchangée.
 - Gestion des catégories existante vérifiée : les suppressions par mois ou globales de `js/categories.js` masquent les catégories dans l'état sans enlever leurs transactions ; en base, la FK `transactions_category_id_household_id_fkey` est `ON DELETE RESTRICT`. Aucun code de suppression modifié ; opérations historiques conservées.
 - Limite voulue : aucune dépense **future** n'est créée comme déjà réalisée ; si le mois futur est demandé avec une dépense, l'assistant refuse et demande une opération datée réalisable. Les budgets futurs sans dépense sont acceptés.
-- Tests Core, serveur, UI et SQL statique ajoutés ; vérifications CI et de déploiement pilote requises avant publication. Aucune opération de test créée en base par l'agent.
+- Tests Core, serveur, UI et SQL statique ajoutés ; **205 tests automatisés réussis (203 applicatifs + 2 complémentaires, run 44938411873)**. Migration pilote `smart_assistant_category_budget_expense_atomic_v2` appliquée et vérifiée : `anon=false`, `authenticated=false`, `service_role=true`. Edge Function pilote `smart-assistant` **v25** active, JWT obligatoire et 5 fichiers comparés aux sources. Aucune opération de test créée en base par l'agent. Validation navigateur authentifié d'une vraie confirmation encore nécessaire.
 
 
 
