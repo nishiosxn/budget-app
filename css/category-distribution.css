@@ -128,3 +128,191 @@
 @media(prefers-reduced-motion:reduce){
   #categories .budget-distribution :where(*, *::before, *::after){animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+
+/* PR49 Unslop page rhythm — one visual grammar for all sections on Catégories.
+ * Scoped to this view: no shared components, other pages or financial data change.
+ */
+#categories{
+  --cat-panel-padding:clamp(1rem,calc(.8rem + 1vw),1.5rem);
+  --cat-heading-size:clamp(1rem,calc(.96rem + .25vw),1.1875rem);
+  --cat-panel-radius:var(--radius,1.25rem);
+  --cat-meta-size:clamp(.8125rem,calc(.79rem + .12vw),.875rem);
+  --cat-section-gap:1rem;
+}
+#categories .category-layout{display:grid;gap:var(--cat-section-gap);min-width:0}
+#categories .budget-distribution,
+#categories .category-group{
+  margin:0;
+  min-width:0;
+  background:var(--panel);
+  color:var(--text);
+  border:.0625rem solid var(--line);
+  border-radius:var(--cat-panel-radius);
+  padding:var(--cat-panel-padding);
+  box-shadow:var(--shadow);
+}
+#categories .budget-distribution{margin-bottom:var(--cat-section-gap)}
+#categories .category-group{display:grid;gap:1rem}
+#categories .bd-heading,
+#categories .category-group-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-width:0;
+  gap:.75rem;
+  margin:0;
+}
+#categories .category-group-head{
+  padding:0 0 1rem;
+  border-bottom:.0625rem solid var(--line);
+}
+#categories .bd-heading h2,
+#categories .category-group-head h2{
+  margin:0;
+  font-size:var(--cat-heading-size);
+  font-weight:650;
+  line-height:1.3;
+  letter-spacing:-.018em;
+  color:var(--text);
+}
+#categories .bd-heading{padding:0 0 .875rem;border-bottom:.0625rem solid var(--line)}
+#categories .bd-total strong{font-weight:650;letter-spacing:-.035em}
+#categories .bd-total span{font-size:var(--cat-meta-size)}
+#categories .bd-legend-amount,
+#categories .bd-legend-row,
+#categories .bd-changes-delta{font-weight:600}
+#categories .bd-legend-percent,
+#categories .bd-legend-row,
+#categories .bd-sort,
+#categories .bd-sort select,
+#categories .bd-change,
+#categories .bd-changes-trigger small{
+  font-size:var(--cat-meta-size);
+}
+#categories .bd-tooltip small,
+#categories .bd-empty span{font-size:.8125rem}
+#categories .bd-empty{gap:.65rem}
+#categories .bd-footnote{display:none}
+#categories .cg-head-end{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:.75rem;
+  min-width:0;
+  flex-wrap:wrap;
+}
+#categories .cg-figures{
+  display:flex;
+  align-items:baseline;
+  justify-content:flex-end;
+  gap:clamp(.5rem,1vw,.875rem);
+  flex-wrap:wrap;
+  font-size:var(--cat-meta-size);
+  line-height:1.35;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+#categories .cg-figures span{white-space:nowrap}
+#categories .cg-figures strong{font-size:.9375rem;font-weight:650;color:var(--text)}
+#categories .category-cards{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  min-width:0;
+  align-items:start;
+}
+#categories .category-cards.income-cards{grid-template-columns:minmax(0,1fr)}
+#categories .cat-section,
+#categories .cat-section.card{
+  min-width:0;
+  margin:0;
+  padding:0 clamp(.75rem,1vw,1.125rem);
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  border-radius:0;
+}
+#categories .category-cards:not(.income-cards) .cat-section:first-child{padding-left:0}
+#categories .category-cards:not(.income-cards) .cat-section:last-child{padding-right:0}
+#categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
+  border-right:.0625rem solid var(--line);
+}
+#categories .cat-section-single{padding:0}
+#categories .category-cards.income-cards .cat-section{padding:0}
+#categories .cat-section-head{
+  display:flex;
+  align-items:center;
+  gap:.625rem;
+  justify-content:space-between;
+  margin:0 0 .25rem;
+  padding:0 0 .6875rem;
+}
+#categories .cat-section-title,
+#categories .saving-card .cat-section-title,
+#categories .income-card .cat-section-title{
+  font-size:.90625rem;
+  font-weight:650;
+  color:var(--text);
+  line-height:1.35;
+}
+#categories .cat-section-total{
+  margin:.25rem 0 0;
+  font-size:var(--cat-meta-size);
+  font-weight:450;
+  line-height:1.5;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+#categories .saving-card{background:transparent}
+#categories .saving-group .category-group-head h2{color:var(--text)}
+#categories .cat-item{
+  border-color:var(--line);
+  padding-block:.75rem;
+}
+#categories .cat-name{font-size:.875rem;font-weight:550;line-height:1.4}
+#categories .cat-amount{font-size:.875rem;font-weight:650;font-variant-numeric:tabular-nums}
+#categories .cat-meta{font-size:.8125rem;line-height:1.4}
+#categories .cat-planned,
+#categories .cat-owner{font-size:.8125rem}
+#categories .cat-section-actions .cat-bulk,
+#categories .add-category{font-size:.8125rem;font-weight:600}
+#categories .add-category{
+  min-height:2.5rem;
+  margin-top:.75rem;
+  border-color:var(--line);
+  background:transparent;
+}
+#categories .category-filter-banner{
+  margin:0;
+  font-size:var(--cat-meta-size);
+}
+#categories .bd-legend-row:focus-visible,
+#categories .cat-item :where(button,select):focus-visible{
+  outline:.15rem solid var(--bd-accent,#5c29d6);
+  outline-offset:.12rem;
+}
+@media(max-width:56rem){
+  #categories .category-cards:not(.income-cards){grid-template-columns:minmax(0,1fr)}
+  #categories .category-cards:not(.income-cards) .cat-section{
+    padding:1rem 0;
+    border-right:0;
+    border-bottom:.0625rem solid var(--line);
+  }
+  #categories .category-cards:not(.income-cards) .cat-section:first-child{padding-top:0}
+  #categories .category-cards:not(.income-cards) .cat-section:last-child{padding-bottom:0;border-bottom:0}
+}
+@media(max-width:40rem){
+  #categories .category-group-head{align-items:flex-start;flex-wrap:wrap;gap:.5rem}
+  #categories .category-group-head h2{flex:1 0 100%}
+  #categories .cg-head-end{width:100%;justify-content:space-between;gap:.625rem}
+  #categories .category-group-head>.cg-figures{justify-content:flex-start}
+  #categories .cg-figures{justify-content:flex-start;gap:.75rem}
+  #categories .cg-figures strong{font-size:.875rem}
+  #categories .bd-toolbar{width:100%}
+  #categories .bd-legend-row{min-height:2.75rem}
+  #categories .cat-meta{font-size:.8125rem}
+}
+@media(prefers-reduced-motion:reduce){
+  #categories .category-group :where(*,*::before,*::after){transition:none!important;animation:none!important}
+}
