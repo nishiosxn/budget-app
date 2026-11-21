@@ -82,12 +82,12 @@ test("category selector groups existing categories separately from proposed crea
 test("31ai: changing a category's start month preserves one-off expense dating rules",()=>{
  const c={...ctx,selectedMonth:"2026-11",today:"2026-11-21",firstMonth:"2026-09",lastMonth:"2028-12",solo:true,actor:"B",categories:[]};
  const base={kind:"categoryDraft",name:"Atelier",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:10000,expenseCents:null};
- const past=root.SmartBudgetAssistantReviewEditor.categoryFromFields(base,{name:"Atelier",month:"2026-10",budget:"100",expense:"25"},c);
+ const past=e.categoryFromFields(base,{name:"Atelier",month:"2026-10",budget:"100",expense:"25"},c);
  assert.equal(past.ok,true);
  assert.equal(past.value.date,"2026-10-01");
  assert.equal(past.value.expenseCents,2500);
- const future=root.SmartBudgetAssistantReviewEditor.categoryFromFields(base,{name:"Atelier",month:"2026-12",budget:"100",expense:"25"},c);
+ const future=e.categoryFromFields(base,{name:"Atelier",month:"2026-12",budget:"100",expense:"25"},c);
  assert.equal(future.ok,false);
- const futureCategory=root.SmartBudgetAssistantReviewEditor.categoryFromFields(base,{name:"Atelier",month:"2026-12",budget:"100",expense:""},c);
+ const futureCategory=e.categoryFromFields(base,{name:"Atelier",month:"2026-12",budget:"100",expense:""},c);
  assert.equal(futureCategory.ok,true);
 });
