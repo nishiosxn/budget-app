@@ -5,7 +5,7 @@
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  const kinds={expense:"Dépense",income:"Revenu",saving:"Mise en épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
- const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Confirmation déjà utilisée avec une autre proposition. Aucune nouvelle création."};
+ const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Conflit détecté : un budget a changé, une catégorie existe déjà ou la demande a été modifiée. Aucune opération partielle enregistrée.",confirm_budget_baseline_required:"Budget actuel indisponible. Actualise le foyer avant de confirmer.",confirm_not_supported:"Cette opération ne peut pas être enregistrée dans le pilote."};
  // Single-line default. Expand only for actual line breaks or visual wrapping.
  function resizeComposer(){
   input.style.height="auto";
@@ -451,6 +451,10 @@
     try{
      const expectation=draft.operations.map((op,i)=>({index:i,beforeCents:baselines[i]?.beforeCents}));
      const r=await saveBatchDraft(requestId,sourceCommand,draft,expectation);
+     if(!r.ok&&[409,422].includes(r.status)){
+      attempted=false;requestId=null;saveError=errorMessages[r.body?.error]||"Lot refusé, aucune écriture. Reformule la demande.";
+      status.textContent=saveError;return;
+     }
      if(!r.ok||r.body.commit?.kind!=="batch"||r.body.commit?.requestId!==requestId||
        r.body.commit?.count!==draft.operations.length+draft.categories.length||
        r.body.commit?.categoriesCreated!==draft.categories.length)throw Error("Confirmation non vérifiée.");
@@ -632,6 +636,10 @@
      const batchDraft={kind:"draft",operations:entries.map(e=>e.op)};
      const expectation=entries.flatMap((entry,i)=>entry.op.kind==="plan"?[{index:i,beforeCents:entry.baseline?.beforeCents}]:[]);
      const r=batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft);
+     if(!r.ok&&[409,422].includes(r.status)){
+      attempted=false;requestId=null;saveError=errorMessages[r.body?.error]||"Lot refusé, aucune écriture. Actualise les budgets.";
+      status.textContent=saveError;return;
+     }
      if(!r.ok||r.body.commit?.requestId!==requestId||r.body.commit?.count!==entries.length||
        (batch&&r.body.commit?.kind!=="batch"))throw Error("Unverified save");
      saved=true;locked=true;pendingReview=null;history=[];budgetReads.clear();status.dataset.source="";status.textContent="Enregistré · aucun appel IA.";
@@ -639,7 +647,7 @@
      saveError="Enregistrement non vérifié. Réessaie le même lot ; ne le ressaisis pas.";
      status.dataset.source="";status.textContent="Confirmation à vérifier.";
     }finally{
-     setSavingPilot(false);if(!saved){send.disabled=true;$("cancel").disabled=true}draw();
+     setSavingPilot(false);if(!saved&&attempted){send.disabled=true;$("cancel").disabled=true}draw();
     }
    });
    actions.append(cancel,ok);group.append(actions);
