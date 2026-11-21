@@ -401,3 +401,17 @@ test("31aj: budget and mixed category batches remain reviewed, atomic and replay
  assert.match(js,/requestId=crypto\.randomUUID\(\)/);
  assert.match(html,/live-ui\.js\?v=31aj/);
 });
+
+
+test("31ak: repeated confirmation cannot create a fresh request or allow editing the in-flight lot",()=>{
+ assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
+ assert.match(js,/cancel\.disabled=locked\|\|saving\|\|attempted/);
+ assert.match(js,/cancel\.disabled=locked\|\|attempted/);
+ assert.match(js,/if\(!locked&&!attempted\)\{/);
+ assert.match(js,/attempted=true;saving=true;saveError=""/);
+ assert.match(js,/setSavingPilot\(true\)/);
+ assert.match(js,/setSavingPilot\(false\)/);
+ assert.match(js,/if\(!r\.ok&&\[409,422\]\.includes\(r\.status\)\)/);
+ assert.match(js,/Confirmation non vérifiée\. Réessaie le même lot/);
+ assert.match(js,/saveBatchDraft\(requestId,sourceCommand,draft,expectation\)/);
+});
