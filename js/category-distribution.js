@@ -186,7 +186,7 @@
   const row=id?[...target.querySelectorAll("[data-category-row]")].find(el=>el.dataset.categoryRow===id):null;
   const el=row||target.querySelector(".category-group")||target;
   el.setAttribute("tabindex","-1");el.focus({preventScroll:true});
-  el.scrollIntoView({behavior:root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?"instant":"smooth",block:"start"});
+  el.scrollIntoView({behavior:root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?"auto":"smooth",block:"start"});
  }
  function attach(){
   if(typeof document==="undefined")return;
@@ -237,6 +237,6 @@
  }
  root.SmartBudgetCategoryDistribution=Object.freeze({buildModel,render(){attach();renderBudgetCard()},filter,clear(){
   ui.selected=null;renderBudgetCard();updateGrid();
- },__state:ui});
+ }});
  attach();
 })(globalThis);
