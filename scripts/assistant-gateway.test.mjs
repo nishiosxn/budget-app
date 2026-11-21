@@ -204,3 +204,23 @@ test("31al: screenshot verbatim must not invoke Gemma or reserve a single token"
  assert.equal(reservations,0);
  assert.equal(providerCalls,0);
 });
+
+
+
+test("31am: gateway returns a safe sidecar for missing category with zero provider or quota calls",async()=>{
+ const c={...ctx,solo:true,actor:"B",today:"2026-11-21",selectedMonth:"2026-11",categories:[{id:"courses",name:"Courses",kind:"expense",owner:"B",createdFrom:"2026-09"}]};
+ let quota=0,gemma=0;
+ const handler=createAssistantGateway({enabled:true,model,
+  authorize:async()=>({context:c,userId:"33333333-3333-4333-8333-333333333333"}),
+  quickExpense:core.quickCommand,validate:core.validateResult,validateReview:core.validateReview,
+  reserve:async()=>{quota++;return true},infer:async()=>{gemma++;throw Error("Gemma must not execute")}
+ });
+ const r=await handler({...request,body:{...request.body,command:"« J’ai payé 50 € en Gundam. »"}});
+ assert.equal(r.status,200);
+ assert.equal(r.body.model,"local-rules");
+ assert.equal(r.body.metering.tokens.total,0);
+ assert.equal(r.body.result.kind,"clarify");
+ assert.equal(r.body.missingCategory.name,"Gundam");
+ assert.equal(r.body.missingCategory.amountCents,5000);
+ assert.equal(quota,0);assert.equal(gemma,0);
+});
