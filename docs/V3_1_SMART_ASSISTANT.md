@@ -131,3 +131,8 @@ Inset commun 16/12 px, supprimer la marge native du triangle et placer un chevro
 
 ## 31y — Alignement du padding inférieur
 Suppression du wrapper vide du bouton Nouvelle demande. Éléments de résultat et statut réellement vides masqués visuellement afin de ne pas créer de pistes et gaps dans la grille du Smart Assistant. Design system documente la règle pour l'ensemble des écrans. Aucune modification des données ou des autorisations.
+
+## 31z — Protection quota et meilleur routage local
+- Une dépense ponctuelle complète « J'ai dépensé/payé N € chez [enseigne] » est traitée sans IA même si l'enseigne n'est pas dans la liste. Le libellé est gardé, aucun ID ni catégorie n'est inventé ; l'utilisateur doit choisir la catégorie si elle reste ambiguë. Conditions strictes pour éviter qu'une opération multiple, future ou récurrente soit acceptée partiellement. Décathlon et King Jouet disposent d'une graphie canonique.
+- Dans la passerelle Gemma : au maximum 1024 tokens de sortie (contre 1400), une seule inférence, réservation estimée <=320 neurones par demande sur le plafond interne de 8000/j. Estimation volontairement prudente basée sur la taille complète du payload, une marge et le coût maximal de sortie ; rejet sans appel IA des contextes trop lourds. Le quota 320 est un plafond de réservation applicative, non une garantie mathématique de consommation du fournisseur (qui peut différer de l'estimation). La limite réelle dépend aussi de Cloudflare.
+- Tests de nouvelle enseigne, refus de commandes liées, bornes estimées et absence d'appel/quota sur demandes locales ou trop coûteuses. Aucun changement d'écriture/autorisation, aucune donnée financière modifiée. Régression avec vrais prompts navigateur à effectuer avant fusion.

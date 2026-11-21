@@ -16,7 +16,7 @@ test("quota failure fails closed",async()=>{for(const reserve of [async()=>false
 test("unknown model cannot run",async()=>{const {handler,calls}=setup({model:"not-approved"});assert.equal((await handler(request)).status,503);assert.equal(calls.length,0)});
 test("malicious or malformed outputs cannot become proposals",async()=>{for(const output of [{kind:"delete_all"},{...valid,operations:[{...valid.operations[0],categoryId:"unknown"}]},"not json"]){const {handler}=setup({infer:async()=>({result:{response:output}})});assert.equal([422,502].includes((await handler(request)).status),true)}});
 test("supports both REST output variants; rejects extra text",()=>{assert.equal(decodeModelResponse({result:{response:valid}}),valid);assert.equal(decodeModelResponse({result:{choices:[{message:{content:JSON.stringify(valid)}}]}}).kind,"draft");assert.throws(()=>decodeModelResponse({result:{response:"Here is JSON: "+JSON.stringify(valid)}}))});
-test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_completion_tokens,1400);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
+test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_completion_tokens,1024);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
 test("shared client and server validator remain identical",()=>{assert.equal(fs.readFileSync("js/assistant-core.js","utf8"),fs.readFileSync("supabase/functions/_shared/smart-assistant-core.js","utf8"))});
 
 test("guarded conversation carries a bounded prior draft and question",async()=>{
@@ -35,7 +35,7 @@ test("malformed, stale, excessive and non-draft history fails before quota or pr
 test("Gemma pilot reserves the bounded estimate before a real provider call",async()=>{
  let amount=null,seen;const {handler}=setup({reserve:async(_token,_household,units)=>{amount=units;return true},infer:async(_model,payload)=>{seen=payload;return {result:{response:valid}}}});
  assert.equal((await handler(request)).status,200);
- assert.equal(amount,estimateReservation(seen));assert.ok(Number.isInteger(amount)&&amount>0&&amount<=1000);
+ assert.equal(amount,estimateReservation(seen));assert.ok(Number.isInteger(amount)&&amount>0&&amount<=320);
 });
 test("oversized context is rejected before quota or provider",async()=>{
  let invoked=false;const tooLarge={...ctx,categories:Array.from({length:280},(_,i)=>({id:"c"+i,name:"é".repeat(120),kind:"expense",owner:"common"}))};

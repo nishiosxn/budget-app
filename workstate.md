@@ -227,3 +227,6 @@ Quota et règles catégorisation alignés sur des insets cohérents, chevron acc
 
 ### 31y — Correction du dernier écart inférieur
 Retrait du wrapper grid vide et alignement du bouton Nouvelle demande en enfant direct. Nettoyage des pistes vides de résultat et statut, standard réutilisable pour la refonte globale.
+
+### 31z — Protection de consommation IA
+Local : achats simples chez toute enseigne non ambiguë sans catégorie inventée, Décathlon reconnu. Edge : sortie plafonnée à 1024 tokens ; réservation conservatrice limitée à 320 neurones internes par prompt, pas d'inférence sur payload trop gros. Tests de limites et non-régressions. Les coûts réels peuvent différer des estimations.

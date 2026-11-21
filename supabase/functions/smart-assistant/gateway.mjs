@@ -3,6 +3,10 @@ const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
 const uuid=v=>typeof v==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
 // Pilot permits only the model covered by our current reservation estimate.
 const modelIds=new Set(["@cf/google/gemma-4-26b-a4b-it"]);
+// Fail-closed per-request envelope: 320 estimated neurons is 4% of the
+// pilot app allocation (8,000/day), never the entire daily limit.
+export const MAX_NEURONS_PER_PROMPT=320;
+export const MAX_OUTPUT_TOKENS=1024;
 export const validModel=id=>modelIds.has(id);
 export const modelSchema={
  type:"object",properties:{
@@ -27,15 +31,16 @@ const systemPrompt=[
  "Aucun SQL, suppression, création de catégorie, transfert bancaire ou action non autorisée. Si la demande hors périmètre implique une action, précise la limite. Au plus 12 opérations."
 ].join("\n");
 export function makeModelRequest(command,context,history=[]){
- return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_completion_tokens:1400,temperature:0.1,stream:false,chat_template_kwargs:{enable_thinking:false}};
+ return {messages:[{role:"system",content:systemPrompt},{role:"user",content:JSON.stringify({command,context,...(history.length?{history}:{})})}],response_format:{type:"json_schema",json_schema:modelSchema},max_completion_tokens:MAX_OUTPUT_TOKENS,temperature:0.1,stream:false,chat_template_kwargs:{enable_thinking:false}};
 }
 // Estimate, not provider metering: reserve pessimistically from UTF-8 payload size,
- // 2048 tokens of template headroom, maximum completion tokens and 50% margin.
+ // 2048 units of template headroom, maximum completion tokens and 50% margin.
  // Reference rates: 9,091 input / 27,273 output neurons per million tokens.
  export function estimateReservation(payload){
   const bytes=new TextEncoder().encode(JSON.stringify(payload)).length;
-  if(bytes>24000||payload.max_completion_tokens!==1400)return null;
-  return Math.ceil(1.5*((bytes+2048)*9091+1400*27273)/1000000);
+  if(bytes>24000||payload.max_completion_tokens!==MAX_OUTPUT_TOKENS)return null;
+  const estimated=Math.ceil(1.5*((bytes+2048)*9091+MAX_OUTPUT_TOKENS*27273)/1000000);
+  return estimated>=1&&estimated<=MAX_NEURONS_PER_PROMPT?estimated:null;
  }
  export function extractTokenUsage(raw){
  const data=raw?.result?.usage??raw?.usage??raw?.result?.choices?.[0]?.usage;
