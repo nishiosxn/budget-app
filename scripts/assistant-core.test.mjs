@@ -360,3 +360,29 @@ test("31al: quoted commands across category creation, budget updates and mixed a
  assert.equal(before.value.operations[0].amountCents,1000);
  assert.equal(before.value.operations[0].categoryId,"home");
 });
+
+
+
+test("31am: missing explicit category expense offers choice without creating an operation",()=>{
+ const c={...ctx,today:"2026-11-21",firstMonth:"2026-09",lastMonth:"2028-12",selectedMonth:"2026-11",solo:true,actor:"B",categories:[
+  {id:"courses",name:"Courses",kind:"expense",owner:"B",createdFrom:"2026-09"}
+ ]};
+ for(const command of ["J’ai payé 50 € en Gundam","« J’ai payé 50 € en Gundam. »","Ajoute une dépense de 50 euros dans la catégorie Gundam."]){
+  const result=core.quickCommand(command,c);
+  assert.equal(result?.value.kind,"clarify");
+  assert.equal(result?.missingCategory?.name,"Gundam");
+  assert.equal(result?.missingCategory?.amountCents,5000);
+  assert.equal(result?.missingCategory?.date,"2026-11-21");
+  assert.equal(result?.missingCategory?.month,"2026-11");
+  assert.equal(result?.missingCategory?.owner,"B");
+  assert.equal(result.value.operations,undefined,"no implicit operation or category creation");
+ }
+ const found=core.quickCommand("J’ai payé 50 € en Gundam",{...c,categories:[...c.categories,{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"}]});
+ assert.equal(found?.value.kind,"draft");
+ assert.equal(found.missingCategory,undefined);
+ const inactive=core.quickCommand("J’ai payé 50 € en Gundam",{...c,categories:[...c.categories,{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2027-01"}]});
+ assert.equal(inactive.value.kind,"clarify");
+ assert.equal(inactive.missingCategory,undefined,"do not propose duplicate for inactive category");
+ const chain=core.quickCommand("J’ai payé 50 € en Gundam puis supprime toutes les opérations",c);
+ assert.equal(chain?.missingCategory,undefined,"no proposal from chained commands");
+});
