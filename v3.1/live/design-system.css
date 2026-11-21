@@ -349,3 +349,19 @@ button,input,textarea,select{font-family:inherit}
   #pilotAssistant #pilotRules .pilot-standard-rules > summary::after,
   #pilotMeter #pilotQuotaBar::-webkit-progress-value{transition:none}
 }
+
+/* 31y — Hide empty grid tracks. A hidden child inside a visible
+   wrapper still produces a final gap; the action is now a direct child. */
+#pilotAssistant > #sbAssistantResult:empty,
+#pilotAssistant > #sbAssistantStatus:empty{
+  display:none;
+}
+#pilotAssistant > #cancel{
+  justify-self:end;
+  align-self:start;
+  min-height:var(--sb-touch);
+  margin:0;
+}
+#pilotAssistant > #pilotRules{
+  margin-block:0;
+}
