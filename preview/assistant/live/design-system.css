@@ -226,7 +226,7 @@ button,input,textarea,select{font-family:inherit}
   box-sizing:border-box;min-width:0;width:100%;
   margin:0;padding:0;border:1px solid var(--sb-line);
   border-radius:var(--sb-card-radius);
-  background:var(--sb-surface);overflow:hidden;
+  background:var(--sb-surface);overflow:visible;
   color:var(--sb-ink);font-size:var(--sb-sm);
   line-height:var(--sb-lh-sm);
 }

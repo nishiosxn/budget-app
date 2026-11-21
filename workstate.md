@@ -221,3 +221,6 @@ Lot ponctuel dépenses/revenus catégories existantes seulement ; confirmation i
 
 ### 31w — correctif état de confirmation
 Libération de busy avant rendu du brouillon valide ; protection d'enregistrement conservée. Test d'exécution du callback, aucune modification Supabase.
+
+### 31x — harmonisation géométrique et charte V1.1
+Quota et règles catégorisation alignés sur des insets cohérents, chevron accessible ; design system entièrement documenté pour future refonte globale. Front pilote seulement.

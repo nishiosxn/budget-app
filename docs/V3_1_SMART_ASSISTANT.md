@@ -125,3 +125,6 @@ Les lots composés exclusivement de dépenses/revenus ponctuels dans des catégo
 
 ## 31w — Correctif bouton Confirmer
 Le rendu du brouillon intervient après validation et libération de l'état busy d'analyse. Le composeur reste bloqué jusqu'au finally synchrone ; le verrou busy reste actif pendant l'enregistrement réel. Test de régression exécutant le callback de soumission pour les deux types de brouillons. Aucun changement serveur ou financier.
+
+## 31x — Ajustement technique du quota et de l’accordéon
+Inset commun 16/12 px, supprimer la marge native du triangle et placer un chevron maîtrisé à droite ; une seule bordure et même padding horizontal pour le contenu ouvert, les actions et les messages. Quota sans cadre supplémentaire pour la dernière demande, jauge 6 px et wrapping. Charte Smart Budget 1.1 étendue à tous les composants et pages ; aucun changement moteur/DB.
