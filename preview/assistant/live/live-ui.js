@@ -232,13 +232,25 @@
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&pendingReview===draft&&!locked}
   function draw(){
-   group.replaceChildren();const content=document.createElement("div");content.className="pilot-category-card";group.append(content);const heading=document.createElement("strong");heading.textContent=draft.name;heading.className="pilot-category-heading";content.append(heading);
-   const note=document.createElement("p");note.className="pilot-op-meta";note.textContent="Nouvelle catégorie de dépenses · "+draft.month;content.append(note);
-   if(draft.budgetCents!==null)content.append(reviewRow("Budget prévu",draft.budgetCents,"pilot-plan"));
-   if(draft.expenseCents!==null)content.append(reviewRow("Dépense à enregistrer",draft.expenseCents,"pilot-negative"));
-   if(draft.budgetCents!==null&&draft.expenseCents!==null){
-    if(draft.budgetCents>0){const bar=document.createElement("div");bar.className="pilot-category-progress";const used=document.createElement("span");used.style.width=Math.min(100,draft.expenseCents/draft.budgetCents*100)+"%";bar.append(used);content.append(bar)}
-    const remain=draft.budgetCents-draft.expenseCents;content.append(reviewRow("Budget restant",remain,remain>=0?"pilot-positive":"pilot-negative"));
+   group.replaceChildren();
+   // Match the existing 31z operation cards, including the right-aligned amount.
+   const content=document.createElement("div");content.className="pilot-op";group.append(content);
+   const top=document.createElement("div");top.className="pilot-op-top";
+   const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon("game"));
+   const info=document.createElement("div");info.className="pilot-op-info";
+   const heading=document.createElement("strong");heading.textContent=draft.name;
+   const meta=document.createElement("div");meta.className="pilot-op-meta";
+   meta.textContent="Nouvelle catégorie · "+monthReviewDate(draft.month+"-01",ctx)+" · Budget initial";
+   info.append(heading,meta);
+   const amount=document.createElement("strong");amount.className="pilot-op-money pilot-plan";
+   amount.textContent=draft.budgetCents===null?"Sans budget":euro(draft.budgetCents);
+   top.append(symbol,info,amount);content.append(top);
+   if(draft.budgetCents!==null){
+    // A new category has zero *existing* expenses. Include only an explicitly
+    // requested expense; never use the parent category's spending.
+    mixedBudgetBar(content,draft.budgetCents,draft.expenseCents??0,{name:draft.name,month:draft.month,isNew:true});
+   }else if(draft.expenseCents!==null){
+    content.append(reviewRow("Dépense proposée",draft.expenseCents,"pilot-negative"));
    }
    if(!locked){
     if(editing){
@@ -248,7 +260,7 @@
       {key:"month",label:"Mois du budget",type:"month",value:draft.month,min:ctx.firstMonth,max:ctx.lastMonth,required:true,wide:true}],
       async(fields,notice,finish)=>{if(!active())return "Proposition périmée.";const checked=reviewEditor.categoryFromFields(draft,fields,ctx);if(!checked.ok)return checked.error;await finish(()=>{if(!active())return;Object.assign(draft,checked.value);history=[];editing=false;draw()});return null},
       ()=>{if(active()){editing=false;draw()}});
-    }else{const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=true;draw()}});content.append(edit)}
+    }else{const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=true;draw()}});actions.append(edit);content.append(actions)}
    }
    const safe=document.createElement("p");safe.className="pilot-review-message";safe.textContent=locked?"Confirmé en simulation.":"Mode test · aucun enregistrement.";group.append(safe);
    const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
