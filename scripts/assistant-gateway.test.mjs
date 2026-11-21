@@ -143,3 +143,33 @@ test("31ag: expense using the exact named existing category skips AI and quota",
  assert.equal(absent.status,200);
  assert.equal(reserved,0);
 });
+
+
+
+test("31ak: exact-category voice expenses bypass provider and quota after authentication",async()=>{
+ const personal={...ctx,solo:true,actor:"B",categories:[
+  {id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-09",hiddenMonths:[]}
+ ]};
+ let reserved=0,called=0,authorized=0;
+ const handler=createAssistantGateway({enabled:true,model,
+  authorize:async()=>{authorized++;return{context:personal}},
+  quickExpense:core.quickCommand,validate:core.validateResult,validateReview:core.validateReview,
+  reserve:async()=>{reserved++;return true},
+  infer:async()=>{called++;throw Error("AI must not be called")}
+ });
+ for(const command of ["J'ai dépensé 50 euros dans la catégorie Gundam","J'ai payé 50 € en Gundam","50 euros de dépense en Gundam"]){
+  const r=await handler({...request,body:{...request.body,command}});
+  assert.equal(r.status,200,command);
+  assert.equal(r.body.model,"local-rules");
+  assert.equal(r.body.result.kind,"draft");
+  assert.equal(r.body.result.operations[0].categoryId,"gundam");
+  assert.equal(r.body.metering.tokens.total,0);
+  assert.equal(r.body.metering.reservedNeurons,0);
+ }
+ const noCategory=await handler({...request,body:{...request.body,command:"J'ai payé 50 euros en Inconnue"}});
+ assert.equal(noCategory.status,200);
+ assert.equal(noCategory.body.result.kind,"clarify");
+ assert.equal(authorized,4);
+ assert.equal(reserved,0);
+ assert.equal(called,0);
+});
