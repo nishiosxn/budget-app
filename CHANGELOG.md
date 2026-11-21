@@ -6,7 +6,7 @@
 - Correctif du rejeu après réponse perdue pour les lots qui créent une catégorie : l'apparition de celle-ci dans le foyer ne bloque plus le même `requestId`, tout en préservant les refus SQL des nouveaux doublons.
 - Reconnaissance déterministe de plusieurs formulations vocales de dépenses dans une catégorie **déjà existante** ; nom inconnu = clarification, jamais de création implicite ou de dépense devinée.
 - Tests anti-doubles clics, identifiant stable et confirmation en cours, plus tests de non-régression des lots financiers et absence d'appel Gemma pour ces commandes.
-- **219 tests applicatifs et 2 contrôles complémentaires réussis** ; aucune migration ni modification de `main`, du foyer personnel ou de la DA.
+- **219 tests applicatifs et 2 contrôles complémentaires réussis** ; Edge Function pilote v27 active et six fichiers vérifiés. Aucune migration ni modification de `main`, du foyer personnel ou de la DA.
 
 
 
