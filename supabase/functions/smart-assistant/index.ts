@@ -130,14 +130,14 @@ const commitTransactions=createTransactionCommit({
 // category guesses, transactions and multi-action mixed drafts.
 const commitCategory=createCategoryCommit({
  validateCategoryDraft,recognizeCreation:quickExpense,
- writeCategory:async ({householdId,userId,requestId,name,month,budgetCents}:any)=>{
+ writeCategory:async ({householdId,userId,requestId,name,month,budgetCents,expenseCents,expenseDate}:any)=>{
   const key=env("SUPABASE_SERVICE_ROLE_KEY");
   if(!key||!uuidPattern.test(householdId)||!allowedUsers.has(userId)||!allowlist.has(householdId))
    throw Error("Pilot category confirmation is not authorized");
-  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_create_category_pilot_v1",{
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_create_category_pilot_v2",{
    method:"POST",
    headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},
-   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,p_request_id:requestId,p_name:name,p_month:month,p_budget_cents:budgetCents}),
+   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,p_request_id:requestId,p_name:name,p_month:month,p_budget_cents:budgetCents,p_expense_cents:expenseCents,p_expense_date:expenseDate}),
    signal:timeout()
   });
   if(!r.ok)throw Error("Atomic category creation unavailable");
