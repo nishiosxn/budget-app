@@ -2,6 +2,16 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31al — recette finale, correction du coût IA pour les commandes citées (21 novembre 2026)
+- Retour utilisateur : la requête affichée `« J’ai payé 50 € en Gundam. »` déclenchait **Gemma 4, 2 208 tokens** alors que la variante sans guillemets était locale depuis 31ak. Origine : une paire de guillemets entourant la commande empêchait les parseurs d'actions exactes de correspondre.
+- Correction symétrique du moteur `js/assistant-core.js` et du miroir serveur `supabase/functions/_shared/smart-assistant-core.js` : retirer seulement **une paire de guillemets extérieurs équilibrée** (français, typographiques ou ASCII), avant la normalisation des montants et des contractions. Pas de suppression des guillemets internes ; parseurs des montants toujours ancrés et catégories exactes obligatoires.
+- Couverture automatisée : commande de capture exacte, guillemets alternatifs, mot-clé/phrase dictés, ponctuation finale et espaces ; catégories inconnues → clarification sans création, commandes combinées ambiguës → aucune proposition de dépense ; création explicite, budget simple et lot mixte avec guillemets continuent à être reconnus localement. Passerelle testée avec quota et fournisseur qui lèvent une erreur s'ils sont appelés pour cette requête.
+- **Preuves :** App integrity CI `44944184269` : **222 tests applicatifs + 2 contrôles complémentaires réussis, 0 échec** ; aucun changement de CSS, confirmation ou logique SQL. Contrôle lecture seule Supabase : RPC de création et lot `SECURITY DEFINER` exécutables uniquement par `service_role`, reçus de lots RLS activée et pas d'INSERT aux clients ; 1 reçu de lot confirmé existait au moment du contrôle.
+- Edge Function pilote `smart-assistant` **v28** ACTIVE, JWT obligatoire, six sources exactes comparées au déploiement. Pas de migration, pas d'écriture de test et pas d'opération du foyer personnel. Frontend `assistant-core.js?v=31al` dans l'aperçu isolé. `main` et DA Deep Dark préservés.
+- **À valider manuellement avant intégration :** la phrase exacte de la capture doit afficher `Smart Engine · 0 token IA` (non Gemma) ; tests de catégorie inexistante, budget `month` vs `forward`, lot mixte et confirmation réseau après perte de réponse, responsive mobile et dictée sur iOS/Android. Ces vérifications en navigateur ne sont PAS prétendues réussies.
+
+
+
 ### 31ak — durcissement des confirmations et commandes vocales (21 novembre 2026)
 - **Reprise idempotente des lots mixtes après coupure réseau :** si une création de catégorie a été effectivement enregistrée, la réponse perdue ne doit plus transformer le même `requestId` en refus à cause de l'apparition de la catégorie dans le catalogue actualisé. La validation du brouillon exclut temporairement les catégories créées par la demande ; les opérations sur les catégories existantes restent contrôlées et **le reçu SQL atomique reste l'autorité finale**. Un nouvel `requestId` pour le même nom reste soumis au contrôle anti-doublons.
 - **Interprétation locale étendue aux expressions vocales non ambiguës**, notamment « J'ai dépensé 50 euros dans la catégorie Gundam », « J'ai payé 50 € en Gundam », « J'ai fait une dépense de 50 euros en Gundam », « 50 euros de dépense en Gundam » : résolution stricte d'une catégorie du foyer déjà disponible, aucun appel IA, aucune création implicite.
