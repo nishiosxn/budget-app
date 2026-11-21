@@ -525,13 +525,21 @@
   return rule;
  }
  // Recognize only complete, unambiguous single-expense sentences. No partial matching.
- const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","essence":"Essence","carburant":"Carburant"});
+ const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","decathlon":"Décathlon","king jouet":"King Jouet","essence":"Essence","carburant":"Carburant"});
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
-  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
+  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
   if(!m)return null;
-  const merchant=normalizeCategory(m[2]),label=Object.hasOwn(quickMerchants,merchant)?createExpenseLabel(m[2]):null;
+  const merchant=normalizeCategory(m[2]),known=Object.hasOwn(quickMerchants,merchant);
+  // A merchant-only payment does not need AI to extract the exact amount.
+  // For unknown shops, leave the category unset and require review instead
+  // of guessing. Only a fully bounded "chez NAME" clause is accepted.
+  const safeStore=m[2].toLowerCase()==="chez"&&
+   /^[\p{L}][\p{L}\p{M}\p{N}'’ &.-]{1,59}$/u.test(m[3].trim())&&
+   !/\b(?:et|puis|ensuite|pour|avec|mais|demain|hier|aujourd'hui|chaque|tous|mensuel|mois|semaine|annule|supprime|efface|modifie|ajoute|recu|reçu|payé|paye|dépensé|depense)\b/iu.test(m[3])&&
+   !/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/iu.test(m[3]);
+  const label=(known||safeStore)?createExpenseLabel(m[3]):null;
   if(!label)return null;
   const [whole,decimal=""]=m[1].replace(",",".").split("."),amountCents=Number(whole)*100+Number(decimal.padEnd(2,"0"));
   if(!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>100000000)return null;
