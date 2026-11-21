@@ -192,9 +192,10 @@ test("31ak: a mixed request is replay-safe after the first category becomes visi
  assert.equal(requests.length,2);
  assert.equal(requests[0].requestId,requests[1].requestId);
  assert.deepEqual(requests[0].actions,requests[1].actions,"same request uses exact same SQL payload");
- const fresh=await commit({...options,context:visible,requestId:"66666666-6666-4666-8666-666666666666"});
- // SQL's active duplicate guard remains the final authority for a new request.
- assert.equal(fresh.status,200,"mock SQL is deliberately permissive; duplicate is tested separately");
+ const {commit:duplicateAttempt}=setup(async()=>({status:"conflict"}));
+ const fresh=await duplicateAttempt({...options,context:visible,
+  requestId:"66666666-6666-4666-8666-666666666666"});
+ assert.equal(fresh.status,409,"a different requestId cannot bypass SQL's duplicate guard");
 });
 test("31ak: lost response followed by retry recovers the same committed batch",async()=>{
  const command="Ajoute 10 euros au budget maison et crée une catégorie Test Lot avec un budget de 60 euros.";
