@@ -2,6 +2,17 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### Correctif 31aa — interprétation des budgets et créations (21 novembre 2026)
+- Signalement test 31z : « Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros » renvoyait à tort deux remplacements de budgets existants.
+- Le moteur déterministe produit désormais un lot mixte de revue `mixedDraft` : augmentation du budget Maison existant de 10 € (calcul sur base lue) et création indépendante d'une catégorie Lego avec 60 € ; jamais de modification du budget parent Loisirs.
+- Les demandes explicites de création de catégorie avec budget unique passent localement ; demandes mixtes ambiguës bloquées par une clarification, pas déléguées à Gemma pour créer une modification incorrecte.
+- Boulangerie → Courses ; Décathlon → Vêtements par défaut ; achat explicitement lié à l'escalade → Loisirs ; commerçant inconnu = catégorie non déterminée.
+- Revue dédiée : deux cartes séparées avec indication de création/variation et simulation exclusivement, modification autorisée, validation stricte. Aucune nouvelle écriture de budgets ou catégories.
+- CI App integrity réussi à partir de `cc028a4754b6f0beb31d84969298731e4d4c7710` (run 44930266223), 180 tests automatisés ; non-régression des commandes critiques. Tests navigateur réels encore à faire.
+- Edge Function `smart-assistant` v20 active sur le projet pilote `budget-foyer` ; `verify_jwt=true` et quatre fichiers comparés intégralement aux sources. Branche `main` inchangée.
+- Publication isolée GitHub Pages `/v3.1/live/` à synchroniser après validation du code ; aucune modification des finances personnelles ni de l'application de production.
+
+
 - Base develop : 463ae1b4beafbf96fc47d4fc16972dd434a181ea ; branche work/v3.1-smart-assistant.
 - Premier lot : interface de laboratoire, palette violette, contrat de validation et consultations bornées, dictée selon navigateur. Aucune écriture financière par l'assistant.
 - Passerelle IA préparée côté Supabase : auth + adhésion RLS, catalogue reconstruit côté serveur, listes positives de comptes/foyers de test, modèle configurable et garde quota fail-closed. Non déployée ; RPC de quota et identifiants manquants.
