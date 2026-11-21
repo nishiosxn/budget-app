@@ -769,10 +769,24 @@
  function quickNamedIncome(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"");
-  const m=t.match(/^j[' ]ai (?:reçu|recu|touché|touche|encaissé|encaisse) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:de |d'|par |venant de )([\p{L}][\p{L}' -]{0,49})$/iu);
-  if(!m)return null;
-  const name=m[2].trim().replace(/\s+/g," "),amountCents=centsFromText(m[1]);
-  if(!amountCents||name.length>50||/\b(?:et|puis|demain|hier|supprime|efface|ajoute|modifie|chaque|mensuel|tous|compte|transfert)\b/iu.test(name))return null;
+  // A sender is a transaction label, never an inferred household member.
+  const money="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
+  const person="([\\p{L}][\\p{L}' -]{0,49})";
+  const incoming="(?:reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne)";
+  const options=[
+   {re:new RegExp("^j[' ]ai "+incoming+" "+money+" (?:de |d'|par |venant de )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^je viens de recevoir "+money+" (?:de |d'|par )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^j[' ]ai "+incoming+" (?:un |le )?(?:virement|remboursement) de "+money+" (?:de |d'|par )"+person+"$","iu"),amount:1,sender:2},
+   {re:new RegExp("^j[' ]ai "+incoming+" (?:de |d')"+person+" "+money+"$","iu"),amount:2,sender:1},
+   {re:new RegExp("^"+person+" m[' ]a (?:viré|vire|envoyé|envoye|donné|donne|remboursé|rembourse) "+money+"$","iu"),amount:2,sender:1},
+   {re:new RegExp("^"+person+" m[' ]a fait un virement de "+money+"$","iu"),amount:2,sender:1}
+  ];
+  let name="",amountCents=null;
+  for(const {re,amount,sender} of options){
+   const m=t.match(re);if(!m)continue;
+   name=m[sender].trim().replace(/\s+/g," ");amountCents=centsFromText(m[amount]);break;
+  }
+  if(!amountCents||!name||name.length>50||/\b(?:et|puis|ensuite|demain|hier|supprime|efface|ajoute|modifie|chaque|mensuel|tous|compte|transfert|annule|prêt|pret)\b/iu.test(name))return null;
   const label="Reçu de "+name;
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"income",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label,frequency:"once",categoryHint:"extra"}]},ctx,command);
   return checked.ok?checked:null;
