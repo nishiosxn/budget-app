@@ -2,6 +2,17 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ai — budget mensuel reconduit + dépense initiale atomique (21 novembre 2026)
+- Contrat métier : une catégorie est active à partir du mois demandé (ou du mois sélectionné), avec un budget `forward` qui s'applique à tous les mois suivants jusqu'à modification explicite. Aucune nouvelle catégorie créée tous les mois. Commandes « à partir de décembre 2026 » et « pour octobre 2026 » reconnues localement.
+- Création explicite + dépense initiale unique (ex. « Créer Gundam, budget 100 €, ajoute 50 € de dépense ») : deux objets financiers associés à la catégorie, **une transaction SQL atomique** via `smart_assistant_create_category_pilot_v2`. La dépense n'est pas récurrente.
+- Protection de la persistance : authentification et allowlist uniques du foyer test, RPC `SECURITY DEFINER` interdite aux rôles `anon`/`authenticated`, verrou par foyer, contrôle doublon, idempotence `requestId`, budget initial `forward` et transaction initiale facultative créée seulement si l'utilisateur la demande. Toute erreur SQL annule l'ensemble.
+- UI : « Confirmer » disponible aussi pour une catégorie + dépense, aperçu de jauge et texte explicite « budget mensuel reconduit », modification désactivée après première tentative de confirmation pour préserver l'identifiant de reprise. DA Deep Dark inchangée.
+- Gestion des catégories existante vérifiée : les suppressions par mois ou globales de `js/categories.js` masquent les catégories dans l'état sans enlever leurs transactions ; en base, la FK `transactions_category_id_household_id_fkey` est `ON DELETE RESTRICT`. Aucun code de suppression modifié ; opérations historiques conservées.
+- Limite voulue : aucune dépense **future** n'est créée comme déjà réalisée ; si le mois futur est demandé avec une dépense, l'assistant refuse et demande une opération datée réalisable. Les budgets futurs sans dépense sont acceptés.
+- Tests Core, serveur, UI et SQL statique ajoutés ; vérifications CI et de déploiement pilote requises avant publication. Aucune opération de test créée en base par l'agent.
+
+
+
 ### 31ag — fiabilité des écritures et interprétation locale (21 novembre 2026)
 - Interprétation locale stricte des dépenses dans une **catégorie nommée et existante** : « ajoute 50 euro de dépense en Gundam » → dépense de 50 €, catégorie exacte Gundam si elle existe et est active ; 0 token Gemma / 0 neurone. Aucune création implicite, aucune catégorisation approximative ; si le nom n'existe pas, réponse de clarification.
 - Correction du rappel idempotent des créations après réponse réseau perdue : le texte explicite de création et le brouillon sont vérifiés indépendamment du catalogue actualisé, puis le RPC atomique fait foi pour `same`, `duplicate` ou `conflict` selon l'identifiant de demande. Une création d'un nom déjà présent reste refusée avec un **nouvel** identifiant.
