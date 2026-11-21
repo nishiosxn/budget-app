@@ -134,7 +134,7 @@
    '<div class="bd-toolbar" role="group" aria-label="Afficher les budgets de dépenses ou de revenus">'+
    '<button type="button" data-bd-scope="expense" aria-pressed="'+(!income)+'" class="'+(!income?"is-active":"")+'">Dépenses</button>'+
    '<button type="button" data-bd-scope="income" aria-pressed="'+income+'" class="'+(income?"is-active":"")+'">Revenus</button></div>'+
-   '<div class="bd-total"><div><strong>'+esc(money(model.total))+'</strong><span>Budget prévu · '+esc(monthName(month))+'</span></div></div>'+
+   '<div class="bd-total"><div><strong>'+esc(money(model.total))+'</strong><span>Budget prévu</span></div></div>'+
    (model.total>0?'<div class="bd-track-wrap"><div class="bd-track" role="group" aria-label="Répartition interactive des budgets">'+
     model.items.map(item=>itemMarkup(item,model.total)).join("")+'</div><div class="bd-tooltip" role="tooltip" hidden></div></div>':
     '<div class="bd-empty"><strong>Aucun budget prévu.</strong>'+
