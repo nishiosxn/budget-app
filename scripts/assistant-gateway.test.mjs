@@ -173,3 +173,34 @@ test("31ak: exact-category voice expenses bypass provider and quota after authen
  assert.equal(reserved,0);
  assert.equal(called,0);
 });
+
+
+
+test("31al: screenshot verbatim must not invoke Gemma or reserve a single token",async()=>{
+ const personal={...ctx,today:"2026-11-21",solo:true,actor:"B",categories:[
+  {id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11",hiddenMonths:[]}
+ ]};
+ let reservations=0,providerCalls=0,auth=0;
+ const handler=createAssistantGateway({enabled:true,model,
+  authorize:async()=>{auth++;return{context:personal}},
+  quickExpense:core.quickCommand,validate:core.validateResult,validateReview:core.validateReview,
+  reserve:async()=>{reservations++;return true},
+  infer:async()=>{providerCalls++;throw Error("Gemma should not run")}
+ });
+ const screenshot="« J’ai payé 50 € en Gundam. »";
+ const r=await handler({...request,body:{...request.body,command:screenshot}});
+ assert.equal(r.status,200);
+ assert.equal(r.body.model,"local-rules");
+ assert.equal(r.body.metering.source,"local-rules");
+ assert.equal(r.body.metering.tokens.total,0);
+ assert.equal(r.body.metering.reservedNeurons,0);
+ assert.equal(r.body.result.kind,"draft");
+ assert.equal(r.body.result.operations[0].categoryId,"gundam");
+ assert.equal(r.body.result.operations[0].amountCents,5000);
+ const unknown=await handler({...request,body:{...request.body,command:"« J’ai payé 50 € en Unknown. »"}});
+ assert.equal(unknown.status,200);
+ assert.equal(unknown.body.result.kind,"clarify");
+ assert.equal(auth,2);
+ assert.equal(reservations,0);
+ assert.equal(providerCalls,0);
+});
