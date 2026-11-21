@@ -64,7 +64,7 @@ begin
     if v_existing.archived_at is not null
        or pg_catalog.lower(pg_catalog.regexp_replace(pg_catalog.btrim(v_existing.name), '\s+', ' ', 'g')) <> v_key
        or v_existing.type <> 'expense'
-       or v_existing.owner_slot <> 'B'
+       or v_existing.owner_slot is distinct from 'B'
        or v_existing.is_custom is distinct from true
        or v_existing.created_from <> p_month then
       return jsonb_build_object('status','conflict');
@@ -73,7 +73,7 @@ begin
      where household_id=p_household_id and category_id=v_existing.id
        and month=p_month and archived_at is null limit 1;
     if not found or v_budget.scope<>'forward'
-       or v_budget.owner_slot <> 'B'
+       or v_budget.owner_slot is distinct from 'B'
        or v_budget.planned_amount <> (p_budget_cents::numeric / 100) then
       return jsonb_build_object('status','conflict');
     end if;
