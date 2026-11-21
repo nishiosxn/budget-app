@@ -13,12 +13,13 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>Budget foyer</title>
-  <link rel="stylesheet" href="css/style.css?v=20261006-v27a" />
+  <link rel="stylesheet" href="css/style.css?v=31c" />
   <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
   <link rel="stylesheet" href="css/history-filters.css?v=20261117-ios-focus" />
   <link rel="stylesheet" href="css/subscriptions-overview.css?v=20261116-v29b" />
   <link rel="stylesheet" href="css/motion.css?v=20261117-v30c" />
   <link rel="stylesheet" href="css/touch-inputs.css?v=20261117-v302" />
+  <link rel="stylesheet" href="css/assistant.css?v=31d" />
 </head>
 <body>
 <div id="sbBootScreen" class="sb-boot sb-open" role="status" aria-live="polite" aria-label="Chargement du budget"><div class="sb-boot-card"><strong>Smart Budget</strong><span class="sb-loading-label">Préparation du budget…</span></div></div>
@@ -58,6 +59,18 @@
     </div>
 
     <section id="overview" class="view active">
+      <section class="card sb-assistant" aria-labelledby="sbAssistantTitle">
+        <div class="sb-assistant-hero"><span class="sb-assistant-symbol"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z"/></svg></span><h2 id="sbAssistantTitle">Smart Assistant</h2><p>Que souhaites-tu faire aujourd’hui ?</p></div>
+        <div class="sb-assistant-suggestions" aria-label="Suggestions"><button type="button" data-assistant-suggestion="J’ai dépensé 20 €"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3zM3 10h18"/></svg><span>J’ai dépensé 20 €</span></button><button type="button" data-assistant-suggestion="J’ai fait un virement"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/></svg><span>J’ai fait un virement</span></button><button type="button" data-assistant-suggestion="Ajoute 10 € au budget"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h16v14H3zM3 6V4h14v2M15 12h6v5h-6z"/></svg><span>Ajoute 10 € au budget</span></button></div>
+        <form id="sbAssistantForm">
+          <label class="sb-sr-only" for="sbAssistantInput">Ta demande</label><div class="sb-assistant-composer">
+          <textarea id="sbAssistantInput" rows="2" maxlength="1600" placeholder="Pose une question ou ajoute une opération…"></textarea>
+          <div class="sb-assistant-actions"><span class="sb-voice-clock" hidden aria-hidden="true">00:00</span><button id="sbAssistantMic" type="button" class="sb-assistant-secondary sb-assistant-iconbtn" aria-label="Dicter" title="Dicter"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11v1a7 7 0 0 0 14 0v-1M12 19v3"/></svg></button><button id="sbAssistantSend" type="submit" class="sb-assistant-send sb-assistant-iconbtn" aria-label="Envoyer" title="Envoyer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div></div>
+          <label class="sb-assistant-consent"><input id="sbAssistantConsent" type="checkbox"> Autoriser l’envoi de la demande et des catégories au service IA externe.</label>
+        </form>
+        <div id="sbAssistantStatus" role="status" aria-live="polite">Laboratoire : aucune écriture financière par l’IA.</div>
+        <div id="sbAssistantResult"></div>
+      </section>
       <div class="hero-grid">
         <article class="card balance-card">
           <div class="balance-main">
@@ -277,7 +290,7 @@
 
 <div id="settingsBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V3.0</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
+    <div class="modal-head"><div><h3 id="settingsTitle">Paramètres & données</h3><div class="modal-kind">Budget foyer · V3.1</div></div><button class="close" id="closeSettings" aria-label="Fermer">×</button></div>
     <div class="settings-modal-body">
       <div class="cloud-account-card">
         <div><span>FOYER PARTAGÉ</span><strong id="cloudActiveHousehold">Aucun foyer</strong></div>
@@ -328,14 +341,14 @@
       </div>
       <div class="settings-copy-note">Les anciennes versions locales restent importables uniquement comme source de migration ; elles ne servent plus de cache de travail.</div>
       <div class="settings-danger"><button id="resetBtn" class="btn btn-danger-soft" type="button">Réinitialiser les données</button></div>
-      <div class="settings-version">V3.0 (préversion) · synchronisation cloud directe · Supabase</div>
+      <div class="settings-version">V3.1 (préversion) · synchronisation cloud directe · Supabase</div>
     </div>
   </div>
 </div>
 
 <div id="onboardingBackdrop" class="onboarding-backdrop" aria-hidden="true">
   <section class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V3.0</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V3.1</div><h2 id="onboardingTitle">Importer une ancienne version</h2></div></div>
     <p class="onboarding-intro">Retrouve ici une ancienne version locale ou importe une sauvegarde compatible. La création d’un nouveau budget passe désormais uniquement par le builder V2.8.</p>
     <div class="onboarding-card">
       <h3>Migration et sauvegardes</h3>
@@ -350,7 +363,7 @@
 
 <div id="cloudGate" class="cloud-gate" aria-hidden="true">
   <section class="cloud-gate-panel" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
-    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V3.0</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
+    <div class="onboarding-brand"><div class="logo"><svg class="theme-logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg></div><div><div class="eyebrow">Budget foyer · V3.1</div><h2 id="cloudGateTitle">Budget partagé</h2></div></div>
     <div id="cloudLoginView" class="cloud-gate-view" hidden>
       <div class="cloud-auth-tabs" role="tablist" aria-label="Authentification">
         <button id="cloudLoginModeBtn" class="cloud-auth-tab active" type="button" role="tab" aria-selected="true">Connexion</button>
@@ -399,7 +412,7 @@
 <script src="js/config.js" defer></script>
 <script src="js/data.js" defer></script>
 <script src="js/storage.js" defer></script>
-<script src="js/appearance.js?v=20261006-v27c" defer></script>
+<script src="js/appearance.js?v=31c" defer></script>
 <script src="js/calculations.js" defer></script>
 <script src="js/ui.js?v=20261116-v29a" defer></script>
 <script src="js/history-filters.js?v=20261116-v29a" defer></script>
@@ -412,7 +425,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/supabase-client.js?v=20261116-hf1" defer></script>
-<script src="js/motion.js?v=20261117-v30c" defer></script>
+<script src="js/motion.js?v=31c" defer></script>
   <script src="js/auth.js?v=20261117-v30c" defer></script>
 <script src="js/cloud-household.js?v=20261006-v27a" defer></script>
 <script src="js/account-balances.js" defer></script>
@@ -425,5 +438,8 @@
 <script src="js/pwa.js" defer></script>
 <script src="js/app.js" defer></script>
 <script src="js/mobile-ui.js?v=20261116-v28a" defer></script>
+<script src="js/assistant-core.js?v=31a" defer></script>
+<script src="js/assistant-planner.js?v=31b" defer></script>
+<script src="js/assistant-voice.js?v=31d" defer></script><script src="js/assistant-ui.js?v=31d" defer></script>
 </body>
 </html>

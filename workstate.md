@@ -1,5 +1,73 @@
 # Workstate — Budget foyer
 
+## V3.1 — Smart Assistant, chantier isolé
+
+### 31af — noir graphite, boutons carrés et création explicite dans le foyer de test (21 novembre 2026)
+- Correction du micro et de l'envoi : boîtes `2.75rem × 2.75rem`, `box-sizing:border-box`, `display:grid;place-items:center`, padding nul, SVG centré, réduction cohérente sur très petit mobile.
+- Design « gris graphite » (pas de fond violet) dans `native-dark.css` : fond `#0d0e10`, surface `#181a1d`, secondaire `#222428`, surélévation `#2b2e33`, bordures `#373a3f`, violet de marque `#5c29d6` réservé aux accents. Suppression du halo violet dans le fond.
+- Cache revu : `assistant-core.js?v=31af`, `live-ui.js?v=31af` et `native-dark.css?v=31af` pour charger les règles réelles et éviter la copie 31aa qui appelait Gemma pour « quatre-vingt-dix euros ». Le moteur courant reconnaît la formulation orale avec 0 token IA.
+- Activation **conditionnelle** d'une création réelle de catégorie (budget initial compris), uniquement après demande explicite de création et clic `Confirmer` dans le foyer pilote solo autorisé. Une dépense simple ne crée jamais de catégorie ; les demandes mixtes, catégories + dépense et modifications de budgets restent en simulation.
+- La fonction `smart_assistant_create_category_pilot_v1` est `SECURITY DEFINER` **révoquée à `anon` et `authenticated`**, exécutable seulement par `service_role`, et vérifie qu'il s'agit d'un foyer individuel à un seul membre B. Verrou transactionnel par foyer, refus des catégories actives homonymes, idempotence par `requestId` et insertion atomique catégorie + budget `forward`.
+- Migration `20261121183000_smart_assistant_pilot_category_creation.sql` appliquée au projet Supabase Budget, rôles vérifiés (anon=false, authenticated=false, service_role=true). Edge Function `smart-assistant` v23 active, JWT requis, cinq sources comparées aux fichiers déployés.
+- Tests : App integrity sur la branche : **194 tests applicatifs + 2 complémentaires réussis**, dont 31af catégorisation explicite/verbale, refus d'une création implicite, RPC et rappel idempotent, géométrie icônes et thème sombre. Pas de test navigateur authentifié de confirmation réelle effectué par l'agent.
+- Production `main` et foyer personnel inchangés. La publication `/v3.1/live/` est isolée ; validation manuelle de l'apparence et de la création réelle par l'utilisateur avant toute extension.
+
+
+
+### 31ae — refonte deep-dark de tout le pilote Smart Assistant (21 novembre 2026)
+- Couche `preview/assistant/live/native-dark.css` chargée **après** les styles historiques uniquement dans `preview/assistant/live/index.html` ; aucun changement des pages principales Smart Budget ni de la logique financière.
+- Système de design unifié, inspiré du rendu des cartes de la conversation et reconstruit en CSS standard (composants ChatGPT non directement exportables) : fond nuit bleuté `#0a0c13`, surfaces `#161a24` / `#1f2430` / `#252b39`, bordures `#343a49`, texte `#f4f5fb`, accent de marque conservé `#5c29d6`, indicateurs positifs `#79d6a8` et négatifs `#ff929e`.
+- Application cohérente au bandeau de marque, formulaire de connexion, carte du foyer/quota, hero, suggestions, compositeur/micro/envoi, texte soumis et réponses, toutes les opérations (dépenses, revenus, budgets, catégories et mélanges), jauges, contrôles de confirmation/édition et panneau des règles.
+- Alignements centraux, grilles icône / libellés / montant, barre et labels symétriques, rythme d'espacement relatif en rem, breakpoints mobiles, contraste, focus clavier et respect de `prefers-reduced-motion`. Pas de font externe, pas de nouvelle dépendance JavaScript.
+- Validation : suite `App integrity` de la branche réussie (run 44933775815) après test de couverture du thème/contrastes. Revue visuelle manuelle en navigateur encore nécessaire ; fichier CSS de démonstration publié uniquement sous `/v3.1/live/`.
+- `main`, le foyer personnel et Supabase inchangés. Actions catégories/budgets toujours en simulation ; transactions ponctuelles existantes inchangées. Prochaine étape : comparer captures utilisateur sur desktop et mobile puis affiner avant d'étudier une migration à tout Smart Budget.
+
+
+
+### 31ad — clarification sans exemple fictif et rafraîchissement du pilote (21 novembre 2026)
+- Retrait de la phrase de repli « Crée une catégorie Lego avec un budget de 60 euros ». Quand la demande de création est ambiguë, réponse générique demandant le **nom de la catégorie** et le **budget en euros**, sans proposition d'écriture.
+- Pour « Créer la catégorie Restauration, Fast Food avec une valeur de cent euros », recherche stricte sur le catalogue du foyer authentifié ; si la catégorie « Restaurants / fast-food » y existe, retour « Cette catégorie existe déjà dans le foyer ». Synonymie limitée à cette dénomination composée, sans fusion de catégories arbitraires.
+- Capture utilisateur Gundam affichait un composant antérieur sans jauge : le rendu 31ac contient déjà `mixedBudgetBar` et `pilot-exp-budget-track` pour les créations isolées, mais le navigateur montrait l'ancienne version ; mise à jour de l'empreinte du script `live-ui.js?v=31ad` et fournir une URL de page versionnée pour purger l'HTML en cache.
+- CI avec 184 tests applicatifs + 2 complémentaires passés (run 44932687150) ; nouveau test de refus explicite et reformulation générique.
+- Edge Function pilote Supabase `smart-assistant` v22 active `verify_jwt=true`; quatre fichiers vérifiés identiques aux sources. Maintien du mode simulation pour budgets et catégories, sans toucher `main` ni au profil personnel.
+
+### 31ac — cartes de nouvelles catégories et refus strict des doublons (21 novembre 2026)
+- Le pilote rend une création de catégorie seule (ex. Gundam 90 €) dans une carte `pilot-op` identique aux dépenses habituelles, avec icône à gauche, montant à droite, barre de budget initial et 0 € utilisés si aucune dépense n'est demandée. Une dépense explicitement prévue est reflétée dans l'aperçu.
+- Correctif de sécurité sémantique : une demande « Crée une catégorie Lego » ne peut plus être transformée en modification du budget d'une catégorie existante. Le moteur répond qu'elle existe déjà et refuse toute action, en comparant les noms normalisés du catalogue du foyer récupéré sous JWT/RLS.
+- CI complète sur branche de travail : 183 tests applicatifs + 2 tests complémentaires réussis (run 44932121208). Tests DOM de l'affichage et tests de non-régression des doublons ajoutés.
+- Edge Function pilote `smart-assistant` v21 active, `verify_jwt=true`, fichiers serveur comparés et identiques aux sources. Toujours aucune création de catégorie ou écriture de budget réelle ; simulation exclusivement sur ces actions.
+- La préversion GitHub Pages `/v3.1/live/` reste isolée, `main` et production inchangées. Essais manuels de cette dernière carte encore à réaliser.
+
+### 31ab — restauration de la revue et tests de préconnexion (21 novembre 2026)
+- Cause de « Communication interrompue » après affichage des cartes : affectation de variables non déclarées `cancel` et `ok` en strict mode dans le pied de la revue mixte ; correction et différenciation erreur de rendu / erreur réseau.
+- Suppression du rendu spécial `pilot-category-card` des commandes mixtes : réutilisation des cartes `pilot-op` 31z, pictogrammes, montants et variations alignés à droite, contrôles Modifier compacts, barre du budget et progression réelle de la catégorie existante lue sous RLS ; catégorie nouvelle à 0 dépense simulée.
+- Simulation complète avec Annuler et Simuler, sans nouvelle écriture réelle. Statut du Smart Engine rétabli.
+- Test de rendu DOM simulé des deux cartes, présence du bouton Simuler, jauge et clic sans exception, plus suite App integrity CI réussie (run 44931268107).
+- Lecture seule de la structure Supabase et des politiques RLS pour évaluer une future confirmation atomique catégorie+budget. Risque identifié : `budgets` contient des règles `month` et `forward`, et synchronisation côté application requiert un contrat transactionnel idempotent ; **aucune activation d'écriture mixte avant cette protection**.
+- Publication dédiée `/v3.1/live/` à synchroniser après CI, sans changement `main` ni foyer réel.
+
+### Correctif 31aa — interprétation des budgets et créations (21 novembre 2026)
+- Signalement test 31z : « Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros » renvoyait à tort deux remplacements de budgets existants.
+- Le moteur déterministe produit désormais un lot mixte de revue `mixedDraft` : augmentation du budget Maison existant de 10 € (calcul sur base lue) et création indépendante d'une catégorie Lego avec 60 € ; jamais de modification du budget parent Loisirs.
+- Les demandes explicites de création de catégorie avec budget unique passent localement ; demandes mixtes ambiguës bloquées par une clarification, pas déléguées à Gemma pour créer une modification incorrecte.
+- Boulangerie → Courses ; Décathlon → Vêtements par défaut ; achat explicitement lié à l'escalade → Loisirs ; commerçant inconnu = catégorie non déterminée.
+- Revue dédiée : deux cartes séparées avec indication de création/variation et simulation exclusivement, modification autorisée, validation stricte. Aucune nouvelle écriture de budgets ou catégories.
+- CI App integrity réussi à partir de `cc028a4754b6f0beb31d84969298731e4d4c7710` (run 44930266223), 180 tests automatisés ; non-régression des commandes critiques. Tests navigateur réels encore à faire.
+- Edge Function `smart-assistant` v20 active sur le projet pilote `budget-foyer` ; `verify_jwt=true` et quatre fichiers comparés intégralement aux sources. Branche `main` inchangée.
+- Publication isolée GitHub Pages `/v3.1/live/` à synchroniser après validation du code ; aucune modification des finances personnelles ni de l'application de production.
+
+
+- Base develop : 463ae1b4beafbf96fc47d4fc16972dd434a181ea ; branche work/v3.1-smart-assistant.
+- Premier lot : interface de laboratoire, palette violette, contrat de validation et consultations bornées, dictée selon navigateur. Aucune écriture financière par l'assistant.
+- Passerelle IA préparée côté Supabase : auth + adhésion RLS, catalogue reconstruit côté serveur, listes positives de comptes/foyers de test, modèle configurable et garde quota fail-closed. Non déployée ; RPC de quota et identifiants manquants.
+- Planificateur pur de lots confirmés et banc de 200 scénarios FR fictifs préparés ; pas raccordé aux écritures réelles. Tests de contrat et runner live limité, non exécuté avec fournisseur.
+- Conversation courte : deux échanges transitoires maximum, réinitialisation, historique revalidé serveur avant quota, aucun enregistrement. Tests simulés ajoutés ; comportement réel à évaluer.
+- À terminer : quota durable, benchmark français réel, intégration de la synchronisation et confirmation sur foyer isolé, mémoire RLS, revue visuelle de la palette et tests navigateur.
+- Identité : logo SVG d'origine recoloré et déclinaisons PNG/ICO PWA régénérées ; tests statiques, décodage des images et contraste. Revue visuelle réelle à faire.
+- UI trois suggestions, dictée continue best-effort et changement de modèle préparés ; secrets renseignés selon le propriétaire, non vérifiés. Aucune activation serveur.
+- Aperçu demandé : laboratoire autonome sur foyer fictif, sans Supabase, validateurs et planificateur réels, simulateur local explicitement indiqué. Publication sous /v3.1/ après check ; production inchangée.
+
+
 ## Correctif V3.0.2 — zoom des champs iOS et tablette
 
 - Branche : `work/v3.0.2-touch-input-focus` issue de `develop` (V3.0 + correctif Historique V3.0.1).
@@ -29,7 +97,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V3.0`
+- Version du code : `V3.1`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.
@@ -139,3 +207,81 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 ## Prochaine action
 
 Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.
+
+### Reprise V3.1 — quota pilote
+Code de réservation conservative avant inférence et SQL de revue isolé, non appliqué. Aucun appel Cloudflare. Foyer de test et forfait Workers Free à confirmer avant activation ; tests SQL et modèle réel manquants.
+
+### Pilote connecté — migration et interface
+Quota installé (`20261117235347`) ; garde permissions/plafonds et zéro résidu vérifiés. La page `preview/assistant/live/` se connecte au compte isolé sans sauvegarde de session, appelle la passerelle, reçoit un résultat revalidé, sans écriture financière. Activation explicite par deux secrets et test réel navigateur encore nécessaires.
+
+### Pilote IA — premières demandes réelles
+Plusieurs POST 200 vérifiés, 6 réservations et 917 unités le 18/11 UTC. Fonction v5 identique à la source f2326dd4. Préparation du contrôle des doublons futurs dans le planificateur, écriture toujours désactivée jusqu'à intégration et tests sur foyer isolé.
+
+### V3.1 — proposition immédiate
+Prompt et contrat de revue assouplis, catégories absentes explicitement non affectées, variation de budget calculée côté serveur, confirmation locale simulée. Validation stricte d'écriture conservée. Pas de mutation financière.
+
+### V3.1 e — référentiel et cartes
+Catégorisation déterministe et indices contrôlés Gemma, propositions de catégories manquantes, revue design et mémoire locale opt-in. Tests de la taxonomie et normalisation ajoutés ; aucune écriture financière.
+
+### 31f — Zara / raccourci sans IA
+Chemin déterministe après autorisation, avant quota : dépenses simples et commerces connus, prévisualisation uniquement. Tests ajoutés pour Zara, montant décimal, catégories manquantes et phrases complexes.
+
+### 31g — moteur hybride
+Budget relatif/absolu/zéro et alias essence/carburant, opérations familiales simples, sans appel IA, prévisualisation du budget réel quand disponible. Tests ajoutés ; aucune écriture financière.
+
+### 31h — budget et lots
+Variantes de budget relatif (course), delta UI, création explicite groupée et consultation historique catégorie en lecture seule. Tests de régression ; aucune mutation financière.
+
+### 31i — demande et Gundam
+Correction de la grammaire de création groupée et affichage du texte envoyé en mémoire. Tests de régression et publication pilote à vérifier. Aucune mutation financière.
+
+### 31j — Smart Engine
+Normalisation et lot de mouvements déterministes, corpus synthétique 2 000 cas + refus, validation stricte conservée. Publication après CI. Aucun changement des données.
+
+### 31k — DA + consommation
+Pilote connecté : composition horizontale, labels superflus retirés, pas de checkbox récurrente, barre quota neutrons estimés via RPC service_role et détail tokens retournés si disponibles. Sans écriture financière.
+
+### 31l — composer compact
+Textarea auto-ajustable, aucune hauteur fixe desktop/mobile, aucune poignée native ; redimensionnement lié à la dictée et à la saisie. Tests frontend et voix ajoutés.
+
+### 31m — provenance et épargne
+Revenus nommés, épargne et lots mixtes locaux ; badges d'origine, résumé hors transferts, tests. Aucune opération enregistrée.
+
+### 31n — catégorisation personnalisée
+Lecture des catégories réelles du foyer à la connexion ; formulaire de règle persisté directement sur ajout, tri par type, correspondance de mots, suppression. Tests spécifiques ; aucune écriture Supabase ni changement moteur.
+
+### 31o — catalogue complet dans l'éditeur de mots-clés
+Les cibles affichent le catalogue automatique intégral + catégories spécifiques du foyer sans doublon ; correspondance locale vers catégorie active ou proposition de création lors de la revue. Confirmations simulées.
+
+### 31p — retours terrain
+Six captures analysées : catégories explicites produits, date préfixée, phrase dépenses composées, revenu + épargne anaphorique, transfert interne et solde bancaire non connecté. Parsing local, suggestion de catégorie canonique, tests de sécurité ; aucune écriture.
+
+### 31q — libellés contextualisés
+Extraction des descriptions explicites pour achats, courses et magasins, affichage séparé du magasin sans ajouter de champ de stockage. Libellé par défaut = magasin ; catégorie guidée par le produit, tests. Aucune écriture réelle.
+
+### 31r — retours tests avec payeurs et pharmacie
+Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres du foyer à deux ; le pilote solo retourne une explication au lieu d'une conversion invalide. Pharmacie : libellé contextuel, Santé, date exacte, sans IA. Pas de modification des accès, ni de la production.
+
+### 31s — éditeur de propositions
+Éditeur local de cartes et lots groupés, recalcul de budget/solde, retrait d'une ligne, lecture GET du budget si cible/mois modifié, validation et tests. Aucun enregistrement financier ni modification serveur.
+
+### 31t — aperçu budget
+Barre par dépense, calcul mensuel existant + lot en cours, nouvelle catégorie sans budget par défaut, définition explicite dans le lot, sélecteur groupé. Tests ; lecture seule et aucune écriture.
+
+### 31u — design system 1.0 et polish des réponses
+Charte `docs/SMART_BUDGET_DESIGN_SYSTEM.md`, tokens `preview/assistant/live/design-system.css`, structure minimale et responsive, suppression de bruit, informations critiques conservées, animations éditeur. Smart Engine, Gemma, données et production inchangés.
+
+### 31v — enregistrement réel V1 pilote solo
+Lot ponctuel dépenses/revenus catégories existantes seulement ; confirmation insert-only avec JWT/RLS, clé de lot stable et vérification. Les autres transactions et types restent en simulation. Production inchangée.
+
+### 31w — correctif état de confirmation
+Libération de busy avant rendu du brouillon valide ; protection d'enregistrement conservée. Test d'exécution du callback, aucune modification Supabase.
+
+### 31x — harmonisation géométrique et charte V1.1
+Quota et règles catégorisation alignés sur des insets cohérents, chevron accessible ; design system entièrement documenté pour future refonte globale. Front pilote seulement.
+
+### 31y — Correction du dernier écart inférieur
+Retrait du wrapper grid vide et alignement du bouton Nouvelle demande en enfant direct. Nettoyage des pistes vides de résultat et statut, standard réutilisable pour la refonte globale.
+
+### 31z — Protection de consommation IA
+Local : achats simples chez toute enseigne non ambiguë sans catégorie inventée, Décathlon reconnu. Edge : sortie plafonnée à 1024 tokens ; réservation conservatrice limitée à 320 neurones internes par prompt, pas d'inférence sur payload trop gros. Tests de limites et non-régressions. Les coûts réels peuvent différer des estimations.

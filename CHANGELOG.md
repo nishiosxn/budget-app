@@ -1,5 +1,58 @@
 # Changelog
 
+## V3.1 — Smart Assistant (chantier expérimental, non publié)
+
+### 31af — design graphite et création explicite de catégorie test (21 novembre 2026)
+- Palette noire/neutre profonde sur l'ensemble du pilote, sans halo violet derrière les cartes ; violets réservés à l'identité et aux actions.
+- Micro et bouton Envoyer carrés, icônes parfaitement centrées malgré les styles hérités.
+- Correction du chargement cache des règles IA pour la création avec un montant en toutes lettres (« quatre-vingt-dix euros »).
+- Bouton **Confirmer** uniquement sur une catégorie sans dépense explicitement demandée, permettant l'enregistrement atomique de la catégorie et de son budget dans le foyer de test. Dépenses ordinaires, modifications de budgets et demandes multiples restent distinctes et sans création implicite.
+- RPC Supabase service-only, idempotente, dédoublonnage SQL transactionnel et vérification des droits du foyer pilote. Edge Function v23, aucun changement de production.
+- Tests automatisés : 194 + 2 réussis. Confirmation navigateur authentifiée encore à valider.
+
+
+
+### 31ae — direction artistique deep-dark du pilote (21 novembre 2026)
+- Nouvelle palette profonde à plusieurs surfaces et bordures, avec violet Smart Budget conservé, états verts/rouges explicites et typographie système.
+- Harmonisation globale de l'interface du pilote : connexion/quota, hero, suggestions, composer, propositions, budgets/jauges, éditions, validations et règles.
+- Grille centrée à trois zones pour toutes les cartes ; espacements relatifs et responsive, contrastes contrôlés, focus et mouvements réduits.
+- Feuille de style `native-dark.css` dédiée à `/v3.1/live/` et chargée en dernier ; aucune modification de JavaScript métier, Supabase ou production.
+- Test automatisé du contrat visuel et CI App integrity ; validation visuelle utilisateur à confirmer.
+
+
+
+### 31ad — messages de création et rafraîchissement (21 novembre 2026)
+- Suppression de l'exemple Lego et des montants arbitraires dans les demandes de reformulation. Message désormais neutre et descriptif.
+- Catégorie « Restauration, Fast Food » reconnue comme variante de « Restaurants / fast-food » uniquement si elle existe réellement dans le catalogue du foyer ; aucune modification autorisée sur une commande de création.
+- Empreinte JS de préversion renouvelée pour éviter l'affichage d'anciennes cartes dépourvues de jauge. Pilot Supabase v22 et tests de régression.
+
+### 31ac — harmonisation création de catégorie (21 novembre 2026)
+- Carte de catégorie nouvellement créée conforme à la DA des dépenses : icône, nom, budget initial à droite, jauge de budget 0/90 € pour une catégorie Gundam de 90 € sans dépenses, montant utilisé et reste sous la jauge.
+- Nouvelle garantie : une création explicite visant le nom d'une catégorie déjà active renvoie un refus clair, sans remplacer son budget ni générer une dépense.
+- Tests de rendu/validation et suite CI réussis ; Edge Function test v21, aucune écriture sur budgets ou catégories et aucune modification de production.
+
+### 31ab — correction affichage du pilote (21 novembre 2026)
+
+- Revue mixte de nouveau conforme à la DA 31z : icônes, montants, variations, jauge d'utilisation, contrôles d'édition et simulation ; aucun composant parallèle.
+- Correction d'une exception JavaScript qui masquait le bouton de simulation et affichait à tort « Communication interrompue » après réception du résultat.
+- Tests automatisés du rendu et de la simulation, CI App integrity. Modifications financières réelles toujours limitées aux transactions simples déjà validées, pas aux budgets/créations de catégories.
+
+### 31aa — correction Smart Assistant (pilote uniquement, 21 novembre 2026)
+
+- Découpe sûre d'une demande mixte : augmentation du budget existant + création de catégorie indépendante, sans réinterprétation silencieuse par Gemma.
+- Proposition `mixedDraft` non committable : validation stricte, ancien/nouveau montant du budget, carte séparée pour la catégorie à créer, simulation uniquement.
+- Catégorisation locale enrichie : Boulangerie → Courses, Décathlon → Vêtements par défaut, matériel d'escalade → Loisirs, commerçant inconnu non forcé.
+- CI et tests de non-régression ; Edge Function test v20. Production `main` non modifiée, aucun enregistrement réel de budgets ou catégories.
+
+
+- Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
+- Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
+- Contexte conversationnel court et réinitialisable, sans enregistrement ; historique revalidé côté passerelle.
+- Laboratoire web autonome à données fictives : démo guidée, validation et confirmation locale, sans connexion à Supabase.
+- Interface assistant centrée, trois suggestions horizontales et dictée continue avec transcription intermédiaire (selon navigateur).
+- IA distante, confirmation connectée, mémoire et validation réelle à finaliser.
+
+
 ### V3.0.2 — correctif global zoom automatique iOS/iPadOS (17 novembre 2026)
 
 - Sur écran tactile ou fenêtre au format tablette, tous les champs éditables natifs (texte, nombre, recherche, email, dates, selects, textarea et champs du builder) utilisent une police minimale de 16 px : évite le zoom automatique Safari au focus.
