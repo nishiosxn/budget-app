@@ -4,7 +4,7 @@
 const uuid=s=>typeof s==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s);
 const failure=(status,error)=>({status,body:{error}});
 const cents=n=>Number.isSafeInteger(n)&&n>=0&&n<=100000000;
-export function createBatchCommit({validateReview,validateMixedDraft,recognize,readCategories,writeBatch}){
+export function createBatchCommit({validateReview,validateMixedDraft,recognize,normalizeCategory,readCategories,writeBatch}){
  return async function commitBatch({token,householdId,userId,requestId,command,draft,expectedPlans,context}){
   if(!uuid(householdId)||!uuid(userId)||!uuid(requestId)||typeof command!=="string"||!command.trim()||command.length>1600
      ||!Array.isArray(expectedPlans)||expectedPlans.length>12)
@@ -12,14 +12,26 @@ export function createBatchCommit({validateReview,validateMixedDraft,recognize,r
   if(!context?.solo||context.actor!=="B"||!Array.isArray(context.categories))
    return failure(403,"household_not_authorized");
   const mixed=draft?.kind==="mixedDraft";
-  const checked=mixed?validateMixedDraft(draft,context):validateReview(draft,context);
+  // On replay the new category can already exist in the latest authenticated
+  // catalogue. Revalidate the *same proposed creation* independently of that
+  // category's presence; the SQL receipt + duplicate check remain authoritative.
+  // Financial categories are deliberately left in the context.
+  if(mixed&&(!Array.isArray(draft?.categories)||typeof normalizeCategory!=="function"))
+   return failure(422,"confirm_not_supported");
+  const createdNames=mixed?draft.categories.map(c=>normalizeCategory(c?.name||"")):[];
+  if(mixed&&(createdNames.some(x=>!x)||new Set(createdNames).size!==createdNames.length))
+   return failure(422,"confirm_not_supported");
+  const validatingContext=mixed?{...context,categories:context.categories.filter(
+   c=>!createdNames.includes(normalizeCategory(c.name))
+  )}:context;
+  const checked=mixed?validateMixedDraft(draft,validatingContext):validateReview(draft,context);
   if(!checked?.ok)return failure(422,"confirm_not_supported");
   const v=checked.value,ops=v.operations,categories=mixed?v.categories:[];
   if(!Array.isArray(ops)||!ops.length||ops.length+categories.length>12
     ||!ops.some(o=>o.kind==="plan")&&!categories.length)
    return failure(422,"confirm_not_supported");
   if(mixed){
-   const original=recognize(command,context);
+   const original=recognize(command,validatingContext);
    if(original?.ok!==true||original.value.kind!=="mixedDraft"
       ||original.value.categories.length!==categories.length)
     return failure(422,"confirm_creation_not_requested");
