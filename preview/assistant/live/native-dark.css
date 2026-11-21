@@ -3,7 +3,7 @@
    Scoped to the V3.1 pilot; no change to Smart Budget main. */
 
 /* One palette, rhythm and radius scale for the entire isolated page. */
-:root {
+:root:root {
   color-scheme: dark;
   --sb-brand: #5c29d6;
   --sb-brand-hover: #7040eb;
@@ -608,14 +608,14 @@ main .brand:focus-visible {
   #pilotAssistant #pilotRules > .pilot-rule-editor button { grid-column: auto; }
 }
 @media (max-width: 23.75rem) {
-  :root { --sb-icon-box: 2.125rem; --sb-icon: 1.125rem; --sb-card-pad: .75rem; }
+  :root:root { --sb-icon-box: 2.125rem; --sb-icon: 1.125rem; --sb-card-pad: .75rem; }
   #pilotAssistant .pilot-op-top { grid-template-columns: var(--sb-icon-box) minmax(0,1fr) auto; gap: .5rem; }
   #pilotAssistant .pilot-op-icon { display: grid; }
   #pilotAssistant .pilot-review-actions { grid-template-columns: 1fr; }
   #pilotAssistant .pilot-operation-editor { grid-template-columns: minmax(0,1fr); }
 }
 @media (prefers-contrast: more) {
-  :root { --sb-line: #737b90; --sb-control-line: #a4adbe; --sb-muted: #d1d6e2; }
+  :root:root { --sb-line: #737b90; --sb-control-line: #a4adbe; --sb-muted: #d1d6e2; }
   #pilotAssistant .pilot-op { border-width: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
