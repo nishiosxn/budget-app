@@ -326,7 +326,7 @@
     const cancel=reviewButton("Annuler"),confirm=reviewButton(attempted?"Réessayer":mode==="create"?"Créer et enregistrer":"Enregistrer la dépense","sb-assistant-send");
     cancel.disabled=attempted||saving;
     confirm.disabled=attempted?saving:!active()||(mode==="create"?!buildDraft().ok:!existingDraft().ok);
-    if(mode==="create"&&typeof confirmButton!=="undefined")confirmButton=confirm;
+    if(mode==="create")confirmButton=confirm;
     cancel.addEventListener("click",()=>{if(active()&&!attempted){wipe();status.textContent="Proposition annulée. Aucune écriture."}});
     confirm.addEventListener("click",async()=>{
      if(!active()||confirm.disabled)return;
