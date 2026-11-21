@@ -229,3 +229,33 @@ test("31ag: local expense in named existing category uses zero inferred category
  const inactive=core.quickCommand("ajoute 50 euro de depense en gundam",{...c,categories:[{...c.categories[0],hiddenMonths:["2026-11"]}]});
  assert.equal(inactive?.value?.kind,"clarify");
 });
+
+
+test("31ai: category starts in the requested month; forward budget persists, spending does not recur",()=>{
+ const c={...ctx,today:"2026-11-21",firstMonth:"2026-09",lastMonth:"2028-12",selectedMonth:"2026-11",actor:"B",solo:true,categories:[]};
+ const future=core.quickCommand("Crée une catégorie Atelier avec un budget de 100 euros à partir de décembre 2026",c);
+ assert.equal(future?.ok,true);
+ assert.equal(future.value.kind,"categoryDraft");
+ assert.equal(future.value.month,"2026-12");
+ assert.equal(future.value.budgetCents,10000);
+ assert.equal(future.value.expenseCents,null);
+ const sameMonth=core.quickCommand("Crée une catégorie Lego avec un budget de 60 euros",c);
+ assert.equal(sameMonth?.value.month,"2026-11");
+ const cWithPast={...c,selectedMonth:"2026-10"};
+ const past=core.quickCommand("Crée la catégorie Gundam avec un budget de 90 euros et ajoute 40 euros de dépense",cWithPast);
+ assert.equal(past?.ok,true);
+ assert.equal(past.value.kind,"categoryDraft");
+ assert.equal(past.value.month,"2026-10");
+ assert.equal(past.value.date,"2026-10-01");
+ assert.equal(past.value.expenseCents,4000);
+ assert.equal(core.validateCategoryDraft(past.value,cWithPast).ok,true);
+ const forbiddenFuture=core.validateCategoryDraft({...future.value,expenseCents:5000,date:"2026-12-01"},c);
+ assert.equal(forbiddenFuture.ok,false,"cannot book future as a completed transaction");
+ const budget=[{month:"2026-11-01",planned_amount:90,scope:"forward"}];
+ assert.equal(core.readBudgetCents(budget,"2026-10"),0);
+ assert.equal(core.readBudgetCents(budget,"2026-11"),9000);
+ assert.equal(core.readBudgetCents(budget,"2026-12"),9000);
+ assert.equal(core.readBudgetCents(budget,"2027-01"),9000);
+ assert.equal(core.readBudgetCents([...budget,{month:"2026-12-01",planned_amount:80,scope:"month"}],"2026-12"),8000);
+ assert.equal(core.readBudgetCents([...budget,{month:"2026-12-01",planned_amount:80,scope:"month"}],"2027-01"),9000);
+});
