@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31ai/);assert.match(html,/live-ui\.js\?v=31ai/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31ai/);assert.match(html,/live-ui\.js\?v=31aj/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -385,5 +385,19 @@ test("31ai: explicit category with initial expense is confirmable and monthly fo
  assert.match(js,/r\.body\.commit\.expenseCreated/);
  assert.match(js,/edit\.disabled=requestId!==null/);
  assert.match(html,/review-editor\.js\?v=31ai/);
- assert.match(html,/live-ui\.js\?v=31ai/);
+ assert.match(html,/live-ui\.js\?v=31aj/);
+});
+
+
+test("31aj: budget and mixed category batches remain reviewed, atomic and replay-safe",()=>{
+ assert.match(js,/action:"confirm_batch"/);
+ assert.match(js,/const batch=canSaveBatch\(entries,ctx\)/);
+ assert.match(js,/const expectation=entries\.flatMap/);
+ assert.match(js,/saveBatchDraft\(requestId,sourceCommand,batchDraft,expectation\)/);
+ assert.match(js,/function renderMixedDraft\(v,ctx,previews,sourceCommand\)/);
+ assert.match(js,/new Set\(draft\.operations\.map\(op=>op\.categoryId\)\)/);
+ assert.match(js,/saveBatchDraft\(requestId,sourceCommand,draft,expectation\)/);
+ assert.match(js,/r\.body\.commit\?\.categoriesCreated!==draft\.categories\.length/);
+ assert.match(js,/requestId=crypto\.randomUUID\(\)/);
+ assert.match(html,/live-ui\.js\?v=31aj/);
 });
