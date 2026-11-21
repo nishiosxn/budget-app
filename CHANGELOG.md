@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31aj — budgets et lots financiers atomiques, pilote exclusivement (21 novembre 2026)
+- Confirmation des budgets existants (montant fixe, hausse ou baisse), avec portée `month` ou `forward` ; calcul et vérification du budget précédent côté PostgreSQL.
+- Une seule confirmation pour les propositions multiples validées, incluant les créations explicites de catégories et les transactions ponctuelles si compatibles. Refus des lots ambigus, sans catégorie existante ou sans référence budgétaire fiable.
+- Lot SQL atomique avec reçu idempotent, verrou et protection contre les doublons, les baselines obsolètes et les écritures partielles. Migration isolée au foyer test et RPC service-only, fonction de pilote v26.
+- CI : 212 tests applicatifs et 2 contrôles complémentaires réussis. Vérification manuelle des confirmations réelles encore nécessaire ; aucune modification de `main` ni de la DA.
+
+
+
 ### 31ai — catégories reconduites, dépense initiale et préservation historique (21 novembre 2026)
 - Création d'une catégorie à partir d'un mois déterminé, budget mensuel reconduit grâce à `scope=forward` (sans multiplier les lignes par mois).
 - Confirmation explicite d'une catégorie avec budget **et dépense initiale** en une seule transaction PostgreSQL idempotente. Aucune création implicite lors d'une simple dépense.
