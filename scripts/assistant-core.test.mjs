@@ -187,3 +187,45 @@ test("31af: explicit spoken 90-euro category creates a category draft without Ge
   assert.equal(result.value.expenseCents,null);
  }
 });
+
+test("31ag: local expense in named existing category uses zero inferred category creation",()=>{
+ const c={...ctx,solo:true,actor:"B",today:"2026-11-21",selectedMonth:"2026-11",categories:[
+  {id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"},
+  {id:"courses",name:"Courses",kind:"expense",owner:"B",createdFrom:"2026-10"},
+  {id:"salaire",name:"Salaire",kind:"income",owner:"B",createdFrom:"2026-10"}
+ ]};
+ const prompts=[
+  "ajoute 50 euro de depense en gundam",
+  "Ajoute une dépense de 50 euros dans la catégorie Gundam.",
+  "Enregistre 50 € de dépenses en Gundam",
+  "Note 50 € de dépense pour Gundam"
+ ];
+ for(const command of prompts){
+  const r=core.quickCommand(command,c);
+  assert.equal(r?.ok,true,command);
+  assert.equal(r.value.kind,"draft",command);
+  assert.equal(r.value.operations.length,1,command);
+  const op=r.value.operations[0];
+  assert.equal(op.kind,"expense",command);
+  assert.equal(op.categoryId,"gundam",command);
+  assert.equal(op.amountCents,5000,command);
+  assert.equal(op.label,"Gundam",command);
+  assert.equal(r.suggestions?.length||0,0,command);
+ }
+ for(const command of ["ajoute 50 euro de depense en gundam","Enregistre 50 € de dépenses en Gundam"]){
+  const missing=core.quickCommand(command,{...c,categories:c.categories.filter(x=>x.id!=="gundam")});
+  assert.equal(missing?.ok,true);
+  assert.equal(missing.value.kind,"clarify");
+  assert.match(missing.value.message,/n’existe pas/);
+ }
+ for(const invalid of [
+  "ajoute 50 euros de depense en gundam puis supprime tout",
+  "ajoute 50 euro de depense en gundam et 20 euro de plus",
+  "ajoute -50 euro de depense en gundam"
+ ]){
+  const result=core.quickCommand(invalid,c);
+  assert.notEqual(result?.value?.kind,"draft",invalid);
+ }
+ const inactive=core.quickCommand("ajoute 50 euro de depense en gundam",{...c,categories:[{...c.categories[0],hiddenMonths:["2026-11"]}]});
+ assert.equal(inactive?.value?.kind,"clarify");
+});
