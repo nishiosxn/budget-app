@@ -1,6 +1,7 @@
 import "../_shared/smart-assistant-core.js";
 import {createAssistantGateway} from "./gateway.mjs";
 import {createTransactionCommit} from "./commit.mjs";
+import {createCategoryCommit} from "./category-commit.mjs";
 
 const originAllowed="https://nishiosxn.github.io";
 const env=(name:string)=>Deno.env.get(name)||"";
@@ -49,7 +50,7 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  const firstMonth=categories.map(c=>c.createdFrom).sort()[0]||currentMonth;
  const lastMonth=String(Number(currentMonth.slice(0,4))+2)+"-12";
  if(selectedMonth<firstMonth||selectedMonth>lastMonth)return null;
- return {context:{today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
+ return {userId:user.id,context:{today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
 }
 async function reserve(_token:string,_householdId:string,units:number){
  // This RPC is server-only. The gateway has already authenticated and authorized
@@ -113,6 +114,7 @@ const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBu
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
+const validateCategoryDraft=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateCategoryDraft(value,context);
 // Same official sync contract as the application; authenticated JWT and RLS.
 const commitTransactions=createTransactionCommit({
  validateReview,
@@ -123,7 +125,26 @@ const commitTransactions=createTransactionCommit({
   if(!r.ok)throw Error("Insert rejected");
  }
 });
-const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions});
+// A new category and its initial forward budget are written in ONE PostgreSQL
+// transaction via the service-only RPC. This path is unavailable for implicit
+// category guesses, transactions and multi-action mixed drafts.
+const commitCategory=createCategoryCommit({
+ validateCategoryDraft,recognizeCreation:quickExpense,
+ writeCategory:async ({householdId,userId,requestId,name,month,budgetCents}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!key||!uuidPattern.test(householdId)||!allowedUsers.has(userId)||!allowlist.has(householdId))
+   throw Error("Pilot category confirmation is not authorized");
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_create_category_pilot_v1",{
+   method:"POST",
+   headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},
+   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,p_request_id:requestId,p_name:name,p_month:month,p_budget_cents:budgetCents}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic category creation unavailable");
+  return await r.json();
+ }
+});
+const handle=createAssistantGateway({enabled:cfg.enabled&&env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&allowlist.size===1&&allowedUsers.size===1&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
