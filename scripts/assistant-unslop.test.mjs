@@ -55,3 +55,14 @@ test('assistant theme text and essential control borders retain AA contrast',()=
  }
  assert.ok(ratio('#ffffff','#5c29d6')>=4.5,'brand primary button');
 });
+
+test('31ao completion states hide confirmation controls while retaining secure live actions',()=>{
+ const groups=source.match(/if\(!locked\)\{actions\.append\(cancel,ok\);group\.append\(actions\)\}/g)||[];
+ assert.equal(groups.length,3,'all three review modes hide actions once finalized');
+ assert.match(source,/fetch\(PILOT_URL\+path/,'connected pilot still uses the real gateway');
+ assert.match(source,/action:"confirm_batch"/,'server-side batch confirm remains available');
+ assert.doesNotMatch(source,/UnslopFixture/,'fixture is not bundled into the connected pilot');
+ const css=fs.readFileSync(base+'unslop.css','utf8');
+ assert.match(css,/#pilotSubmitted\.pilot-submitted \{ padding:\.625rem \.875rem/);
+ assert.match(css,/\.pilot-op-info \.pilot-op-meta/);
+});
