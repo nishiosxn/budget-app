@@ -1,5 +1,20 @@
 # Workstate — Budget foyer
 
+## V3.1 — Refonte Catégories : répartition interactive (21 novembre 2026)
+
+- Branche indépendante `work/v3.1-category-repartition` depuis `develop`, PR [#49](https://github.com/nishiosxn/budget-app/pull/49) en brouillon vers `develop`. Smart Assistant `work/v3.1-smart-assistant` et `main` restent intacts.
+- L'ancienne carte « Échéances du mois / Abonnements et récurrences » est retirée uniquement de Catégories et n'est plus chargée. Les catégories, abonnements, transactions, séries récurrentes et éditeurs financiers sont conservés. Aucune migration ni écriture Supabase.
+- Nouvelle carte : montants **prévus** par mois, Revenus/Dépenses, familles/catégories, tri par montant ou ordre original, barre proportionnelle, couleurs stables et légende interactive. Revenus et dépenses séparés, épargne exclue et budget commun compté une seule fois.
+- Survol/focus synchronisé des segments et légendes, infobulle, filtres appliqués à la vraie liste des catégories, retour « Tout afficher », accès à l'éditeur de budget existant. Aucune action d'écriture financière déclenchée par la carte.
+- Valeurs calculées par `visibleIncomeCategories` / `visibleExpenseCategories` et `planForCategory`, respectant les budgets `forward` et `month`, les dates de création et catégories masquées. Les familles incluent leurs catégories à budget 0 sans fausser la barre ; les petites parts restent accessibles par la légende.
+- Variations de planification par rapport au mois précédent affichées seulement si un budget a changé et si le mois précédent est disponible ; pas de dépenses réelles ni d'alertes redondantes dans cette carte.
+- CSS relatif/responsive, navigation clavier et tactile, mode clair/sombre et `prefers-reduced-motion`. Aucun stockage financier ajouté.
+- Démo isolée : https://nishiosxn.github.io/budget-app/previews/pr-49/ — **montants fictifs, aucun compte connecté, aucune donnée réelle**. Déploiement gh-pages validé (run 44952614650) ; fichiers copiés bit-à-bit depuis la branche source.
+- App integrity : 41 tests réussis, 0 échec (run 44952270349), dont la nouvelle suite `scripts/category-distribution.test.mjs` ; audit documentaire et syntaxique passé. Tests manuels dans l'application réelle et retour visuel utilisateur encore nécessaires.
+- Suite distincte envisagée : alertes « catégorie sans budget » et « dépense non catégorisée » dans Vue d'ensemble ; les dépassements sont déjà affichés dans « À surveiller ». Ne pas fusionner sans validation de cette carte.
+
+
+
 ## Correctif V3.0.2 — zoom des champs iOS et tablette
 
 - Branche : `work/v3.0.2-touch-input-focus` issue de `develop` (V3.0 + correctif Historique V3.0.1).
