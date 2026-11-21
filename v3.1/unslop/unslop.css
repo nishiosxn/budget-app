@@ -109,3 +109,10 @@ main > .card, #pilotSession.card.ledger, #pilotAssistant.card.sb-assistant { bac
 .demo-banner { padding:.75rem 1rem; margin:0 0 1rem; border:1px solid var(--sb-control-line); border-radius:.75rem; background:var(--sb-secondary); color:var(--sb-ink); font-size:.875rem; }
 #pilotAssistant #pilotRules .pilot-rule-editor :is(input,select), #pilotAssistant .pilot-operation-editor :is(input,select) { background:var(--sb-secondary) !important; color:var(--sb-ink) !important; }
 #pilotAssistant button:disabled { opacity:.65; }
+
+/* Aperçu 31ao : rappel compact et métadonnées lisibles. */
+#pilotSubmitted.pilot-submitted { padding:.625rem .875rem; }
+#pilotSubmitted > p { margin:.25rem 0 0; line-height:1.4; overflow-wrap:anywhere; }
+#pilotAssistant .pilot-op-info .pilot-op-meta, #pilotAssistant .pilot-expense-detail, #pilotAssistant .pilot-op-meta, #pilotAssistant .pilot-review-message { font-size:.8125rem; line-height:1.5; color:var(--sb-muted); letter-spacing:normal; }
+#pilotAssistant > #cancel.sb-assistant-secondary { color:var(--sb-ink); background:var(--sb-surface); border-color:var(--sb-control-line); opacity:1; }
+#pilotAssistant > #cancel.sb-assistant-secondary:disabled { color:var(--sb-muted); opacity:.65; }
