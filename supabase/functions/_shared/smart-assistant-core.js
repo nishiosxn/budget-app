@@ -562,10 +562,10 @@
   const monthly=/(?: chaque mois| par mois| tous les mois)$/.test(text);
   if(monthly)text=text.replace(/(?: chaque mois| par mois| tous les mois)$/,"");
   const selected=ctx.selectedMonth||ctx.today.slice(0,7);if(!monthOK(selected,ctx))return null;
-  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le) budget (?:de |d'|des |pour )?(.+)$"));
-  const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire) (?:le )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
-  const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:le )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
-  const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:le )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
+  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le|a mon|a notre|dans mon|sur mon) budget (?:de |d'|des |pour )?(.+)$"));
+  const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire|enleve) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
+  const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:(?:le|mon|notre) )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
   let name,raw,mode;
   if(delta){[,mode,raw,name]=delta;mode=["retire","diminue","enleve","baisse","reduis"].includes(mode)?"decrease":"increase"}
   else if(deltaAfter){[,mode,name,raw]=deltaAfter;mode=["retire","diminue","baisse","reduis"].includes(mode)?"decrease":"increase"}
@@ -794,10 +794,10 @@
  function quickSaving(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   const t=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/[.!?]$/,"");
-  const m=t.match(/^j[' ]ai (?:mis|place|verse|epargne|economise) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: (?:en epargne|de cote|sur (?:mon |le )?(?:livret|compte epargne)))?$/u);
+  const m=t.match(/^j[' ]ai (?:mis|place|verse|epargne|economise) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: (?:en epargne|de cote|sur (?:mon |le )?(?:livret(?: a)?|compte epargne)|dans (?:mon |le )?epargne))?$/u);
   if(!m)return null;
   // A generic "J'ai versé 100 euros" is ambiguous; require explicit saving destination.
-  if(!/(?:en epargne|de cote|livret|compte epargne)$/.test(t)&&!/^j[' ]ai (?:epargne|economise) /.test(t))return null;
+  if(!/(?:en epargne|de cote|livret(?: a)?|compte epargne|dans (?:mon |le )?epargne)$/.test(t)&&!/^j[' ]ai (?:epargne|economise) /.test(t))return null;
   const amountCents=centsFromText(m[1]);if(!amountCents)return null;
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"saving",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:"Mise en épargne",frequency:"once",categoryHint:"saving"}]},ctx,command);
   return checked.ok?checked:null;
