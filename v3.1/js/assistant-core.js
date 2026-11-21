@@ -605,21 +605,34 @@
 
  // Explicit category creation is a review-only command, not an invented database ID.
  function validateCategoryDraft(v,c){
-  if(!contextOK(c)||!exact(v,["kind","name","owner","month","date","budgetCents","expenseCents"])||v.kind!=="categoryDraft"||!clean(v.name,60)||!/^[\p{L}\p{N}][\p{L}\p{N} /&'’_-]{0,59}$/u.test(v.name)||!ownerOK(v.owner,c)||v.owner!==c.actor||!monthOK(v.month,c)||!validDate(v.date)||v.date!==c.today)return fail("Création de catégorie invalide.");
+  if(!contextOK(c)||!exact(v,["kind","name","owner","month","date","budgetCents","expenseCents"])||v.kind!=="categoryDraft"||!clean(v.name,60)||!/^[\p{L}\p{N}][\p{L}\p{N} /&'’_-]{0,59}$/u.test(v.name)||!ownerOK(v.owner,c)||v.owner!==c.actor||!monthOK(v.month,c)||!validDate(v.date)||(v.date!==c.today&&v.date!==v.month+"-01"))return fail("Création de catégorie invalide.");
   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(v.name)))return fail("Une catégorie de ce nom existe déjà.");
   if(v.budgetCents!==null&&(!Number.isSafeInteger(v.budgetCents)||v.budgetCents<0||v.budgetCents>100000000))return fail("Budget invalide.");
   if(v.expenseCents!==null&&(!Number.isSafeInteger(v.expenseCents)||v.expenseCents<=0||v.expenseCents>100000000))return fail("Dépense invalide.");
-  if(v.expenseCents!==null&&v.month!==v.date.slice(0,7))return fail("Les opérations ne concernent pas le même mois.");
+  if(v.expenseCents!==null&&(v.month!==v.date.slice(0,7)||v.date>c.today))return fail("La dépense initiale doit être datée dans le mois demandé et ne peut pas être future.");
   return {ok:true,value:{...v,name:v.name.trim()}};
+ }
+ // The category begins in the requested month; its budget is persisted
+ // with scope='forward' by the server and continues in later months.
+ // No unspecified year is guessed for named-month commands.
+ function creationMonth(command,c){
+  const match=command.match(/\s+(?:à partir de|a partir de|pour|en)\s+(?:(?:le|du)\s+mois\s+de\s+)?(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)\s+(\d{4})$/iu);
+  if(!match)return {text:command,month:c.selectedMonth||c.today.slice(0,7)};
+  const names=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
+  const m=names.indexOf(normalizeCategory(match[1])),month=match[2]+"-"+String(m+1).padStart(2,"0");
+  return {text:command.slice(0,match.index).trim(),month};
  }
  function quickCreateCategory(command,c){
   if(!contextOK(c)||!ownerOK(c.actor,c)||typeof command!=="string"||command.length>1600)return null;
-  const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const raw=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const requested=creationMonth(raw,c);
+  const t=requested.text;
+  if(!monthOK(requested.month,c))return validateAssistantResult({kind:"clarify",message:"Précise un mois et une année disponibles pour la création de cette catégorie."},c);
   // A new named category is a separate creation intent; never reuse the
   // budget of an existing parent category such as Loisirs.
   const direct=t.match(/^(?:crée|cree|créer|creer) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}?) avec un budget de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)$/iu);
   if(direct){
-   const month=c.selectedMonth||c.today.slice(0,7),amount=centsFromText(direct[2]);
+   const month=requested.month,amount=centsFromText(direct[2]);
    if(amount===null)return null;
    const draft={kind:"categoryDraft",name:direct[1].trim(),owner:c.actor,month,date:c.today,budgetCents:amount,expenseCents:null};
    if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+draft.name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
@@ -643,14 +656,15 @@
     else return null;
    }
   }
-  const month=c.selectedMonth||c.today.slice(0,7);
+  const month=requested.month;
   const matches=c.categories.filter(x=>normalizeCategory(x.name)===normalizeCategory(name));
   if(matches.length){
    // A CREATE request must never silently become a SET-budget or expense on
    // an existing category, even when the spoken command contains both.
    return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
   }
-  const checked=validateCategoryDraft({kind:"categoryDraft",name,owner:c.actor,month,date:c.today,budgetCents,expenseCents},c);return checked.ok?checked:null;
+  const date=expenseCents!==null&&month!==c.today.slice(0,7)?month+"-01":c.today;
+  const checked=validateCategoryDraft({kind:"categoryDraft",name,owner:c.actor,month,date,budgetCents,expenseCents},c);return checked.ok?checked:null;
  }
  function quickCategoryQuery(command,c){
   if(!contextOK(c)||typeof command!=="string"||command.length>1600)return null;
