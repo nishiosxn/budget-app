@@ -231,11 +231,11 @@
   return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm_category",householdId:session.householdId,requestId,command,draft})});
  }
  function categoryExplicitIntent(command){
-  return typeof command==="string"&&/^(?:crée|cree|créer|creer)\s+(?:(?:une|la)\s+)?cat[ée]gorie\b/iu.test(command.trim());
+  return typeof command==="string"&&/^(?:crée|cree|créer|creer|ajoute)\s+(?:(?:une|la)\s+)?cat[ée]gorie\b/iu.test(command.trim());
  }
  function renderCategoryDraft(v,ctx,sourceCommand){
   const draft={...v};pendingReview=draft;let editing=false,locked=false,saving=false,created=false,requestId=null,saveError="";
-  const canWrite=ctx.solo&&ctx.actor==="B"&&categoryExplicitIntent(sourceCommand)&&draft.expenseCents===null&&draft.budgetCents!==null;
+  const canWrite=ctx.solo&&ctx.actor==="B"&&categoryExplicitIntent(sourceCommand);
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&!saving&&pendingReview===draft&&!locked}
   function draw(){
@@ -247,7 +247,7 @@
    const info=document.createElement("div");info.className="pilot-op-info";
    const heading=document.createElement("strong");heading.textContent=draft.name;
    const meta=document.createElement("div");meta.className="pilot-op-meta";
-   meta.textContent="Nouvelle catégorie · "+monthReviewDate(draft.month+"-01",ctx)+" · Budget initial";
+   meta.textContent="Nouvelle catégorie · "+draft.month+" · Budget mensuel reconduit";
    info.append(heading,meta);
    const amount=document.createElement("strong");amount.className="pilot-op-money pilot-plan";
    amount.textContent=draft.budgetCents===null?"Sans budget":euro(draft.budgetCents);
@@ -267,23 +267,24 @@
       {key:"month",label:"Mois du budget",type:"month",value:draft.month,min:ctx.firstMonth,max:ctx.lastMonth,required:true,wide:true}],
       async(fields,notice,finish)=>{if(!active())return "Proposition périmée.";const checked=reviewEditor.categoryFromFields(draft,fields,ctx);if(!checked.ok)return checked.error;await finish(()=>{if(!active())return;Object.assign(draft,checked.value);history=[];editing=false;draw()});return null},
       ()=>{if(active()){editing=false;draw()}});
-    }else{const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=true;draw()}});actions.append(edit);content.append(actions)}
+    }else{const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.disabled=requestId!==null;edit.addEventListener("click",()=>{if(active()&&requestId===null){editing=true;draw()}});actions.append(edit);content.append(actions)}
    }
    const safe=document.createElement("p");safe.className="pilot-review-message";
-   safe.textContent=created?"Catégorie créée dans le foyer de test, avec son budget.":locked?"Simulation terminée · aucune écriture.":saveError||(canWrite?"Confirme pour créer réellement cette catégorie et son budget dans le foyer de test.":"Simulation uniquement · aucune écriture sur cette demande.");
+   const monthly="Budget mensuel reconduit à partir de "+draft.month+".";
+   safe.textContent=created?"Catégorie créée dans le foyer de test. "+monthly+(draft.expenseCents!==null?" Dépense initiale enregistrée.":""):locked?"Simulation terminée · aucune écriture.":saveError||(canWrite?monthly+" Confirmer enregistre "+(draft.expenseCents!==null?"la catégorie, son budget et la dépense initiale ensemble.":"la catégorie et son budget ensemble."):"Simulation uniquement · aucune écriture sur cette demande.");
    group.append(safe);
    const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton(canWrite?"Confirmer":"Simuler","sb-assistant-send");
-   cancel.disabled=locked||saving;ok.disabled=locked||saving||editing||!core.validateCategoryDraft(draft,ctx).ok;
+   cancel.disabled=locked||saving;ok.disabled=locked||saving||editing||canWrite&&draft.budgetCents===null||!core.validateCategoryDraft(draft,ctx).ok;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async ()=>{
     if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;
     if(!canWrite){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return}
     if(!requestId)requestId=crypto.randomUUID();
-    saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Création de la catégorie dans le foyer de test…";draw();
+    saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Enregistrement atomique dans le foyer de test…";draw();
     try{
      const r=await savePilotCategory(requestId,sourceCommand,draft);
      if(r.ok&&r.body?.commit?.kind==="category"&&r.body.commit.requestId===requestId){
-      created=true;locked=true;pendingReview=null;history=[];saveError="";status.textContent="Catégorie « "+r.body.commit.name+" » créée dans le foyer de test.";void loadRuleCategories();
+      created=true;locked=true;pendingReview=null;history=[];saveError="";status.textContent="Catégorie « "+r.body.commit.name+" » confirmée dans le foyer de test"+(r.body.commit.expenseCreated?" avec sa dépense initiale.":" et son budget mensuel.") ;void loadRuleCategories();
      }else if(r.status===409&&r.body?.error==="confirm_category_exists"){
       locked=true;pendingReview=null;history=[];saveError=errorMessages.confirm_category_exists;status.textContent=saveError;
      }else if([400,403,422].includes(r.status)){
