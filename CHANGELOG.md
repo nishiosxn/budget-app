@@ -2,6 +2,13 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ag — interprétation rapide et reprise sûre après panne (21 novembre 2026)
+- Dépenses dans les catégories existantes reconnues localement : « ajoute 50 euro de dépense en Gundam », 0 token IA ; catégorie absente = demande de précision, jamais de création automatique.
+- Reprise des confirmations de création de catégorie avec le même identifiant après réponse réseau perdue. Contrôle atomique et anti-doublon conservé côté base.
+- Tests moteur, serveur et cas de sécurité étendus. Fichiers de préversion actualisés, sans toucher au design ni à la production.
+
+
+
 ### 31af — design graphite et création explicite de catégorie test (21 novembre 2026)
 - Palette noire/neutre profonde sur l'ensemble du pilote, sans halo violet derrière les cartes ; violets réservés à l'identité et aux actions.
 - Micro et bouton Envoyer carrés, icônes parfaitement centrées malgré les styles hérités.
