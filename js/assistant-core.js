@@ -939,6 +939,34 @@
   const checked=normalizeModelDraft({kind:"draft",operations:[{kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date,label:"Pharmacie · Médicaments",frequency:"once",categoryHint:"health"}]},ctx,command);
   return checked.ok?checked:null;
  }
+ // Strict, fully anchored user-requested expense in an existing household category.
+ // This path NEVER creates a category, guesses a category, or uses the AI model.
+ function quickExpenseInCategory(command,ctx){
+  if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
+  const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  const money="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
+  const patterns=[
+   new RegExp("^(?:ajoute|ajouter|enregistre|enregistrer|note|mets) (?:une |la )?d[ée]pense (?:de )?"+money+" (?:dans|en|pour) (?:la cat[ée]gorie )?(.+)$","iu"),
+   new RegExp("^(?:ajoute|ajouter|enregistre|enregistrer|note|mets) "+money+" (?:de |en )?d[ée]penses? (?:dans|en|pour) (?:la cat[ée]gorie )?(.+)$","iu")
+  ];
+  let m=null;for(const pattern of patterns){m=t.match(pattern);if(m)break}
+  if(!m)return null;
+  const amountCents=centsFromText(m[1]),name=m[2].trim();
+  if(!amountCents||!name||name.length>100||/[;.!?<>]/.test(name))return null;
+  const key=normalizeCategory(name);
+  if(!key||key.length>100)return null;
+  const base={kind:"expense",categoryId:null,owner:ctx.actor,amountCents,date:ctx.today,label:name,frequency:"once"};
+  const available=availableCategories(base,ctx).filter(c=>c.kind==="expense");
+  const exact=available.filter(c=>normalizeCategory(c.name)===key);
+  if(exact.length!==1){
+   // Never call the model for a category explicitly named but absent/ambiguous.
+   return validateAssistantResult({kind:"clarify",message:exact.length>1
+    ?"Plusieurs catégories portent ce nom. Choisis la catégorie exacte avant d’enregistrer la dépense."
+    :"La catégorie « "+name+" » n’existe pas parmi les catégories de dépenses disponibles. Choisis une catégorie existante ; aucune catégorie ne sera créée automatiquement."},ctx);
+  }
+  base.categoryId=exact[0].id;base.label=exact[0].name;
+  return validateReview({kind:"draft",operations:[base]},ctx);
+ }
  function quickSingleMovement(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   let t=command.trim(),date=ctx.today;
@@ -1046,9 +1074,9 @@
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
-  const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickExpenseInCategory(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
   // Do not let a model silently turn an unsupported creation into a budget edit.
   return direct||(creationRequested(normalized)?creationClarification(normalized,ctx):null);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickExpenseInCategory,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);
