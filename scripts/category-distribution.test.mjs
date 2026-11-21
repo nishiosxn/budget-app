@@ -25,9 +25,9 @@ test("category allocation uses only effective planned envelopes, with saving and
  assert.equal(v.total,80000);
  assert.equal(v.count,3);
  assert.equal(v.items.reduce((n,x)=>n+x.amount,0),v.total);
- assert.deepEqual(v.items.map(x=>x.name),["Obligatoires","Vie courante","Abonnements"]);
+ assert.deepEqual(toJSON(v.items.map(x=>x.name)),["Obligatoires","Vie courante","Abonnements"]);
  assert.equal(v.items[1].amount,21000);
- assert.deepEqual(Array.from(v.items[1].ids),["groceries","coffee"],"family filters also show zero-budget category");
+ assert.deepEqual(toJSON(v.items[1].ids),["groceries","coffee"],"family filters also show zero-budget category");
  assert.equal(v.items.some(x=>x.ids.includes("save")),false);
  const revenue=model.buildModel({expenses:expense,incomes:income,scope:"income"});
  assert.equal(revenue.total,200000);
@@ -38,9 +38,9 @@ test("category mode respects original order or descending budget; zero and inval
  const {model}=setup();
  const bad=[{id:"invalid",name:"Invalide",budget:"oops",section:"Vie courante"},{id:"negative",name:"Négatif",budget:-99,section:"Vie courante"}];
  const inOrder=model.buildModel({expenses:[...expense,...bad],level:"category",sort:"order"});
- assert.deepEqual(inOrder.items.map(x=>x.name),["Loyer","Courses","Spotify"]);
+ assert.deepEqual(toJSON(inOrder.items.map(x=>x.name)),["Loyer","Courses","Spotify"]);
  const sorted=model.buildModel({expenses:[...expense,...bad],level:"category",sort:"amount"});
- assert.deepEqual(sorted.items.map(x=>x.name),["Loyer","Courses","Spotify"]);
+ assert.deepEqual(toJSON(sorted.items.map(x=>x.name)),["Loyer","Courses","Spotify"]);
  assert.equal(sorted.items.every(i=>i.amount>0),true);
  const none=model.buildModel({expenses:bad,incomes:[]});
  assert.equal(none.total,0);
@@ -94,7 +94,7 @@ test("interactive selection, scope switch and month refresh are isolated from fi
  const {model}=setup({
   document:{getElementById:id=>id==="categoryDistribution"?host:id==="categoryGrid"?grid:null},
   state:appState,
-  visibleExpenseCategories:(month)=>month==="2026-12"?[{id:"new",name:"Transport",budget:30,section:"Vie courante"}]:expense,
+  visibleExpenseCategories:(month=appState.selectedMonth)=>(month==="2026-12"||month==="décembre 2026")?[{id:"new",name:"Transport",budget:30,section:"Vie courante"}]:expense,
   visibleIncomeCategories:()=>income,
   monthKey:month=>month==="décembre 2026"?"2026-12":"2026-11",
   previousMonthKey:key=>key==="2026-12"?"2026-11":"2026-10",
