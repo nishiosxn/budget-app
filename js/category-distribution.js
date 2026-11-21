@@ -23,12 +23,11 @@
  function groupItems(entries){
   const grouped=new Map();
   for(const c of entries){
-   if(c.amount===0)continue;
    const g=grouped.get(c.section)||{key:"family:"+c.section,name:c.section,color:familyColors[c.section]||familyColors.Autres,
     amount:0,ids:[],order:sectionOrder.indexOf(c.section),type:"expense"};
    g.amount+=c.amount;g.ids.push(c.id);grouped.set(c.section,g);
   }
-  return [...grouped.values()];
+  return [...grouped.values()].filter(g=>g.amount>0);
  }
  function categoryItems(entries,type){
   return entries.filter(c=>c.amount>0).map(c=>({key:type+":"+c.id,name:c.name,amount:c.amount,
