@@ -961,7 +961,12 @@
   const money="(\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)";
   const patterns=[
    new RegExp("^(?:ajoute|ajouter|enregistre|enregistrer|note|mets) (?:une |la )?d[ée]pense (?:de )?"+money+" (?:dans|en|pour) (?:la cat[ée]gorie )?(.+)$","iu"),
-   new RegExp("^(?:ajoute|ajouter|enregistre|enregistrer|note|mets) "+money+" (?:de |en )?d[ée]penses? (?:dans|en|pour) (?:la cat[ée]gorie )?(.+)$","iu")
+   new RegExp("^(?:ajoute|ajouter|enregistre|enregistrer|note|mets) "+money+" (?:de |en )?d[ée]penses? (?:dans|en|pour) (?:la cat[ée]gorie )?(.+)$","iu"),
+   // Common speech-to-text variants remain strictly bound to an existing,
+   // explicitly named category; neither a merchant nor an unknown label is inferred.
+   new RegExp("^(?:j[' ]ai )?(?:d[ée]pens[ée]|pay[ée]) "+money+" (?:dans|en) (?:la cat[ée]gorie )?(.+)$","iu"),
+   new RegExp("^j[' ]ai fait une d[ée]pense de "+money+" (?:dans|en) (?:la cat[ée]gorie )?(.+)$","iu"),
+   new RegExp("^"+money+" de d[ée]penses? (?:dans|en) (?:la cat[ée]gorie )?(.+)$","iu")
   ];
   let m=null;for(const pattern of patterns){m=t.match(pattern);if(m)break}
   if(!m)return null;
