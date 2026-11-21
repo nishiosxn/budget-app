@@ -5,7 +5,7 @@
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  const kinds={expense:"Dépense",income:"Revenu",saving:"Mise en épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
- const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable."};
+ const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Confirmation déjà utilisée avec une autre proposition. Aucune nouvelle création."};
  // Single-line default. Expand only for actual line breaks or visual wrapping.
  function resizeComposer(){
   input.style.height="auto";
@@ -227,10 +227,17 @@
  }
  const iconPaths={cart:"M3 3h2l3 12h11l3-8H6M9 20h.01M18 20h.01",food:"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M20 3c-3 0-5 3-5 6v4h5M20 3v18",home:"M3 10l9-7 9 7v10H3zM9 20v-6h6v6",game:"M7 7h10c3 0 5 3 5 7 0 2-1 3-3 3l-4-3H9l-4 3c-2 0-3-1-3-3 0-4 2-7 5-7zM7 9v4M5 11h4M16 10h.01M19 12h.01",transfer:"M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4",income:"M5 5l14 14M5 5v9M5 5h9",card:"M3 5h18v14H3zM3 10h18M6 15h4",fuel:"M4 21V3h10v18M4 11h10M14 13h2l2 3h2V7l-3-3",car:"M4 16l2-8h12l2 8v3H4zM4 16h16M7 19v2M17 19v2",health:"M12 3v18M3 12h18",shirt:"M8 3l4 3 4-3 5 4-4 4v10H7V11L3 7z",gift:"M3 9h18v12H3zM12 9v12M2 5h20v4H2zM12 5C5-3 2 6 12 5c10 1 7-8 0 0",saving:"M12 3l8 5v5c0 5-3 8-8 9-5-1-8-4-8-9V8zM9 13l2 2 4-4"};
  function icon(key){const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),path=document.createElementNS(ns,"path");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");path.setAttribute("d",iconPaths[key]||iconPaths.card);svg.append(path);return svg}
- function renderCategoryDraft(v,ctx){
-  const draft={...v};pendingReview=draft;let editing=false,locked=false;
+ async function savePilotCategory(requestId,command,draft){
+  return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm_category",householdId:session.householdId,requestId,command,draft})});
+ }
+ function categoryExplicitIntent(command){
+  return typeof command==="string"&&/^(?:crée|cree|créer|creer)\s+(?:(?:une|la)\s+)?cat[ée]gorie\b/iu.test(command.trim());
+ }
+ function renderCategoryDraft(v,ctx,sourceCommand){
+  const draft={...v};pendingReview=draft;let editing=false,locked=false,saving=false,created=false,requestId=null,saveError="";
+  const canWrite=ctx.solo&&ctx.actor==="B"&&categoryExplicitIntent(sourceCommand)&&draft.expenseCents===null&&draft.budgetCents!==null;
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
-  function active(){return !busy&&pendingReview===draft&&!locked}
+  function active(){return !busy&&!saving&&pendingReview===draft&&!locked}
   function draw(){
    group.replaceChildren();
    // Match the existing 31z operation cards, including the right-aligned amount.
@@ -262,11 +269,32 @@
       ()=>{if(active()){editing=false;draw()}});
     }else{const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.addEventListener("click",()=>{if(active()){editing=true;draw()}});actions.append(edit);content.append(actions)}
    }
-   const safe=document.createElement("p");safe.className="pilot-review-message";safe.textContent=locked?"Confirmé en simulation.":"Mode test · aucun enregistrement.";group.append(safe);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton("Simuler","sb-assistant-send");
-   cancel.disabled=locked;ok.disabled=locked||editing||!core.validateCategoryDraft(draft,ctx).ok;
+   const safe=document.createElement("p");safe.className="pilot-review-message";
+   safe.textContent=created?"Catégorie créée dans le foyer de test, avec son budget.":locked?"Simulation terminée · aucune écriture.":saveError||(canWrite?"Confirme pour créer réellement cette catégorie et son budget dans le foyer de test.":"Simulation uniquement · aucune écriture sur cette demande.");
+   group.append(safe);
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton(canWrite?"Confirmer":"Simuler","sb-assistant-send");
+   cancel.disabled=locked||saving;ok.disabled=locked||saving||editing||!core.validateCategoryDraft(draft,ctx).ok;
    cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
-   ok.addEventListener("click",()=>{if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw()});
+   ok.addEventListener("click",async ()=>{
+    if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;
+    if(!canWrite){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return}
+    if(!requestId)requestId=crypto.randomUUID();
+    saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Création de la catégorie dans le foyer de test…";draw();
+    try{
+     const r=await savePilotCategory(requestId,sourceCommand,draft);
+     if(r.ok&&r.body?.commit?.kind==="category"&&r.body.commit.requestId===requestId){
+      created=true;locked=true;pendingReview=null;history=[];saveError="";status.textContent="Catégorie « "+r.body.commit.name+" » créée dans le foyer de test.";void loadRuleCategories();
+     }else if(r.status===409&&r.body?.error==="confirm_category_exists"){
+      locked=true;pendingReview=null;history=[];saveError=errorMessages.confirm_category_exists;status.textContent=saveError;
+     }else if([400,403,422].includes(r.status)){
+      locked=true;pendingReview=null;history=[];saveError=errorMessages[r.body?.error]||"Création refusée par le serveur.";status.textContent=saveError;
+     }else{
+      saveError="Enregistrement non vérifié. Réessaie avec le même bouton : aucune deuxième catégorie ne sera créée.";status.textContent=saveError;
+     }
+    }catch{
+     saveError="Réponse réseau indisponible. Réessaie cette confirmation ; la même demande ne sera pas créée deux fois.";status.textContent=saveError;
+    }finally{saving=false;setSavingPilot(false);draw()}
+   });
    actions.append(cancel,ok);group.append(actions);
   }
   draw();
@@ -647,7 +675,7 @@
    // Analysis is complete. Render the review with its real interactive state.
    // No await between this transition and rendering; send stays disabled until finally.
    busy=false;
-   if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx)}
+   if(v.kind==="categoryDraft"){renderCategoryDraft(v,ctx,command)}
    else if(v.kind==="mixedDraft"){renderMixedDraft(v,ctx,r.body.planPreviews||[])}
    else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[]);}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}
