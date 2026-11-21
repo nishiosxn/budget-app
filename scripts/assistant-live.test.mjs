@@ -3,7 +3,7 @@ const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
 
-test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31ag/);assert.match(html,/live-ui\.js\?v=31af/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
+test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31ai/);assert.match(html,/live-ui\.js\?v=31ai/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
 
 test("submitted prompt remains visible in memory above status and results, even before network response",()=>{assert.ok(html.indexOf('id="pilotSubmitted"')<html.indexOf('id="sbAssistantResult"'));assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=command;\$\("pilotSubmitted"\)\.hidden=false/);assert.match(js,/\$\("pilotSubmittedText"\)\.textContent=""/);});
 
@@ -87,7 +87,7 @@ test("merchant and optional explicit expense label render separately",()=>{
 });
 
 test("inline review edits are local, with read-only budget lookup and no write endpoints",()=>{
- assert.match(html,/review-editor\.js\?v=31t/);
+ assert.match(html,/review-editor\.js\?v=31ai/);
  assert.match(js,/reviewEditor\.fromFields\(entry,values,ctx\)/);
  assert.match(js,/entries\.splice\(i,1\);sync\(\);draw\(\)/);
  assert.match(js,/reviewEditor\.validate\(entries,ctx\)/);
@@ -359,7 +359,7 @@ test("31af: neutral dark surfaces and fixed square composer actions",()=>{
  assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*place-items:\s*center/s);
  assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*aspect-ratio:\s*1 \/ 1/s);
  assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\) svg\s*\{[^}]*margin:\s*auto/s);
- assert.match(html,/assistant-core\.js\?v=31ag/);
+ assert.match(html,/assistant-core\.js\?v=31ai/);
  assert.match(html,/native-dark\.css\?v=31af/);
 });
 test("31af: explicit category confirmation has unique retry token and never creates through a spending card",()=>{
@@ -367,9 +367,23 @@ test("31af: explicit category confirmation has unique retry token and never crea
  assert.match(js,/action:"confirm_category"/);
  assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
  assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
- assert.match(js,/draft\.expenseCents===null&&draft\.budgetCents!==null/);
+ assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
+ assert.match(js,/category, son budget et la dépense initiale ensemble/);
  assert.match(js,/canWrite\?"Confirmer":"Simuler"/);
  assert.match(js,/r\.body\.commit\.requestId===requestId/);
  assert.match(js,/renderCategoryDraft\(v,ctx,command\)/);
  assert.match(js,/void loadRuleCategories\(\)/);
+});
+
+
+test("31ai: explicit category with initial expense is confirmable and monthly forward semantics are displayed",()=>{
+ assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
+ assert.doesNotMatch(js,/const canWrite=[^\n]+expenseCents===null/);
+ assert.match(js,/Budget mensuel reconduit/);
+ assert.match(js,/savePilotCategory\(requestId,sourceCommand,draft\)/);
+ assert.match(js,/status\.textContent="Catégorie/);
+ assert.match(js,/r\.body\.commit\.expenseCreated/);
+ assert.match(js,/edit\.disabled=requestId!==null/);
+ assert.match(html,/review-editor\.js\?v=31ai/);
+ assert.match(html,/live-ui\.js\?v=31ai/);
 });
