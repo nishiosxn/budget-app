@@ -7,7 +7,7 @@
 - **Interprétation locale étendue aux expressions vocales non ambiguës**, notamment « J'ai dépensé 50 euros dans la catégorie Gundam », « J'ai payé 50 € en Gundam », « J'ai fait une dépense de 50 euros en Gundam », « 50 euros de dépense en Gundam » : résolution stricte d'une catégorie du foyer déjà disponible, aucun appel IA, aucune création implicite.
 - **Sécurité des confirmations côté navigateur :** cas de double clic, édition pendant confirmation, réutilisation du même identifiant de reprise et erreurs définitives vs réseau couverts par tests de non-régression. Pas de nouvelle écriture SQL ni de migration ; aucune création de données fictives pendant cette phase.
 - **Preuves :** CI App integrity `44942562477` sur branche `work/v3.1-smart-assistant` : **219 tests applicatifs + 2 contrôles complémentaires, 0 échec**. Les validations de simulation couvrent le rejeu d'un lot lorsque la catégorie apparaît ensuite et une réponse perdue après commit.
-- Backend pilote uniquement à synchroniser depuis les sources de cette branche, avec maintien de l'allowlist, du JWT et des six fichiers exacts. Les clics manuels en navigateur (notamment coupure réseau et deux confirmations rapides) restent à réaliser ; `main`, le foyer personnel et la DA Deep Dark sont inchangés.
+- Backend pilote Supabase `smart-assistant` **v27** déployé et actif : JWT obligatoire, allowlist inchangée, six fichiers serveur vérifiés identiques aux sources. Aucune migration de schéma supplémentaire. Les clics manuels en navigateur (notamment coupure réseau et deux confirmations rapides) restent à réaliser ; `main`, le foyer personnel et la DA Deep Dark sont inchangés.
 
 
 
