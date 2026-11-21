@@ -178,3 +178,9 @@ test("PR49 Unslop page rhythm: all financial groups share an internal title and 
  assert.match(preview,/demo-epargne/);
  assert.match(preview,/Données fictives · Aucun compte connecté/);
 });
+
+
+test("PR49 standalone preview assets mirror the actual read-only category component",()=>{
+ assert.equal(read("preview/category-distribution/category-distribution.css"),read("css/category-distribution.css"));
+ assert.equal(read("preview/category-distribution/category-distribution.js"),read("js/category-distribution.js"));
+});
