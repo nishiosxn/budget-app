@@ -622,7 +622,7 @@
    const month=c.selectedMonth||c.today.slice(0,7),amount=centsFromText(direct[2]);
    if(amount===null)return null;
    const draft={kind:"categoryDraft",name:direct[1].trim(),owner:c.actor,month,date:c.today,budgetCents:amount,expenseCents:null};
-   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+draft.name+" » : cette catégorie existe déjà dans le foyer. Pour modifier son budget, demande explicitement « Fixe le budget "+draft.name+" à 60 euros »."},c);
+   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+draft.name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
    return validateCategoryDraft(draft,c);
   }
   // Split clauses only at sentence punctuation or a conjunction followed by an action.
@@ -648,7 +648,7 @@
   if(matches.length){
    // A CREATE request must never silently become a SET-budget or expense on
    // an existing category, even when the spoken command contains both.
-   return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+name+" » : cette catégorie existe déjà dans le foyer. Pour modifier son budget, demande explicitement « Fixe le budget "+name+" à 60 euros »."},c);
+   return validateAssistantResult({kind:"clarify",message:"Impossible de créer « "+name+" » : cette catégorie existe déjà dans le foyer. Pour le modifier, utilise une commande explicite de changement de budget."},c);
   }
   const checked=validateCategoryDraft({kind:"categoryDraft",name,owner:c.actor,month,date:c.today,budgetCents,expenseCents},c);return checked.ok?checked:null;
  }
