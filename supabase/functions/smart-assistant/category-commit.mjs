@@ -11,10 +11,15 @@ export function createCategoryCommit({validateCategoryDraft,recognizeCreation,wr
    return fail(403,"household_not_authorized");
   // The server reinterprets the *original command*; a transaction or an
   // implicit "new category" suggestion is categorically not a create request.
-  const recognized=recognizeCreation(command,context);
+  // Re-parse the authenticated original command without household categories.
+  // Otherwise a successful first write appears as a duplicate on retry and
+  // prevents the database from matching the same requestId after a lost reply.
+  // The atomic RPC remains authoritative for current-household duplicates.
+  const parseContext={...context,categories:[]};
+  const recognized=recognizeCreation(command,parseContext);
   if(!recognized?.ok||recognized.value.kind!=="categoryDraft")
    return fail(422,"confirm_creation_not_requested");
-  const checked=validateCategoryDraft(draft,context);
+  const checked=validateCategoryDraft(draft,parseContext);
   if(!checked.ok)return fail(409,checked.error?.includes("existe déjà")?"confirm_category_exists":"confirm_category_invalid");
   const value=checked.value;
   if(value.owner!=="B"||value.expenseCents!==null||value.budgetCents===null||!Number.isSafeInteger(value.budgetCents))
