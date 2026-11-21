@@ -151,6 +151,7 @@ const commitBatch=createBatchCommit({
  validateReview,
  validateMixedDraft:(v:unknown,c:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateMixedDraft(v,c),
  recognize:quickExpense,
+ normalizeCategory:(globalThis as any).SmartBudgetAssistantCore.normalizeCategory,
  readCategories:(token:string,householdId:string)=>rest(token,"/rest/v1/categories",{
   select:"id,legacy_id,type,is_saving,owner_slot",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"
  }),
