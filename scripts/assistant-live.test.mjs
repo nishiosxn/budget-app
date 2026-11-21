@@ -149,7 +149,7 @@ test("explicit pilot write only through authenticated confirm route; unsupported
  assert.match(js,/r\.body\.commit\?\.requestId!==requestId/);
  assert.match(js,/budgetReads\.clear\(\)/);
  assert.match(js,/send\.disabled=true;\$\("cancel"\)\.disabled=true/);
- assert.match(js,/Enregistrement réel · foyer test uniquement/);
+ assert.match(js,/Confirmation atomique · foyer test uniquement/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"/);
 });
 
@@ -206,7 +206,7 @@ test("31aa: mixed review stays simulation-only and validates category creation s
  assert.match(js,/core\.validateMixedDraft\(/);
  assert.match(js,/Création de catégorie/);
  assert.match(js,/Nouveau budget/);
- assert.match(js,/Simulation uniquement : les catégories et budgets ne sont pas enregistrés/);
+ assert.match(js,/Simulation uniquement · aucune écriture/);
  assert.match(js,/else if\(v\.kind==="mixedDraft"\)\{renderMixedDraft/);
 });
 
@@ -239,7 +239,7 @@ test("31ab: mixed review renders the 31z card structure, controls and no runtime
  };
  vm.createContext(context);
  vm.runInContext(source.slice(helperStart,helperEnd)+"\n"+source.slice(begin,end),context);
- const ctx={categories:[{id:"home",name:"Maison / entretien",kind:"expense",owner:"B"}],firstMonth:"2026-01",lastMonth:"2028-12",today:"2026-11-21",solo:true,actor:"B"};
+ const ctx={categories:[{id:"home",name:"Maison / entretien",kind:"expense",owner:"B"}],firstMonth:"2026-01",lastMonth:"2028-12",today:"2026-11-21",solo:false,actor:"B"};
  const draft={kind:"mixedDraft",operations:[{kind:"plan",categoryId:"home",owner:"B",amountCents:1000,date:"2026-11-01",label:"Maison",frequency:"once",planMode:"increase"}],categories:[{kind:"categoryDraft",name:"Lego",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:6000,expenseCents:null}]};
  context.renderMixedDraft(draft,ctx,[{index:0,beforeCents:5000,afterCents:6000}]);
  assert.equal(context.result.children.length,1);
