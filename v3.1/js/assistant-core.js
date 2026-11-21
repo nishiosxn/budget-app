@@ -97,6 +97,7 @@
   ],
   "terms": [
    "lidl",
+   "boulangerie",
    "aldi",
    "leclerc",
    "e leclerc",
@@ -344,6 +345,7 @@
   ],
   "terms": [
    "zara",
+   "decathlon",
    "h m",
    "uniqlo",
    "kiabi",
@@ -525,7 +527,7 @@
   return rule;
  }
  // Recognize only complete, unambiguous single-expense sentences. No partial matching.
- const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","decathlon":"Décathlon","king jouet":"King Jouet","essence":"Essence","carburant":"Carburant"});
+ const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","decathlon":"Décathlon","boulangerie":"Boulangerie","king jouet":"King Jouet","essence":"Essence","carburant":"Carburant"});
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
@@ -613,6 +615,16 @@
  function quickCreateCategory(command,c){
   if(!contextOK(c)||!ownerOK(c.actor,c)||typeof command!=="string"||command.length>1600)return null;
   const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
+  // A new named category is a separate creation intent; never reuse the
+  // budget of an existing parent category such as Loisirs.
+  const direct=t.match(/^(?:crée|cree|créer|creer) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}?) avec un budget de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)$/iu);
+  if(direct){
+   const month=c.selectedMonth||c.today.slice(0,7),amount=centsFromText(direct[2]);
+   if(amount===null)return null;
+   const draft={kind:"categoryDraft",name:direct[1].trim(),owner:c.actor,month,date:c.today,budgetCents:amount,expenseCents:null};
+   if(c.categories.some(x=>normalizeCategory(x.name)===normalizeCategory(draft.name)))return validateAssistantResult({kind:"clarify",message:"La catégorie "+draft.name+" existe déjà. Précise si tu souhaites modifier son budget."},c);
+   return validateCategoryDraft(draft,c);
+  }
   // Split clauses only at sentence punctuation or a conjunction followed by an action.
   // Decimal separators inside amounts must remain intact.
   const head=t.match(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?(?:budget )?([^,;.!?]+?)(?:(?:[,;.!?]\s*| (?:et|puis) )(.+))?$/iu);
@@ -980,10 +992,41 @@
   const checked=validateReview({kind:"draft",operations},ctx);
   return checked.ok?{...checked,suggestions}:null;
  }
+ // Compound review-only proposals keep category creation distinct from any
+ // modification to an existing category. Neither operation can be committed.
+ function validateMixedDraft(v,c){
+  if(!contextOK(c)||!exact(v,["kind","operations","categories"])||v.kind!=="mixedDraft"||!Array.isArray(v.operations)||!Array.isArray(v.categories)||!v.operations.length||!v.categories.length||v.operations.length+v.categories.length>12)return fail("Lot mixte invalide.");
+  const financial=validateReview({kind:"draft",operations:v.operations},c);
+  if(!financial.ok)return financial;
+  const categories=[],names=new Set();
+  for(const item of v.categories){
+   const checked=validateCategoryDraft(item,c);if(!checked.ok)return checked;
+   const name=normalizeCategory(checked.value.name);
+   if(names.has(name))return fail("Deux créations de catégories identiques.");
+   names.add(name);categories.push(checked.value);
+  }
+  return {ok:true,value:{kind:"mixedDraft",operations:financial.value.operations,categories}};
+ }
+ function quickMixedCategory(command,ctx){
+  if(!contextOK(ctx)||typeof command!=="string")return null;
+  const text=command.trim().replace(/[.!?]$/,"");
+  const match=text.match(/^(.+?)\s+(?:et|puis)\s+((?:crée|cree|créer|creer)(?=\s).+)$/iu);
+  if(!match)return null;
+  const plan=quickBudget(match[1],ctx),creation=quickCreateCategory(match[2],ctx);
+  if(!plan?.ok||plan.value.kind!=="draft"||plan.value.operations.length!==1||plan.value.operations[0].kind!=="plan"||plan.value.operations[0].categoryId===null||!creation?.ok||creation.value.kind!=="categoryDraft")return null;
+  const checked=validateMixedDraft({kind:"mixedDraft",operations:plan.value.operations,categories:[creation.value]},ctx);
+  return checked.ok?{...checked,suggestions:plan.suggestions||[]}:null;
+ }
+ function creationRequested(command){
+  const text=normalizeCategory(command);
+  return /\b(?:cree|creer|creation)\b.{0,80}\bcategorie\b|\bcategorie\b.{0,80}\b(?:cree|creer)\b/.test(text);
+ }
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
-  return quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  // Do not let a model silently turn an unsupported creation into a budget edit.
+  return direct||(creationRequested(normalized)?validateAssistantResult({kind:"clarify",message:"Création de catégorie non comprise sans ambiguïté. Reformule en « Crée une catégorie Lego avec un budget de 60 euros ». Aucun budget existant ne sera modifié."},ctx):null);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);
