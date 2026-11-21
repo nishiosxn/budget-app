@@ -531,9 +531,9 @@
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
-  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
+  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye|réglé|regle) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|à|au|de|en)\s+([^.!?;]+)[.!?]?$/iu);
   if(!m)return null;
-  const merchant=normalizeCategory(m[2]),known=Object.hasOwn(quickMerchants,merchant);
+  const merchant=normalizeCategory(m[3]),known=Object.hasOwn(quickMerchants,merchant);
   // A merchant-only payment does not need AI to extract the exact amount.
   // For unknown shops, leave the category unset and require review instead
   // of guessing. Only a fully bounded "chez NAME" clause is accepted.
@@ -754,7 +754,7 @@
   t=t.replace(/(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?=\s*(?:€|euros?|balles?)\b|\s*€)/giu,m=>m.replace(/\s/g,""));
   t=t.replace(/(\d+(?:[,.]\d{1,2})?)\s+balles?\b/giu,"$1 euros");
   t=t.replace(/^(?:s'il te plaît[,.]?\s+|peux-tu\s+|stp[,.]?\s+)/iu,"").replace(/(?:[,.]?\s+(?:s'il te plaît|merci|stp))[.!?]?$/iu,"");
-  t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse) /iu,"J'ai reçu ");
+  t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache|réglé|regle) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne) /iu,"J'ai reçu ");
   t=t.replace(/^rajoute /iu,"Ajoute ").replace(/^réduis /iu,"Diminue ");
   // A category bundle can be dictated without punctuation. Normalize only after explicit creation intent.
   if(/^(?:crée|cree|créer|creer|ajoute) (?:une |la )?cat[ée]gorie /iu.test(t)){
@@ -818,7 +818,7 @@
  }
  function createExpenseLabel(merchant,description=null){
   const name=merchantName(merchant);
-  if(!name||name.length>60||/[\r\n<>]/.test(name)||/\b(?:et|puis|supprime|efface|demain|hier)\b/iu.test(name))return null;
+  if(!name||name.length>60||/[\r\n<>,;!?]/.test(name)||/\b(?:et|puis|ensuite|supprime|efface|demain|hier|reçu|recu|touché|touche|encaissé|encaisse|virement)\b/iu.test(name)||/\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\b/iu.test(name))return null;
   const detail=description===null?null:productDescription(description);
   if(description!==null&&!detail)return null;
   const result=detail?name+" · "+detail:name;
