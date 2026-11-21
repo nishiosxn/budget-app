@@ -130,7 +130,7 @@ const commitTransactions=createTransactionCommit({
 // transaction via the service-only RPC. This path is unavailable for implicit
 // category guesses, transactions and multi-action mixed drafts.
 const commitCategory=createCategoryCommit({
- validateCategoryDraft,recognizeCreation:quickExpense,
+ validateCategoryDraft,recognizeCreation:quickExpense,recognizeMissingExpense:quickExpense,
  writeCategory:async ({householdId,userId,requestId,name,month,budgetCents,expenseCents,expenseDate}:any)=>{
   const key=env("SUPABASE_SERVICE_ROLE_KEY");
   if(!key||!uuidPattern.test(householdId)||!allowedUsers.has(userId)||!allowlist.has(householdId))
