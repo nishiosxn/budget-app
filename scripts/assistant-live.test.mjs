@@ -1,4 +1,4 @@
-import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs";
+import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs";import vmFixture from "node:vm";
 const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf8"),js=fs.readFileSync(base+"live-ui.js","utf8"),conf=fs.readFileSync(base+"config.js","utf8");
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
 test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
@@ -258,4 +258,57 @@ test("31ab: mixed review renders the 31z card structure, controls and no runtime
  assert.equal(sim.disabled,false);sim.click();
  assert.equal(context.status.textContent,"Simulation terminée · aucune écriture.");
  assert.equal(group.children.length,4);
+});
+
+
+test("31ac: standalone Gundam category uses normal card and a visible 90-euro budget bar",()=>{
+ const vm=vmFixture;
+ const start=js.indexOf(" const iconPaths="),catStart=js.indexOf(" function renderCategoryDraft(",start);
+ const catEnd=js.indexOf(" // Compound previews",catStart);
+ const budgetStart=js.indexOf(" function mixedBudgetBar("),budgetEnd=js.indexOf(" function renderMixedDraft(",budgetStart);
+ assert.ok(start>=0&&catStart>start&&catEnd>catStart&&budgetStart>catEnd&&budgetEnd>budgetStart);
+ class Node{
+  constructor(tag="div"){this.tag=tag;this.children=[];this.attrs={};this.dataset={};this.style={};this.className="";this.textContent="";this.disabled=false;this.listeners={};}
+  append(...xs){this.children.push(...xs)}
+  replaceChildren(...xs){this.children=xs}
+  setAttribute(name,value){this.attrs[name]=String(value)}
+  addEventListener(type,cb){this.listeners[type]=cb}
+  click(){this.listeners.click?.()}
+ }
+ const nodes=[],root=new Node(),buttons=[];
+ const doc={createElement(tag){const n=new Node(tag);nodes.push(n);return n},createElementNS(_ns,tag){return new Node(tag)}};
+ const context={
+  document:doc,result:root,busy:false,pendingReview:null,history:[],status:{dataset:{},textContent:""},
+  euro:n=>(n/100).toFixed(2)+" €",
+  monthReviewDate:()=> "nov.",
+  core:{validateCategoryDraft:v=>({ok:true,value:v})},
+  reviewEditor:{money:n=>n===null?"":String(n/100),categoryFromFields:()=>({ok:false,error:"not used"})},
+  reviewButton:label=>{const n=new Node("button");n.textContent=label;buttons.push(n);return n},
+  compactReviewAction:label=>{const n=new Node("button");n.textContent=label;return n},
+  reviewForm:()=>{},wipe:()=>{},reviewRow:(label,value)=>{const n=new Node();n.textContent=label+" "+value;return n}
+ };
+ vm.createContext(context);
+ vm.runInContext(js.slice(start,catEnd)+"\n"+js.slice(budgetStart,budgetEnd),context);
+ const ctx={today:"2026-11-21",firstMonth:"2026-01",lastMonth:"2028-12"};
+ const draft={kind:"categoryDraft",name:"Gundam",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:9000,expenseCents:null};
+ context.renderCategoryDraft(draft,ctx);
+ assert.equal(root.children.length,1);
+ const group=root.children[0],card=group.children[0];
+ assert.equal(card.className,"pilot-op");
+ assert.equal(card.children[0].className,"pilot-op-top");
+ assert.equal(card.children[0].children[0].className,"pilot-op-icon");
+ assert.equal(card.children[0].children[2].className,"pilot-op-money pilot-plan");
+ assert.equal(card.children[0].children[2].textContent,"90.00 €");
+ const pane=card.children.find(n=>n.className==="pilot-expense-budget");
+ assert.ok(pane,"same budget panel as standard expense cards");
+ const bar=pane.children.find(n=>n.className==="pilot-exp-budget-track");
+ assert.ok(bar,"budget usage bar must always exist for a newly-created 90 € category");
+ assert.equal(bar.attrs.role,"progressbar");
+ assert.equal(bar.attrs["aria-valuenow"],"0");
+ assert.equal(bar.children[0].style.width,"0%");
+ assert.ok(card.children.some(n=>n.className==="pilot-op-controls"),"edit action matches regular cards");
+ const simulate=buttons.find(n=>n.textContent==="Simuler");
+ assert.ok(simulate&&!simulate.disabled);
+ simulate.click();
+ assert.equal(context.status.textContent,"Simulation terminée · aucune écriture.");
 });
