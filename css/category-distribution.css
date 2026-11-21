@@ -105,7 +105,7 @@
 #categories .category-filter-banner button{min-height:2.5rem;border:.0625rem solid var(--line);border-radius:.65rem;background:var(--panel-2);padding:.5rem .7rem;font:inherit;color:var(--bd-accent,#5c29d6);font-weight:700;cursor:pointer}
 #categories .category-filter-banner button:focus-visible{outline:.15rem solid var(--accent);outline-offset:.1rem}
 @keyframes bd-segment-appear{from{opacity:.55;transform:scaleY(.5)}to{opacity:1;transform:scaleY(1)}}
-@keyframes bd-tooltip-appear{from{opacity:0;transform:translateY(.2rem)}to{opacity:1;transform:translateY(0)}}
+@keyframes bd-tooltip-appear{from{opacity:0;translate:0 .2rem}to{opacity:1;translate:0 0}}
 @media(max-width:38rem){
   #categories .budget-distribution{gap:.85rem;padding:1rem}
   #categories .bd-toolbar{width:100%}
