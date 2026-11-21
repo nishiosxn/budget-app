@@ -3,8 +3,8 @@
    upstream. The service-only PostgreSQL RPC commits both records atomically. */
 const uuid=value=>typeof value==="string"&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value);
 const fail=(status,error)=>({status,body:{error}});
-export function createCategoryCommit({validateCategoryDraft,recognizeCreation,writeCategory}){
- return async function commitCategory({token,householdId,userId,requestId,command,draft,context}){
+export function createCategoryCommit({validateCategoryDraft,recognizeCreation,recognizeMissingExpense=null,writeCategory}){
+ return async function commitCategory({token,householdId,userId,requestId,command,draft,context,missingIntent=false}){
   if(!uuid(householdId)||!uuid(userId)||!uuid(requestId)||typeof command!=="string"||!command.trim()||command.length>1600)
    return fail(400,"invalid_request");
   if(!context?.solo||context.actor!=="B"||!Array.isArray(context.categories))
@@ -16,9 +16,21 @@ export function createCategoryCommit({validateCategoryDraft,recognizeCreation,wr
   // prevents the database from matching the same requestId after a lost reply.
   // The atomic RPC remains authoritative for current-household duplicates.
   const parseContext={...context,categories:[]};
-  const recognized=recognizeCreation(command,parseContext);
-  if(!recognized?.ok||recognized.value.kind!=="categoryDraft")
-   return fail(422,"confirm_creation_not_requested");
+  if(missingIntent){
+   // Only this explicit confirmation endpoint can convert an *exact missing
+   // expense* into a new category. A routine expense never reaches this path.
+   const parsed=recognizeMissingExpense?.(command,parseContext);
+   const source=parsed?.missingCategory;
+   if(!parsed?.ok||parsed.value?.kind!=="clarify"||!source)
+    return fail(422,"confirm_creation_not_requested");
+   if(draft?.kind!=="categoryDraft"||draft.expenseCents!==source.amountCents||
+      draft.month!==source.month||draft.date!==source.date||draft.owner!==source.owner)
+    return fail(422,"confirm_category_invalid");
+  }else{
+   const recognized=recognizeCreation(command,parseContext);
+   if(!recognized?.ok||recognized.value.kind!=="categoryDraft")
+    return fail(422,"confirm_creation_not_requested");
+  }
   const checked=validateCategoryDraft(draft,parseContext);
   if(!checked.ok)return fail(409,checked.error?.includes("existe déjà")?"confirm_category_exists":"confirm_category_invalid");
   const value=checked.value;
