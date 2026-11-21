@@ -295,3 +295,46 @@ test("31ak: voice phrasing for exact household categories stays local and never 
   assert.notEqual(parsed?.value?.kind,"draft",dangerous);
  }
 });
+
+
+
+test("31al: exact screenshot with French guillemets remains a 0-token local expense",()=>{
+ const c={...ctx,solo:true,actor:"B",today:"2026-11-21",selectedMonth:"2026-11",categories:[
+  {id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11",hiddenMonths:[]}
+ ]};
+ for(const command of [
+  "« J’ai payé 50 € en Gundam. »",
+  "“J’ai payé 50 € en Gundam.”",
+  '"J’ai payé 50 € en Gundam."',
+  "„J’ai payé 50 € en Gundam.“",
+  "‹J’ai payé 50 € en Gundam.›",
+  "   «  J’ai payé 50 euros en Gundam.   »  "
+ ]){
+  const parsed=core.quickCommand(command,c);
+  assert.equal(parsed?.ok,true,command);
+  assert.equal(parsed.value.kind,"draft",command);
+  assert.equal(parsed.value.operations.length,1,command);
+  assert.equal(parsed.value.operations[0].categoryId,"gundam",command);
+  assert.equal(parsed.value.operations[0].amountCents,5000,command);
+ }
+ for(const command of [
+  "« J’ai payé 50 € en Catégorie inconnue. »",
+  "“J’ai payé 50 € en Inconnue.”"
+ ]){
+  const parsed=core.quickCommand(command,c);
+  assert.equal(parsed?.ok,true,command);
+  assert.equal(parsed.value.kind,"clarify",command);
+  assert.match(parsed.value.message,/aucune catégorie ne sera créée automatiquement/i);
+ }
+ for(const dangerous of [
+  "« J’ai payé 50 € en Gundam et crée une catégorie Test Lot avec un budget de 60 euros. »",
+  "« J’ai payé 50 € en Gundam. » puis crée une catégorie Test Lot",
+  "« J’ai payé 50 € en Gundam.",
+  "J’ai payé 50 € en Gundam. »"
+ ]){
+  const parsed=core.quickCommand(dangerous,c);
+  assert.notEqual(parsed?.value?.kind,"draft",dangerous);
+ }
+ const noCategory=core.quickCommand("« Crée une catégorie Lego avec un budget de 60 euros. »",c);
+ assert.equal(noCategory?.value?.kind,"categoryDraft","explicit quoted creation remains allowed");
+});
