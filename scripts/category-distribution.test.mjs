@@ -152,3 +152,29 @@ test("integration retires only the obsolete card, while recurring transactions a
  assert.match(read("js/calculations.js"),/recurringOccurrenceDate/);
  assert.doesNotMatch(distrib,/\bsaveState\s*\(|\bfetch\s*\(|\bcloudClient\b|\.transactions\.push\s*\(/);
 });
+
+
+test("PR49 Unslop page rhythm: all financial groups share an internal title and single panel",()=>{
+ const ui=read("js/ui.js"),css=read("css/category-distribution.css");
+ const preview=read("preview/category-distribution/index.html");
+ const chart=read("js/category-distribution.js");
+ assert.match(ui,/section class="category-group card"/);
+ assert.match(ui,/cg-revenues/);
+ assert.match(ui,/cg-expenses/);
+ assert.match(ui,/cg-savings/);
+ assert.match(ui,/sectionFigures\(incomeActual,incomePlanned\)/);
+ assert.match(ui,/sectionFigures\(expenseActual,expensePlanned\)/);
+ assert.match(ui,/sectionFigures\(savingActual,savingPlanned\)/);
+ assert.doesNotMatch(ui,/Entrées d’argent · réel \/ prévu|Argent réellement consommé · hors épargne|Argent mis de côté · déduit du disponible/);
+ assert.match(css,/PR49 Unslop page rhythm/);
+ assert.match(css,/#categories \.category-group-head h2/);
+ assert.match(css,/#categories \.category-cards:not\(\.income-cards\)/);
+ assert.match(css,/@media\(max-width:56rem\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.doesNotMatch(chart,/Ces montants sont des enveloppes prévues, pas des dépenses effectuées/);
+ assert.doesNotMatch(preview,/Essaie le survol|Budgets prévus · démonstration/);
+ assert.match(preview,/demo-revenus/);
+ assert.match(preview,/demo-depenses/);
+ assert.match(preview,/demo-epargne/);
+ assert.match(preview,/Données fictives · Aucun compte connecté/);
+});
