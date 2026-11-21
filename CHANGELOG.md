@@ -5,7 +5,7 @@
 ### 31ai — catégories reconduites, dépense initiale et préservation historique (21 novembre 2026)
 - Création d'une catégorie à partir d'un mois déterminé, budget mensuel reconduit grâce à `scope=forward` (sans multiplier les lignes par mois).
 - Confirmation explicite d'une catégorie avec budget **et dépense initiale** en une seule transaction PostgreSQL idempotente. Aucune création implicite lors d'une simple dépense.
-- Sécurisation des rejouements, doublons, pannes réseau et interdiction de transformer des dépenses futures en écritures présentes.
+- Sécurisation des rejouements, doublons, pannes réseau et interdiction de transformer des dépenses futures en écritures présentes. CI réussie (203 tests + 2 contrôles) ; migration appliquée au seul projet pilote et Edge Function v25 vérifiée.
 - Archivage et masquage historiques préservés ; opérations rattachées non supprimées. Aucun changement de DA ni de production.
 
 
