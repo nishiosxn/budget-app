@@ -72,7 +72,7 @@ test("31aj: exact mixed creation plus Maison augmentation uses same atomic RPC",
  const draft=core.quickCommand(command,ctx)?.value;
  assert.equal(draft?.kind,"mixedDraft");
  const {commit,calls}=setup();
- const r=await commit({...base,command,draft});
+ const r=await commit({...base,command,draft,expectedPlans:[]});
  assert.equal(r.status,422,"without the expected budget baseline, reject");
  assert.equal(calls.length,0);
  const good=await commit({...base,command,draft,expectedPlans:[{index:0,beforeCents:5000}]});
