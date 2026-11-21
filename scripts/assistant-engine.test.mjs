@@ -116,3 +116,24 @@ test("31ap: ambiguous or unsupported tails never become partial local operations
  ];
  for(const command of rejected){const r=core.quickCommand(command,ctx);assert.notEqual(r?.value?.kind,"draft",command)}
 });
+
+
+test("31ap: personal budget phrases and explicit savings destinations are local",()=>{
+ const extended={...ctx,categories:[...ctx.categories,{id:"saving",name:"Épargne",kind:"saving",owner:"B"}]};
+ const samples=[
+  ["Mets mon budget courses à 150 euros","plan","set",15000],
+  ["Augmente mon budget courses de 10 euros","plan","increase",1000],
+  ["Réduis mon budget courses de 10 euros","plan","decrease",1000],
+  ["Ajoute 10 euros à mon budget courses","plan","increase",1000],
+  ["Remets mon budget courses à zéro","plan","set",0],
+  ["J'ai mis 20 euros sur mon livret A","saving",null,2000],
+  ["J'ai mis 20 euros dans mon épargne","saving",null,2000]
+ ];
+ for(const [command,kind,mode,cents] of samples){
+  const r=core.quickCommand(command,extended);assert.ok(r?.ok,command);
+  const op=r.value.operations[0];assert.equal(op.kind,kind,command);
+  assert.equal(op.amountCents,cents,command);if(mode)assert.equal(op.planMode,mode,command);
+ }
+ for(const command of ["J'ai mis 20 euros sur mon compte courant","Augmente mon budget voiture de 10 euros et supprime le reste","Diminue mon budget courses de moins 10 euros"])
+  assert.notEqual(core.quickCommand(command,extended)?.value?.kind,"draft",command);
+});
