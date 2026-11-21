@@ -326,9 +326,10 @@
     top.append(symbol,info,money);card.append(top);
     if(projection){
      const key=reviewEditor.key(op),holder=document.createElement("div");card.append(holder);
+     const loading=document.createElement("span");loading.className="pilot-exp-budget-note";loading.textContent="Chargement de l’utilisation du budget…";holder.append(loading);
      if(!budgetReads.has(key))budgetReads.set(key,readExpenseBudget(op).catch(()=>null));
      budgetReads.get(key).then(report=>{
-      if(!holder.isConnected||pendingReview!==draft)return;
+      if(!holder.isConnected)return;
       holder.replaceChildren();
       mixedBudgetBar(holder,projection.afterCents,Number.isSafeInteger(report?.actualCents)?report.actualCents:null,{name:cat?.name||"",month:op.date.slice(0,7)});
      });
