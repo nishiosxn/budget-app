@@ -54,7 +54,7 @@ export function createBatchCommit({validateReview,validateMixedDraft,recognize,r
     const row=candidates[0];
     if(op.kind==="plan"){
      if(!["expense","income"].includes(row.type)||!["set","increase","decrease"].includes(op.planMode)
-        ||!["once","monthly"].includes(op.frequency)||op.date.slice(8)!=="-01"
+        ||!["once","monthly"].includes(op.frequency)||op.date.slice(8)!=="01"
         ||planCategories.has(row.id))
       return failure(422,"confirm_not_supported");
      planCategories.add(row.id);
