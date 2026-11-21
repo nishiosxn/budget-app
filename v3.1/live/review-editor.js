@@ -41,7 +41,9 @@
   return {ok:true,entry:{op:validated.value.operations[0],ruleKey,baseline:entry.baseline&&entry.baseline.key===key(op)?entry.baseline:null}};
  }
  function categoryFromFields(original,fields,ctx){
-  const next={...original,name:String(fields.name??"").trim(),month:fields.month,budgetCents:cents(fields.budget,true),expenseCents:cents(fields.expense,true)};
+  const month=String(fields.month??""),expenseCents=cents(fields.expense,true);
+  const date=expenseCents!==null&&month!==ctx.today.slice(0,7)?month+"-01":ctx.today;
+  const next={...original,name:String(fields.name??"").trim(),month,date,budgetCents:cents(fields.budget,true),expenseCents};
   return core.validateCategoryDraft(next,ctx);
  }
  function validate(entries,ctx){
