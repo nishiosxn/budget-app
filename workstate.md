@@ -2,6 +2,17 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31aj — confirmations atomiques de budgets et lots mixtes (21 novembre 2026)
+- Confirmations réelles limitées au foyer test individuel autorisé : **fixer**, **augmenter**, **diminuer** un budget en conservant la portée `month` (uniquement ce mois) ou `forward` (à partir de ce mois), ainsi que des lots contenant plusieurs changements financiers.
+- Prise en charge d'un lot mixte déjà reconnu par Smart Engine, par exemple « Ajoute 10 € au budget Maison et crée une catégorie Lego avec 60 € » : une seule confirmation enregistre les budgets, créations explicites et éventuelles dépenses/revenus uniques, ou rien.
+- Contrat sécurisé du serveur : `confirm_batch`, six champs stricts, authentification JWT Supabase, foyer allowlist, solo slot B, catégorie déjà active et détenue par le foyer, base de calcul en centimes `expectedBeforeCents` lue depuis l'aperçu. Aucun modèle IA n'exécute les montants; seules les cartes validées sont confirmables.
+- Migration `20261121195500_smart_assistant_pilot_atomic_batch.sql` appliquée au projet Supabase Budget. RPC service-only `smart_assistant_commit_batch_pilot_v1` avec verrou par foyer, baselines de budget bloquées `FOR UPDATE`, transaction SQL atomique, refus de montants négatifs, conflit sur budget ancien et refus de budgets concurrentiels. Reçus idempotents par `householdId + requestId + hash du lot`, table RLS activée, aucun droit d'insertion pour `anon` / `authenticated`.
+- Edge Function pilote `smart-assistant` **v26** active, JWT requis, six fichiers vérifiés identiques. Les scripts de l'interface préparent la même demande à chaque tentative de reprise et n'effacent pas les opérations historiques.
+- App integrity du commit fonctionnel `2f81c63d60813d483c557b9ee5ac1761c1241e8e` : **212 tests applicatifs + 2 contrôles complémentaires, 0 échec** (run 44940901330). Validation des écritures de budget dans un navigateur authentifié encore nécessaire ; aucune écriture financière artificielle effectuée par l'agent.
+- DA Deep Dark inchangée. Foyer personnel et branche `main` inchangés. Les opérations d'épargne et les récurrences de transactions restent en simulation.
+
+
+
 ### 31ai — budget mensuel reconduit + dépense initiale atomique (21 novembre 2026)
 - Contrat métier : une catégorie est active à partir du mois demandé (ou du mois sélectionné), avec un budget `forward` qui s'applique à tous les mois suivants jusqu'à modification explicite. Aucune nouvelle catégorie créée tous les mois. Commandes « à partir de décembre 2026 » et « pour octobre 2026 » reconnues localement.
 - Création explicite + dépense initiale unique (ex. « Créer Gundam, budget 100 €, ajoute 50 € de dépense ») : deux objets financiers associés à la catégorie, **une transaction SQL atomique** via `smart_assistant_create_category_pilot_v2`. La dépense n'est pas récurrente.
