@@ -130,16 +130,14 @@
   ui.items=model.items;ui.month=month;
   if(ui.selected&&!selection())ui.selected=null;
   const income=ui.scope==="income",active=selection();
-  host.innerHTML='<div class="bd-heading"><div><h2>Répartition des budgets</h2><p>'+esc(monthName(month))+' · montants prévus</p></div>'+
-   '<span class="bd-heading-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h5v9H3zm7-7h5v16h-5zm7 4h5v12h-5z"/></svg></span></div>'+
+  host.innerHTML='<div class="bd-heading"><h2>Répartition des budgets</h2></div>'+
    '<div class="bd-toolbar" role="group" aria-label="Afficher les budgets de dépenses ou de revenus">'+
    '<button type="button" data-bd-scope="expense" aria-pressed="'+(!income)+'" class="'+(!income?"is-active":"")+'">Dépenses</button>'+
    '<button type="button" data-bd-scope="income" aria-pressed="'+income+'" class="'+(income?"is-active":"")+'">Revenus</button></div>'+
-   '<div class="bd-total"><div><strong>'+esc(money(model.total))+'</strong><span>Budget mensuel prévu</span></div>'+
-   '<span>'+model.count+' catégorie'+(model.count>1?"s":"")+' avec budget</span></div>'+
+   '<div class="bd-total"><div><strong>'+esc(money(model.total))+'</strong><span>Budget prévu · '+esc(monthName(month))+'</span></div></div>'+
    (model.total>0?'<div class="bd-track-wrap"><div class="bd-track" role="group" aria-label="Répartition interactive des budgets">'+
     model.items.map(item=>itemMarkup(item,model.total)).join("")+'</div><div class="bd-tooltip" role="tooltip" hidden></div></div>':
-    '<div class="bd-empty"><strong>Aucun budget prévu ce mois-ci.</strong><span>Configure une enveloppe dans la liste des catégories pour afficher sa répartition.</span>'+
+    '<div class="bd-empty"><strong>Aucun budget prévu.</strong>'+
     '<button type="button" class="bd-action" data-bd-action="view">Voir les catégories</button></div>')+
    '<div class="bd-subtoolbar">'+
    (!income?'<div class="bd-level" role="group" aria-label="Niveau de détail">'+
@@ -148,8 +146,7 @@
    '<label class="bd-sort">Trier <select data-bd-sort aria-label="Trier les budgets"><option value="amount"'+(ui.sort==="amount"?" selected":"")+'>Par montant</option>'+
    '<option value="order"'+(ui.sort==="order"?" selected":"")+'>Ordre des catégories</option></select></label></div>'+
    (model.total>0?'<div class="bd-legend" aria-label="Détail des budgets">'+model.items.map(item=>legendMarkup(item,model.total)).join("")+'</div>':"")+
-   summaryMarkup(active,model)+changesMarkup(model,month)+
-   '<p class="bd-footnote">Ces montants sont des enveloppes prévues, pas des dépenses effectuées.</p>';
+   summaryMarkup(active,model)+changesMarkup(model,month);
  }
  function updateGrid(){if(typeof renderCategories==="function"&&typeof metrics==="function")renderCategories(metrics())}
  function chooseBudgetSegment(key){

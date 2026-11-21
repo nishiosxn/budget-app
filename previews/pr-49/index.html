@@ -22,6 +22,9 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
 .context strong{display:block;font-size:.875rem}
 .context span{display:block;margin-top:.3rem;color:var(--muted);font-size:.75rem;line-height:1.5}
 .context em{font-size:.75rem;font-style:normal;color:#ab91ff}
+.demo-note{font-size:.8125rem;color:var(--muted);margin:-.5rem 0 1rem;text-align:right}
+.income-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1.25rem}
+@media(max-width:40rem){.income-list{grid-template-columns:minmax(0,1fr)}}
 .card{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--radius)}
 .category-group{margin-top:1rem}
 .category-group-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.25rem .15rem .65rem}
@@ -58,13 +61,13 @@ dialog button.primary{border-color:#5c29d6;background:#5c29d6;color:white;font-w
 </head>
 <body>
 <div class="shell">
- <header class="header"><div class="brand"><div class="brand-symbol">✓</div><div><h1>Smart Budget</h1><p>Prototype · Répartition des budgets</p></div></div>
+ <header class="header"><div class="brand"><div class="brand-symbol">✓</div><div><h1>Smart Budget</h1></div></div>
  <div class="controls"><label>Mois <select id="demoMonth"><option value="Octobre 2026">Octobre 2026</option><option value="Novembre 2026" selected>Novembre 2026</option><option value="Décembre 2026">Décembre 2026</option></select></label>
  <button id="themeToggle" type="button">Mode clair</button></div></header>
- <div class="context"><div><strong>Préversion interactive de la carte Catégories</strong><span>Essaie le survol, les segments, les filtres, les niveaux de détail, la comparaison mensuelle et la modification d'un budget.</span></div><em>Données fictives · aucun compte connecté</em></div>
+ <p class="demo-note">Données fictives · Aucun compte connecté</p>
  <main id="categories"><section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition des budgets prévus"></section><div id="categoryGrid" class="category-layout"></div></main>
 </div>
-<dialog id="budgetDialog"><form id="budgetForm" method="dialog"><h2>Modifier le budget</h2><p>Simulation locale : aucune modification n'est enregistrée dans Smart Budget.</p><label>Catégorie<input id="demoCategoryName" type="text" readonly></label><label>Nouveau budget mensuel (€)<input id="demoBudgetAmount" type="number" min="0" max="1000000" step=".01" inputmode="decimal" required></label><div class="buttons"><button value="cancel" type="button" id="closeBudget">Annuler</button><button value="save" class="primary" type="submit">Appliquer</button></div></form></dialog>
+<dialog id="budgetDialog"><form id="budgetForm" method="dialog"><h2>Modifier le budget</h2><p>Simulation locale · Sans enregistrement</p><label>Catégorie<input id="demoCategoryName" type="text" readonly></label><label>Nouveau budget mensuel (€)<input id="demoBudgetAmount" type="number" min="0" max="1000000" step=".01" inputmode="decimal" required></label><div class="buttons"><button value="cancel" type="button" id="closeBudget">Annuler</button><button value="save" class="primary" type="submit">Appliquer</button></div></form></dialog>
 <script>
 const state={selectedMonth:"Novembre 2026",createdMonth:"2026-09"};
 const MONTHS={"Octobre 2026":"2026-10","Novembre 2026":"2026-11","Décembre 2026":"2026-12"};
@@ -80,33 +83,56 @@ const source=[
  {id:"music",name:"Musique",section:"Abonnements",owner:"B",budget:12}
 ];
 const finance={
- "2026-10":{expense:{rent:530,insurance:75,groceries:210,car:120,health:0,internet:40,music:12},income:{salary:1700,benefits:200}},
- "2026-11":{expense:{rent:530,insurance:75,groceries:250,car:120,health:0,internet:40,music:12},income:{salary:1700,benefits:200}},
- "2026-12":{expense:{rent:530,insurance:75,groceries:280,car:90,health:0,internet:40,music:12},income:{salary:1750,benefits:200}}
+ "2026-10":{expense:{rent:530,insurance:75,groceries:210,car:120,health:0,internet:40,music:12},income:{salary:1700,benefits:200},saving:{reserve:100,projects:30}},
+ "2026-11":{expense:{rent:530,insurance:75,groceries:250,car:120,health:0,internet:40,music:12},income:{salary:1700,benefits:200},saving:{reserve:100,projects:40}},
+ "2026-12":{expense:{rent:530,insurance:75,groceries:280,car:90,health:0,internet:40,music:12},income:{salary:1750,benefits:200},saving:{reserve:120,projects:40}}
 };
 const revenue=[{id:"salary",name:"Salaire",owner:"B"},{id:"benefits",name:"Aides",owner:"B"}];
+const savings=[{id:"reserve",name:"Épargne de précaution",owner:"B"},{id:"projects",name:"Projets",owner:"B"}];
+const actuals={
+ "2026-10":{expense:{rent:530,insurance:75,groceries:198,car:105,health:0,internet:40,music:12},income:{salary:1700,benefits:200},saving:{reserve:80,projects:25}},
+ "2026-11":{expense:{rent:530,insurance:75,groceries:186,car:54,health:0,internet:40,music:12},income:{salary:1700,benefits:200},saving:{reserve:60,projects:20}},
+ "2026-12":{expense:{},income:{},saving:{}}
+};
 function visibleExpenseCategories(label=state.selectedMonth){const key=monthKey(label);return source.map(c=>({...c,budget:finance[key]?.expense?.[c.id]??c.budget}))}
 function visibleIncomeCategories(label=state.selectedMonth){const key=monthKey(label);return revenue.map(c=>({...c,budget:finance[key]?.income?.[c.id]??0}))}
+function visibleSavingCategories(label=state.selectedMonth){const key=monthKey(label);return savings.map(c=>({...c,budget:finance[key]?.saving?.[c.id]??0}))}
+function actual(type,id){return actuals[monthKey(state.selectedMonth)]?.[type]?.[id]??0}
 const currency=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n);
 const safe=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function metrics(){return {}}
 function renderCategories(){
  const filter=globalThis.SmartBudgetCategoryDistribution?.filter()||null,ids=filter?new Set(filter.ids):null;
- const groups=[];
- const selected=(type,cats)=>filter?(filter.type===type?cats.filter(c=>ids.has(c.id)):[]):cats;
- const incomes=selected("income",visibleIncomeCategories());
- if(incomes.length){groups.push({title:"Revenus",entries:[{name:"Revenus",type:"income",cats:incomes}]})}
- const expense=selected("expense",visibleExpenseCategories()),sections=["Obligatoires","Abonnements","Vie courante"];
- const expenseGroups=sections.map(section=>({name:section,type:"expense",cats:expense.filter(c=>c.section===section)})).filter(v=>v.cats.length);
- if(expenseGroups.length)groups.push({title:"Dépenses",entries:expenseGroups});
- const html=groups.map(g=>'<section class="category-group"><div class="category-group-head"><h2>'+g.title+'</h2><span>Budgets prévus · démonstration</span></div><div class="category-cards">'+
-  g.entries.map(section=>'<article class="card cat-section"><div class="cat-section-title">'+safe(section.name)+'</div><div class="cat-section-total">'+currency(section.cats.reduce((s,c)=>s+c.budget,0))+' prévus</div>'+
-  section.cats.map(c=>'<div class="cat-item" data-category-row="'+safe(c.id)+'"><div class="cat-main"><span>'+safe(c.name)+'</span><strong>'+currency(c.budget)+'</strong></div><div><small>'+(c.owner==="common"?"À deux":"Personne 1")+'</small><button type="button" data-demo-edit="'+safe(section.type+":"+c.id)+'">Modifier le budget</button></div></div>').join("")+'</article>').join("")+'</div></section>').join("");
- document.getElementById("categoryGrid").innerHTML=(filter?'<div class="category-filter-banner" role="status">Filtre actif : <strong>'+safe(filter.label)+'</strong><button type="button" data-clear-category-filter>Tout afficher</button></div>':"")+html;
+ const include=(type,cats)=>filter?(filter.type===type?cats.filter(c=>ids.has(c.id)):[]):cats;
+ const income=include("income",visibleIncomeCategories());
+ const expense=include("expense",visibleExpenseCategories());
+ const saving=!filter?visibleSavingCategories():[];
+ const parts=[];
+ const figures=(reel,prevu)=>'<div class="cg-figures"><span><strong>'+currency(reel)+'</strong> réel</span><span><strong>'+currency(prevu)+'</strong> prévu</span></div>';
+ const row=(type,c)=>'<div class="cat-item" data-category-row="'+safe(c.id)+'"><div class="cat-main"><span>'+safe(c.name)+'</span><strong>'+currency(actual(type,c.id))+'</strong></div>'+
+  '<div><small>Prévu '+currency(c.budget)+' · '+(c.owner==="common"?"À deux":"Personne 1")+'</small><button type="button" data-demo-edit="'+safe(type+":"+c.id)+'">Modifier</button></div></div>';
+ const panel=(key,title,metrics,inner)=>'<section class="category-group card" aria-labelledby="'+key+'"><div class="category-group-head"><h2 id="'+key+'">'+title+'</h2>'+metrics+'</div><div class="category-cards'+(title==="Dépenses"?"":" income-cards")+'">'+inner+'</div></section>';
+ if(income.length){
+  parts.push(panel("demo-revenus","Revenus",figures(income.reduce((n,c)=>n+actual("income",c.id),0),income.reduce((n,c)=>n+c.budget,0)),
+   '<article class="cat-section cat-section-single income-card"><div class="income-list">'+income.map(c=>row("income",c)).join("")+'</div></article>'));
+ }
+ const groups=["Obligatoires","Abonnements","Vie courante"].map(name=>({name,cats:expense.filter(c=>c.section===name)})).filter(g=>g.cats.length);
+ if(groups.length){
+  parts.push(panel("demo-depenses","Dépenses",
+   figures(expense.reduce((n,c)=>n+actual("expense",c.id),0),expense.reduce((n,c)=>n+c.budget,0)),
+   groups.map(g=>'<article class="cat-section"><div class="cat-section-head"><div class="cat-section-title">'+safe(g.name)+
+    '<div class="cat-section-total">'+currency(g.cats.reduce((n,c)=>n+actual("expense",c.id),0))+' réel · '+currency(g.cats.reduce((n,c)=>n+c.budget,0))+' prévu</div></div></div>'+
+    g.cats.map(c=>row("expense",c)).join("")+'</article>').join("")));
+ }
+ if(saving.length){
+  parts.push(panel("demo-epargne","Épargne",figures(saving.reduce((n,c)=>n+actual("saving",c.id),0),saving.reduce((n,c)=>n+c.budget,0)),
+   '<article class="cat-section cat-section-single saving-card"><div class="income-list">'+saving.map(c=>row("saving",c)).join("")+'</div></article>'));
+ }
+ document.getElementById("categoryGrid").innerHTML=(filter?'<div class="category-filter-banner" role="status"><strong>'+safe(filter.label)+'</strong><button type="button" data-clear-category-filter>Tout afficher</button></div>':"")+parts.join("");
 }
 let edited=null;
 function openCategoryEditor(id,_section,_mode,type){
- const c=(type==="income"?visibleIncomeCategories():visibleExpenseCategories()).find(v=>v.id===id);
+ const c=(type==="income"?visibleIncomeCategories():type==="saving"?visibleSavingCategories():visibleExpenseCategories()).find(v=>v.id===id);
  if(!c)return;
  edited={id,type};document.getElementById("demoCategoryName").value=c.name;
  document.getElementById("demoBudgetAmount").value=c.budget;
