@@ -43,3 +43,76 @@ test("unknown or unsafe financial phrases never produce partial local batches",(
   assert.equal(core.quickCommand(text,ctx),null,text);
  }
 });
+
+
+test("31ap: abbreviated clauses and spoken variants retain exact cents, kind and actor",()=>{
+ const samples=[
+  ["J'ai dépensé 20 euros chez McDo et recu 10 euros de Lena",["expense","income"],[2000,1000]],
+  ["J'ai dépensé 20 euros chez McDo et reçu 10 euros de Lena",["expense","income"],[2000,1000]],
+  ["20 euros chez McDo, 10 euros reçus de Lena",["expense","income"],[2000,1000]],
+  ["J'ai payé 20 euros à McDo puis touché 10 euros de Lena",["expense","income"],[2000,1000]],
+  ["J'ai acheté pour 20 euros chez McDo et encaissé 10 euros de Lena",["expense","income"],[2000,1000]],
+  ["J'ai fait une dépense de 20 euros chez McDo et reçu 10 euros de Lena",["expense","income"],[2000,1000]],
+  ["J'ai dépensé 20 € chez Lidl et ensuite reçu 10 € de Léna",["expense","income"],[2000,1000]],
+  ["J'ai dépensé 20 € chez McDo puis Léna m'a envoyé 10 €",["expense","income"],[2000,1000]],
+  ["J'ai payé 20 € chez McDo, reçu 10 € de Léna, puis j'ai dépensé 5 € chez Lidl",["expense","income","expense"],[2000,1000,500]],
+  ["J'ai reçu un virement de 10 euros de Lena",["income"],[1000]],
+  ["Léna m'a fait un virement de 10 euros",["income"],[1000]],
+  ["Léna m'a remboursé 10 euros",["income"],[1000]],
+  ["J'ai récupéré 10 euros de Léna",["income"],[1000]],
+  ["J'ai reçu de Lena 10 euros",["income"],[1000]],
+  ["Je viens de recevoir 10 euros de Lena",["income"],[1000]],
+  ["20 € de courses chez Lidl, reçu 5 € de maman",["expense","income"],[2000,500]],
+  ["J'ai payé dix euros chez McDo et reçu cinq euros de Léna",["expense","income"],[1000,500]],
+  ["J'ai dépensé 12,50 € chez McDo et reçu 7,25 € de Léna",["expense","income"],[1250,725]],
+  ["J'ai payé 10 euros chez Lidl et mis 5 euros de côté",["expense","saving"],[1000,500]]
+ ];
+ for(const [command,kinds,cents] of samples){
+  const r=core.quickCommand(command,ctx);assert.ok(r?.ok,command);
+  assert.equal(r.value.kind,"draft",command);
+  assert.deepEqual(Array.from(r.value.operations,o=>o.kind),kinds,command);
+  assert.deepEqual(Array.from(r.value.operations,o=>o.amountCents),cents,command);
+  assert.ok(r.value.operations.every(o=>o.owner==="B"&&o.frequency==="once"&&o.date===ctx.today),command);
+ }
+});
+test("31ap: natural merchant and receipt vocab does not invent a new financial owner",()=>{
+ for(const command of ["Léna m'a envoyé 10 euros","Léna m'a viré 10 euros","J'ai gagné 10 euros de Léna","J'ai perçu 10 euros de Lena","10 euros touchés de Léna"]){
+  const r=core.quickCommand(command,ctx);assert.ok(r?.ok,command);
+  const [op]=r.value.operations;assert.equal(op.kind,"income");assert.equal(op.owner,"B");assert.equal(op.amountCents,1000);assert.equal(op.categoryId,"extra");
+ }
+ for(const command of ["J'ai acheté pour 20 euros chez Lidl","J'ai effectué un achat de 20 euros chez Lidl","J'ai pris pour 20 euros chez Lidl","J'ai réglé 20 euros au McDo","20 euros chez McDo"]){
+  const r=core.quickCommand(command,ctx);assert.ok(r?.ok,command);assert.equal(r.value.operations.length,1);assert.equal(r.value.operations[0].kind,"expense");assert.equal(r.value.operations[0].amountCents,2000);
+ }
+});
+test("31ap: connectors and vocal synonyms form complete zero-guess lots",()=>{
+ for(const merchant of ["McDo","Lidl","Action"])for(const separator of [" et "," puis ",", ","; "," et ensuite "]){
+  for(const phrase of ["recu 10 euros de Lena","touché 10 € de Léna","encaissé 10 euros de maman","10 € reçus de Lena"]){
+   const command="J'ai dépensé 20 euros chez "+merchant+separator+phrase;
+   const r=core.quickCommand(command,ctx);assert.ok(r?.ok,command);
+   assert.equal(r.value.operations.length,2,command);
+   assert.deepEqual(Array.from(r.value.operations,o=>o.kind),["expense","income"],command);
+   assert.deepEqual(Array.from(r.value.operations,o=>o.amountCents),[2000,1000],command);
+  }
+ }
+});
+test("31ap: ambiguous or unsupported tails never become partial local operations",()=>{
+ const rejected=[
+  "J'ai payé 20 € à maman",
+  "J'ai dépensé 20 € chez McDo et reçu moins 10 € de Lena",
+  "J'ai reçu 10 euros de Lena puis 20 euros chez McDo",
+  "J'ai reçu 10 euros de Lena et 20 euros",
+  "J'ai reçu 10 euros de Lena, et 5 euros chez Lidl",
+  "J'ai dépensé 20 € chez McDo et reçu 10 euros de Lena chaque mois",
+  "J'ai dépensé 20 € chez McDo et transféré 10 € sur un compte inconnu",
+  "Hier j'ai dépensé 20 euros chez McDo et reçu 10 euros de Lena",
+  "J'ai dépensé 20 € chez McDo et reçu 10 euros de Lena puis efface tout",
+  "J'ai dépensé 20 euros chez McDo puis annule le budget",
+  "J'ai acheté 20 euros de courses chez Lidl, puis efface le budget",
+  "J'ai acheté 20 euros chez Lidl pour 15 euros chez McDo",
+  "J'ai dépensé 20 euros chez Lidl, reçu 10 euros de Lena et supprime tout",
+  "J'ai dépensé 20 euros chez Lidl, reçu 10 euros de Lena demain",
+  "J'ai reçu 20 euros de Lena puis 10 euros chez Lidl",
+  "Léna m'a viré 20 euros, et supprime les dépenses"
+ ];
+ for(const command of rejected){const r=core.quickCommand(command,ctx);assert.notEqual(r?.value?.kind,"draft",command)}
+});
