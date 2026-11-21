@@ -1,5 +1,11 @@
 # Changelog
 
+## Non publié — Smart Assistant 31ao (intégration Unslop)
+
+- Report des dernières finitions de la démonstration dans le pilote **connecté** : boutons de confirmation masqués après un état terminé, rappel de demande compact, métadonnées à 13px, meilleure cohérence des champs et états désactivés.
+- Pas de copie du moteur fictif : Smart Engine, appels Cloudflare, confirmation serveur, anti-doublons, synchronisation et authentification sont conservés.
+- Test d'interface actualisé pour l'absence d'actions après confirmation ; nouvelles assertions de sécurité vérifiant le maintien du chemin connecté. PR #47 uniquement ; **aucune publication sur GitHub Pages**.
+
 ## Non publié — Smart Assistant 31an
 
 - Corrections Unslop limitées au pilote : saisie mobile, hiérarchie compacte, focus clavier, confirmation d’abandon, projections et récurrences explicites, thèmes clair/sombre/système, géométrie et motion harmonisées.
