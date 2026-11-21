@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ak — fiabilité de la confirmation et commandes vocales à 0 token (21 novembre 2026)
+- Correctif du rejeu après réponse perdue pour les lots qui créent une catégorie : l'apparition de celle-ci dans le foyer ne bloque plus le même `requestId`, tout en préservant les refus SQL des nouveaux doublons.
+- Reconnaissance déterministe de plusieurs formulations vocales de dépenses dans une catégorie **déjà existante** ; nom inconnu = clarification, jamais de création implicite ou de dépense devinée.
+- Tests anti-doubles clics, identifiant stable et confirmation en cours, plus tests de non-régression des lots financiers et absence d'appel Gemma pour ces commandes.
+- **219 tests applicatifs et 2 contrôles complémentaires réussis** ; aucune migration ni modification de `main`, du foyer personnel ou de la DA.
+
+
+
 ### 31aj — budgets et lots financiers atomiques, pilote exclusivement (21 novembre 2026)
 - Confirmation des budgets existants (montant fixe, hausse ou baisse), avec portée `month` ou `forward` ; calcul et vérification du budget précédent côté PostgreSQL.
 - Une seule confirmation pour les propositions multiples validées, incluant les créations explicites de catégories et les transactions ponctuelles si compatibles. Refus des lots ambigus, sans catégorie existante ou sans référence budgétaire fiable.
