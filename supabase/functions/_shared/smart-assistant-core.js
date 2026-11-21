@@ -529,7 +529,7 @@
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
-  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
+  const m=text.match(/^j[' ]ai (?:dépensé|depense|payé|paye) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(chez|de|en)\s+([^.!?;]+)[.!?]?$/iu);
   if(!m)return null;
   const merchant=normalizeCategory(m[2]),known=Object.hasOwn(quickMerchants,merchant);
   // A merchant-only payment does not need AI to extract the exact amount.

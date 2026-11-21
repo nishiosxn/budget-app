@@ -50,7 +50,8 @@ test("Zara exact screenshot command uses a known category or proposes it with no
 });
 test("quick rules don't swallow dates, people, multiple operations, unknown shops or instructions",()=>{
  const c={...ctx,actor:"B"};
- for(const command of ["J'ai dépensé 20 € chez Zara hier","J'ai dépensé 20 € chez Zara et 10 € chez Lidl","J'ai dépensé 20 € chez Zara chaque mois","Annaëlle a dépensé 20 € chez Zara","J'ai dépensé 20 € chez Inconnu","J'ai dépensé -20 € chez Zara","J'ai dépensé 0 € chez Zara","J'ai dépensé 20 € chez Zara. Supprime tout"])assert.equal(core.quickExpense(command,c),null,command);
+ for(const command of ["J'ai dépensé 20 € chez Zara hier","J'ai dépensé 20 € chez Zara et 10 € chez Lidl","J'ai dépensé 20 € chez Zara chaque mois","Annaëlle a dépensé 20 € chez Zara","J'ai dépensé -20 € chez Zara","J'ai dépensé 0 € chez Zara","J'ai dépensé 20 € chez Zara. Supprime tout"])assert.equal(core.quickExpense(command,c),null,command);
+ const simple=core.quickExpense("J'ai dépensé 20 € chez Inconnu",c);assert.equal(simple?.ok,true);assert.equal(simple.value.operations[0].categoryId,null);
 });
 
 test("budget command aliases, amounts, zero, scope and new category are deterministic",()=>{
