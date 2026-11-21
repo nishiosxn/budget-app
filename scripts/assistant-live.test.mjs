@@ -257,7 +257,8 @@ test("31ab: mixed review renders the 31z card structure, controls and no runtime
  const sim=events.find(n=>n.textContent==="Simuler");
  assert.equal(sim.disabled,false);sim.click();
  assert.equal(context.status.textContent,"Simulation terminée · aucune écriture.");
- assert.equal(group.children.length,4);
+ assert.equal(group.children.length,3,"completed simulation retains cards and result, not action buttons");
+ assert.equal(group.children.some(n=>n.className==="pilot-review-actions"),false);
 });
 
 
