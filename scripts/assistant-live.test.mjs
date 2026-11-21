@@ -312,3 +312,38 @@ test("31ac: standalone Gundam category uses normal card and a visible 90-euro bu
  simulate.click();
  assert.equal(context.status.textContent,"Simulation terminée · aucune écriture.");
 });
+
+test("31ae: pilot-wide native-style deep-dark layer is isolated, coherent and accessible",()=>{
+ const theme=fs.readFileSync(base+"native-dark.css","utf8");
+ assert.ok(html.indexOf('design-system.css?v=31y')<html.indexOf('native-dark.css?v=31ae'),"dark layer loads after legacy styles");
+ assert.match(theme,/:root:root\s*\{[^}]*color-scheme:\s*dark/s,"force deep dark even with a light OS");
+ const variables=["sb-brand","sb-bg","sb-surface","sb-secondary","sb-elevated","sb-line","sb-control-line","sb-ink","sb-muted","sb-accent","sb-positive","sb-negative","sb-shell-pad","sb-card-pad","sb-icon-box","sb-progress"];
+ for(const key of variables)assert.match(theme,new RegExp("--"+key+":\\s*[^;]+;"),key);
+ for(const selector of [
+   "body","main",".brand","#pilotLogin","#pilotSession","#pilotMeter",
+   ".sb-assistant-hero",".sb-assistant-suggestions",".sb-assistant-composer",
+   "#pilotSubmitted","#sbAssistantStatus","#sbAssistantResult",
+   ".pilot-review",".pilot-op",".pilot-op-top",".pilot-op-icon",
+   ".pilot-op-money",".pilot-expense-budget",".pilot-exp-budget-track",
+   ".pilot-review-actions",".pilot-operation-editor",".pilot-editor-field",
+   ".pilot-compact-action","#pilotRules"
+ ])assert.ok(theme.includes(selector),"Missing style coverage: "+selector);
+ assert.match(theme,/#pilotAssistant \.pilot-op-top\s*\{[^}]*align-items:\s*center/s);
+ assert.match(theme,/#pilotAssistant \.pilot-exp-budget-foot,[\s\S]*?justify-content:\s*space-between/);
+ assert.match(theme,/@media\s*\(max-width:\s*42rem\)/);
+ assert.match(theme,/@media\s*\(max-width:\s*23\.75rem\)/);
+ assert.match(theme,/@media\s*\(prefers-contrast:\s*more\)/);
+ assert.match(theme,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+ assert.match(theme,/:focus-visible/);
+ assert.doesNotMatch(theme,/@import|https?:\/\/|url\(/i,"pilot visuals have no external font or asset dependency");
+ const parse=k=>{
+  const re=new RegExp("--"+k+":\\s*(#[\\da-fA-F]{6})\\s*;");
+  const m=theme.match(re);assert.ok(m,"missing solid color token "+k);return m[1].slice(1).match(/../g).map(x=>parseInt(x,16)/255);
+ };
+ const luminance=v=>v.map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((n,x,i)=>n+x*[.2126,.7152,.0722][i],0);
+ const contrast=(a,b)=>{const x=luminance(parse(a)),y=luminance(parse(b));return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+ assert.ok(contrast("sb-ink","sb-surface")>=7);
+ assert.ok(contrast("sb-muted","sb-surface")>=4.5);
+ assert.ok(contrast("sb-positive","sb-surface")>=4.5);
+ assert.ok(contrast("sb-negative","sb-surface")>=4.5);
+});
