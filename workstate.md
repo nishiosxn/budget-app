@@ -1,5 +1,18 @@
 # Workstate — Budget foyer
 
+
+## Lot 31ap — vocabulaire français étendu et Smart Engine local (pilote publié)
+
+- Source sur `work/v3.1-smart-assistant` / PR brouillon #47. Miroirs `js/assistant-core.js` et `supabase/functions/_shared/smart-assistant-core.js` strictement identiques.
+- Commandes composées avec sujet omis : « J'ai dépensé 20 euros chez McDo et recu 10 euros de Lena » et variantes « touché », « encaissé », « reçu de », « X euros reçus de », « Léna m'a viré » ; phrases d'achat et budgets possessifs ; épargne explicitement sur livret A.
+- Délimitation des clauses, conservation des centimes/date/payeurs, rejet des opérations partielles et du vocabulaire de suppression mêlé à des mouvements, protection contre un commerçant qui absorberait une deuxième instruction.
+- Tests : `App integrity` GitHub Actions `44962165968` réussie, 242 tests applicatifs et 2 contrôles complémentaires, zéro échec ; corpus déterministe de 2 000 commandes toujours conservé.
+- Fonction Edge `smart-assistant` **v30 ACTIVE**, JWT requis et six fichiers inspectés : seul le fichier partagé du parseur est modifié par rapport à v29. Aucun changement de schéma, RLS, RPC, secret ou opération financière réelle.
+- Publication isolée GitHub Pages `17ca4dd`, seulement `v3.1/js/assistant-core.js` et `v3.1/live/index.html`, avec cache bust `31ap`. Workflow Pages `44962214118` : build, deploy et report réussis. Démo Unslop et racine de production inchangées.
+- Reste à vérifier : exercice authentifié sur PC/iPhone avec le cas exact affichant `Smart Engine · 0 token IA`, vérification de la proposition avant confirmation et tests des limitations iOS/zoom/VoiceOver. Intégration dans l'application principale non engagée.
+- Architecture, limites de couverture et plan d'intégration : `docs/SMART_ENGINE_ARCHITECTURE.md`. Aucun merge vers `develop` ou `main`.
+
+
 ## Lot 31ao — transfert des finitions Unslop au pilote connecté (préversion publiée)
 
 - Comparaison ciblée de `gh-pages:/v3.1/unslop/` avec `preview/assistant/live/` : le pilote possédait déjà le design Unslop 31an. Seules les finitions 31ao ont été reprises : actions masquées une fois la proposition verrouillée (3 parcours), demande soumise plus compacte, métadonnées lisibles à 13px et contrôles cohérents en clair/sombre.
