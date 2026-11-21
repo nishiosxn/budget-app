@@ -146,3 +146,25 @@ test("31aj: SQL transaction and receipt are service-only, atomic and protective"
  assert.match(server,/allowlist\.has\(householdId\)/);
  assert.match(server,/allowedUsers\.has\(userId\)/);
 });
+
+
+test("31aj: a month-only override at the start of a forward budget preserves later months",()=>{
+ const sql=fs.readFileSync("supabase/migrations/20261121201000_smart_assistant_pilot_forward_override_guard.sql","utf8");
+ assert.match(sql,/create or replace function public\.smart_assistant_commit_batch_pilot_v1/);
+ assert.match(sql,/v_plan\.scope='forward' and v_scope='month'/);
+ assert.match(sql,/select min\(b\.month\) into v_stop_month/);
+ assert.match(sql,/v_next_month:=\(v_month\+interval '1 month'\)::date/);
+ assert.match(sql,/not exists\(select 1 from public\.budgets b/);
+ assert.match(sql,/values\(p_household_id,v_category_id,v_next_month,v_plan\.planned_amount,'forward','B'\)/);
+ assert.match(sql,/if not v_restored and v_stop_month is null then/);
+ assert.match(sql,/raise exception using errcode='P0001',message='cannot preserve future forward rule'/);
+ assert.match(sql,/scope=v_scope/);
+ assert.match(sql,/for update/);
+ const m="2026-11";
+ const rows=[{month:"2026-11-01",planned_amount:50,scope:"forward"}];
+ const before=core.readBudgetCents(rows,m);assert.equal(before,5000);
+ const novemberOverride=[{month:"2026-11-01",planned_amount:60,scope:"month"}, {month:"2026-12-01",planned_amount:50,scope:"forward"}];
+ assert.equal(core.readBudgetCents(novemberOverride,"2026-11"),6000);
+ assert.equal(core.readBudgetCents(novemberOverride,"2026-12"),5000);
+ assert.equal(core.readBudgetCents(novemberOverride,"2027-01"),5000);
+});
