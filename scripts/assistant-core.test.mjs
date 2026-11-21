@@ -170,3 +170,20 @@ test("31ad: ambiguous category creation uses generic guidance or existing househ
  assert.equal(newCategory.value.kind,"categoryDraft");
  assert.equal(newCategory.value.budgetCents,9000);
 });
+
+
+test("31af: explicit spoken 90-euro category creates a category draft without Gemma",()=>{
+ const c={...ctx,solo:true,actor:"B",selectedMonth:"2026-11",categories:[]};
+ for(const utterance of [
+  "Crée une catégorie Gundam avec un budget de quatre-vingt-dix euros.",
+  "Créer une catégorie Gundam avec un budget de quatre-vingt-dix euros.",
+  "Crée une catégorie Gundam avec un budget de 90 euros."
+ ]){
+  const result=core.quickCommand(utterance,c);
+  assert.equal(result?.ok,true,utterance);
+  assert.equal(result?.value.kind,"categoryDraft",utterance);
+  assert.equal(result.value.name,"Gundam");
+  assert.equal(result.value.budgetCents,9000);
+  assert.equal(result.value.expenseCents,null);
+ }
+});
