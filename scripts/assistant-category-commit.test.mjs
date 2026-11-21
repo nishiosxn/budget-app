@@ -16,7 +16,7 @@ const draft=core.quickCommand(command,ctx).value;
 const base={token:"authenticated-token-for-testing",householdId,userId,requestId,command,draft,context:ctx};
 function create(impl){
  const calls=[];
- const commit=createCategoryCommit({validateCategoryDraft:core.validateCategoryDraft,recognizeCreation:core.quickCommand,
+ const commit=createCategoryCommit({validateCategoryDraft:core.validateCategoryDraft,recognizeCreation:core.quickCommand,recognizeMissingExpense:core.quickCommand,
   writeCategory:async a=>{calls.push(a);return impl?impl(a):{status:"created",categoryId,name:a.name,expenseCreated:a.expenseCents!==null}}});
  return {commit,calls};
 }
@@ -176,4 +176,81 @@ test("31ai: RPC includes one recurring budget, optional one-off expense, and no 
  assert.match(sql,/pg_advisory_xact_lock/);
  assert.doesNotMatch(sql,/\bdelete\s+from\s+public\.(?:categories|transactions|budgets)\b/i);
  assert.doesNotMatch(sql,/\bupdate\s+public\.(?:categories|transactions|budgets)\b/i);
+});
+
+
+test("31am: an exact missing-category expense can be CREATED only by explicit opt-in",async()=>{
+ const missingCommand="« J’ai payé 50 € en Gundam. »";
+ const suggestion=core.quickCommand(missingCommand,ctx);
+ assert.equal(suggestion?.value.kind,"clarify");
+ assert.equal(suggestion.missingCategory?.name,"Gundam");
+ assert.equal(suggestion.missingCategory?.amountCents,5000);
+ const proposed={kind:"categoryDraft",name:"Gundam",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:9000,expenseCents:5000};
+ const {commit,calls}=create();
+ const defaultAttempt=await commit({...base,command:missingCommand,draft:proposed});
+ assert.equal(defaultAttempt.status,422,"ordinary confirm_category must reject missing expense");
+ assert.equal(calls.length,0);
+ const r=await commit({...base,command:missingCommand,draft:proposed,missingIntent:true});
+ assert.equal(r.status,200);
+ assert.equal(r.body.commit.kind,"category");
+ assert.equal(r.body.commit.expenseCreated,true);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].budgetCents,9000);
+ assert.equal(calls[0].expenseCents,5000);
+ assert.equal(calls[0].name,"Gundam");
+ assert.equal(calls[0].expenseDate,"2026-11-21");
+});
+test("31am: users may edit proposed name/budget but cannot change the authorized expense",async()=>{
+ const command="J’ai payé 50 € en Gundam";
+ const proposed={kind:"categoryDraft",name:"Jeux vidéo",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:7500,expenseCents:5000};
+ const {commit,calls}=create();
+ assert.equal((await commit({...base,command,draft:proposed,missingIntent:true})).status,200);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].name,"Jeux vidéo");
+ assert.equal(calls[0].budgetCents,7500);
+ for(const bad of [
+  {...proposed,expenseCents:5100},
+  {...proposed,expenseCents:null},
+  {...proposed,owner:"A"},
+  {...proposed,month:"2026-12"},
+  {...proposed,date:"2026-11-20"},
+  {...proposed,budgetCents:null}
+ ]){
+  const r=await commit({...base,command,draft:bad,missingIntent:true});
+  assert.notEqual(r.status,200,JSON.stringify(bad));
+ }
+ for(const impossible of [
+  "J’ai payé 50 € chez Gundam",
+  "J’ai payé 50 € en Courses et crée une catégorie Gundam",
+  "Ajoute 10 euros au budget maison"
+ ]){
+  const r=await commit({...base,command:impossible,draft:proposed,missingIntent:true});
+  assert.equal(r.status,422,impossible);
+ }
+ assert.equal(calls.length,1);
+});
+test("31am: lost response can replay with same requestId even if created category appears",async()=>{
+ const command="J’ai payé 50 € en Gundam";
+ const proposal={kind:"categoryDraft",name:"Gundam",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:9000,expenseCents:5000};
+ const {commit,calls}=create(a=>({status:calls.length===1?"created":"same",categoryId,name:a.name,expenseCreated:true}));
+ const r1=await commit({...base,command,draft:proposal,missingIntent:true});
+ assert.equal(r1.status,200);
+ const refreshed={...ctx,categories:[...ctx.categories,{id:"gundam",name:"Gundam",kind:"expense",owner:"B",createdFrom:"2026-11"}]};
+ const r2=await commit({...base,command,draft:proposal,context:refreshed,missingIntent:true});
+ assert.equal(r2.status,200);assert.equal(r2.body.commit.created,false);
+ assert.equal(calls.length,2);assert.equal(calls[0].requestId,calls[1].requestId);
+});
+test("31am: gateway accepts only exact authenticated confirm_missing_category payload",async()=>{
+ const action="confirm_missing_category",original="J’ai payé 50 € en Gundam";
+ const payload={action,householdId,requestId,command:original,draft:{kind:"categoryDraft",name:"Gundam",owner:"B",month:"2026-11",date:"2026-11-21",budgetCents:9000,expenseCents:5000}};
+ const called=[];
+ const gateway=createAssistantGateway({enabled:true,model:"@cf/google/gemma-4-26b-a4b-it",
+  authorize:async()=>({userId,context:ctx}),reserve:async()=>{throw Error("quota should not run")},
+  infer:async()=>{throw Error("Gemma should not run")},validate:core.validateResult,
+  commitCategory:async a=>{called.push(a);return{status:200,body:{commit:{kind:"category",requestId}}}}});
+ const res=await gateway({token:base.token,body:payload});
+ assert.equal(res.status,200);assert.equal(called.length,1);
+ assert.equal(called[0].missingIntent,true);
+ assert.equal((await gateway({token:base.token,body:{...payload,malicious:true}})).status,400);
+ assert.equal(called.length,1);
 });
