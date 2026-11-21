@@ -77,3 +77,53 @@ test("previous-month category query uses calendar month and exact alias",()=>{co
 test("category report mirrors month override and recurrence exclusions, includes changed category",()=>{const r=core.categoryReport({month:"2026-10",categoryId:"groceries",categoryUuid:"uuid-food",budgets:[{month:"2026-09-01",planned_amount:120,scope:"forward"},{month:"2026-10-01",planned_amount:150,scope:"month"}],transactions:[{category_id:"uuid-food",transaction_date:"2026-10-05",amount:65.5}],recurrences:[{category_id:"uuid-food",start_month:"2026-09-01",amount:5,excluded_months:["2026-10"]},{category_id:"uuid-food",start_month:"2026-09-01",amount:20,overrides:{"2026-10":{amount:25}}},{category_id:"other",start_month:"2026-09-01",amount:10,overrides:{"2026-10":{category:"groceries"}}}]});assert.equal(r.plannedCents,15000);assert.equal(r.actualCents,10050);assert.equal(r.remainingCents,4950);assert.equal(r.recurringCents,3500);});
 
 test("category Gundam wording with spoken sentence boundaries and expense amount",()=>{const c={...ctx,actor:"B",selectedMonth:"2026-11"};const cases=["Crée la catégorie budget Gundam. Mets-y un budget de 90 euros et ajoute une dépense de 40 euros.","Crée une catégorie Gundam, mets-y un budget de 90 € puis ajoute une dépense de 40 € dans cette catégorie.","Crée la catégorie Gundam. Mets-y un budget de 90,50 euros. Ajoute-y 40,25 euros de dépenses."];for(const command of cases){const a=core.quickCommand(command,c);assert.ok(a?.ok,command);assert.equal(a.value.kind,"categoryDraft");assert.equal(a.value.name,"Gundam");assert.equal(a.value.budgetCents,command.includes("90,50")?9050:9000);assert.equal(a.value.expenseCents,command.includes("40,25")?4025:4000);}for(const command of ["Crée une catégorie Gundam. Mets-y un budget de 90 euros et ajoute une dépense de 40 euros puis supprime tout.","Crée une catégorie Gundam. Mets-y un budget de 90 euros et ajoute une dépense de 40 euros demain.","Crée une catégorie Gundam. Mets-y un budget de 90 euros et fixe un budget de 40 euros."])assert.equal(core.quickCreateCategory(command,c),null,command);});
+
+
+test("31aa: create named Lego category without reusing existing Loisirs budget",()=>{
+ const c={...ctx,actor:"B",selectedMonth:"2026-11",categories:[
+  {id:"home",name:"Maison / entretien",kind:"expense",owner:"B"},
+  {id:"leisure",name:"Loisirs",kind:"expense",owner:"B"}
+ ]};
+ const single=core.quickCommand("Crée une catégorie Lego avec un budget de 60 euros.",c);
+ assert.equal(single?.ok,true);assert.equal(single.value.kind,"categoryDraft");
+ assert.equal(single.value.name,"Lego");assert.equal(single.value.budgetCents,6000);
+ const mixed=core.quickCommand("Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros.",c);
+ assert.equal(mixed?.ok,true);assert.equal(mixed.value.kind,"mixedDraft");
+ assert.equal(mixed.value.operations.length,1);assert.equal(mixed.value.categories.length,1);
+ assert.equal(mixed.value.operations[0].categoryId,"home");
+ assert.equal(mixed.value.operations[0].planMode,"increase");
+ assert.equal(mixed.value.operations[0].amountCents,1000);
+ assert.equal(core.resolvePlanAmount(mixed.value.operations[0],5000).afterCents,6000);
+ assert.equal(mixed.value.categories[0].name,"Lego");
+ assert.equal(mixed.value.categories[0].budgetCents,6000);
+ assert.equal(mixed.value.operations.some(o=>o.categoryId==="leisure"),false);
+ assert.equal(core.validateResult(mixed.value,c).ok,false,"never a committable financial draft");
+ assert.equal(core.validateMixedDraft(mixed.value,c).ok,true);
+ const present={...c,categories:[...c.categories,{id:"lego",name:"Lego",kind:"expense",owner:"B"}]};
+ assert.notEqual(core.quickCommand("Crée une catégorie Lego avec un budget de 60 euros.",present)?.value.kind,"categoryDraft");
+ for(const tricky of ["Ajoute 10 euros au budget maison et crée une catégorie Lego puis supprime tout",
+                      "Crée une catégorie Lego avec un budget de 60 euros et efface les budgets"]){
+  const r=core.quickCommand(tricky,c);assert.equal(r?.ok,true,tricky);assert.equal(r.value.kind,"clarify",tricky);
+ }
+});
+test("31aa: merchant taxonomy prefers product meaning over shop default",()=>{
+ const c={...ctx,actor:"B",categories:[
+  {id:"groceries",name:"Courses",kind:"expense",owner:"B"},
+  {id:"clothing",name:"Vêtements",kind:"expense",owner:"B"},
+  {id:"leisure",name:"Loisirs",kind:"expense",owner:"B"}
+ ]};
+ const cases=[
+  ["J'ai dépensé 15 euros chez Décathlon.","clothing",1500],
+  ["J'ai payé 14,90 euros chez Boulangerie Saint Marc.","groceries",1490],
+  ["J'ai acheté des chaussures d'escalade chez Décathlon pour 79 euros.","leisure",7900]
+ ];
+ for(const [command,id,amount] of cases){
+  const r=core.quickCommand(command,c);
+  assert.equal(r?.ok,true,command);
+  assert.equal(r.value.operations[0].categoryId,id,command);
+  assert.equal(r.value.operations[0].amountCents,amount,command);
+ }
+ const unknown=core.quickCommand("J'ai dépensé 35 euros chez Boutique Inconnue.",c);
+ assert.equal(unknown?.ok,true);
+ assert.equal(unknown.value.operations[0].categoryId,null);
+});
