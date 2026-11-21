@@ -1014,16 +1014,41 @@
   const checked=validateMixedDraft({kind:"mixedDraft",operations:plan.value.operations,categories:[creation.value]},ctx);
   return checked.ok?{...checked,suggestions:plan.suggestions||[]}:null;
  }
+ // Compare a requested category with the authenticated household catalogue.
+ // For food, tolerate only the well-known "restaurant(s)/restauration + fast-food"
+ // compound spelling; do not guess matches from arbitrary shared words.
+ function duplicateCategoryFor(name,ctx){
+  const key=normalizeCategory(name);
+  if(!key||!contextOK(ctx))return null;
+  const foodKey=v=>normalizeCategory(v).replace(/\b(?:restaurants|restauration)\b/g,"restaurant");
+  const strictFood=/^restaurant fast food$/;
+  const candidates=ctx.categories.filter(c=>{
+   const existing=normalizeCategory(c.name);
+   return existing===key||(strictFood.test(foodKey(key))&&foodKey(existing)===foodKey(key));
+  });
+  return candidates.length===1?candidates[0]:null;
+ }
  function creationRequested(command){
   const text=normalizeCategory(command);
   return /\b(?:cree|creer|creation)\b.{0,80}\bcategorie\b|\bcategorie\b.{0,80}\b(?:cree|creer)\b/.test(text);
+ }
+ function creationClarification(command,ctx){
+  // Extract only the explicit category name, never a fuzzy substring of the
+  // financial operation. Ambiguous wording is not passed to a model to edit.
+  const match=command.trim().replace(/[.!?]$/,"").match(/^(?:crée|cree|créer|creer)\s+(?:(?:une|la)\s+)?cat[ée]gorie\s+(?:nomm[ée]e?\s+)?(.+?)(?:\s+avec\s+(?:(?:une?\s+)?(?:valeur|budget)\s+de|un\s+budget\s+de)|$)/iu);
+  const name=match?.[1]?.trim().replace(/\s+/g," ");
+  if(name&&name.length<=100){
+   const duplicate=duplicateCategoryFor(name,ctx);
+   if(duplicate)return validateAssistantResult({kind:"clarify",message:"Cette catégorie existe déjà dans le foyer : « "+duplicate.name+" ». Aucune création ni modification n’a été effectuée."},ctx);
+  }
+  return validateAssistantResult({kind:"clarify",message:"Veuillez reformuler votre demande en indiquant le nom de la catégorie et son budget en euros. Aucune opération n’a été effectuée."},ctx);
  }
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
   const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
   // Do not let a model silently turn an unsupported creation into a budget edit.
-  return direct||(creationRequested(normalized)?validateAssistantResult({kind:"clarify",message:"Création de catégorie non comprise sans ambiguïté. Reformule en « Crée une catégorie Lego avec un budget de 60 euros ». Aucun budget existant ne sera modifié."},ctx):null);
+  return direct||(creationRequested(normalized)?creationClarification(normalized,ctx):null);
  }
  root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);
