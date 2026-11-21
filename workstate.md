@@ -2,6 +2,13 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ac — cartes de nouvelles catégories et refus strict des doublons (21 novembre 2026)
+- Le pilote rend une création de catégorie seule (ex. Gundam 90 €) dans une carte `pilot-op` identique aux dépenses habituelles, avec icône à gauche, montant à droite, barre de budget initial et 0 € utilisés si aucune dépense n'est demandée. Une dépense explicitement prévue est reflétée dans l'aperçu.
+- Correctif de sécurité sémantique : une demande « Crée une catégorie Lego » ne peut plus être transformée en modification du budget d'une catégorie existante. Le moteur répond qu'elle existe déjà et refuse toute action, en comparant les noms normalisés du catalogue du foyer récupéré sous JWT/RLS.
+- CI complète sur branche de travail : 183 tests applicatifs + 2 tests complémentaires réussis (run 44932121208). Tests DOM de l'affichage et tests de non-régression des doublons ajoutés.
+- Edge Function pilote `smart-assistant` v21 active, `verify_jwt=true`, fichiers serveur comparés et identiques aux sources. Toujours aucune création de catégorie ou écriture de budget réelle ; simulation exclusivement sur ces actions.
+- La préversion GitHub Pages `/v3.1/live/` reste isolée, `main` et production inchangées. Essais manuels de cette dernière carte encore à réaliser.
+
 ### 31ab — restauration de la revue et tests de préconnexion (21 novembre 2026)
 - Cause de « Communication interrompue » après affichage des cartes : affectation de variables non déclarées `cancel` et `ok` en strict mode dans le pied de la revue mixte ; correction et différenciation erreur de rendu / erreur réseau.
 - Suppression du rendu spécial `pilot-category-card` des commandes mixtes : réutilisation des cartes `pilot-op` 31z, pictogrammes, montants et variations alignés à droite, contrôles Modifier compacts, barre du budget et progression réelle de la catégorie existante lue sous RLS ; catégorie nouvelle à 0 dépense simulée.
