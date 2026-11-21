@@ -2,6 +2,11 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ac — harmonisation création de catégorie (21 novembre 2026)
+- Carte de catégorie nouvellement créée conforme à la DA des dépenses : icône, nom, budget initial à droite, jauge de budget 0/90 € pour une catégorie Gundam de 90 € sans dépenses, montant utilisé et reste sous la jauge.
+- Nouvelle garantie : une création explicite visant le nom d'une catégorie déjà active renvoie un refus clair, sans remplacer son budget ni générer une dépense.
+- Tests de rendu/validation et suite CI réussis ; Edge Function test v21, aucune écriture sur budgets ou catégories et aucune modification de production.
+
 ### 31ab — correction affichage du pilote (21 novembre 2026)
 
 - Revue mixte de nouveau conforme à la DA 31z : icônes, montants, variations, jauge d'utilisation, contrôles d'édition et simulation ; aucun composant parallèle.
