@@ -8,18 +8,18 @@
   --sb-brand: #5c29d6;
   --sb-brand-hover: #7040eb;
   --sb-on-brand: #fff;
-  --sb-bg: #0a0c13;
-  --sb-surface: #161a24;
-  --sb-secondary: #1f2430;
-  --sb-elevated: #252b39;
-  --sb-line: #343a49;
-  --sb-line-soft: #2a303d;
-  --sb-control-line: #596173;
-  --sb-ink: #f4f5fb;
-  --sb-muted: #aab1c1;
-  --sb-dimmed: #848da1;
+  --sb-bg: #0d0e10;
+  --sb-surface: #181a1d;
+  --sb-secondary: #222428;
+  --sb-elevated: #2b2e33;
+  --sb-line: #373a3f;
+  --sb-line-soft: #2f3237;
+  --sb-control-line: #60636a;
+  --sb-ink: #f4f4f5;
+  --sb-muted: #b0b2b8;
+  --sb-dimmed: #93969e;
   --sb-accent: #c0acff;
-  --sb-tint: #302249;
+  --sb-tint: #2a223d;
   --sb-positive: #79d6a8;
   --sb-negative: #ff929e;
   --sb-warning: #efc783;
@@ -64,8 +64,7 @@ body {
   min-height: 100dvh;
   color: var(--sb-ink);
   background:
-    radial-gradient(ellipse 55rem 30rem at 50% -15rem, rgba(92, 41, 214, .12), transparent 74%),
-    linear-gradient(180deg, #0b0d16 0%, var(--sb-bg) 28rem);
+    linear-gradient(180deg, #101115 0%, var(--sb-bg) 30rem);
   font-family: var(--sb-font);
   font-size: .9375rem;
   line-height: 1.5;
@@ -99,7 +98,7 @@ main > .card,
   box-sizing: border-box;
   border: 1px solid var(--sb-line);
   border-radius: var(--sb-shell-radius);
-  background: linear-gradient(150deg, #191d27, #151923 65%);
+  background: linear-gradient(150deg, #1b1d21, #17191c 75%);
   box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, .15), inset 0 1px rgba(255,255,255,.018);
   padding: var(--sb-shell-pad);
 }
@@ -238,7 +237,7 @@ main > .card,
   padding: .4375rem .5rem .4375rem .875rem;
   border: 1px solid var(--sb-control-line);
   border-radius: 1.125rem;
-  background: #131722;
+  background: #16181b;
   box-shadow: inset 0 1px rgba(255,255,255,.018);
 }
 #pilotAssistant .sb-assistant-composer:focus-within {
@@ -339,7 +338,7 @@ main > .card,
   padding: var(--sb-card-pad);
   border: 1px solid var(--sb-line);
   border-radius: var(--sb-card-radius);
-  background: linear-gradient(155deg, #1b202b, #191d27);
+  background: linear-gradient(155deg, #202226, #1a1c20);
   box-shadow: inset 0 1px rgba(255,255,255,.018);
 }
 #pilotAssistant .pilot-op-top {
@@ -543,7 +542,7 @@ main > .card,
   margin: 0;
   border: 1px solid var(--sb-line);
   border-radius: var(--sb-card-radius);
-  background: #191d27;
+  background: var(--sb-surface);
 }
 #pilotAssistant #pilotRules > summary {
   min-height: 2.875rem;
@@ -624,4 +623,51 @@ main .brand:focus-visible {
   #pilotAssistant *::after,
   #pilotSession *,
   #pilotMeter #pilotQuotaBar::-webkit-progress-value { animation: none !important; transition: none !important; }
+}
+
+/* 31af — composer controls: fixed square hit targets and centered glyphs.
+   This overrides the generic primary/secondary button padding above. */
+#pilotAssistant .sb-assistant-composer .sb-assistant-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .375rem;
+  min-width: 0;
+}
+#pilotAssistant .sb-assistant-composer :is(#mic,#send) {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  max-width: 2.75rem;
+  max-height: 2.75rem;
+  flex: 0 0 2.75rem;
+  padding: 0;
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  line-height: 1;
+}
+#pilotAssistant .sb-assistant-composer :is(#mic,#send) svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: auto;
+  flex: none;
+  stroke: currentColor;
+}
+@media (max-width: 23.75rem) {
+  #pilotAssistant .sb-assistant-composer :is(#mic,#send) {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    max-width: 2.5rem;
+    height: 2.5rem;
+    min-height: 2.5rem;
+    max-height: 2.5rem;
+    flex-basis: 2.5rem;
+  }
 }
