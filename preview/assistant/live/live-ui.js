@@ -441,7 +441,7 @@
      saveError="Réponse réseau indisponible. Réessaie cette confirmation ; la même demande ne sera pas créée deux fois.";status.textContent=saveError;
     }finally{saving=false;setSavingPilot(false);draw()}
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
@@ -608,7 +608,7 @@
     }catch{saveError="Confirmation non vérifiée. Réessaie le même lot sans le ressaisir.";status.dataset.source="";status.textContent="Confirmation à vérifier."}
     finally{saving=false;setSavingPilot(false);draw()}
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
@@ -796,7 +796,7 @@
      setSavingPilot(false);if(!saved&&attempted){send.disabled=true;$("cancel").disabled=true}draw();
     }
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
