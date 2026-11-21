@@ -360,7 +360,7 @@ test("31af: neutral dark surfaces and fixed square composer actions",()=>{
  assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\)\s*\{[^}]*aspect-ratio:\s*1 \/ 1/s);
  assert.match(css,/#pilotAssistant \.sb-assistant-composer :is\(#mic,#send\) svg\s*\{[^}]*margin:\s*auto/s);
  assert.match(html,/assistant-core\.js\?v=31am/);
- assert.match(html,/native-dark\.css\?v=31af/);
+ assert.match(html,/native-dark\.css\?v=31am/);
 });
 test("31af: explicit category confirmation has unique retry token and never creates through a spending card",()=>{
  assert.match(js,/function categoryExplicitIntent\(command\)/);
