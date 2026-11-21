@@ -2,6 +2,17 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31am — résolution interactive d'une catégorie manquante (21 novembre 2026)
+- Pour une commande **simple et non ambiguë** telle que « J'ai payé 50 € en Gundam », si le nom n'existe dans aucune catégorie du foyer, Smart Engine répond localement avec `clarify` et une métadonnée serveur `missingCategory` validée (nom, montant en centimes, date, mois, propriétaire). **0 token Gemma, 0 écriture** à ce stade. Le message indique explicitement qu'aucune catégorie ne sera créée automatiquement.
+- Carte inline Deep Dark harmonisée avec les cartes existantes, sans modale : question de confirmation, nom prérempli modifiable, budget mensuel **vide et obligatoire**, dépense initiale en lecture seule, date/mois, jauge projetée lorsque le budget est valide, choix alternatif parmi les catégories de dépenses disponibles et possédées par B.
+- Deux actions explicites : **« Créer et enregistrer »** (catégorie, budget forward et dépense ponctuelle en un commit atomique via `smart_assistant_create_category_pilot_v2`) ou **« Enregistrer la dépense »** dans une catégorie déjà existante via la confirmation transactionnelle habituelle. « Annuler » ne produit aucune écriture. Budget absent ou invalide = bouton désactivé.
+- Nouveau chemin JWT `confirm_missing_category` distinct de `confirm_category`. Le serveur revalide la phrase d'origine dans un catalogue minimal indépendant des créations ultérieures, impose montant/date/mois/personne identiques à la dépense explicitement demandée, et ne permet la création qu'après action distincte ; le RPC garde le contrôle ultime anti-doublon et le reçu idempotent. Le chemin explicite antérieur continue à refuser une simple dépense.
+- Reprise réseau : identifiant `requestId` conservé lorsque le résultat est incertain, entrées et choix bloqués pour empêcher des changements de contenu durant la reprise ; conflit définitif affiché sans enregistrer partiellement.
+- Tests : **229 applicatifs + 2 contrôles complémentaires, 0 échec** sur le commit `c942ea7262f14cd035716efe6321c4d7b4c29135` (run `44949017058`). Couvre les propositions locales, fausses commandes enchaînées, doublons, autorisation JWT, montant/date non altérables, idempotence et éléments visuels/réactifs par inspection statique.
+- Edge Function Supabase **v29** ACTIVE, `verify_jwt=true` et 6 fichiers vérifiés identiques. Pas de modification SQL/migration, pas de dépense fictive écrite par le développeur, pas de modification du foyer personnel ni de `main`. Validation manuelle de l'interface et d'une confirmation authentifiée encore nécessaire.
+
+
+
 ### 31al — recette finale, correction du coût IA pour les commandes citées (21 novembre 2026)
 - Retour utilisateur : la requête affichée `« J’ai payé 50 € en Gundam. »` déclenchait **Gemma 4, 2 208 tokens** alors que la variante sans guillemets était locale depuis 31ak. Origine : une paire de guillemets entourant la commande empêchait les parseurs d'actions exactes de correspondre.
 - Correction symétrique du moteur `js/assistant-core.js` et du miroir serveur `supabase/functions/_shared/smart-assistant-core.js` : retirer seulement **une paire de guillemets extérieurs équilibrée** (français, typographiques ou ASCII), avant la normalisation des montants et des contractions. Pas de suppression des guillemets internes ; parseurs des montants toujours ancrés et catégories exactes obligatoires.
