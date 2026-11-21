@@ -224,3 +224,6 @@ Libération de busy avant rendu du brouillon valide ; protection d'enregistremen
 
 ### 31x — harmonisation géométrique et charte V1.1
 Quota et règles catégorisation alignés sur des insets cohérents, chevron accessible ; design system entièrement documenté pour future refonte globale. Front pilote seulement.
+
+### 31y — Correction du dernier écart inférieur
+Retrait du wrapper grid vide et alignement du bouton Nouvelle demande en enfant direct. Nettoyage des pistes vides de résultat et statut, standard réutilisable pour la refonte globale.

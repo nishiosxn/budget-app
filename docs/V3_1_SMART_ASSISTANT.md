@@ -128,3 +128,6 @@ Le rendu du brouillon intervient après validation et libération de l'état bus
 
 ## 31x — Ajustement technique du quota et de l’accordéon
 Inset commun 16/12 px, supprimer la marge native du triangle et placer un chevron maîtrisé à droite ; une seule bordure et même padding horizontal pour le contenu ouvert, les actions et les messages. Quota sans cadre supplémentaire pour la dernière demande, jauge 6 px et wrapping. Charte Smart Budget 1.1 étendue à tous les composants et pages ; aucun changement moteur/DB.
+
+## 31y — Alignement du padding inférieur
+Suppression du wrapper vide du bouton Nouvelle demande. Éléments de résultat et statut réellement vides masqués visuellement afin de ne pas créer de pistes et gaps dans la grille du Smart Assistant. Design system documente la règle pour l'ensemble des écrans. Aucune modification des données ou des autorisations.

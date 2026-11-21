@@ -115,7 +115,7 @@ test("expense budget uses signed-in household read-only data and local projectio
 
 test("31u design system is scoped to pilot, with concentric radii, responsive and accessible control tokens",()=>{
  const design=fs.readFileSync(base+"design-system.css","utf8"),charter=fs.readFileSync("docs/SMART_BUDGET_DESIGN_SYSTEM.md","utf8");
- assert.match(html,/design-system\.css\?v=31x/);
+ assert.match(html,/design-system\.css\?v=31y/);
  assert.ok(html.indexOf("design-system.css?v=31x")>html.indexOf("live.css?v=31t"));
  assert.match(design,/--sb-brand:#5C29D6/);
  assert.match(design,/--sb-card-radius:calc\(var\(--sb-shell-radius\) - var\(--sb-shell-pad\)\)/);
