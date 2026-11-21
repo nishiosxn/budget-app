@@ -2,6 +2,15 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ae — direction artistique deep-dark du pilote (21 novembre 2026)
+- Nouvelle palette profonde à plusieurs surfaces et bordures, avec violet Smart Budget conservé, états verts/rouges explicites et typographie système.
+- Harmonisation globale de l'interface du pilote : connexion/quota, hero, suggestions, composer, propositions, budgets/jauges, éditions, validations et règles.
+- Grille centrée à trois zones pour toutes les cartes ; espacements relatifs et responsive, contrastes contrôlés, focus et mouvements réduits.
+- Feuille de style `native-dark.css` dédiée à `/v3.1/live/` et chargée en dernier ; aucune modification de JavaScript métier, Supabase ou production.
+- Test automatisé du contrat visuel et CI App integrity ; validation visuelle utilisateur à confirmer.
+
+
+
 ### 31ad — messages de création et rafraîchissement (21 novembre 2026)
 - Suppression de l'exemple Lego et des montants arbitraires dans les demandes de reformulation. Message désormais neutre et descriptif.
 - Catégorie « Restauration, Fast Food » reconnue comme variante de « Restaurants / fast-food » uniquement si elle existe réellement dans le catalogue du foyer ; aucune modification autorisée sur une commande de création.
