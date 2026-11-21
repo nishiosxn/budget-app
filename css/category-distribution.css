@@ -134,6 +134,8 @@
  * Scoped to this view: no shared components, other pages or financial data change.
  */
 #categories{
+  --accent:#5c29d6;
+  --accent-soft:color-mix(in srgb,var(--accent) 10%,var(--panel));
   --cat-panel-padding:clamp(1rem,calc(.8rem + 1vw),1.5rem);
   --cat-heading-size:clamp(1rem,calc(.96rem + .25vw),1.1875rem);
   --cat-panel-radius:var(--radius,1.25rem);
