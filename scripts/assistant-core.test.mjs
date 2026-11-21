@@ -338,3 +338,25 @@ test("31al: exact screenshot with French guillemets remains a 0-token local expe
  const noCategory=core.quickCommand("« Crée une catégorie Lego avec un budget de 60 euros. »",c);
  assert.equal(noCategory?.value?.kind,"categoryDraft","explicit quoted creation remains allowed");
 });
+
+
+test("31al: quoted commands across category creation, budget updates and mixed actions stay deterministic",()=>{
+ const c={...ctx,today:"2026-11-21",firstMonth:"2026-09",lastMonth:"2028-12",
+  selectedMonth:"2026-11",solo:true,actor:"B",members:{B:"Test"},
+  categories:[{id:"home",name:"Maison / entretien",kind:"expense",owner:"B",createdFrom:"2026-09",hiddenMonths:[]}]
+ };
+ const cases=[
+  ["« Ajoute 10 euros au budget maison. »","draft","plan"],
+  ["“Crée une catégorie Atelier Mecha avec un budget de 100 euros et ajoute 50 euros de dépense.”","categoryDraft",null],
+  ['"Ajoute 10 euros au budget maison et crée une catégorie Test Lot avec un budget de 60 euros."',"mixedDraft",null]
+ ];
+ for(const [command,kind,opKind] of cases){
+  const parsed=core.quickCommand(command,c);
+  assert.equal(parsed?.ok,true,command);
+  assert.equal(parsed.value.kind,kind,command);
+  if(opKind)assert.equal(parsed.value.operations[0].kind,opKind,command);
+ }
+ const before=core.quickCommand("« Ajoute 10 euros au budget maison. »",c);
+ assert.equal(before.value.operations[0].amountCents,1000);
+ assert.equal(before.value.operations[0].categoryId,"home");
+});
