@@ -138,7 +138,7 @@ begin
          and b.archived_at is null and b.month<=v_month
          and (b.scope='forward' or b.scope='month' and b.month=v_month)
        order by case when b.scope='month' and b.month=v_month then 0 else 1 end,
-                b.month desc limit 1;
+                b.month desc limit 1 for update;
      v_current:=coalesce(v_current,0);
      if v_current<>v_before then raise exception using errcode='P0001',message='stale budget'; end if;
      v_after:=case v_mode when 'set' then v_amount
