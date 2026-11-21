@@ -134,8 +134,8 @@ test("interactive selection, scope switch and month refresh are isolated from fi
 test("integration retires only the obsolete card, while recurring transactions and their code remain intact",()=>{
  const html=read("index.html"),ui=read("js/ui.js"),categories=read("js/categories.js"),distrib=read("js/category-distribution.js"),css=read("css/category-distribution.css");
  assert.match(html,/id="categoryDistribution"/);
- assert.match(html,/js\/category-distribution\.js\?v=31ca/);
- assert.match(html,/css\/category-distribution\.css\?v=31ca/);
+ assert.match(html,/js\/category-distribution\.js\?v=31ub/);
+ assert.match(html,/css\/category-distribution\.css\?v=31ub/);
  assert.doesNotMatch(html,/id="subscriptionsOverview"/);
  assert.doesNotMatch(html,/js\/subscriptions-overview\.js/);
  assert.match(ui,/SmartBudgetCategoryDistribution\?\.render\(\);renderCategories\(m\)/);
