@@ -617,7 +617,7 @@
   const t=command.trim().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
   // A new named category is a separate creation intent; never reuse the
   // budget of an existing parent category such as Loisirs.
-  const direct=t.match(/^(?:crée|cree|créer|creer) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([\\p{L}\\p{N}][\\p{L}\\p{N} /&'_-]{0,59}?) avec un budget de (\\d{1,6}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)$/iu);
+  const direct=t.match(/^(?:crée|cree|créer|creer) (?:une |la )?cat[ée]gorie (?:nomm[ée]e? )?([\p{L}\p{N}][\p{L}\p{N} /&'_-]{0,59}?) avec un budget de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)$/iu);
   if(direct){
    const month=c.selectedMonth||c.today.slice(0,7),amount=centsFromText(direct[2]);
    if(amount===null)return null;
@@ -1010,16 +1010,16 @@
  function quickMixedCategory(command,ctx){
   if(!contextOK(ctx)||typeof command!=="string")return null;
   const text=command.trim().replace(/[.!?]$/,"");
-  const match=text.match(/^(.+?)\\s+(?:et|puis)\\s+((?:crée|cree|créer|creer)\\b.+)$/iu);
+  const match=text.match(/^(.+?)\s+(?:et|puis)\s+((?:crée|cree|créer|creer)(?=\s).+)$/iu);
   if(!match)return null;
   const plan=quickBudget(match[1],ctx),creation=quickCreateCategory(match[2],ctx);
-  if(!plan?.ok||plan.value.kind!=="draft"||plan.value.operations.length!==1||plan.value.operations[0].kind!=="plan"||!creation?.ok||creation.value.kind!=="categoryDraft")return null;
+  if(!plan?.ok||plan.value.kind!=="draft"||plan.value.operations.length!==1||plan.value.operations[0].kind!=="plan"||plan.value.operations[0].categoryId===null||!creation?.ok||creation.value.kind!=="categoryDraft")return null;
   const checked=validateMixedDraft({kind:"mixedDraft",operations:plan.value.operations,categories:[creation.value]},ctx);
   return checked.ok?{...checked,suggestions:plan.suggestions||[]}:null;
  }
  function creationRequested(command){
   const text=normalizeCategory(command);
-  return /\\b(?:cree|creer|creation)\\b.{0,80}\\bcategorie\\b|\\bcategorie\\b.{0,80}\\b(?:cree|creer)\\b/.test(text);
+  return /\b(?:cree|creer|creation)\b.{0,80}\bcategorie\b|\bcategorie\b.{0,80}\b(?:cree|creer)\b/.test(text);
  }
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
