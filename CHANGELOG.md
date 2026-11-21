@@ -1,5 +1,15 @@
 # Changelog
 
+
+## Pilote V3.1 — Smart Engine 31ap (22 novembre 2026)
+
+- Compréhension locale d'expressions françaises abrégées, ponctuées et dictées : clauses « et reçu », « puis touché », montants reçus avec expéditeur, achats chez commerçant, budgets possessifs et épargne explicitement indiquée.
+- Sécurisation de la grammaire : délimitation complète des opérations, noms d'enseignes et de personnes, dates, rejets des clauses incomprises et aucune confirmation implicite.
+- Tests : 242 applicatifs + 2 documentaires réussis (`44962165968`), dont cas exact « McDo et recu 10 euros de Lena » en traitement serveur local à 0 token et 0 quota.
+- Fonction Edge pilote `smart-assistant` v30 mise à jour sans SQL ni modification des données ; GitHub Pages `17ca4dd` publiées uniquement sous `/v3.1/live/` (`31ap`). Application principale et `/v3.1/unslop/` inchangées.
+- Documentation : `docs/SMART_ENGINE_ARCHITECTURE.md`. Validation réelle PC/iPhone avec session de test à faire avant toute intégration dans Smart Budget.
+
+
 ## Préversion publiée — Smart Assistant 31ao (intégration Unslop)
 
 - Report des dernières finitions de la démonstration dans le pilote **connecté** : boutons de confirmation masqués après un état terminé, rappel de demande compact, métadonnées à 13px, meilleure cohérence des champs et états désactivés.
