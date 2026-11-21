@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31aa — correction Smart Assistant (pilote uniquement, 21 novembre 2026)
+
+- Découpe sûre d'une demande mixte : augmentation du budget existant + création de catégorie indépendante, sans réinterprétation silencieuse par Gemma.
+- Proposition `mixedDraft` non committable : validation stricte, ancien/nouveau montant du budget, carte séparée pour la catégorie à créer, simulation uniquement.
+- Catégorisation locale enrichie : Boulangerie → Courses, Décathlon → Vêtements par défaut, matériel d'escalade → Loisirs, commerçant inconnu non forcé.
+- CI et tests de non-régression ; Edge Function test v20. Production `main` non modifiée, aucun enregistrement réel de budgets ou catégories.
+
+
 - Interface de laboratoire, dictée selon navigateur, contrôles de réponse, lectures locales et brouillons sans écriture.
 - Accent violet Smart Budget par défaut, logo de démarrage et toutes les icônes PWA recolorés ; préférences enregistrées conservées.
 - Contexte conversationnel court et réinitialisable, sans enregistrement ; historique revalidé côté passerelle.
