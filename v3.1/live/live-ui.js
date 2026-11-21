@@ -1,8 +1,18 @@
 (()=>{"use strict";
  const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),form=$("sbAssistantForm"),send=$("send");
  const core=globalThis.SmartBudgetAssistantCore;
- let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0;
+ let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0,confirmationStarted=false;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
+ function focusInput(){requestAnimationFrame(()=>{if(session&&!$("pilotAssistant").hidden){resizeComposer();input.focus()}})}
+ const confirmDiscard=message=>globalThis.SmartBudgetAssistantInteraction.confirmDiscard(message);
+ async function askDiscard(){return !pendingReview||await confirmDiscard(confirmationStarted?"Un enregistrement a été tenté. Vérifie son résultat dans l’historique avant toute ressaisie. Abandonner cet affichage ?":"Abandonner cette proposition et les modifications en cours ?")}
+ window.addEventListener("beforeunload",e=>{if(pendingReview||input.value.trim()){e.preventDefault();e.returnValue=""}});
+ document.querySelector(".brand").addEventListener("click",async e=>{
+  if(!busy&&!pendingReview&&!input.value.trim())return;
+  e.preventDefault();const href=e.currentTarget.href;if(busy||!await askDiscard())return;
+  if(input.value.trim()&&!await confirmDiscard("Quitter et abandonner la demande non envoyée ?"))return;
+  pendingReview=null;input.value="";location.assign(href);
+ });
  const kinds={expense:"Dépense",income:"Revenu",saving:"Mise en épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
  const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Conflit détecté : un budget a changé, une catégorie existe déjà ou la demande a été modifiée. Aucune opération partielle enregistrée.",confirm_budget_baseline_required:"Budget actuel indisponible. Actualise le foyer avant de confirmer.",confirm_not_supported:"Cette opération ne peut pas être enregistrée dans le pilote."};
@@ -11,12 +21,15 @@
   input.style.height="auto";
   input.style.overflowY="hidden";
   const contentHeight=input.scrollHeight;
-  const desired=Math.max(42,Math.min(contentHeight,180));
+  const base=parseFloat(getComputedStyle(input).fontSize)||16;
+  const desired=Math.max(base*2.625,Math.min(contentHeight,base*11.25));
   input.style.height=desired+"px";
-  input.style.overflowY=contentHeight>180?"auto":"hidden";
+  input.style.overflowY=contentHeight>base*11.25?"auto":"hidden";
  }
  const voice=globalThis.SmartBudgetAssistantVoice.bind({input,button:$("mic"),status,clock:document.querySelector(".sb-voice-clock"),authorize:()=>window.confirm("Autoriser la dictée du navigateur ? Utilise uniquement des données fictives."),onTextChange:resizeComposer});
  input.addEventListener("input",resizeComposer);
+ window.addEventListener("resize",resizeComposer);
+ if(typeof ResizeObserver==="function"){let width=0;new ResizeObserver(entries=>{const next=entries[0].contentRect.width;if(next!==width){width=next;resizeComposer()}}).observe(input)}
  resizeComposer();
  function append(v){const line=document.createElement("div");line.className="sb-assistant-result-row";line.textContent=v;result.append(line)}
  let ruleContext=null,personalRules=Object.create(null);
@@ -139,11 +152,13 @@
   return b;
  }
  function closeReviewForm(panel,after){
+  const cards=Array.from(result.querySelectorAll(".pilot-op")),index=cards.indexOf(panel.closest(".pilot-op")),done=after;
+  after=()=>{done();requestAnimationFrame(()=>{const card=result.querySelectorAll(".pilot-op")[Math.max(0,index)];const target=card?.querySelector(".pilot-op-controls button:not(:disabled)");(target||result).focus()})};
   if(!panel.isConnected||typeof panel.animate!=="function"||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){after();return Promise.resolve()}
   const height=panel.getBoundingClientRect().height;
   if(!height){after();return Promise.resolve()}
   panel.style.overflow="hidden";
-  const animation=panel.animate([{height:height+"px",opacity:1},{height:"0px",opacity:0,paddingTop:"0px",paddingBottom:"0px",marginTop:"0px",marginBottom:"0px",borderTopWidth:"0px",borderBottomWidth:"0px"}],{duration:160,easing:"cubic-bezier(.2,.8,.2,1)",fill:"forwards"});
+  const animation=panel.animate([{opacity:1,transform:"translateY(0)"},{opacity:0,transform:"translateY(-4px)"}],{duration:160,easing:"cubic-bezier(.2,.8,.2,1)",fill:"forwards"});
   return animation.finished.then(after,after);
  }
  function fillReviewOptions(select,options){
@@ -168,9 +183,11 @@
   }
   const notice=document.createElement("p");notice.className="pilot-editor-notice pilot-editor-wide";notice.setAttribute("role","status");panel.append(notice);
   const actions=document.createElement("div");actions.className="pilot-editor-actions pilot-editor-wide";
-  const cancel=reviewButton("Annuler"),save=reviewButton("Appliquer","sb-assistant-send");save.type="submit";actions.append(cancel,save);panel.append(actions);parent.append(panel);
+  const cancel=reviewButton("Annuler la modification"),save=reviewButton("Appliquer","sb-assistant-send");save.type="submit";actions.append(cancel,save);panel.append(actions);parent.append(panel);
+  const initial=Object.fromEntries(Object.entries(controls).map(([key,el])=>[key,el.value]));
+  queueMicrotask(()=>{if(panel.isConnected)panel.querySelector("input:not(:disabled),select:not(:disabled)")?.focus()});
   let saving=false;
-  cancel.addEventListener("click",()=>{if(saving)return;saving=true;save.disabled=cancel.disabled=true;void closeReviewForm(panel,onCancel)});
+  cancel.addEventListener("click",async()=>{if(saving)return;if(Object.entries(controls).some(([key,el])=>el.value!==initial[key])&&!await confirmDiscard("Abandonner les modifications de cette opération ?"))return;saving=true;save.disabled=cancel.disabled=true;void closeReviewForm(panel,onCancel)});
   panel.addEventListener("submit",async e=>{
    e.preventDefault();if(saving)return;
    const values=Object.fromEntries(Object.entries(controls).map(([k,el])=>[k,el.value]));
@@ -264,7 +281,7 @@
    const symbol=document.createElement("div");symbol.className="pilot-op-icon";symbol.append(icon("game"));
    const info=document.createElement("div");info.className="pilot-op-info";
    const title=document.createElement("strong");title.textContent="Catégorie introuvable";
-   const detail=document.createElement("div");detail.className="pilot-op-meta";detail.textContent="« "+offer.name+" » · "+offer.month+" · Dépense ponctuelle";
+   const detail=document.createElement("div");detail.className="pilot-op-meta";detail.textContent="« "+offer.name+" » · "+monthReviewDate(offer.month+"-01",ctx)+" · Dépense ponctuelle";
    info.append(title,detail);
    const amount=document.createElement("strong");amount.className="pilot-op-money pilot-negative";amount.textContent="−"+euro(offer.amountCents);
    top.append(symbol,info,amount);card.append(top);
@@ -319,15 +336,15 @@
    const note=document.createElement("p");note.className="pilot-review-message";
    note.setAttribute("role","status");
    note.textContent=locked?(saved?"Opération enregistrée dans le foyer de test.":"Aucune écriture."):
-    error||(mode==="create"?"Le budget mensuel sera reconduit à partir de "+offer.month+". La catégorie et la dépense seront enregistrées ensemble après confirmation.":"La dépense sera affectée uniquement à la catégorie sélectionnée.");
+    error||(mode==="create"?"Le budget mensuel sera reconduit à partir de "+monthReviewDate(offer.month+"-01",ctx)+". La catégorie et la dépense seront enregistrées ensemble après confirmation.":"La dépense sera affectée uniquement à la catégorie sélectionnée.");
    group.append(note);
    if(!locked){
     const actions=document.createElement("div");actions.className="pilot-review-actions";
-    const cancel=reviewButton("Annuler"),confirm=reviewButton(attempted?"Réessayer":mode==="create"?"Créer et enregistrer":"Enregistrer la dépense","sb-assistant-send");
+    const cancel=reviewButton("Abandonner la proposition"),confirm=reviewButton(attempted?"Réessayer":mode==="create"?"Créer et enregistrer":"Enregistrer la dépense","sb-assistant-send");
     cancel.disabled=attempted||saving;
     confirm.disabled=attempted?saving:!active()||(mode==="create"?!buildDraft().ok:!existingDraft().ok);
     if(mode==="create")confirmButton=confirm;
-    cancel.addEventListener("click",()=>{if(active()&&!attempted){wipe();status.textContent="Proposition annulée. Aucune écriture."}});
+    cancel.addEventListener("click",async()=>{if(active()&&!attempted&&await askDiscard()){wipe();status.textContent="Proposition annulée. Aucune écriture."}});
     confirm.addEventListener("click",async()=>{
      if(!active()||confirm.disabled)return;
      const checked=mode==="create"?buildDraft():existingDraft();
@@ -375,7 +392,7 @@
    const info=document.createElement("div");info.className="pilot-op-info";
    const heading=document.createElement("strong");heading.textContent=draft.name;
    const meta=document.createElement("div");meta.className="pilot-op-meta";
-   meta.textContent="Nouvelle catégorie · "+draft.month+" · Budget mensuel reconduit";
+   meta.textContent="Nouvelle catégorie · "+monthReviewDate(draft.month+"-01",ctx)+" · Budget mensuel reconduit";
    info.append(heading,meta);
    const amount=document.createElement("strong");amount.className="pilot-op-money pilot-plan";
    amount.textContent=draft.budgetCents===null?"Sans budget":euro(draft.budgetCents);
@@ -398,17 +415,17 @@
     }else{const actions=document.createElement("div");actions.className="pilot-op-controls";const edit=compactReviewAction("Modifier","edit");edit.disabled=requestId!==null;edit.addEventListener("click",()=>{if(active()&&requestId===null){editing=true;draw()}});actions.append(edit);content.append(actions)}
    }
    const safe=document.createElement("p");safe.className="pilot-review-message";
-   const monthly="Budget mensuel reconduit à partir de "+draft.month+".";
+   const monthly="Budget mensuel reconduit à partir de "+monthReviewDate(draft.month+"-01",ctx)+".";
    safe.textContent=created?"Catégorie créée dans le foyer de test. "+monthly+(draft.expenseCents!==null?" Dépense initiale enregistrée.":""):locked?"Simulation terminée · aucune écriture.":saveError||(canWrite?monthly+" Confirmer enregistre "+(draft.expenseCents!==null?"la catégorie, son budget et la dépense initiale ensemble.":"la catégorie et son budget ensemble."):"Simulation uniquement · aucune écriture sur cette demande.");
    group.append(safe);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Annuler"),ok=reviewButton(canWrite?"Confirmer":"Simuler","sb-assistant-send");
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(canWrite?"Confirmer":"Simuler","sb-assistant-send");
    cancel.disabled=locked||saving;ok.disabled=locked||saving||editing||canWrite&&draft.budgetCents===null||!core.validateCategoryDraft(draft,ctx).ok;
-   cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
+   cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async ()=>{
     if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;
     if(!canWrite){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return}
     if(!requestId)requestId=crypto.randomUUID();
-    saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Enregistrement atomique dans le foyer de test…";draw();
+    saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Enregistrement dans le foyer de test…";draw();
     try{
      const r=await savePilotCategory(requestId,sourceCommand,draft);
      if(r.ok&&r.body?.commit?.kind==="category"&&r.body.commit.requestId===requestId){
@@ -424,7 +441,7 @@
      saveError="Réponse réseau indisponible. Réessaie cette confirmation ; la même demande ne sera pas créée deux fois.";status.textContent=saveError;
     }finally{saving=false;setSavingPilot(false);draw()}
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
@@ -435,7 +452,7 @@
  function mixedBudgetBar(host,plannedCents,actualCents,{name="",month="",isNew=false}={}){
   const pane=document.createElement("div");pane.className="pilot-expense-budget";
   const head=document.createElement("div");head.className="pilot-exp-budget-head";
-  const title=document.createElement("span");title.textContent="Budget prévu";
+  const title=document.createElement("span");title.textContent="Budget après ajout";
   const amount=document.createElement("strong");amount.textContent=euro(plannedCents);head.append(title,amount);pane.append(head);
   if(actualCents!==null){
    const remain=plannedCents-actualCents;
@@ -532,7 +549,7 @@
     const info=document.createElement("div");info.className="pilot-op-info";
     const heading=document.createElement("strong");heading.textContent=cat.name;
     const meta=document.createElement("div");meta.className="pilot-op-meta";
-    meta.textContent="Création de catégorie · "+cat.month+" · Budget initial";
+    meta.textContent="Création de catégorie · "+monthReviewDate(cat.month+"-01",ctx)+" · Budget mensuel reconduit";
     info.append(heading,meta);
     const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
     money.textContent=cat.budgetCents===null?"Sans budget":euro(cat.budgetCents);
@@ -568,9 +585,9 @@
     real?"Confirmer enregistre toutes les opérations ou aucune. Budget de nouvelle catégorie reconduit chaque mois.":"Simulation uniquement · aucune écriture.");
    group.append(note);
    const actions=document.createElement("div");actions.className="pilot-review-actions";
-   const cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?"Confirmer les "+(draft.operations.length+draft.categories.length)+" opérations":"Simuler","sb-assistant-send");
+   const cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(attempted&&!locked?"Réessayer":real?"Confirmer les "+(draft.operations.length+draft.categories.length)+" opérations":"Simuler","sb-assistant-send");
    cancel.disabled=locked||saving||attempted;ok.disabled=locked||saving||editing!==-1||!ready;
-   cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
+   cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async()=>{
     if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;
     if(!real){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return;}
@@ -591,7 +608,7 @@
     }catch{saveError="Confirmation non vérifiée. Réessaie le même lot sans le ressaisir.";status.dataset.source="";status.textContent="Confirmation à vérifier."}
     finally{saving=false;setSavingPilot(false);draw()}
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
@@ -622,6 +639,7 @@
   return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm",householdId:session.householdId,requestId,draft})});
  }
  function setSavingPilot(value){
+  if(value)confirmationStarted=true;
   busy=value;send.disabled=value;$("cancel").disabled=value;$("pilotLogout").disabled=value;
  }
  function renderDraft(v,ctx,previews,suggestions,sourceCommand){
@@ -696,7 +714,7 @@
     if(!pane.isConnected)return;
     pane.replaceChildren();const projection=reviewEditor.expenseBudget(entry,saved?[]:entries,report);
     const title=document.createElement("div");title.className="pilot-exp-budget-head";
-    const t=document.createElement("span");t.textContent="Budget";title.append(t);pane.setAttribute("aria-label","Budget "+name+" · "+month);pane.removeAttribute("aria-busy");
+    const t=document.createElement("span");t.textContent=saved?"Budget actuel":"Budget après ajout";title.append(t);pane.setAttribute("aria-label","Budget "+name+" · "+month);pane.removeAttribute("aria-busy");
     const amount=document.createElement("strong");amount.textContent=projection?.budget!=null?euro(projection.budget):"—";title.append(amount);pane.append(title);
     if(!projection){const p=document.createElement("p");p.className="pilot-op-meta";p.textContent="Aperçu du budget indisponible.";pane.append(p);return}
     if(projection.budget!==null){
@@ -733,7 +751,7 @@
     const top=document.createElement("div");top.className="pilot-op-top";const iconBox=document.createElement("div");iconBox.className="pilot-op-icon";iconBox.append(icon(rule?.icon||core.categoryRules.find(r=>r.key===guessed)?.icon||(o.kind==="income"?"income":o.kind==="saving"?"saving":o.kind==="plan"?"home":"card")));
     const info=document.createElement("div");info.className="pilot-op-info";const name=document.createElement("strong");const parts=o.kind==="expense"?core.expenseLabelParts(o.label):{merchant:o.label,detail:null};name.textContent=parts.merchant;info.append(name);
     if(parts.detail){const detailLabel=document.createElement("div");detailLabel.className="pilot-expense-detail";detailLabel.textContent=parts.detail;info.append(detailLabel)}
-    const sub=document.createElement("div");sub.className="pilot-op-meta";const meta=[category?.name||rule?.name||"Catégorie à choisir",o.kind==="plan"?monthReviewDate(o.date,ctx):shortReviewDate(o.date,ctx)];if(!ctx.solo)meta.push(ctx.members[o.owner]||"À deux");if(o.frequency==="monthly")meta.push("Mensuel");if(o.kind==="saving")meta.push("Épargne");sub.textContent=meta.join(" · ");info.append(sub);
+    const sub=document.createElement("div");sub.className="pilot-op-meta";const meta=[category?.name||rule?.name||"Catégorie à choisir",o.kind==="plan"?monthReviewDate(o.date,ctx):shortReviewDate(o.date,ctx)];if(!ctx.solo)meta.push(ctx.members[o.owner]||"À deux");if(o.frequency==="monthly")meta.push("Chaque mois à partir de "+monthReviewDate(o.date,ctx));if(o.kind==="saving")meta.push("Épargne");sub.textContent=meta.join(" · ");info.append(sub);
     const amount=document.createElement("strong");amount.className="pilot-op-money "+(o.kind==="income"?"pilot-positive":o.kind==="saving"?"pilot-plan":o.kind==="plan"?"pilot-plan":"pilot-negative");
     const base=reviewEditor.planPreview(entry);
     if(o.kind==="plan"&&base){const prev=document.createElement("span");prev.className="pilot-old-amount";prev.textContent=euro(base.beforeCents);const next=document.createElement("span");next.textContent=euro(base.afterCents);amount.append(prev,next);const delta=base.afterCents-base.beforeCents,change=document.createElement("span");change.className="pilot-budget-delta "+(delta>0?"pilot-positive":delta<0?"pilot-negative":"");change.textContent=(delta>0?"+":delta<0?"−":"")+euro(Math.abs(delta));amount.append(change)}
@@ -745,16 +763,16 @@
      else if(editing===i)renderEdit(card,entry,i);
      else{
       const edit=compactReviewAction("Modifier","edit");edit.disabled=editing!==-1;edit.addEventListener("click",()=>{if(active()&&editing===-1){editing=i;draw()}});const actions=document.createElement("div");actions.className="pilot-op-controls";actions.append(edit);
-      if(entries.length>1){const remove=compactReviewAction("Retirer","remove");remove.disabled=editing!==-1;remove.addEventListener("click",()=>{if(active()&&editing===-1&&entries.length>1){entries.splice(i,1);sync();draw()}});actions.append(remove)}card.append(actions);
+      if(entries.length>1){const remove=compactReviewAction("Retirer","remove");remove.disabled=editing!==-1;remove.addEventListener("click",()=>{if(active()&&editing===-1&&entries.length>1){entries.splice(i,1);sync();draw();requestAnimationFrame(()=>{const card=group.querySelectorAll(".pilot-op")[Math.min(i,entries.length-1)];card?.querySelector(".pilot-op-controls button")?.focus()})}});actions.append(remove)}card.append(actions);
      }
     }
    }
    const checked=reviewEditor.validate(entries,ctx),creationKeys=[...new Set(entries.filter(e=>e.op.categoryId===null&&e.ruleKey).map(e=>e.ruleKey))];
    if(!locked&&creationKeys.length){const creation=document.createElement("p");creation.className="pilot-review-message";creation.dataset.creation="true";creation.textContent="À créer : "+creationKeys.map(k=>core.categoryRules.find(r=>r.key===k)?.name||k).join(", ");group.append(creation)}
-   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)||canSaveBatch(entries,ctx)?"Confirmation atomique · foyer test uniquement.":"Simulation · catégorie non attribuée, épargne ou récurrence non enregistrable.");group.append(note);
-   const actions=document.createElement("div");actions.className="pilot-review-actions";const batch=canSaveBatch(entries,ctx),real=canSavePilot(entries,ctx)||batch,cancel=reviewButton("Annuler"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
+   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)||canSaveBatch(entries,ctx)?"Ces opérations seront enregistrées ensemble dans le foyer de test.":"Simulation · catégorie non attribuée, épargne ou récurrence non enregistrable.");group.append(note);
+   const actions=document.createElement("div");actions.className="pilot-review-actions";const batch=canSaveBatch(entries,ctx),real=canSavePilot(entries,ctx)||batch,cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
    cancel.disabled=locked||attempted;ok.disabled=locked||busy||editing!==-1||!checked.ok;
-   cancel.addEventListener("click",()=>{if(active()){wipe();status.textContent="Brouillon annulé."}});
+   cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async()=>{
     if(!active()||ok.disabled||!reviewEditor.validate(entries,ctx).ok)return;
     if(!real){locked=true;pendingReview=null;history=[];status.dataset.source="";status.textContent="Simulation terminée · aucune écriture.";draw();return}
@@ -778,11 +796,11 @@
      setSavingPilot(false);if(!saved&&attempted){send.disabled=true;$("cancel").disabled=true}draw();
     }
    });
-   actions.append(cancel,ok);group.append(actions);
+   if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
- function wipe(){pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true})}
+ function wipe(){confirmationStarted=false;$("pilotAssistant").dataset.state="initial";$("pilotExamples").open=true;pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true});focusInput()}
  function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
@@ -821,18 +839,18 @@
    const t=a.body.access_token,u=a.body.user.id;if(!/^[a-f0-9-]{36}$/i.test(u))throw Error("Session invalide.");
    const m=await json("/rest/v1/household_members?select=household_id,slot&user_id=eq."+encodeURIComponent(u)+"&limit=2",{headers:headers(t)});
    if(!m.ok||!Array.isArray(m.body)||m.body.length!==1||m.body[0].slot!=="B")throw Error("Le compte de test doit disposer d’un foyer isolé.");
-   session={token:t,householdId:m.body[0].household_id};resetMeter();readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="";void refreshQuota();void loadRuleCategories();
+   session={token:t,householdId:m.body[0].household_id};resetMeter();readPersonal();showRules();epoch++;wipe();$("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;status.textContent="";focusInput();void refreshQuota();void loadRuleCategories();
   }catch(e){$("pilotLoginStatus").textContent=e.message||"Connexion impossible."}
   finally{$("pilotSignIn").disabled=false}
  });
- $("pilotLogout").addEventListener("click",()=>{if(busy)return;if(send.disabled&&pendingReview&&!window.confirm("Vérifie l’historique du foyer avant de ressaisir un lot dont l’enregistrement n’est pas vérifié. Se déconnecter ?"))return;logout()});
- $("cancel").addEventListener("click",()=>{epoch++;busy=false;send.disabled=false;wipe();status.textContent="Nouvelle demande."});
- document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",()=>{voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;resizeComposer();input.focus()}));
+ $("pilotLogout").addEventListener("click",async()=>{if(busy)return;if(send.disabled&&pendingReview&&!window.confirm("Vérifie l’historique du foyer avant de ressaisir un lot dont l’enregistrement n’est pas vérifié. Se déconnecter ?"))return;if(!await askDiscard())return;if(input.value.trim()&&!await confirmDiscard("Se déconnecter et abandonner la demande non envoyée ?"))return;logout()});
+ $("cancel").addEventListener("click",async()=>{if(confirmationStarted&&(busy||send.disabled)||!await askDiscard())return;if(busy&&!await confirmDiscard("Interrompre l’analyse et commencer une nouvelle demande ?"))return;if(!busy&&input.value.trim()&&!await confirmDiscard("Abandonner la demande non envoyée ?"))return;epoch++;busy=false;send.disabled=false;wipe();status.textContent="Nouvelle demande."});
+ document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",async()=>{if(busy||send.disabled)return;if(input.value.trim()&&!await confirmDiscard("Remplacer le texte de la demande par cet exemple ?"))return;voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;resizeComposer();input.focus()}));
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
  
  form.addEventListener("submit",async e=>{
   e.preventDefault();if(!session||busy||send.disabled)return;voice.stop();
-  const command=input.value.trim();if(!command)return;
+  const command=input.value.trim();if(!command)return;if(!await askDiscard()||busy||send.disabled)return;$("pilotAssistant").dataset.state="analysis";$("pilotExamples").open=false;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   let receivedResponse=false;
   try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
@@ -852,8 +870,9 @@
    else if(v.kind==="draft"){renderDraft(v,ctx,r.body.planPreviews||[],r.body.categorySuggestions||[],command);}
    else if(v.kind==="clarify"&&r.body.missingCategory){renderMissingCategory(r.body.missingCategory,ctx,command)}
    else if(v.kind==="query"&&r.body.categoryReport&&renderCategoryReport(r.body.categoryReport)){}
-   else if(v.kind==="query"){append(queries[v.query]+" · "+v.month+(v.compareMonth?" / "+v.compareMonth:"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
+   else if(v.kind==="query"){append(queries[v.query]+" · "+monthReviewDate(v.month+"-01",ctx)+(v.compareMonth?" / "+monthReviewDate(v.compareMonth+"-01",ctx):"")+(v.categoryId?" · "+(ctx.categories.find(c=>c.id===v.categoryId)?.name||"Catégorie"):""));append("Consultation comprise. Calcul à raccorder à l’application complète.");}
    else append(v.message);
+   $("pilotAssistant").dataset.state="review";requestAnimationFrame(()=>{if(current===epoch&&result.childNodes.length)result.focus()});
    history=["draft","clarify"].includes(v.kind)?[...history,{command,result:v}].slice(-2):[];$("cancel").hidden=false;
    const local=r.body.metering?.source==="local-rules";
    status.dataset.source=local?"smart-engine":"gemma";
