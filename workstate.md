@@ -2,6 +2,14 @@
 
 ## V3.1 — Smart Assistant, chantier isolé
 
+### 31ab — restauration de la revue et tests de préconnexion (21 novembre 2026)
+- Cause de « Communication interrompue » après affichage des cartes : affectation de variables non déclarées `cancel` et `ok` en strict mode dans le pied de la revue mixte ; correction et différenciation erreur de rendu / erreur réseau.
+- Suppression du rendu spécial `pilot-category-card` des commandes mixtes : réutilisation des cartes `pilot-op` 31z, pictogrammes, montants et variations alignés à droite, contrôles Modifier compacts, barre du budget et progression réelle de la catégorie existante lue sous RLS ; catégorie nouvelle à 0 dépense simulée.
+- Simulation complète avec Annuler et Simuler, sans nouvelle écriture réelle. Statut du Smart Engine rétabli.
+- Test de rendu DOM simulé des deux cartes, présence du bouton Simuler, jauge et clic sans exception, plus suite App integrity CI réussie (run 44931268107).
+- Lecture seule de la structure Supabase et des politiques RLS pour évaluer une future confirmation atomique catégorie+budget. Risque identifié : `budgets` contient des règles `month` et `forward`, et synchronisation côté application requiert un contrat transactionnel idempotent ; **aucune activation d'écriture mixte avant cette protection**.
+- Publication dédiée `/v3.1/live/` à synchroniser après CI, sans changement `main` ni foyer réel.
+
 ### Correctif 31aa — interprétation des budgets et créations (21 novembre 2026)
 - Signalement test 31z : « Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros » renvoyait à tort deux remplacements de budgets existants.
 - Le moteur déterministe produit désormais un lot mixte de revue `mixedDraft` : augmentation du budget Maison existant de 10 € (calcul sur base lue) et création indépendante d'une catégorie Lego avec 60 € ; jamais de modification du budget parent Loisirs.
