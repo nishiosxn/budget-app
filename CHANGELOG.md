@@ -2,6 +2,11 @@
 
 ## V3.1 — Smart Assistant (chantier expérimental, non publié)
 
+### 31ad — messages de création et rafraîchissement (21 novembre 2026)
+- Suppression de l'exemple Lego et des montants arbitraires dans les demandes de reformulation. Message désormais neutre et descriptif.
+- Catégorie « Restauration, Fast Food » reconnue comme variante de « Restaurants / fast-food » uniquement si elle existe réellement dans le catalogue du foyer ; aucune modification autorisée sur une commande de création.
+- Empreinte JS de préversion renouvelée pour éviter l'affichage d'anciennes cartes dépourvues de jauge. Pilot Supabase v22 et tests de régression.
+
 ### 31ac — harmonisation création de catégorie (21 novembre 2026)
 - Carte de catégorie nouvellement créée conforme à la DA des dépenses : icône, nom, budget initial à droite, jauge de budget 0/90 € pour une catégorie Gundam de 90 € sans dépenses, montant utilisé et reste sous la jauge.
 - Nouvelle garantie : une création explicite visant le nom d'une catégorie déjà active renvoie un refus clair, sans remplacer son budget ni générer une dépense.
