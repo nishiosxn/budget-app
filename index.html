@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="css/style.css?v=20261006-v27a" />
   <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
   <link rel="stylesheet" href="css/history-filters.css?v=20261117-ios-focus" />
-  <link rel="stylesheet" href="css/subscriptions-overview.css?v=20261116-v29b" />
   <link rel="stylesheet" href="css/motion.css?v=20261117-v30c" />
   <link rel="stylesheet" href="css/touch-inputs.css?v=20261117-v302" />
+  <link rel="stylesheet" href="css/category-distribution.css?v=31ug" />
 </head>
 <body>
 <div id="sbBootScreen" class="sb-boot sb-open" role="status" aria-live="polite" aria-label="Chargement du budget"><div class="sb-boot-card"><strong>Smart Budget</strong><span class="sb-loading-label">Préparation du budget…</span></div></div>
@@ -107,7 +107,10 @@
       </div>
     </section>
 
-    <section id="categories" class="view"><section class="card subscriptions-panel" id="subscriptionsOverview" aria-label="Abonnements et récurrences du mois"></section><div class="category-layout" id="categoryGrid"></div></section>
+    <section id="categories" class="view">
+      <section class="card budget-distribution" id="categoryDistribution" aria-label="Répartition interactive des budgets prévus"></section>
+      <div class="category-layout" id="categoryGrid"></div>
+    </section>
     <section id="history" class="view">
       <div class="card history-toolbar" role="search" aria-label="Recherche et filtres d'historique">
         <div class="history-toolbar-title">
@@ -404,8 +407,8 @@
 <script src="js/ui.js?v=20261116-v29a" defer></script>
 <script src="js/history-filters.js?v=20261116-v29a" defer></script>
 <script src="js/categories.js" defer></script>
+<script src="js/category-distribution.js?v=31ug" defer></script>
 <script src="js/transactions.js?v=20261116-v29a" defer></script>
-<script src="js/subscriptions-overview.js?v=20261116-v29b" defer></script>
 <script src="js/settings.js?v=20261006-v27c" defer></script>
 <script src="js/tracking.js" defer></script>
 <script src="js/onboarding.js" defer></script>

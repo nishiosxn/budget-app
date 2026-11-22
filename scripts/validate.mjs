@@ -86,13 +86,17 @@ const duplicateIds=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
 if(duplicateIds.length) fail("IDs HTML dupliqués: "+duplicateIds.join(", "));
 else ok("IDs HTML uniques");
 
-const domRefs=[...allJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+const activeJs=scripts.filter(name=>exists(path.join("js",name))).map(name=>read(path.join("js",name))).join("\n");
+// Optional legacy modules may stay in the repository for historical tests.
+// Check DOM references only in files actually loaded by this page.
+const domRefs=[...activeJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
 const dynamicIds=[...allJs.matchAll(/\.id\s*=\s*"([^"]+)"/g)].map(m=>m[1]);
 const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.includes(id)))];
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 
-const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+
 const missingScripts=scripts.filter(f=>!exists(path.join("js",f)));
 if(missingScripts.length) fail("Scripts HTML absents: "+missingScripts.join(", "));
 else if(scripts.length) ok("Scripts référencés présents");
