@@ -1,0 +1,312 @@
+/* PR49 31un — A + C dashboard experiment
+ * Method: Unslop by Damir Sokolovsky (CC BY 4.0).
+ * Product: Smart Budget, household finances; calm, exact, immediate.
+ * Chart is the colorful moment; category rows and navigation stay quiet.
+ * The shell may grow across wide screens; content remains naturally sized.
+ */
+:root{
+ --sb-page-max:115rem;
+ --sb-page-gutter:clamp(1rem,2.25vw,2.75rem);
+ --sb-group-gap:clamp(1rem,1.8vw,2rem);
+ --sb-hairline:var(--line);
+}
+.demo-app main.shell{
+ width:min(var(--sb-page-max),calc(100% - 2 * var(--sb-page-gutter)));
+ max-width:none;
+ margin-inline:auto;
+}
+#categories .category-layout[data-layout="hybrid"]{
+ gap:var(--sb-group-gap);
+}
+#categories .category-top{
+ grid-template-columns:minmax(0,1.02fr) minmax(0,1.08fr);
+ column-gap:var(--sb-group-gap);
+ align-items:stretch;
+}
+#categories #categoryIncomeSlot,
+#categories #categoryExpenseSlot,
+#categories #categorySavingSlot{
+ min-width:0;
+}
+#categories .category-top #categoryIncomeSlot > .category-group,
+#categories .category-top > .budget-distribution{
+ height:100%;
+}
+#categories .category-top .income-card .cat-budget-list,
+#categories #categorySavingSlot .saving-card .cat-budget-list{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ column-gap:clamp(.75rem,1.1vw,1.25rem);
+ row-gap:.75rem;
+}
+#categories #categoryExpenseSlot .category-group{
+ gap:clamp(1rem,1.45vw,1.5rem);
+}
+#categories #categoryExpenseSlot .category-cards:not(.income-cards){
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ align-items:start;
+ column-gap:var(--sb-group-gap);
+ row-gap:clamp(1.5rem,2vw,2.25rem);
+ min-width:0;
+}
+#categories #categoryExpenseSlot .cat-family-block,
+#categories #categoryExpenseSlot .category-cards:not(.income-cards) .cat-family-block:not(:last-child){
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ gap:.75rem;
+ min-width:0;
+ margin:0;
+ padding:0!important;
+ border:0!important;
+}
+#categories #categoryExpenseSlot .cat-family-block + .cat-family-block{
+ margin-top:0;
+ padding-top:0!important;
+}
+#categories #categoryExpenseSlot .cat-family-block > .cat-section-head{
+ display:flex;
+ align-items:flex-start;
+ justify-content:space-between;
+ flex-direction:column;
+ gap:.625rem;
+ margin:0;
+ padding:0 0 .125rem;
+ border:0;
+}
+#categories #categoryExpenseSlot .cat-section-title{
+ font-size:clamp(.9375rem,1vw,1.0625rem);
+ font-weight:650;
+ gap:.25rem;
+ line-height:1.35;
+}
+#categories #categoryExpenseSlot .cat-section-total{
+ line-height:1.45;
+ font-size:.8125rem;
+ color:var(--muted);
+}
+#categories #categoryExpenseSlot .cat-tile-bulk{
+ display:flex;
+ align-items:center;
+ justify-content:flex-start;
+ flex-wrap:wrap;
+ gap:.375rem;
+ max-width:100%;
+}
+#categories #categoryExpenseSlot .cat-tile-bulk .cat-bulk{
+ min-height:2.375rem;
+ padding:.4rem .55rem;
+ font-size:.75rem;
+ white-space:normal;
+ text-align:center;
+}
+#categories #categoryExpenseSlot .cat-budget-list{
+ display:block;
+ min-width:0;
+ padding:0;
+ margin:0;
+}
+#categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile,
+#categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile + .cat-budget-tile{
+ display:block;
+ min-width:0;
+ width:100%;
+ margin:0;
+ padding:clamp(.75rem,1vw,1rem) 0;
+ border:0!important;
+ border-top:.0625rem solid var(--sb-hairline)!important;
+ border-radius:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+ transition:background-color .16s ease;
+}
+#categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile:last-child{
+ border-bottom:.0625rem solid var(--sb-hairline)!important;
+}
+#categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile:hover{
+ background:color-mix(in srgb,var(--panel-2) 45%,transparent)!important;
+ border-color:var(--sb-hairline)!important;
+}
+#categories #categoryExpenseSlot .cat-tile-head{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:.25rem .5rem;
+ min-height:2.75rem;
+}
+#categories #categoryExpenseSlot .cat-tile-identity{
+ min-width:0;
+ flex:1 1 8.75rem;
+ display:flex;
+ align-items:center;
+ flex-wrap:wrap;
+ column-gap:.625rem;
+ row-gap:.25rem;
+}
+#categories #categoryExpenseSlot .cat-tile-name{
+ min-width:0;
+ font-size:clamp(.875rem,1vw,.9375rem);
+ line-height:1.4;
+ font-weight:600;
+}
+#categories #categoryExpenseSlot .cat-tile-owner{
+ font-size:.75rem;
+ line-height:1.45;
+}
+#categories #categoryExpenseSlot .cat-tile-actions{
+ flex:0 0 auto;
+ display:flex;
+ gap:.125rem;
+ margin-left:auto;
+}
+#categories #categoryExpenseSlot .cat-tile-icon{
+ width:2.5rem;
+ height:2.5rem;
+}
+#categories #categoryExpenseSlot .cat-tile-icon[data-demo-armed="true"]{
+ width:auto;
+}
+#categories #categoryExpenseSlot .cat-tile-finances{
+ display:flex;
+ align-items:baseline;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ margin-top:.25rem;
+ gap:.25rem .875rem;
+}
+#categories #categoryExpenseSlot .cat-tile-money{
+ display:flex;
+ align-items:baseline;
+ gap:.35rem;
+ min-width:0;
+}
+#categories #categoryExpenseSlot .cat-tile-kicker{
+ font-size:.75rem;
+}
+#categories #categoryExpenseSlot .cat-tile-money-button{
+ font-size:clamp(.875rem,1vw,1.0625rem);
+ padding-inline:0;
+ min-height:2.5rem;
+ white-space:nowrap;
+}
+#categories #categoryExpenseSlot .cat-progress-row{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:.75rem;
+ margin-top:.375rem;
+}
+#categories #categoryExpenseSlot .cat-progress-caption{
+ max-width:12rem;
+ font-size:.75rem;
+ overflow-wrap:anywhere;
+}
+#categories #categoryExpenseSlot .cat-budget-tile .cat-details{
+ margin-top:.625rem;
+ padding:.35rem .625rem;
+ background:var(--panel-2);
+ border-radius:.625rem;
+}
+#categories #categoryExpenseSlot .cat-details .cat-detail-row{
+ min-width:0;
+}
+#categories #categoryExpenseSlot .add-category{
+ margin-top:.625rem;
+ width:max-content;
+ max-width:100%;
+}
+#categories #categoryExpenseSlot .archived-wrap,
+#categories #categoryExpenseSlot .restorable-categories{
+ margin-top:.75rem;
+}
+#categories #categorySavingSlot .category-group{
+ width:100%;
+}
+#categories .category-top .budget-distribution{
+ min-width:0;
+ align-content:start;
+}
+/* At intermediate widths, retain compact families rather than compressing
+ * three finance-control columns below an accessible tap-target size. */
+@media(max-width:78rem){
+ #categories #categoryExpenseSlot .category-cards:not(.income-cards){
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:70rem){
+ #categories .category-top{
+  grid-template-columns:minmax(0,1fr);
+  row-gap:var(--sb-group-gap);
+ }
+ #categories .category-top .budget-distribution{
+  height:auto;
+ }
+}
+@media(max-width:50rem){
+ #categories #categoryExpenseSlot .category-cards:not(.income-cards){
+  grid-template-columns:minmax(0,1fr)!important;
+  row-gap:clamp(1.5rem,4vw,2.25rem);
+ }
+ #categories #categoryExpenseSlot .cat-family-block > .cat-section-head{
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.5rem 1rem;
+ }
+ #categories #categoryExpenseSlot .cat-tile-bulk{
+  justify-content:flex-end;
+ }
+}
+@media(max-width:47rem){
+ #categories .category-top .income-card .cat-budget-list,
+ #categories #categorySavingSlot .saving-card .cat-budget-list{
+  grid-template-columns:minmax(0,1fr);
+ }
+}
+@media(max-width:40rem){
+ #categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile{
+  padding-block:.875rem;
+ }
+ #categories #categoryExpenseSlot .cat-tile-icon{
+  min-width:2.75rem;min-height:2.75rem;
+ }
+ #categories #categoryExpenseSlot .cat-tile-money-button{
+  min-height:2.75rem;
+  font-size:1rem;
+ }
+ #categories #categoryExpenseSlot .cat-progress-row{
+  grid-template-columns:minmax(0,1fr);
+  gap:.375rem;
+ }
+ #categories #categoryExpenseSlot .cat-progress-caption{
+  max-width:none;
+  font-size:.8125rem;
+  text-align:right;
+ }
+ #categories #categoryExpenseSlot .cat-tile-bulk .cat-bulk{
+  min-height:2.75rem;
+  font-size:.8125rem;
+ }
+ #categories #categoryExpenseSlot .cat-family-block > .cat-section-head{
+  align-items:flex-start;
+  flex-direction:column;
+  gap:.625rem;
+ }
+ #categories #categoryExpenseSlot .cat-tile-bulk{
+  justify-content:flex-start;
+ }
+}
+@media(max-width:22rem){
+ #categories #categoryExpenseSlot .cat-tile-finances{
+  gap:.125rem .625rem;
+ }
+ #categories #categoryExpenseSlot .cat-tile-money{
+  flex-wrap:wrap;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #categories #categoryExpenseSlot .cat-budget-list > .cat-budget-tile{
+  transition:none!important;
+ }
+}
