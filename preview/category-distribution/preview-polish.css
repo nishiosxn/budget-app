@@ -626,3 +626,27 @@ html[data-demo-theme="dark"] #categories{
 }
 
 .sb-settings-field[hidden]{display:none!important}
+
+
+/* Archived categories: same visual vocabulary, quieter information density. */
+#categories .archived-wrap{
+ display:grid;gap:.5rem;
+ margin-top:1rem;
+}
+#categories .archived-wrap .archived-label{
+ font-size:.8125rem;color:var(--muted);font-weight:550;
+}
+#categories .archived-wrap .cat-item.archived{
+ margin:0;
+ padding:.75rem 1rem;
+ border:.0625rem solid var(--line);
+ border-radius:.75rem;
+ background:var(--panel-2);
+ box-shadow:none;
+}
+#categories .archived-wrap .cat-item.archived .cat-amount{
+ color:var(--text);font-variant-numeric:tabular-nums;
+}
+#categories .archived-wrap .archive-badge{
+ color:var(--muted);font-size:.75rem;
+}
