@@ -10,7 +10,7 @@ const state={
  household:{name:"Foyer fictif",mode:"couple",personB:"Personne 1",personA:"Personne 2"},
  transactions:[],customIncomeCategories:[],customExpenseCategories:[],
  categoryBudgets:{},incomeBudgets:{},categoryOwners:{},incomeCategoryOwners:{},
- categoryNames:{},incomeCategoryNames:{},planOverrides:[],
+ categoryNames:{},incomeCategoryNames:{},planOverrides:[],sectionOverrides:[],
  deletedIncomeCategoriesGlobal:[],deletedCategoriesGlobal:[],
  deletedIncomeCategoryMonths:{},deletedCategoryMonths:{}
 };
@@ -52,9 +52,18 @@ function categoryCreatedFrom(id,type){
  const c=(type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES).find(x=>x.id===id);
  return c?.createdFrom||"2026-09";
 }
+function categorySectionForMonth(c,month=state.selectedMonth){
+ const key=monthKey(month);
+ let section=c.section||"Vie courante";
+ for(const move of state.sectionOverrides||[]){
+  if(move.id!==c.id)continue;
+  if(move.scope==="month"?move.month===key:move.month<=key)section=move.section;
+ }
+ return section;
+}
 function planForCategory(c,month=state.selectedMonth,type="expense"){
  const key=monthKey(month),kind=type==="income"?"income":"expense";
- const plan={...c,budget:baseline[key]?.[kind]?.[c.id]??c.budget??0};
+ const plan={...c,section:type==="income"?c.section:categorySectionForMonth(c,month),budget:baseline[key]?.[kind]?.[c.id]??c.budget??0};
  for(const update of state.planOverrides){
   if(update.type!==kind||update.id!==c.id)continue;
   if(update.scope==="month"?update.month===key:update.month<=key){
