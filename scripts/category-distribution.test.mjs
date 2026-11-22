@@ -580,6 +580,13 @@ test("PR49 31uj: one settings dialog handles existing edits and period-scoped fa
  node("categorySettingsScope").value="forward";
  callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
  assert.equal(readState('planForCategory(catById("car"),"2026-12").section'),"Obligatoires");
+ readState('openCategorySettings("car","expense")');
+ node("categorySettingsSection").value="Autres";
+ node("categorySettingsScope").value="month";
+ callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
+ assert.equal(readState('visibleExpenseCategories().find(c=>c.id==="car").section'),"Autres");
+ assert.match(node("categoryGrid").innerHTML,/>Autres</,"moved custom group must remain visible");
+ assert.equal(readState('planForCategory(catById("car"),"2026-12").section'),"Obligatoires");
  readState('openCategoryEditor(null,"Vie courante","planned","expense")');
  assert.ok(node("categoryEditBackdrop"),"original category creation form is preserved");
 });
