@@ -143,8 +143,13 @@
    (!income?'<div class="bd-level" role="group" aria-label="Niveau de détail">'+
    '<button type="button" data-bd-level="family" aria-pressed="'+(ui.level==="family")+'" class="'+(ui.level==="family"?"is-active":"")+'">Par famille</button>'+
    '<button type="button" data-bd-level="category" aria-pressed="'+(ui.level==="category")+'" class="'+(ui.level==="category"?"is-active":"")+'">Par catégorie</button></div>':"<span></span>")+
-   '<label class="bd-sort">Trier <select data-bd-sort aria-label="Trier les budgets"><option value="amount"'+(ui.sort==="amount"?" selected":"")+'>Par montant</option>'+
-   '<option value="order"'+(ui.sort==="order"?" selected":"")+'>Ordre des catégories</option></select></label></div>'+
+   '<div class="bd-sort"><span>Trier</span><div class="bd-sort-picker">'+
+   '<button type="button" class="bd-sort-trigger" data-bd-sort-trigger aria-haspopup="listbox" aria-expanded="false">'+
+   '<span>'+(ui.sort==="amount"?"Par montant":"Ordre des catégories")+'</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>'+
+   '<div class="bd-sort-menu" data-bd-sort-menu role="listbox" aria-label="Trier les budgets" hidden>'+
+   '<button type="button" role="option" data-bd-sort-option="amount" aria-selected="'+(ui.sort==="amount")+'">Par montant</button>'+
+   '<button type="button" role="option" data-bd-sort-option="order" aria-selected="'+(ui.sort==="order")+'">Ordre des catégories</button>'+
+   '</div></div></div></div>'+
    (model.total>0?'<div class="bd-legend" aria-label="Détail des budgets">'+model.items.map(item=>legendMarkup(item,model.total)).join("")+'</div>':"")+
    summaryMarkup(active,model)+changesMarkup(model,month);
  }
@@ -185,6 +190,18 @@
   el.setAttribute("tabindex","-1");el.focus({preventScroll:true});
   el.scrollIntoView({behavior:root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?"auto":"smooth",block:"start"});
  }
+ function closeSort(host,focus=false){
+  const menu=host.querySelector("[data-bd-sort-menu]"),trigger=host.querySelector("[data-bd-sort-trigger]");
+  if(!menu||!trigger)return;
+  menu.hidden=true;trigger.setAttribute("aria-expanded","false");
+  if(focus)trigger.focus();
+ }
+ function openSort(host){
+  const menu=host.querySelector("[data-bd-sort-menu]"),trigger=host.querySelector("[data-bd-sort-trigger]");
+  if(!menu||!trigger)return;
+  menu.hidden=false;trigger.setAttribute("aria-expanded","true");
+  (menu.querySelector('[aria-selected="true"]')||menu.querySelector("button"))?.focus();
+ }
  function attach(){
   if(typeof document==="undefined")return;
   const host=document.getElementById("categoryDistribution");
@@ -192,6 +209,17 @@
   host.dataset.bound="1";
   host.addEventListener("click",event=>{
    const b=event.target.closest("button");if(!b||!host.contains(b))return;
+   if(b.dataset.bdSortTrigger!==undefined){
+    const menu=host.querySelector("[data-bd-sort-menu]");
+    if(menu?.hidden)openSort(host);else closeSort(host,true);
+    return;
+   }
+   if(b.dataset.bdSortOption!==undefined){
+    ui.sort=b.dataset.bdSortOption==="order"?"order":"amount";
+    renderBudgetCard();updateGrid();
+    host.querySelector("[data-bd-sort-trigger]")?.focus();
+    return;
+   }
    if(b.dataset.bdScope){ui.scope=b.dataset.bdScope;ui.selected=null;ui.showChanges=false;renderBudgetCard();updateGrid();return}
    if(b.dataset.bdLevel){ui.level=b.dataset.bdLevel;ui.selected=null;renderBudgetCard();updateGrid();return}
    if(b.dataset.bdKey){chooseBudgetSegment(b.dataset.bdKey);return}
@@ -204,10 +232,8 @@
     if(id&&typeof openCategoryEditor==="function")openCategoryEditor(id,null,"planned",ui.scope);
    }
   });
-  host.addEventListener("change",event=>{
-   if(event.target.matches("[data-bd-sort]")){
-    ui.sort=event.target.value==="order"?"order":"amount";renderBudgetCard();updateGrid();
-   }
+  document.addEventListener?.("pointerdown",event=>{
+   if(!host.contains(event.target)||!event.target.closest(".bd-sort-picker"))closeSort(host);
   });
   host.addEventListener("pointerover",event=>{
    if(event.pointerType==="touch")return;
@@ -229,6 +255,16 @@
    ui.hovered=null;tooltipFor(null);
   });
   host.addEventListener("keydown",event=>{
+   const menu=host.querySelector("[data-bd-sort-menu]");
+   const inSort=event.target.closest(".bd-sort-picker");
+   if(inSort&&event.key==="Escape"&&menu&&!menu.hidden){event.preventDefault();closeSort(host,true);return}
+   if(inSort&&(event.key==="ArrowDown"||event.key==="ArrowUp")){
+    event.preventDefault();
+    if(menu?.hidden){openSort(host);return}
+    const options=[...menu.querySelectorAll("button")],index=options.indexOf(document.activeElement);
+    options[(index+(event.key==="ArrowDown"?1:options.length-1))%options.length]?.focus();
+    return;
+   }
    if(event.key==="Escape"&&ui.hovered){ui.hovered=null;tooltipFor(null)}
   });
  }
