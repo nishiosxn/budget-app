@@ -65,16 +65,22 @@ function categoryProgressMarkup(c,actual,type){
  const planned=Math.max(0,Number(c.budget)||0),current=Math.max(0,Number(actual)||0);
  const pct=planned>.005?Math.round(current/planned*100):null;
  const exceeded=expense&&planned>.005&&current>planned+.005;
- const over=current-planned;
- const severity=exceeded?(over/planned>.15?"danger":"warning"):"normal";
+ const difference=planned-current;
+ const severity=exceeded?(current/planned>1.15?"danger":"warning"):"normal";
  const fill=pct===null?0:Math.max(0,Math.min(100,pct));
- const text=pct===null?(current>.005?"Sans budget":"—"):
-  exceeded?"+"+euro(over)+" · "+pct+" %":pct+" %";
- const progressInfo=pct===null?(current>.005?"Montant réel sans budget prévu":"Aucun budget prévu"):
-  pct+" % du budget prévu"+(exceeded?", dépassement de "+euro(over):"");
- return '<div class="cat-progress-row"><div class="cat-progress-track" role="progressbar" aria-label="'+escapeHtml(c.name)+' — réel / prévu" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+fill+'" aria-valuetext="'+escapeHtml(progressInfo)+'">'+
-   '<span class="cat-progress-fill is-'+severity+(isSaving?" is-saving":type==="income"?" is-income":"")+'" style="width:'+fill+'%"></span></div>'+
-   '<span class="cat-progress-caption '+(exceeded?"is-"+severity:"")+'">'+escapeHtml(text)+'</span></div>';
+ let label;
+ if(pct===null)label=current>.005?"Sans budget prévu":"Pas de budget";
+ else if(exceeded)label="+"+euro(-difference)+" · "+pct+" %";
+ else if(!expense&&difference<-.005)label="+"+euro(-difference)+" · "+pct+" %";
+ else if(Math.abs(difference)<.005)label="100 % atteint";
+ else if(isSaving)label=euro(difference)+" à épargner · "+pct+" %";
+ else if(type==="income")label=euro(difference)+" à recevoir · "+pct+" %";
+ else label=euro(difference)+" restants · "+pct+" %";
+ const progressInfo=pct===null?(current>.005?euro(current)+" de réel sans budget prévu":"Aucun budget prévu"):
+  pct+" % du prévu"+(exceeded?", dépassement de "+euro(-difference):"");
+ return '<div class="cat-progress-row"><div class="cat-progress-track'+(pct===null&&current>.005?" is-unbudgeted":"")+'" role="progressbar" aria-label="'+escapeHtml(c.name)+' — réel / prévu" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+fill+'" aria-valuetext="'+escapeHtml(progressInfo)+'">'+
+  '<span class="cat-progress-fill is-'+severity+(isSaving?" is-saving":type==="income"?" is-income":"")+'" style="width:'+fill+'%"></span></div>'+
+  '<span class="cat-progress-caption '+(exceeded?"is-"+severity:"")+'">'+escapeHtml(label)+'</span></div>';
 }
 function categoryActionIcon(name){
  if(name==="check")return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4L19 6.5"/></svg>';
@@ -90,7 +96,7 @@ function categoryRow(c,actual,type,m){
   ?'<button class="cat-tile-name cat-name-toggle" type="button" data-category-details-toggle="'+escapeHtml(c.id)+'" data-category-type="'+type+'" aria-expanded="'+(open?"true":"false")+'" aria-label="'+(open?"Masquer":"Afficher")+' les '+details.count+' opérations de '+escapeHtml(c.name)+'"><span class="cat-name">'+escapeHtml(c.name)+'</span><svg class="cat-detail-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4"/></svg></button>'
   :'<span class="cat-tile-name cat-name">'+escapeHtml(c.name)+'</span>';
  const id=escapeHtml(c.id),kind=escapeHtml(type),category=escapeHtml(c.name);
- const fillAction=canFill?'<button class="cat-tile-icon cat-tile-fill" type="button" data-fill-category="'+id+'" data-category-type="'+kind+'" aria-label="Aligner le réel de '+category+' sur '+euro(planned)+'" title="Réaligner sur le prévu" '+(stateClass==="is-matched"?'disabled':'')+'>'+categoryActionIcon("check")+'</button>':"";
+ const fillAction=canFill?'<button class="cat-tile-icon cat-tile-fill" type="button" data-demo-fill-category="'+id+'" data-category-type="'+kind+'" aria-label="Aligner le réel de '+category+' sur '+euro(planned)+'" title="Aligner le réel sur le prévu (confirmation si déjà renseigné)" '+(stateClass==="is-matched"?'disabled':'')+'>'+categoryActionIcon("check")+'</button>':"";
  return '<article class="cat-item cat-budget-tile '+stateClass+' '+(open?"details-open":"")+'" data-category-row="'+id+'">'+
   '<div class="cat-tile-head"><div class="cat-tile-identity">'+nameMarkup+'<span class="cat-tile-owner">'+escapeHtml(ownerLabel(c.owner))+'</span></div>'+
    '<div class="cat-tile-actions">'+fillAction+
@@ -125,8 +131,8 @@ function restorableBlock(cats,type){
 function categoryBulkButtons(type,section,label){
  const categoryType=escapeHtml(type),sectionName=escapeHtml(section||""),name=escapeHtml(label);
  return '<div class="cat-section-actions cat-tile-bulk">'+
-  '<button class="cat-bulk fill" type="button" data-demo-fill-all data-category-type="'+categoryType+'" data-section="'+sectionName+'" aria-label="Aligner tous les réels de '+name+' sur leurs prévus" title="Aligner tous les réels sur leurs prévus">'+categoryActionIcon("check")+'<span>Tout remplir</span></button>'+
-  '<button class="cat-bulk cat-bulk-clear" type="button" data-demo-clear-all data-category-type="'+categoryType+'" data-section="'+sectionName+'" aria-label="Tout vider dans '+name+'" title="Remettre tous les réels à zéro">'+categoryActionIcon("trash")+'<span>Tout vider</span></button>'+
+  '<button class="cat-bulk fill" type="button" data-demo-fill-all data-category-type="'+categoryType+'" data-section="'+sectionName+'" aria-label="Compléter les réels vides de '+name+' sans modifier les montants existants" title="Compléter uniquement les réels à zéro">'+categoryActionIcon("check")+'<span>Remplir les vides</span></button>'+
+  '<button class="cat-bulk cat-bulk-clear" type="button" data-demo-clear-all data-category-type="'+categoryType+'" data-section="'+sectionName+'" aria-label="Tout vider dans '+name+'" title="Remettre tous les réels à zéro, sans effacer les opérations">'+categoryActionIcon("trash")+'<span>Tout vider</span></button>'+
   '</div>';
 }
 function renderCategories(m){
