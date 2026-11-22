@@ -79,3 +79,22 @@ La charte reste **une proposition**, pas une refonte approuvée de l'ensemble de
 ### À contrôler avant généralisation
 
 Contrastes réels, capture mobile 320/390 et desktop 1280/1440, longues catégories, dialogues clavier, état sans budget, dépassement, revenu supérieur au prévu, dates, mois, filtre famille et retour au tout. **Les tests automatisés ne sont pas une preuve de conformité visuelle.**
+
+
+## Essai 31uj — corrections de sécurité, lisibilité et sémantique
+
+*La description de l'essai 31ui ci-dessus reste un historique. Les règles ci-dessous ont priorité dans la démonstration 31uj ; ce n'est toujours pas une validation pour l'application principale.*
+
+- **Remplir les vides** : n'agit que sur des montants réels nuls avec un prévu positif. Un montant déjà renseigné ou dépassé ne doit jamais être réécrit par une action de groupe.
+- **Coche individuelle** : si le réel est vide, un clic le renseigne ; s'il est non nul, le bouton demande une deuxième confirmation explicite avant de l'aligner sur le prévu. Une coche désactivée indique un réel déjà égal au prévu.
+- **Tout vider** : deux clics de confirmation ; ajoute des ajustements compensatoires vers zéro **sans supprimer l'historique**.
+- **Annuler** : ne retire que les ajustements créés par l'action concernée, identifiés par leur ID. Les opérations indépendantes ajoutées entre-temps survivent.
+- **Une seule fenêtre pour les modifications existantes** : réel, prévu, attribution, famille et période sont accessibles depuis le montant, la roue crantée ou la répartition. Le formulaire de création reste distinct. Le nom s'applique à tous les mois ; prévu, attribution et changement de famille respectent la portée « Ce mois / Ce mois et suivants ».
+- **Jauges informatives** : pour les dépenses, afficher le montant restant ou dépassé ainsi que le pourcentage ; pour revenus et épargne, le montant restant à recevoir ou épargner. Une catégorie sans budget ne montre pas une fausse progression à 100 %.
+- **Contraste** : sur surfaces claires, orange #93550F, rouge #A52E35, vert #147E60 ; sur surfaces sombres, orange #F1BB6F, rouge #FF9998, vert #55DBA3. Ne pas confondre le violet de marque #5C29D6 et les couleurs sémantiques.
+- **États archivés** : surfaces discrètes cohérentes avec les catégories actives, sans leur donner des actions qui ne sont plus applicables.
+- **Limite de périmètre** : scripts, données et CSS de cette nouvelle UX restent dans le prototype statique, avec une politique connect-src none. Aucun appel Supabase, aucune donnée de compte, aucune intégration main/develop. La consolidation de la CSS du vrai produit attend la validation visuelle.
+
+### Vérifications encore requises
+
+Un passage en vrai navigateur desktop et iPhone, modes clair/sombre, 320/390/1280/1440, zoom 200 %, VoiceOver/lecteur d'écran, parcours de suppression, de récurrence et synchronisation reste nécessaire avant tout portage. Un succès des tests JS ne constitue pas une validation visuelle.
