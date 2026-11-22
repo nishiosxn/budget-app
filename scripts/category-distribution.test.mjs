@@ -173,14 +173,79 @@ test("PR49 Unslop page rhythm: all financial groups share an internal title and 
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.doesNotMatch(chart,/Ces montants sont des enveloppes prévues, pas des dépenses effectuées/);
  assert.doesNotMatch(preview,/Essaie le survol|Budgets prévus · démonstration/);
- assert.match(preview,/demo-revenus/);
- assert.match(preview,/demo-depenses/);
- assert.match(preview,/demo-epargne/);
+ const realRenderer=read("preview/category-distribution/category-render-live.js");
+ assert.match(realRenderer,/cg-revenues/);
+ assert.match(realRenderer,/cg-expenses/);
+ assert.match(realRenderer,/cg-savings/);
  assert.match(preview,/Données fictives · Aucun compte connecté/);
+ assert.match(preview,/id="categoryEditBackdrop"/);
+ assert.match(preview,/id="categoryDeleteBackdrop"/);
 });
 
 
 test("PR49 standalone preview assets mirror the actual read-only category component",()=>{
  assert.equal(read("preview/category-distribution/category-distribution.css"),read("css/category-distribution.css"));
  assert.equal(read("preview/category-distribution/category-distribution.js"),read("js/category-distribution.js"));
+});
+
+
+
+test("PR49 31uf: preview reuses exact published category handlers and source CSS",()=>{
+ const live=read("preview/category-distribution/categories-live.js");
+ const repoHandlers=read("js/categories.js");
+ assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
+ const page=read("preview/category-distribution/index.html");
+ for(const key of ["category-render-live.js","categories-live.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
+  assert.ok(page.includes(key+"?v=31uf"),key);
+ }
+ for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
+  assert.match(page,new RegExp('id="'+id+'"'),id);
+ }
+ assert.match(page,/connect-src 'none'/,"no financial or AI network request possible");
+ assert.doesNotMatch(page,/supabase|cloudflare|https:\/\/|localStorage|fetch\(/i);
+ const state=read("preview/category-distribution/demo-state.js");
+ assert.match(state,/function saveState\(\)\{\}/);
+ assert.doesNotMatch(state,/\bfetch\s*\(|localStorage|sessionStorage/);
+ assert.match(live,/data-fill-category/);
+ assert.match(live,/data-bulk-action/);
+ assert.match(live,/data-category-menu-trigger/);
+ assert.match(live,/data-edit-actual/);
+ assert.match(live,/data-edit-planned/);
+ assert.match(live,/data-add-saving/);
+ assert.match(live,/data-delete-category/);
+ assert.match(live,/data-restore-category/);
+ const renderer=read("preview/category-distribution/category-render-live.js");
+ for(const s of ["data-category-details-toggle","data-category-menu","data-section-menu","cat-quick-fill","restorableBlock","archivedBlock"])
+  assert.ok(renderer.includes(s),s);
+});
+test("PR49 31uf: actual published category rows render against local-only fixture",()=>{
+ const grid={innerHTML:""};
+ const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ vm.runInContext("renderCategories(metrics())",box);
+ const html=grid.innerHTML;
+ assert.match(html,/Répartition|Revenus/);
+ for(const key of ["Dépenses","Épargne","Obligatoires","Abonnements","Vie courante","data-fill-category","data-category-menu-trigger","data-edit-actual","data-edit-planned","data-add-category","data-add-saving","data-bulk-action","data-category-details-toggle"]){
+  assert.ok(html.includes(key),key);
+ }
+ assert.ok(html.includes("cat-section-actions"));
+ const state=vm.runInContext("({income:metrics().income,saving:metrics().saving,expense:metrics().expense,insurance:metrics().expMap.insurance||0,insurancePlanned:visibleExpenseCategories().find(x=>x.id==='insurance').budget})",box);
+ assert.equal(state.income,1900);
+ assert.equal(state.saving,80);
+ assert.equal(state.expense,810);
+ assert.equal(state.insurance,0);
+ assert.equal(state.insurancePlanned,75);
+});
+test("PR49 31uf: sort choices are an accessible listbox and active text is neutral",()=>{
+ const source=read("js/category-distribution.js"),css=read("css/category-distribution.css");
+ for(const token of ['data-bd-sort-trigger','data-bd-sort-menu','data-bd-sort-option','role="listbox"','aria-selected','closeSort(host,true)']){
+  assert.ok(source.includes(token),token);
+ }
+ assert.doesNotMatch(source,/<select data-bd-sort/);
+ assert.match(css,/\.bd-sort-menu/);
+ assert.match(css,/\.bd-toolbar \.is-active:hover/);
+ assert.match(css,/color:var\(--text\)!important/);
+ assert.match(css,/PR49 31uf/);
 });
