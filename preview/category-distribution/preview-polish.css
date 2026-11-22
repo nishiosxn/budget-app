@@ -650,3 +650,303 @@ html[data-demo-theme="dark"] #categories{
 #categories .archived-wrap .archive-badge{
  color:var(--muted);font-size:.75rem;
 }
+
+
+/* PR49 31uk — A-hybrid layout, mobile-first.
+ * Product: a household budget read primarily on a phone.
+ * Character: measured, immediate, legible.
+ * World: domestic financial instruments.
+ * Moment: interactive budget distribution + real-vs-plan bars.
+ * Signature: Smart Budget's #5C29D6 accent only where it communicates state.
+ * Unslop / Damir Sokolovsky (CC BY 4.0).
+ */
+#categories .category-layout[data-layout="hybrid"]{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:clamp(.875rem,1.5vw,1.25rem);
+ min-width:0;
+}
+#categories #categoryFilterSlot:empty,
+#categories #categoryIncomeSlot:empty,
+#categories #categoryExpenseSlot:empty,
+#categories #categorySavingSlot:empty{
+ display:none;
+}
+#categories .category-top{
+ display:grid;
+ grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);
+ align-items:stretch;
+ column-gap:clamp(.875rem,1.5vw,1.25rem);
+ min-width:0;
+}
+#categories .category-top > *,
+#categories #categoryIncomeSlot,
+#categories #categoryExpenseSlot,
+#categories #categorySavingSlot{
+ min-width:0;
+}
+#categories .category-top .budget-distribution{
+ margin:0;
+ height:100%;
+ min-height:0;
+}
+#categories .category-top #categoryIncomeSlot > .category-group{
+ height:100%;
+ display:flex;
+ flex-direction:column;
+ gap:clamp(.75rem,1.5vw,1.125rem);
+}
+#categories .category-top .category-group-head{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ justify-content:flex-start;
+ gap:.625rem;
+ padding:0;
+}
+#categories .category-top .category-group-head > .cg-head-end{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ justify-content:flex-start;
+ gap:.625rem;
+ width:100%;
+}
+#categories .category-top .cg-figures{
+ justify-content:flex-start;
+ font-size:.8125rem;
+ gap:.625rem 1rem;
+}
+#categories .category-top .cat-tile-bulk{
+ justify-content:flex-start;
+ gap:.5rem;
+}
+#categories .category-top .category-cards{
+ flex:1;
+}
+#categories .category-top .income-card .cat-budget-list,
+#categories #categorySavingSlot .saving-card .cat-budget-list{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.75rem;
+}
+#categories .category-top .cat-budget-tile{
+ padding:clamp(.75rem,1.3vw,1rem);
+}
+#categories .category-top .cat-tile-head{
+ flex-wrap:wrap;
+ gap:.375rem .5rem;
+ align-items:center;
+}
+#categories .category-top .cat-tile-identity{
+ flex:1 1 7rem;
+ min-width:0;
+ gap:.25rem .5rem;
+}
+#categories .category-top .cat-tile-actions{
+ margin-left:auto;
+ gap:.125rem;
+}
+#categories .category-top .cat-tile-owner{
+ line-height:1.25;
+}
+#categories .category-top .cat-tile-finances{
+ flex-wrap:wrap;
+ gap:.125rem .875rem;
+ margin-top:.375rem;
+}
+#categories .category-top .cat-tile-money{
+ flex-wrap:wrap;
+ gap:.125rem .4rem;
+}
+#categories .category-top .cat-tile-money-button{
+ min-height:2.5rem;
+}
+#categories #categoryExpenseSlot .category-group{
+ gap:clamp(1.125rem,2vw,1.5rem);
+}
+#categories #categoryExpenseSlot .cat-family-block{
+ display:grid;
+ gap:.75rem;
+}
+#categories #categoryExpenseSlot .cat-family-block + .cat-family-block{
+ margin-top:clamp(.375rem,.7vw,.625rem);
+ padding-top:0!important;
+}
+#categories #categoryExpenseSlot .cat-family-block .cat-section-head{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:.5rem 1.25rem;
+ padding:0;
+ margin:0;
+}
+#categories #categoryExpenseSlot .cat-budget-list{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.75rem;
+ align-items:stretch;
+}
+#categories #categoryExpenseSlot .cat-budget-tile,
+#categories #categorySavingSlot .cat-budget-tile{
+ padding:clamp(.875rem,1.3vw,1.125rem);
+}
+#categories #categoryExpenseSlot .cat-tile-head,
+#categories #categorySavingSlot .cat-tile-head{
+ flex-wrap:wrap;
+ gap:.375rem .75rem;
+}
+#categories #categoryExpenseSlot .cat-tile-identity,
+#categories #categorySavingSlot .cat-tile-identity{
+ flex:1 1 9rem;
+}
+#categories #categoryExpenseSlot .cat-tile-actions,
+#categories #categorySavingSlot .cat-tile-actions{
+ margin-left:auto;
+}
+#categories .cat-budget-tile{
+ overflow-wrap:anywhere;
+}
+#categories .cat-budget-tile .cat-tile-name .cat-name{
+ white-space:normal;
+ overflow-wrap:anywhere;
+}
+#categories .cat-budget-tile .cat-tile-finances{
+ min-width:0;
+}
+#categories .cat-budget-tile .cat-tile-money-button{
+ max-width:100%;
+}
+#categories .cat-budget-tile .cat-progress-caption{
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+#categories .cat-budget-tile .cat-progress-row{
+ min-width:0;
+}
+#categories .category-top .cat-budget-tile .cat-progress-row{
+ grid-template-columns:minmax(0,1fr);
+ gap:.375rem;
+}
+#categories .category-top .cat-budget-tile .cat-progress-caption{
+ text-align:right;
+}
+#categories .category-top .cat-tile-icon{
+ width:2.5rem;height:2.5rem;
+}
+#categories .category-top .cat-tile-fill[data-demo-armed="true"]{
+ width:auto;
+}
+#categories .category-top .cat-budget-tile .cat-details{
+ margin-top:.75rem;
+}
+#categories #categorySavingSlot .category-group,
+#categories #categoryExpenseSlot .category-group{
+ min-width:0;
+}
+/* Preserve readable category cards when the available width contracts. */
+@media(max-width:68rem){
+ #categories .category-top{
+  grid-template-columns:minmax(0,1fr);
+  row-gap:clamp(.875rem,1.5vw,1.25rem);
+ }
+ #categories .category-top .budget-distribution{
+  height:auto;
+ }
+ #categories .category-top .category-group-head,
+ #categories .category-top .category-group-head > .cg-head-end{
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+ }
+ #categories .category-top .cat-tile-finances{
+  flex-wrap:nowrap;
+ }
+ #categories .category-top .cat-tile-money{
+  flex-wrap:nowrap;
+ }
+}
+@media(max-width:47rem){
+ #categories #categoryExpenseSlot .cat-budget-list{
+  grid-template-columns:minmax(0,1fr);
+ }
+ #categories .category-top .income-card .cat-budget-list,
+ #categories #categorySavingSlot .saving-card .cat-budget-list{
+  grid-template-columns:minmax(0,1fr);
+ }
+ #categories .category-top .category-group-head,
+ #categories .category-top .category-group-head > .cg-head-end{
+  align-items:stretch;
+  flex-direction:column;
+ }
+ #categories .category-top .cat-tile-finances{
+  flex-wrap:wrap;
+ }
+ #categories .category-top .cat-tile-money{
+  flex-wrap:wrap;
+ }
+ #categories .category-top .cat-budget-tile .cat-progress-row{
+  grid-template-columns:minmax(0,1fr) auto;
+ }
+ #categories .category-top .cat-budget-tile .cat-progress-caption{
+  text-align:right;
+ }
+}
+@media(max-width:40rem){
+ #categories .category-layout[data-layout="hybrid"]{
+  gap:1rem;
+ }
+ #categories #categoryExpenseSlot .cat-family-block + .cat-family-block{
+  margin-top:.875rem;
+ }
+ #categories #categoryExpenseSlot .cat-family-block .cat-section-head{
+  align-items:flex-start;
+ }
+ #categories .cat-tile-icon,
+ #categories .category-top .cat-tile-icon{
+  width:2.75rem;
+  height:2.75rem;
+ }
+ #categories .cat-tile-bulk .cat-bulk{
+  min-height:2.75rem;
+ }
+ #categories .cat-budget-tile .cat-tile-money-button{
+  min-height:2.75rem;
+ }
+ #categories .cat-tile-actions{
+  gap:.125rem;
+ }
+ #categories .category-top .cat-tile-finances,
+ #categories #categoryExpenseSlot .cat-tile-finances{
+  justify-content:space-between;
+  gap:.375rem 1.125rem;
+ }
+ #categories .cat-tile-head{
+  align-items:center;
+ }
+ #categories .cat-budget-tile .cat-progress-row{
+  grid-template-columns:minmax(0,1fr);
+  gap:.375rem;
+ }
+ #categories .cat-budget-tile .cat-progress-caption{
+  text-align:right;
+ }
+}
+@media(max-width:22rem){
+ #categories .cat-tile-actions{
+  margin-left:auto;
+ }
+ #categories .cat-budget-tile .cat-tile-finances{
+  gap:.25rem .875rem;
+ }
+ #categories .cat-tile-money-button{
+  font-size:.9375rem;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #categories .category-top *,
+ #categories #categoryExpenseSlot *,
+ #categories #categorySavingSlot *{
+  scroll-behavior:auto;
+ }
+}
