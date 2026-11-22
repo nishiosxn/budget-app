@@ -102,7 +102,9 @@
   return selected?{type:ui.scope,ids:[...selected.ids],label:selected.name}:null;
  }
  function itemMarkup(item,total){
-  const title=item.name+" · "+money(item.amount)+" · "+percent(item.amount,total);
+  const info=usageFor(item);
+  const remainingText=info.planned<=.005?"Sans budget":money(Math.abs(info.remaining));
+  const title=item.name+" · "+info.label+" : "+money(info.used)+" · Budget prévu : "+money(info.planned)+" · "+info.remainingLabel+" : "+remainingText+" · "+percent(item.amount,total)+" du total";
   const selected=ui.selected===item.key?" is-active":"";
   return '<button type="button" class="bd-segment'+selected+'" data-bd-key="'+esc(item.key)+'"'+
    ' aria-label="'+esc(title)+'" aria-pressed="'+String(ui.selected===item.key)+'"'+
