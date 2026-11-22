@@ -853,8 +853,8 @@ test("PR49 31up: expense tiles never gain a hover rectangle, and top actions use
  const html=read("preview/category-distribution/index.html");
  assert.match(css,/PR49 31up — focused CTA and gauge interaction pass/);
  assert.match(css,/\.demo-app \.nav-primary-actions>\.btn-income,[\s\S]*?background:var\(--panel\)/);
- assert.match(css,/\.demo-app \.nav-primary-actions>\.btn-expense,[\s\S]*?background:#5c29d6/);
- assert.match(css,/#modalBackdrop \.save\.btn-income,[\s\S]*?background:#5c29d6/);
+ assert.match(css,/\.demo-app \.nav-primary-actions>\.btn-expense,[\s\S]*?background:var\(--sb-cta-primary\)/);
+ assert.match(css,/#modalBackdrop \.save\.btn-income,[\s\S]*?background:var\(--sb-cta-primary\)/);
  assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list>\.cat-budget-tile,[\s\S]*?background:transparent!important/);
  assert.match(css,/#categories \.category-top \.cat-budget-list>\.cat-budget-tile:hover,[\s\S]*?background:var\(--panel-2\)!important/);
  assert.match(css,/#categories \.cat-budget-tile\{cursor:default/);
@@ -897,6 +897,8 @@ test("PR49 31up: category gauges explain real, planned and remaining for every f
  assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]:hover ~ \.cat-progress-tooltip/);
  assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]:focus-visible ~ \.cat-progress-tooltip/);
  assert.match(css,/#categories \.cat-progress-row\[data-tooltip-open="true"\] \.cat-progress-tooltip/);
+ assert.match(css,/--sb-cta-primary:var\(--accent,#5c29d6\)/);
+ assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]::after\{[\s\S]*?inset:-1\.125rem 0/);
  assert.match(css,/@media\(max-width:40rem\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
