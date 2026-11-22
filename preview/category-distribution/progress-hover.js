@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
  const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")||null;
  let active=null,pressed=null,frame=0,lastFrame=0,linger=0,suppressChartClick=false;
- let current={x:0,y:0},target={x:0,y:0};
+ let current={x:0,y:0},target={x:0,y:0},tipSize={width:0,height:0};
  const chartApi=()=>window.SmartBudgetCategoryDistribution;
  const cancelLinger=()=>{if(linger){clearTimeout(linger);linger=0}};
  function viewport(){
@@ -64,8 +64,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(!frame)frame=requestAnimationFrame(draw);
  }
  function moveTo(x,y,kind,first=false){
-  const rect=float.getBoundingClientRect();
-  const desired=sbFollowPlace(x,y,rect.width,rect.height,viewport(),kind);
+  const desired=sbFollowPlace(x,y,tipSize.width,tipSize.height,viewport(),kind);
   target=desired;
   if(first||reduced?.matches){
    current={...desired};
@@ -104,14 +103,21 @@ document.addEventListener("DOMContentLoaded",()=>{
    if(!info)return;
    if(active?.kind==="distribution"&&info.kind!=="distribution")chartApi()?.preview?.(null);
    float.innerHTML=info.html;
+   tipSize={width:0,height:0};
    active={element,kind:info.kind};
   }
   cancelLinger();
   if(!float.classList.contains("is-visible")){
    float.classList.add("is-visible");
    float.setAttribute("aria-hidden","false");
+   const bounds=float.getBoundingClientRect();
+   tipSize={width:bounds.width,height:bounds.height};
    moveTo(x,y,kind,true);
   }else{
+   if(!same){
+    const bounds=float.getBoundingClientRect();
+    tipSize={width:bounds.width,height:bounds.height};
+   }
    moveTo(x,y,kind,!same);
   }
  }
@@ -230,6 +236,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   const node=document.getElementById(slot);
   if(node)observer.observe(node,{childList:true});
  }
+ document.addEventListener("pointerout",event=>{
+  if(event.pointerType==="mouse"&&!event.relatedTarget&&!pressed)close();
+ });
+ window.addEventListener("blur",close);
  window.addEventListener("scroll",()=>{if(!pressed&&active)close()},{passive:true});
  window.addEventListener("resize",()=>{if(active)close()},{passive:true});
  document.addEventListener("visibilitychange",()=>{if(document.hidden)close()});
