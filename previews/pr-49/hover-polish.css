@@ -1,0 +1,228 @@
+/* PR49 31up — focused CTA and gauge interaction pass.
+ * Smart Budget's #5C29D6 is the action color; no red/green navigation buttons.
+ * Unslop / Damir Sokolovsky (CC BY 4.0).
+ */
+.demo-app{--sb-cta-primary:var(--accent,#5c29d6);--sb-cta-primary-hover:#4b21b8}
+/* Two coordinated desktop actions: one calm secondary and one primary. */
+.demo-app .nav-primary-actions>.btn{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:.5rem;
+ min-height:2.75rem;
+ border-radius:.6875rem;
+ border:.0625rem solid transparent;
+ padding:.625rem .875rem;
+ font-weight:600;
+ font-size:.8125rem;
+ line-height:1.2;
+ filter:none;
+ box-shadow:none;
+ transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+.demo-app .nav-primary-actions>.btn svg{
+ flex:0 0 1rem;
+ width:1rem;height:1rem;
+ stroke:currentColor;stroke-width:1.85;stroke-linecap:round;fill:none;
+}
+.demo-app .nav-primary-actions>.btn-income,
+.demo-app .nav-primary-actions>.btn-income:hover{
+ color:var(--text);
+ border-color:var(--line);
+ background:var(--panel);
+ filter:none;
+}
+.demo-app .nav-primary-actions>.btn-income:hover{
+ border-color:var(--muted);
+ background:var(--panel-2);
+}
+.demo-app .nav-primary-actions>.btn-expense,
+.demo-app .nav-primary-actions>.btn-expense:hover{
+ color:#fff;
+ border-color:var(--sb-cta-primary);
+ background:var(--sb-cta-primary);
+ filter:none;
+}
+.demo-app .nav-primary-actions>.btn-expense:hover{
+ background:var(--sb-cta-primary-hover);
+ border-color:var(--sb-cta-primary-hover);
+}
+.demo-app .nav-primary-actions>.btn:active{
+ transform:none;
+}
+#modalBackdrop .save.btn-income,
+#modalBackdrop .save.btn-expense,
+#modalBackdrop .save.btn-income:hover,
+#modalBackdrop .save.btn-expense:hover{
+ color:#fff;
+ border:.0625rem solid var(--sb-cta-primary);
+ background:var(--sb-cta-primary);
+ filter:none;
+}
+#modalBackdrop .save.btn-income:hover,
+#modalBackdrop .save.btn-expense:hover{
+ border-color:var(--sb-cta-primary-hover);
+ background:var(--sb-cta-primary-hover);
+}
+.demo-app .mobile-quick-add__option-icon,
+.demo-app .mobile-quick-add__option-icon.expense{
+ color:var(--text);
+ background:var(--panel-2);
+}
+.demo-app .mobile-quick-add__option:focus-visible{
+ outline:.15rem solid var(--sb-cta-primary);outline-offset:.125rem;
+}
+/* Cards have NO row-hover affordance. Only real buttons and bars respond. */
+#categories .cat-budget-list>.cat-budget-tile,
+#categories .cat-budget-list>.cat-budget-tile:hover{
+ transition:none!important;
+ box-shadow:none!important;
+ border-color:var(--line)!important;
+}
+#categories #categoryExpenseSlot .cat-budget-list>.cat-budget-tile,
+#categories #categoryExpenseSlot .cat-budget-list>.cat-budget-tile:hover,
+#categories #categoryExpenseSlot .cat-budget-list>.cat-budget-tile + .cat-budget-tile:hover{
+ background:transparent!important;
+ border-color:var(--line)!important;
+}
+#categories .category-top .cat-budget-list>.cat-budget-tile:hover,
+#categories #categorySavingSlot .cat-budget-list>.cat-budget-tile:hover{
+ background:var(--panel-2)!important;
+ border-color:var(--line)!important;
+}
+#categories .cat-budget-tile{cursor:default;overflow:visible}
+#categories .cat-budget-tile :where(button,a){cursor:pointer}
+#categories .cat-tile-name:not(button){cursor:default}
+/* Budget bar hover/touch/focus — the only new interactive hover surface. */
+#categories .cat-progress-row{
+ position:relative;
+ isolation:auto;
+ overflow:visible;
+}
+#categories .cat-budget-tile:has(.cat-progress-track:hover),
+#categories .cat-budget-tile:has(.cat-progress-track:focus-visible),
+#categories .cat-budget-tile:has(.cat-progress-row[data-tooltip-open="true"]){
+ position:relative;
+ z-index:15;
+}
+#categories .cat-progress-track[data-progress-track]{
+ cursor:help;
+ outline:none;
+ overflow:visible;
+ touch-action:manipulation;
+}
+/* Keep the visible gauge slim while giving finger input a 2.75rem hit area. */
+#categories .cat-progress-track[data-progress-track]::after{
+ content:"";
+ position:absolute;
+ inset:-1.125rem 0;
+ z-index:1;
+ background:transparent;
+ pointer-events:auto;
+}
+#categories .cat-progress-track[data-progress-track]:hover{
+ box-shadow:0 0 0 .125rem color-mix(in srgb,#5c29d6 23%,transparent);
+}
+#categories .cat-progress-track[data-progress-track]:focus-visible{
+ outline:.15rem solid #5c29d6;
+ outline-offset:.22rem;
+}
+#categories .cat-progress-tooltip{
+ display:none;
+ position:absolute;
+ z-index:30;
+ left:0;
+ bottom:calc(100% + .625rem);
+ width:min(16.5rem,100%);
+ min-width:0;
+ padding:.75rem .875rem;
+ border:.0625rem solid color-mix(in srgb,var(--panel) 20%,transparent);
+ border-radius:.75rem;
+ background:var(--text);
+ color:var(--panel);
+ box-shadow:0 .625rem 1.5rem rgba(0,0,0,.14);
+ pointer-events:none;
+ font-size:.8125rem;
+ line-height:1.4;
+ text-align:left;
+}
+#categories .cat-progress-tooltip>strong{
+ display:block;
+ font-size:.8125rem;
+ font-weight:650;
+ margin-bottom:.5rem;
+ overflow-wrap:anywhere;
+}
+#categories .cat-progress-tooltip dl,
+#categories .bd-finance-breakdown{
+ display:grid;
+ gap:.3125rem;
+ margin:0;
+ padding:0;
+}
+#categories .cat-progress-tooltip dl>div,
+#categories .bd-finance-breakdown>div{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ gap:.75rem;
+}
+#categories .cat-progress-tooltip dt,
+#categories .bd-finance-breakdown dt{
+ font-weight:400;
+ color:inherit;
+ opacity:.78;
+}
+#categories .cat-progress-tooltip dd,
+#categories .bd-finance-breakdown dd{
+ margin:0;
+ font-weight:650;
+ font-variant-numeric:tabular-nums;
+ text-align:right;
+ white-space:nowrap;
+}
+#categories .cat-progress-track[data-progress-track]:hover ~ .cat-progress-tooltip,
+#categories .cat-progress-track[data-progress-track]:focus-visible ~ .cat-progress-tooltip,
+#categories .cat-progress-row[data-tooltip-open="true"] .cat-progress-tooltip{
+ display:block;
+}
+#categories .cat-progress-row[data-tooltip-dismissed="true"] .cat-progress-tooltip{
+ display:none!important;
+}
+/* Distribution chart already has accessible hover. Add the same 3 financial metrics. */
+#categories .bd-tooltip{
+ min-width:min(15.5rem,90vw);
+ max-width:min(18rem,90vw);
+}
+#categories .bd-tooltip .bd-finance-breakdown{
+ gap:.3rem;
+ margin:.5rem 0 .4rem;
+}
+#categories .bd-tooltip .bd-finance-breakdown dt{
+ opacity:.8;
+}
+#categories .bd-tooltip .bd-finance-breakdown dd{
+ font-size:.8125rem;
+}
+#categories .bd-selection .bd-finance-breakdown{
+ padding:.625rem .75rem;
+ border-radius:.625rem;
+ background:var(--panel);
+ color:var(--text);
+ border:.0625rem solid var(--line);
+}
+#categories .bd-selection .bd-finance-breakdown dt{color:var(--muted);opacity:1}
+#categories .bd-selection .bd-finance-breakdown dd{color:var(--text)}
+@media(max-width:40rem){
+ #categories .cat-progress-tooltip{
+  width:min(17rem,100%);
+  bottom:calc(100% + .5rem);
+ }
+ #categories .cat-progress-tooltip dl>div{gap:.5rem}
+}
+@media(prefers-reduced-motion:reduce){
+ .demo-app .nav-primary-actions>.btn,
+ #categories .cat-progress-track[data-progress-track]{
+  transition:none!important;
+ }
+}
