@@ -200,7 +200,7 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
  for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","demo-chrome.js","demo-shell.css","mobile-ui.css","app-style.css","preview-polish.css","variant-ac.css","hover-polish.css","progress-hover.js"]){
-  assert.ok(page.includes(key+"?v=31up"),key);
+  assert.ok(page.includes(key+"?v=31uq"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -486,7 +486,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31up'));
+ assert.ok(html.includes('category-prototype.js?v=31uq'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
@@ -820,8 +820,8 @@ test("PR49 31un: A+C uses fluid wide shell while keeping chart, income and savin
  assert.ok(page.indexOf('id="categoryDistribution"') < page.indexOf('id="categoryIncomeSlot"'));
  assert.ok(page.indexOf('id="categoryIncomeSlot"') < page.indexOf('id="categoryExpenseSlot"'));
  assert.ok(page.indexOf('id="categoryExpenseSlot"') < page.indexOf('id="categorySavingSlot"'));
- assert.match(page,/variant-ac\.css\?v=31up/);
- assert.ok(page.indexOf('preview-polish.css?v=31up') < page.indexOf('variant-ac.css?v=31up'));
+ assert.match(page,/variant-ac\.css\?v=31uq/);
+ assert.ok(page.indexOf('preview-polish.css?v=31uq') < page.indexOf('variant-ac.css?v=31uq'));
  assert.match(page,/connect-src 'none'/);
  assert.doesNotMatch(css,/backdrop-filter:|linear-gradient\(/i);
 });
@@ -862,8 +862,8 @@ test("PR49 31up: expense tiles never gain a hover rectangle, and top actions use
  assert.doesNotMatch(css,/linear-gradient\(|radial-gradient\(|box-shadow:0 0 [\d.]+rem [^\n]*#5c29d6/i);
  assert.match(html,/class="btn btn-income"[^>]*data-demo-add="income"[^>]*aria-label="Ajouter une rentrée d'argent"/);
  assert.match(html,/class="btn btn-expense"[^>]*data-demo-add="expense"[^>]*aria-label="Ajouter une dépense"/);
- assert.match(html,/hover-polish\.css\?v=31up/);
- assert.match(html,/progress-hover\.js\?v=31up/);
+ assert.match(html,/hover-polish\.css\?v=31uq/);
+ assert.match(html,/progress-hover\.js\?v=31uq/);
  assert.match(html,/connect-src 'none'/);
 });
 test("PR49 31up: category gauges explain real, planned and remaining for every financial type",()=>{
@@ -934,17 +934,151 @@ test("PR49 31up: chart selection reports actual used, planned and remaining for 
  assert.match(host.innerHTML,/<dt>À recevoir<\/dt>|<dt>Au-dessus du prévu<\/dt>/);
  assert.match(read("preview/category-distribution/category-distribution.js"),/tip\.innerHTML='<strong>'\+esc\(item\.name\)\+'<\/strong>'\+breakdownMarkup\(item\)/);
 });
-test("PR49 31up: touch progress tooltips stay accessible and isolated",()=>{
+test("PR49 31uq: magnetic tooltip placement is viewport-safe in both axes",()=>{
  const code=read("preview/category-distribution/progress-hover.js");
+ const ctx={document:{addEventListener(){}}};
+ vm.createContext(ctx);
+ vm.runInContext(code,ctx);
+ const place=(x,y,w,h,v,kind="touch")=>vm.runInContext(
+  'sbFollowPlace('+[x,y,w,h,JSON.stringify(v),JSON.stringify(kind)].join(",")+')',ctx);
+ const bounds={left:0,top:0,width:320,height:568};
+ const mid=place(160,300,200,95,bounds);
+ assert.ok(mid.x>=9&&mid.x+200<=311);
+ assert.ok(mid.y>=9&&mid.y+95<=559);
+ assert.ok(mid.y<300,"tooltip should be above the fingertip when there is room");
+ const left=place(0,100,200,95,bounds);
+ assert.equal(left.x,9);
+ const right=place(319,300,200,95,bounds);
+ assert.equal(right.x,111);
+ const top=place(100,2,200,95,bounds);
+ assert.ok(top.y>2,"near the top edge the tooltip should move below the finger");
+ const bottom=place(150,564,200,95,bounds);
+ assert.ok(bottom.y+95<=559,"tooltip must stay above the bottom safe edge");
+ const visual={left:16,top:60,width:280,height:460};
+ const mobileZoom=place(250,510,190,100,visual);
+ assert.ok(mobileZoom.x>=25&&mobileZoom.x+190<=287);
+ assert.ok(mobileZoom.y>=69&&mobileZoom.y+100<=511);
+ const eased=vm.runInContext("sbFollowEase(0,100,16,false)",ctx);
+ assert.ok(eased>0&&eased<100,"normal motion should move part of the way, not jump");
+ assert.equal(vm.runInContext("sbFollowEase(0,100,16,true)",ctx),100,"reduced motion must be immediate");
+ const many=vm.runInContext('Array.from({length:30},(_,i)=>i).reduce(v=>sbFollowEase(v,100,16,false),0)',ctx);
+ assert.ok(many>99,"easing should settle at the pointer");
+});
+test("PR49 31uq: finger drag tracks outside the bar without accidentally selecting a chart segment",()=>{
+ const code=read("preview/category-distribution/progress-hover.js");
+ const handlers=new Map(),chartHandlers=new Map(),raf=[],captures=[],released=[],rendered={};
+ const on=(map,type,fn)=>map.set(type,[...(map.get(type)||[]),fn]);
+ function classes(){
+  const set=new Set();
+  return {add:n=>set.add(n),remove:n=>set.delete(n),contains:n=>set.has(n)};
+ }
+ const fly={classList:classes(),innerHTML:"",style:{},setAttribute(k,v){this[k]=v},
+  getBoundingClientRect(){return {width:180,height:96}}};
+ const categoryTip={innerHTML:'<strong>Loyer</strong><dl><div><dt>Utilisé</dt><dd>530 €</dd></div></dl>'};
+ const chartTip={innerHTML:'<strong>Obligatoires</strong><dl><div><dt>Utilisé</dt><dd>530 €</dd></div></dl>'};
+ const row={querySelector:s=>s===".cat-progress-tooltip"?categoryTip:null};
+ const bar={isConnected:true,dataset:{},
+  matches:s=>s==="[data-progress-track]",
+  closest:s=>s===".cat-progress-row"?row:s.includes("[data-progress-track]")?bar:null,
+  getBoundingClientRect(){return {left:40,right:250,top:250,bottom:258,width:210,height:8}},
+  setPointerCapture:id=>captures.push(id),releasePointerCapture:id=>released.push(id)};
+ const segment={isConnected:true,dataset:{bdKey:"family:required"},
+  matches:s=>s===".bd-segment[data-bd-key]"||s===".bd-segment",
+  closest:s=>s.includes(".bd-segment[data-bd-key]")?segment:null,
+  getBoundingClientRect(){return {left:20,right:230,top:180,bottom:196,width:210,height:16}},
+  setPointerCapture:id=>captures.push(id),releasePointerCapture:id=>released.push(id)};
+ const grid={contains:e=>e===bar||e===segment};
+ const chart={contains:e=>e===segment,querySelector:s=>s===".bd-tooltip"?chartTip:null,
+  addEventListener(type,fn){on(chartHandlers,type,fn)}};
+ const root={classList:classes()};
+ const doc={documentElement:root,
+  body:{appendChild(e){rendered.fly=e}},
+  getElementById:id=>({categoryGrid:grid,categoryDistribution:chart})[id]||null,
+  createElement:()=>fly,
+  addEventListener(type,fn){on(handlers,type,fn)},
+  hidden:false};
+ const win={innerWidth:390,innerHeight:720,matchMedia:()=>({matches:false}),
+  SmartBudgetCategoryDistribution:{preview(key){rendered.preview=key;if(key)chartTip.innerHTML='<strong>'+key+'</strong><dl><div><dt>Reste</dt><dd>120 €</dd></div></dl>'}},
+  addEventListener(){}};
+ let timeoutId=0;
+ const ctx={document:doc,window:win,MutationObserver:class{observe(){}},
+  requestAnimationFrame:cb=>{raf.push(cb);return raf.length},
+  cancelAnimationFrame(){},setTimeout:()=>++timeoutId,clearTimeout(){}};
+ vm.createContext(ctx);
+ vm.runInContext(code,ctx);
+ for(const handler of handlers.get("DOMContentLoaded")||[])handler();
+ assert.ok(root.classList.contains("sb-follow-enabled"));
+ assert.equal(rendered.fly,fly);
+ const fire=(type,event)=>{for(const fn of handlers.get(type)||[])fn(event)};
+ function evt(target,x,y,pointerId=1,pointerType="touch"){
+  return {target,clientX:x,clientY:y,pointerId,pointerType};
+ }
+ fire("pointerdown",evt(bar,85,275));
+ assert.equal(fly["aria-hidden"],"false");
+ assert.ok(fly.classList.contains("is-visible"));
+ assert.deepEqual(captures,[1]);
+ const first=fly.style.transform;
+ fire("pointermove",evt(bar,205,365));
+ assert.ok(raf.length>0,"drag movement should be eased by an animation frame");
+ raf.shift()(16);
+ assert.notEqual(fly.style.transform,first,"tooltip should move in x and y");
+ fire("pointerup",evt(bar,205,365));
+ assert.deepEqual(released,[1]);
+ // Hover mouse near the same gauge continues to track outside its bounds.
+ fire("pointerover",evt(bar,100,255,2,"mouse"));
+ const mouseInitial=fly.style.transform;
+ fire("pointermove",evt({closest:()=>null},110,224,2,"mouse"));
+ if(raf.length)raf.shift()(32);
+ assert.notEqual(fly.style.transform,mouseInitial);
+ // A chart drag is inspection only; it must NOT select a category.
+ fire("pointerdown",evt(segment,80,187,3));
+ assert.equal(rendered.preview,"family:required");
+ fire("pointermove",evt(segment,145,235,3));
+ fire("pointerup",evt(segment,145,235,3));
+ let prevented=false,stopped=false;
+ for(const fn of chartHandlers.get("click")||[]){
+  fn({target:{closest:s=>s===".bd-segment"?segment:null},
+   preventDefault(){prevented=true},stopImmediatePropagation(){stopped=true}});
+ }
+ assert.ok(prevented&&stopped,"a drag must suppress the chart's synthetic click-to-filter");
+ fire("pointerdown",evt(segment,80,187,4));
+ fire("pointerup",evt(segment,80,187,4));
+ prevented=false;stopped=false;
+ for(const fn of chartHandlers.get("click")||[]){
+  fn({target:{closest:s=>s===".bd-segment"?segment:null},
+   preventDefault(){prevented=true},stopImmediatePropagation(){stopped=true}});
+ }
+ assert.equal(prevented,false,"a stationary tap must still filter normally");
+ assert.equal(stopped,false);
+});
+test("PR49 31uq: follow tooltip is isolated, compact and reduced-motion aware",()=>{
+ const html=read("preview/category-distribution/index.html");
+ const js=read("preview/category-distribution/progress-hover.js");
  const css=read("preview/category-distribution/hover-polish.css");
- assert.match(code,/pointerType!=="touch"&&event\.pointerType!=="pen"/);
- assert.match(code,/event\.key==="Escape"/);
- assert.match(code,/event\.key==="Enter"\|\|event\.key===" "/);
- assert.match(code,/data-tooltip-dismissed/);
- assert.match(code,/document\.addEventListener\("pointerdown"/);
- assert.match(css,/\.cat-progress-row\[data-tooltip-dismissed="true"\] \.cat-progress-tooltip/);
- assert.doesNotMatch(code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\s*\(|localStorage|sessionStorage|supabase/i);
- for(const path of ["category-render-live.js","category-distribution.js","progress-hover.js"]){
-  assert.doesNotThrow(()=>new Function(read("preview/category-distribution/"+path)),path);
+ const distribution=read("preview/category-distribution/category-distribution.js");
+ for(const s of ["progress-hover.js?v=31uq","hover-polish.css?v=31uq","category-distribution.js?v=31uq"]){
+  assert.ok(html.includes(s),s);
+ }
+ assert.match(html,/connect-src 'none'/);
+ assert.match(js,/setPointerCapture\?\./);
+ assert.match(js,/releasePointerCapture\?\./);
+ assert.match(js,/hoverZone\(active\.element,event\.clientX,event\.clientY\)/);
+ assert.match(js,/window\.visualViewport/);
+ assert.match(js,/requestAnimationFrame\(draw\)/);
+ assert.match(js,/reduced\?\.matches/);
+ assert.match(js,/stopImmediatePropagation\(\)/);
+ assert.match(js,/MutationObserver/);
+ assert.match(css,/html\.sb-follow-enabled #categories \.cat-progress-tooltip/);
+ assert.match(css,/\.sb-follow-tip\{/);
+ assert.match(css,/background:color-mix\(in srgb,var\(--panel\) 95%,transparent\)/);
+ assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]\{\s*touch-action:none/);
+ assert.match(css,/#categories \.bd-segment\[data-bd-key\]::after\{/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.sb-follow-tip\{transition:none/);
+ assert.match(distribution,/preview\(key\)\{tooltipFor\(key\|\|null\)\}/);
+ assert.doesNotMatch(js.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),
+  /\bfetch\s*\(|localStorage|sessionStorage|supabase/i);
+ for(const name of ["progress-hover.js","category-distribution.js","category-render-live.js"]){
+  assert.doesNotThrow(()=>new Function(read("preview/category-distribution/"+name)),name);
  }
 });
+
