@@ -249,3 +249,52 @@ test("PR49 31uf: sort choices are an accessible listbox and active text is neutr
  assert.match(css,/color:var\(--text\)!important/);
  assert.match(css,/PR49 31uf/);
 });
+
+
+test("PR49 31uf: actual category actions mutate only fixture memory",()=>{
+ const ids=new Map(),events=new Map();
+ const node=(id)=>({
+  dataset:{},style:{},value:"",textContent:"",innerHTML:"",hidden:false,
+  classList:{add(){},remove(){},toggle(){},contains(){return false}},
+  addEventListener(type,fn){events.set(id+":"+type,fn)},
+  setAttribute(){},querySelectorAll(){return []},querySelector(){return null},
+  focus(){},select(){},
+ });
+ const document={
+  getElementById(id){if(!ids.has(id))ids.set(id,node(id));return ids.get(id)},
+  querySelectorAll(){return []},
+  addEventListener(){},
+ };
+ const box={document,setTimeout:()=>0,clearTimeout:()=>{}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ vm.runInContext(read("preview/category-distribution/categories-live.js"),box);
+ const check=(expr)=>vm.runInContext(expr,box);
+ assert.equal(check("metrics().expMap.insurance||0"),0);
+ check('fillCategoryActualFromPlan("insurance","expense")');
+ assert.equal(check("metrics().expMap.insurance"),75);
+ assert.equal(check("metrics().expense"),885);
+ check('openCategoryEditor("groceries",null,"actual","expense")');
+ ids.get("categoryBudgetInput").value="299.50";
+ events.get("saveCategoryEdit:click")();
+ assert.equal(check("metrics().expMap.groceries"),299.5);
+ check('openCategoryEditor("rent",null,"planned","expense")');
+ ids.get("categoryBudgetInput").value="550";
+ events.get("saveCategoryEdit:click")();
+ assert.equal(check('visibleExpenseCategories().find(c=>c.id==="rent").budget'),550);
+ check('openCategoryEditor(null,"Vie courante","planned","expense")');
+ ids.get("categoryNameInput").value="Jouets";
+ ids.get("categoryBudgetInput").value="65";
+ events.get("saveCategoryEdit:click")();
+ assert.equal(check('visibleExpenseCategories().find(c=>c.name==="Jouets").budget'),65);
+ check('setSectionActual("expense","Abonnements","fill-empty")');
+ assert.equal(check("metrics().expMap.music"),12);
+ check('openCategoryDelete("insurance","expense")');
+ check("deleteCategoryForMonth()");
+ assert.equal(check('visibleExpenseCategories().some(c=>c.id==="insurance")'),false);
+ check('restoreCategory("insurance","expense")');
+ assert.equal(check('visibleExpenseCategories().some(c=>c.id==="insurance")'),true);
+ assert.match(ids.get("categoryGrid").innerHTML,/Jouets/);
+ assert.ok(!("supabase" in box));
+});
