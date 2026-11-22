@@ -59,11 +59,14 @@ function prototypeFillOne(id,type,button){
  if(Math.abs(current)>=.005&&button?.dataset.demoArmed!=="true"){
   button.dataset.demoArmed="true";
   button.dataset.initialReal=String(current);
+  const baseLabel=button.getAttribute?.("aria-label")||"Aligner sur le prévu";
   button.textContent="Confirmer";
   button.setAttribute("aria-label","Confirmer l’alignement du réel de "+c.name+" sur "+euro(planned));
   button.focus();
   setTimeout(()=>{if(button.isConnected&&button.dataset.demoArmed==="true"){
-   button.dataset.demoArmed="false";button.textContent="✓";
+   button.dataset.demoArmed="false";
+   button.innerHTML=categoryActionIcon("check");
+   button.setAttribute("aria-label",baseLabel);
   }},4500);
   return;
  }
