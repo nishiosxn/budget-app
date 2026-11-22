@@ -77,7 +77,7 @@ function prototypeFillOne(id,type,button){
  showUndoToast(c.name+" : réel aligné au prévu",()=>revertPrototypeAdjustments([created]));
 }
 function prototypeSettingsField(id){return document.getElementById(id)}
-function openCategorySettings(id,type="expense"){
+function openCategorySettings(id,type="expense",focusField="name"){
  const base=catById(id,type);
  if(!base)return;
  const c=categoryView(base,type);
@@ -91,11 +91,11 @@ function openCategorySettings(id,type="expense"){
  const groupField=prototypeSettingsField("categorySettingsSectionField");
  const section=prototypeSettingsField("categorySettingsSection");
  groupField.hidden=type==="income"||!!base.saving;
- section.value=categorySectionOf(base);
+ section.value=categorySectionOf(c);
  prototypeSettingsField("categorySettingsScope").value="month";
  categorySettingsBackdrop.classList.add("open");
  categorySettingsBackdrop.setAttribute("aria-hidden","false");
- prototypeSettingsField("categorySettingsName").focus();
+ prototypeSettingsField(focusField==="actual"?"categorySettingsActual":focusField==="planned"?"categorySettingsPlanned":"categorySettingsName").focus();
 }
 function closeCategorySettings(){
  categorySettingsBackdrop.classList.remove("open");
@@ -144,6 +144,15 @@ categorySettingsForm.addEventListener("submit",event=>{
  }
  saveState();closeCategorySettings();render();
 });
+// Existing real, planned and chart edits share this dialog; the original editor
+// is retained for creating a category, without copying its legacy edit UI.
+const originalCategoryEditorForCreate=openCategoryEditor;
+openCategoryEditor=function(id=null,section=null,mode="planned",type="expense",origin="categories"){
+ if(id&&(mode==="actual"||mode==="planned")){
+  openCategorySettings(id,type,mode);return;
+ }
+ return originalCategoryEditorForCreate(id,section,mode,type,origin);
+};
 categorySettingsBackdrop.addEventListener("click",event=>{
  if(event.target===categorySettingsBackdrop)closeCategorySettings();
 });
