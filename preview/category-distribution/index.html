@@ -60,8 +60,15 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
  </header>
  <p class="demo-notice">Données fictives · Aucun compte connecté · Modifications temporaires</p>
  <main id="categories">
-  <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
-  <div id="categoryGrid" class="category-layout"></div>
+  <div id="categoryGrid" class="category-layout" data-layout="hybrid">
+   <div id="categoryFilterSlot"></div>
+   <div class="category-top">
+    <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
+    <div id="categoryIncomeSlot"></div>
+   </div>
+   <div id="categoryExpenseSlot"></div>
+   <div id="categorySavingSlot"></div>
+  </div>
  </main>
 </div>
 <div id="demoToast" role="status" hidden></div>
