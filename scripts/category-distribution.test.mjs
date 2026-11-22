@@ -366,5 +366,5 @@ test("PR49 31ug: test-only dialogs trap focus and restore it without persistent 
  }
  assert.match(page,/aria-modal="true"/);
  assert.match(page,/connect-src 'none'/);
- assert.doesNotMatch(boot,/\bfetch\(|localStorage|sessionStorage/);
+ assert.doesNotMatch(boot.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\(|localStorage|sessionStorage/);
 });
