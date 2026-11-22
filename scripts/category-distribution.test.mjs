@@ -197,7 +197,7 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
  for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31ui"),key);
+  assert.ok(page.includes(key+"?v=31uj"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -483,7 +483,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31ui'));
+ assert.ok(html.includes('category-prototype.js?v=31uj'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
@@ -496,4 +496,121 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  assert.match(boot,/closeCategorySettings\(\)/);
  assert.match(css,/\.sb-settings-field\[hidden\]\{display:none!important\}/);
  assert.doesNotMatch(js.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b/);
+});
+
+
+test("PR49 31uj: fill-empty never overwrites a nonempty actual and undo is transaction-scoped",()=>{
+ const nodes=new Map(),callbacks=new Map();
+ const node=id=>{
+  if(nodes.has(id))return nodes.get(id);
+  const el={
+   value:"",textContent:"",innerHTML:"",hidden:false,dataset:{},style:{},
+   classList:{add(){},remove(){},contains(){return false},toggle(){}},
+   addEventListener:(event,fn)=>callbacks.set(id+":"+event,fn),
+   setAttribute(){},getAttribute(){return "Aligner sur le prévu"},
+   focus(){},select(){},setCustomValidity(){},reportValidity(){return true},
+   querySelectorAll(){return []},querySelector(){return null}
+  };
+  nodes.set(id,el);return el;
+ };
+ const doc={getElementById:node,querySelectorAll(){return []},addEventListener(){}};
+ const box={document:doc,setTimeout:()=>0,clearTimeout:()=>{}};
+ vm.createContext(box);
+ for(const path of ["demo-state.js","category-render-live.js","categories-live.js","category-prototype.js"]){
+  vm.runInContext(read("preview/category-distribution/"+path),box);
+ }
+ const check=exp=>vm.runInContext(exp,box);
+ const button={dataset:{},textContent:"",innerHTML:"",isConnected:true,
+  setAttribute(){},getAttribute(){return "Aligner sur le prévu"},focus(){}};
+ box.testButton=button;
+ check('prototypeFillOne("groceries","expense",testButton)');
+ assert.equal(check("metrics().expMap.groceries"),186,"first click must not rewrite an existing amount");
+ assert.equal(button.dataset.demoArmed,"true");
+ check('prototypeFillOne("groceries","expense",testButton)');
+ assert.equal(check("metrics().expMap.groceries"),250,"second deliberate click performs alignment");
+ check('setCategoryActual("groceries",186,"expense")');
+ const insurance={dataset:{},textContent:"",innerHTML:"",isConnected:true,setAttribute(){},getAttribute(){return ""},focus(){}};
+ box.emptyButton=insurance;
+ check('prototypeFillOne("insurance","expense",emptyButton)');
+ assert.equal(check("metrics().expMap.insurance"),75,"empty real can be completed with one click");
+ check('setCategoryActual("insurance",0,"expense")');
+ assert.equal(check('prototypeBulkActual("expense","Vie courante","fill-empty")'),0,"existing reals must never be overwritten");
+ assert.equal(check('prototypeBulkActual("expense","Vie courante","clear")'),2);
+ const ids=check('state.transactions.filter(t=>t.bulkGroupId&&t.bulkLabel.includes("Remise du réel à zéro")).map(t=>t.id)');
+ assert.equal(ids.length,2);
+ check('state.transactions.push(record("expense","groceries",25,"common","2026-11-22","Nouvelle dépense"))');
+ box.undoIDs=ids;
+ check("revertPrototypeAdjustments(undoIDs)");
+ assert.equal(check("metrics().expMap.groceries"),211,"later independent expense must survive undo");
+ assert.equal(check("metrics().expMap.car"),54);
+ assert.equal(check('visibleExpenseCategories().find(c=>c.id==="groceries").budget'),250);
+});
+test("PR49 31uj: one settings dialog handles existing edits and period-scoped family changes",()=>{
+ const nodes=new Map(),callbacks=new Map();
+ const node=id=>{
+  if(nodes.has(id))return nodes.get(id);
+  const x={value:"",textContent:"",innerHTML:"",hidden:false,dataset:{},style:{},
+   classList:{add(){},remove(){},contains(){return false},toggle(){}},
+   addEventListener:(type,fn)=>callbacks.set(id+":"+type,fn),
+   setAttribute(){},focus(){},select(){},setCustomValidity(){},reportValidity(){return true},
+   querySelectorAll(){return []},querySelector(){return null}
+  };
+  nodes.set(id,x);return x;
+ };
+ const document={getElementById:node,querySelectorAll(){return []},addEventListener(){}};
+ const box={document,setTimeout:()=>0,clearTimeout:()=>{}};
+ vm.createContext(box);
+ for(const path of ["demo-state.js","category-render-live.js","categories-live.js","category-prototype.js"]){
+  vm.runInContext(read("preview/category-distribution/"+path),box);
+ }
+ const readState=expr=>vm.runInContext(expr,box);
+ readState('openCategoryEditor("rent",null,"actual","expense")');
+ assert.equal(node("categorySettingsActual").value,"530.00");
+ assert.equal(node("categoryEditBackdrop").classList.contains("open"),false);
+ readState('openCategoryEditor("car",null,"planned","expense")');
+ assert.equal(node("categorySettingsPlanned").value,"120.00");
+ node("categorySettingsSection").value="Abonnements";
+ node("categorySettingsScope").value="month";
+ callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
+ assert.equal(readState('visibleExpenseCategories().find(c=>c.id==="car").section'),"Abonnements");
+ assert.equal(readState('planForCategory(catById("car"),"2026-10").section'),"Vie courante");
+ assert.equal(readState('planForCategory(catById("car"),"2026-12").section'),"Vie courante");
+ readState('openCategorySettings("car","expense")');
+ node("categorySettingsSection").value="Obligatoires";
+ node("categorySettingsScope").value="forward";
+ callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
+ assert.equal(readState('planForCategory(catById("car"),"2026-12").section'),"Obligatoires");
+ readState('openCategoryEditor(null,"Vie courante","planned","expense")');
+ assert.ok(node("categoryEditBackdrop"),"original category creation form is preserved");
+});
+test("PR49 31uj: progress copy, warnings and dark/light contrast are meaningful",()=>{
+ const sandbox={document:{}};
+ vm.createContext(sandbox);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),sandbox);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),sandbox);
+ const evalMarkup=src=>vm.runInContext(src,sandbox);
+ const used=evalMarkup('categoryProgressMarkup({name:"Courses",budget:250},186,"expense")');
+ assert.match(used,/64,00/);
+ assert.match(used,/restants/);
+ const warning=evalMarkup('categoryProgressMarkup({name:"Carburant",budget:90},102,"expense")');
+ assert.match(warning,/is-warning/);
+ assert.match(warning,/\+12,00/);
+ const noPlan=evalMarkup('categoryProgressMarkup({name:"Santé",budget:0},35,"expense")');
+ assert.match(noPlan,/is-unbudgeted/);
+ assert.match(noPlan,/Sans budget prévu/);
+ const income=evalMarkup('categoryProgressMarkup({name:"Salaire",budget:1800},1700,"income")');
+ assert.match(income,/à recevoir/);
+ const saving=evalMarkup('categoryProgressMarkup({name:"Projets",budget:120,saving:true},60,"expense")');
+ assert.match(saving,/à épargner/);
+ const css=read("preview/category-distribution/preview-polish.css");
+ const lum=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255)
+  .map(v=>v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4))
+  .reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+ const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+ assert.ok(contrast("#93550f","#f5f6f8")>=4.5);
+ assert.ok(contrast("#a52e35","#f5f6f8")>=4.5);
+ assert.ok(contrast("#f1bb6f","#22262e")>=4.5);
+ assert.ok(contrast("#ff9998","#22262e")>=4.5);
+ for(const color of ["#93550f","#a52e35","#f1bb6f","#ff9998"])
+  assert.ok(css.includes(color),color);
 });
