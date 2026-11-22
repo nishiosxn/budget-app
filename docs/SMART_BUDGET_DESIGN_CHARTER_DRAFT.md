@@ -141,3 +141,44 @@ Un passage en vrai navigateur desktop et iPhone, modes clair/sombre, 320/390/128
 - Modes et UX : menu mobile au-dessus de la barre de navigation, dialogues tactiles en feuille basse, focus clavier confiné dans les modales, fermeture par Échap ou fond, contrôle du zoom iOS et préférence de réduction des animations.
 
 **Limite :** les tests JS/DOM légers valident l'assemblage, les actions fictives et le contrat CSS, mais ne démontrent pas encore la correspondance visuelle exacte des rendus dans un navigateur desktop ou sur iPhone. À vérifier avant intégration.
+
+
+
+## Variante 31un — panorama A + dépenses C (expérimentation)
+
+**Version de référence conservée** : l'ancien prototype 31um est archivé, avec ses 13 fichiers statiques inchangés, sous previews/pr-49/versions/31um/ sur gh-pages. Le point de départ Git pour la branche de travail était 33af2687089366fe91ca090d4c13add2f95f886f. La nouvelle disposition peut être retirée sans réécrire les actions et les données fictives ; elle n'altère pas l'archive.
+
+**Audit visuel et fonctionnel** :
+- En 31um, la coquille centrale était plafonnée à 70rem même sur un grand écran : beaucoup de place inutilisée autour des quatre sections.
+- Les familles Obligatoires / Abonnements / Vie courante étaient empilées verticalement. L'interface fonctionnait, mais imposait un défilement important avec de nombreuses catégories.
+- Le système de catégorie est déjà complet en prévisualisation : réel et prévu cliquables, engagement individuel confirmé, fenêtre de paramètres, suppression confirmée, historique dépliable, remplissage des vides, remise à zéro et annulation ciblée, catégories archivées et répartition interactive.
+- Les interactions, le modèle de données de démo, les modales et le sélecteur de mois ne doivent pas changer pour ce test d'agencement.
+
+**Direction artistique Unslop** (Damir Sokolovsky, CC BY 4.0) :
+- Produit : visualiser et modifier les enveloppes mensuelles réelles/prévues d'un foyer.
+- Caractère : calme, exact, rapide à parcourir.
+- Monde : instruments de suivi financier domestique, surfaces graphite lisibles.
+- Moment : la barre segmentée de répartition et les jauges de catégories.
+- Signature : violet Smart Budget #5C29D6 pour la marque, les actions utiles et les focus, jamais sur les textes au simple hover.
+
+**Neuf passes appliquées au seul layout** :
+1. Espacement : un rythme homogène entre les colonnes et des rangées compactes par famille, sans compresser les zones tactiles.
+2. Couleurs : gris neutres pour les surfaces et les filets ; aucune nouvelle couleur décorative.
+3. Icônes : conserver coches, engrenages, corbeilles et chevrons existants.
+4. Microcopy : conserver les libellés financiers et les confirmations existants.
+5. Typographie : titres de famille lisibles, montants tabulaires et textes financiers toujours visibles.
+6. Layout : conteneur fluide jusqu'à 115rem, marges adaptées par clamp ; synthèse A (Répartition à gauche, Revenus à droite, Épargne après Dépenses) ; dépenses C (trois familles côte à côte avec rangées horizontales compactes).
+7. Détails : aucune séparation verticale entre familles. Une ligne horizontale discrète au-dessus de chaque catégorie et sous la dernière de chaque liste ; surfaces de catégories non doublées.
+8. Visuels : jauges réel/prévu conservées, sans autres graphiques ou badges inutiles.
+9. Animations : état hover discret et motion réduit respecté.
+
+**Responsive** :
+- Desktop large : trois familles en colonnes, deux revenus par ligne et deux épargnes par ligne.
+- Intermédiaire à 78rem : deux colonnes de familles.
+- À 70rem : Répartition et Revenus s'empilent.
+- À 50rem : toutes les familles de dépenses s'empilent.
+- À 47rem : Revenus et Épargne passent sur une colonne.
+- Téléphone : contrôles catégorie de 2.75rem minimum, montants ajustés et jauges/captions sans débordement.
+- Le viewport 16:9 est une **référence visuelle desktop**, pas une contrainte de hauteur CSS sur la vraie page.
+
+**Limites et autorisations** : uniquement la prévisualisation de PR #49, sans déployer le nouveau layout en production ni déplacer la logique de données. Vérifications de rendu navigateur desktop/iPhone et tests lecteurs d'écran à effectuer avant une éventuelle intégration.
