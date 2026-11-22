@@ -2,6 +2,7 @@
  * Smart Budget's #5C29D6 is the action color; no red/green navigation buttons.
  * Unslop / Damir Sokolovsky (CC BY 4.0).
  */
+.demo-app{--sb-cta-primary:var(--accent,#5c29d6);--sb-cta-primary-hover:#4b21b8}
 /* Two coordinated desktop actions: one calm secondary and one primary. */
 .demo-app .nav-primary-actions>.btn{
  display:inline-flex;
@@ -38,13 +39,13 @@
 .demo-app .nav-primary-actions>.btn-expense,
 .demo-app .nav-primary-actions>.btn-expense:hover{
  color:#fff;
- border-color:#5c29d6;
- background:#5c29d6;
+ border-color:var(--sb-cta-primary);
+ background:var(--sb-cta-primary);
  filter:none;
 }
 .demo-app .nav-primary-actions>.btn-expense:hover{
- background:#4b21b8;
- border-color:#4b21b8;
+ background:var(--sb-cta-primary-hover);
+ border-color:var(--sb-cta-primary-hover);
 }
 .demo-app .nav-primary-actions>.btn:active{
  transform:none;
@@ -54,14 +55,14 @@
 #modalBackdrop .save.btn-income:hover,
 #modalBackdrop .save.btn-expense:hover{
  color:#fff;
- border:.0625rem solid #5c29d6;
- background:#5c29d6;
+ border:.0625rem solid var(--sb-cta-primary);
+ background:var(--sb-cta-primary);
  filter:none;
 }
 #modalBackdrop .save.btn-income:hover,
 #modalBackdrop .save.btn-expense:hover{
- border-color:#4b21b8;
- background:#4b21b8;
+ border-color:var(--sb-cta-primary-hover);
+ background:var(--sb-cta-primary-hover);
 }
 .demo-app .mobile-quick-add__option-icon,
 .demo-app .mobile-quick-add__option-icon.expense{
@@ -69,7 +70,7 @@
  background:var(--panel-2);
 }
 .demo-app .mobile-quick-add__option:focus-visible{
- outline:.15rem solid #5c29d6;outline-offset:.125rem;
+ outline:.15rem solid var(--sb-cta-primary);outline-offset:.125rem;
 }
 /* Cards have NO row-hover affordance. Only real buttons and bars respond. */
 #categories .cat-budget-list>.cat-budget-tile,
@@ -107,6 +108,17 @@
 #categories .cat-progress-track[data-progress-track]{
  cursor:help;
  outline:none;
+ overflow:visible;
+ touch-action:manipulation;
+}
+/* Keep the visible gauge slim while giving finger input a 2.75rem hit area. */
+#categories .cat-progress-track[data-progress-track]::after{
+ content:"";
+ position:absolute;
+ inset:-1.125rem 0;
+ z-index:1;
+ background:transparent;
+ pointer-events:auto;
 }
 #categories .cat-progress-track[data-progress-track]:hover{
  box-shadow:0 0 0 .125rem color-mix(in srgb,#5c29d6 23%,transparent);
