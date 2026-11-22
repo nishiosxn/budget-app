@@ -12,28 +12,69 @@ function prototypeSectionCategories(type,section){
  if(section==="__savings__")return visibleSavingCategories();
  return visibleExpenseCategories().filter(c=>categorySectionOf(c)===section);
 }
+function revertPrototypeAdjustments(ids){
+ // Remove ONLY the adjustments created by this action, never restore a global snapshot.
+ const created=new Set(ids);
+ state.transactions=state.transactions.filter(t=>!created.has(t.id));
+ saveState();render();
+}
+function prototypeWriteActual(id,target,type,label,meta={}){
+ const before=state.transactions.length;
+ if(!setCategoryActual(id,target,type,label,meta))return null;
+ const transaction=state.transactions[state.transactions.length-1];
+ return state.transactions.length>before?transaction.id:null;
+}
 function prototypeBulkActual(type,section,operation){
+ if(operation!=="fill-empty"&&operation!=="clear")return 0;
  const categories=prototypeSectionCategories(type,section);
- const previous=categoryTransactionSnapshot();
  const totals=totalsByCategory(type);
  const group=type==="income"?"Revenus":section==="__savings__"?"Épargne":section;
- const groupId="bulk-"+uid();
- let updated=0;
+ const groupId="bulk-"+uid(),created=[];
  for(const c of categories){
   const actual=Number(totals[c.id]||0),planned=Number(c.budget||0);
-  if(operation==="fill"&&planned<=.005)continue;
-  const target=operation==="fill"?planned:0;
-  if(Math.abs(target-actual)<.005)continue;
-  const label=operation==="fill"?"Réel aligné au prévu":"Remise à zéro";
-  if(setCategoryActual(c.id,target,type,label,{bulkGroupId:groupId,bulkLabel:group+" · "+label}))updated++;
+  // "Remplir les vides" must never overwrite a real amount, including an overrun.
+  if(operation==="fill-empty"&&(Math.abs(actual)>=.005||planned<=.005))continue;
+  if(operation==="clear"&&Math.abs(actual)<.005)continue;
+  const target=operation==="fill-empty"?planned:0;
+  const label=operation==="fill-empty"?"Remplissage d'un montant vide":"Remise du réel à zéro";
+  const id=prototypeWriteActual(c.id,target,type,label,{bulkGroupId:groupId,bulkLabel:group+" · "+label});
+  if(id)created.push(id);
  }
- if(!updated){
-  showUndoToast(operation==="fill"?"Montants déjà renseignés":"Montants déjà à zéro");
+ if(!created.length){
+  showUndoToast(operation==="fill-empty"?"Aucun montant vide à compléter":"Montants déjà à zéro");
   return 0;
  }
  saveState();render();
- showUndoToast(updated+" montant"+(updated>1?"s":"")+" "+(operation==="fill"?"aligné"+(updated>1?"s":"")+" au prévu":"remis à zéro"),()=>restoreCategoryTransactions(previous));
- return updated;
+ const changed=created.length;
+ const message=operation==="fill-empty"?changed+" montant"+(changed>1?"s":"")+" vide"+(changed>1?"s":"")+" complété"+(changed>1?"s":""):
+  changed+" réel"+(changed>1?"s":"")+" remis à zéro · opérations conservées";
+ showUndoToast(message,()=>revertPrototypeAdjustments(created));
+ return changed;
+}
+function prototypeFillOne(id,type,button){
+ const c=categoryCurrentView(id,type);
+ if(!c||Number(c.budget||0)<=.005)return;
+ const current=Number(totalsByCategory(type)[id]||0),planned=Number(c.budget);
+ if(Math.abs(current-planned)<.005)return;
+ if(Math.abs(current)>=.005&&button?.dataset.demoArmed!=="true"){
+  button.dataset.demoArmed="true";
+  button.dataset.initialReal=String(current);
+  button.textContent="Confirmer";
+  button.setAttribute("aria-label","Confirmer l’alignement du réel de "+c.name+" sur "+euro(planned));
+  button.focus();
+  setTimeout(()=>{if(button.isConnected&&button.dataset.demoArmed==="true"){
+   button.dataset.demoArmed="false";button.textContent="✓";
+  }},4500);
+  return;
+ }
+ if(button?.dataset.demoArmed==="true"&&Math.abs(Number(button.dataset.initialReal)-current)>=.005){
+  button.dataset.demoArmed="false";
+  render();return;
+ }
+ const created=prototypeWriteActual(id,planned,type,"Réel aligné au prévu (confirmé)");
+ if(!created)return;
+ saveState();render();
+ showUndoToast(c.name+" : réel aligné au prévu",()=>revertPrototypeAdjustments([created]));
 }
 function prototypeSettingsField(id){return document.getElementById(id)}
 function openCategorySettings(id,type="expense"){
@@ -95,10 +136,8 @@ categorySettingsForm.addEventListener("submit",event=>{
  if(Math.abs(planned-Number(current.budget||0))>=.005||owner!==(current.owner||"common")){
   setCategoryPlan(id,type,planned,owner,scope);
  }
- if(type==="expense"&&!base.saving&&newSection!==categorySectionOf(base)){
-  base.section=newSection;
-  const custom=state.customExpenseCategories.find(c=>c.id===id);
-  if(custom)custom.section=newSection;
+ if(type==="expense"&&!base.saving&&newSection!==categorySectionOf(current)){
+  state.sectionOverrides.push({id,month:monthKey(state.selectedMonth),section:newSection,scope});
  }
  if(Math.abs(actual-Number(totalsByCategory(type)[id]||0))>=.005){
   setCategoryActual(id,actual,type,"Ajustement depuis les paramètres");
@@ -115,10 +154,15 @@ categoryGrid.addEventListener("click",event=>{
   openCategorySettings(settings.dataset.demoSettings,settings.dataset.categoryType||"expense");
   return;
  }
+ const single=event.target.closest("[data-demo-fill-category]");
+ if(single){
+  prototypeFillOne(single.dataset.demoFillCategory,single.dataset.categoryType||"expense",single);
+  return;
+ }
  const fill=event.target.closest("[data-demo-fill-all]");
  if(fill){
   clearTimeout(clearArmTimer);
-  prototypeBulkActual(fill.dataset.categoryType||"expense",fill.dataset.section||"","fill");
+  prototypeBulkActual(fill.dataset.categoryType||"expense",fill.dataset.section||"","fill-empty");
   return;
  }
  const clear=event.target.closest("[data-demo-clear-all]");
