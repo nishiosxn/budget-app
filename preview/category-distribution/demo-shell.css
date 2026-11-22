@@ -203,3 +203,17 @@ html[data-demo-theme="dark"] #modalBackdrop .owner-option.active{background:var(
   scroll-behavior:auto!important;animation:none!important;transition:none!important;
  }
 }
+
+
+/* Transaction primary buttons inherit the correct live-app hierarchy in either theme. */
+#modalBackdrop .save.btn-income{background:var(--accent-soft);color:var(--text)}
+#modalBackdrop .save.btn-expense{background:var(--text);color:var(--panel)}
+#categories .bd-level-placeholder{
+ min-height:2.8rem;
+}
+@media(max-width:56.25rem){
+ #demoToast{bottom:calc(6.5rem + env(safe-area-inset-bottom))}
+}
+@media(max-width:38rem){
+ #categories .budget-distribution .bd-level-placeholder{display:none}
+}
