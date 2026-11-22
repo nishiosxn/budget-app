@@ -79,6 +79,24 @@
    scope:ui.scope,level:ui.level,sort:ui.sort})};
  }
  function selection(){return ui.items.find(item=>item.key===ui.selected)||null}
+ function usageFor(item){
+  const data=typeof metrics==="function"?metrics():null;
+  const totals=ui.scope==="income"?data?.incMap:data?.expMap;
+  const used=(item.ids||[]).reduce((sum,id)=>sum+Number(totals?.[id]||0),0);
+  const planned=Number(item.amount)||0;
+  const remaining=planned-used;
+  return {used,planned,remaining,
+   label:ui.scope==="income"?"Reçu":"Utilisé",
+   remainingLabel:remaining<-.005?(ui.scope==="income"?"Au-dessus du prévu":"Dépassement"):
+    ui.scope==="income"?"À recevoir":"Reste"};
+ }
+ function breakdownMarkup(item){
+  const b=usageFor(item),rest=b.planned<=.005?"Sans budget":money(Math.abs(b.remaining));
+  return '<dl class="bd-finance-breakdown">'+
+   '<div><dt>'+b.label+'</dt><dd>'+esc(money(b.used))+'</dd></div>'+
+   '<div><dt>Budget prévu</dt><dd>'+esc(money(b.planned))+'</dd></div>'+
+   '<div><dt>'+b.remainingLabel+'</dt><dd>'+esc(rest)+'</dd></div></dl>';
+ }
  function filter(){
   const selected=selection();
   return selected?{type:ui.scope,ids:[...selected.ids],label:selected.name}:null;
@@ -104,7 +122,7 @@
   return '<div class="bd-selection" role="status"><div class="bd-selection-heading"><strong>'+esc(item.name)+'</strong>'+
    '<button type="button" class="bd-clear" data-bd-action="clear" aria-label="Retirer le filtre">Effacer le filtre ×</button></div>'+
    '<p>'+esc(money(item.amount))+' · '+esc(percent(item.amount,model.total))+' du total'+
-   (single?"":" · "+item.ids.length+" catégories")+'</p>'+
+   (single?"":" · "+item.ids.length+" catégories")+'</p>'+breakdownMarkup(item)+
    (single?'<div class="bd-selection-actions"><button type="button" class="bd-action bd-action-secondary" data-bd-action="edit">Modifier le budget</button></div>':"")+
    '<span class="sr-only">Filtre appliqué à la liste des catégories de '+kind+'.</span></div>';
  }
@@ -171,8 +189,8 @@
   const item=ui.items.find(v=>v.key===key);
   if(!item){tip.hidden=true;return}
   const total=ui.items.reduce((n,v)=>n+v.amount,0);
-  tip.innerHTML='<strong>'+esc(item.name)+'</strong><span>'+esc(money(item.amount))+'</span><small>'+
-   esc(percent(item.amount,total))+' · '+item.ids.length+' catégorie'+(item.ids.length>1?"s":"")+'</small>';
+  tip.innerHTML='<strong>'+esc(item.name)+'</strong>'+breakdownMarkup(item)+
+   '<small>'+esc(percent(item.amount,total))+' du total prévu</small>';
   const seg=[...track.querySelectorAll("[data-bd-key]")].find(el=>el.dataset.bdKey===key);
   const wrap=host.querySelector(".bd-track-wrap");
   if(seg&&wrap){
