@@ -186,7 +186,10 @@ test("PR49 Unslop page rhythm: all financial groups share an internal title and 
 
 test("PR49 standalone preview assets mirror the actual read-only category component",()=>{
  assert.equal(read("preview/category-distribution/category-distribution.css"),read("css/category-distribution.css"));
- assert.equal(read("preview/category-distribution/category-distribution.js"),read("js/category-distribution.js"));
+ const demoChart=read("preview/category-distribution/category-distribution.js");
+ assert.ok(demoChart.includes("function buildModel("),"chart financial model is unchanged");
+ assert.match(demoChart,/bd-level-placeholder/,"income layout now reserves an equal control footprint");
+ assert.doesNotMatch(read("js/category-distribution.js"),/bd-level-placeholder/,"production component is unchanged");
 });
 
 
@@ -196,8 +199,8 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  const repoHandlers=read("js/categories.js");
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
- for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31ul"),key);
+ for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","demo-chrome.js","demo-shell.css","mobile-ui.css","app-style.css","preview-polish.css"]){
+  assert.ok(page.includes(key+"?v=31um"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -483,7 +486,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31ul'));
+ assert.ok(html.includes('category-prototype.js?v=31um'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
@@ -684,4 +687,109 @@ test("PR49 31ul: hybrid A grid is two-up on desktop and one-up on phones",()=>{
  assert.match(js,/gridHost\?\.dataset\?\.layout==="hybrid"/);
  assert.match(js,/gridHost\.dataset\.filterType=filter\?\.type\|\|"all"/);
  assert.match(js,/document\.getElementById\("categoryExpenseSlot"\)\.innerHTML=visibleExpense/);
+});
+
+
+test("PR49 31um: original Smart Budget chrome is present, but other pages are not rendered",()=>{
+ const page=read("preview/category-distribution/index.html");
+ for(const id of ["householdTitle","settingsBtn","themeToggle","prevMonth","demoMonth","nextMonth",
+  "mobileAddButton","mobileQuickAdd","modalBackdrop","demoTransactionForm","amountInput",
+  "transactionLabel","transactionDateInput","ownerSwitch","categorySelect","transactionScopeSwitch","saveTransaction"]){
+  assert.ok(page.includes('id="'+id+'"'),id);
+ }
+ for(const text of ["Vue d'ensemble","Catégories","Historique","Suivi","Rentrée d'argent","Dépense",
+  "Ajouter une dépense","Ajouter un revenu"]){
+  assert.ok(page.includes(text),text);
+ }
+ assert.match(page,/class="tab active"[^>]*aria-current="page">Catégories/);
+ assert.match(page,/class="mobile-nav-item is-active"[^>]*aria-current="page"/);
+ assert.equal((page.match(/class="tab" type="button" disabled/g)||[]).length,3);
+ assert.equal((page.match(/class="mobile-nav-item" type="button" disabled/g)||[]).length,3);
+ assert.doesNotMatch(page,/id="overview"|id="history"|id="tracking"/);
+ assert.match(page,/connect-src 'none'/);
+ assert.match(page,/role="dialog" aria-modal="true" aria-labelledby="modalTitle"/);
+ assert.match(page,/data-demo-add="expense"/);
+ assert.match(page,/data-demo-add="income"/);
+ const css=read("preview/category-distribution/demo-shell.css");
+ assert.match(css,/PR49 31um/);
+ assert.match(css,/#categories \.budget-distribution\{\s*align-content:start;\s*grid-auto-rows:max-content/);
+ assert.match(css,/#categories \.budget-distribution \.bd-total\{min-height:4\.25rem/);
+ assert.match(css,/@media\(max-width:42\.5rem\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ const chart=read("preview/category-distribution/category-distribution.js");
+ assert.match(chart,/bd-level bd-level-placeholder/);
+ assert.match(chart,/aria-hidden="true"/);
+ assert.match(read("preview/category-distribution/mobile-ui.css"),/mobile-bottom-nav__inner/);
+});
+test("PR49 31um: isolated add-operation controller supports local month and recurrence, and targeted undo",()=>{
+ const nodes=new Map(),handlers=new Map();
+ function element(id){
+  if(nodes.has(id))return nodes.get(id);
+  const classNames=new Set();
+  const e={
+   id,value:"",textContent:"",innerHTML:"",hidden:false,disabled:false,dataset:{},style:{},
+   min:"",max:"",options:[],selectedIndex:1,children:[],
+   classList:{add:name=>classNames.add(name),remove:name=>classNames.delete(name),
+    toggle:(name,on)=>{const yes=on===undefined?!classNames.has(name):!!on;if(yes)classNames.add(name);else classNames.delete(name);return yes},
+    contains:name=>classNames.has(name)},
+   setAttribute(){},getAttribute(){return null},focus(){},select(){},
+   setCustomValidity(){},reportValidity(){return true},reset(){},
+   replaceChildren(){this.children=[]},appendChild(child){this.children.push(child)},
+   querySelectorAll(){return []},querySelector(){return null},
+   addEventListener(type,fn){handlers.set(id+":"+type,fn)}
+  };
+  nodes.set(id,e);return e;
+ }
+ const doc={getElementById:element,createElement:tag=>({tag,label:"",value:"",textContent:"",children:[],appendChild(child){this.children.push(child)}}),
+  addEventListener(){}};
+ const box={document:doc,setTimeout:()=>0,clearTimeout:()=>{},Event:class Event{constructor(type){this.type=type}}};
+ vm.createContext(box);
+ for(const path of ["demo-state.js","category-render-live.js","demo-chrome.js"]){
+  vm.runInContext(read("preview/category-distribution/"+path),box);
+ }
+ const evalIn=expression=>vm.runInContext(expression,box);
+ assert.equal(evalIn("demoDateWithinSelectedMonth()"),"2026-11-22");
+ assert.equal(evalIn('demoTransactionCategories("income").length'),2);
+ assert.ok(evalIn('demoTransactionCategories("expense").some(c=>c.group==="Épargne")'));
+ element("demoMonth").options=[{value:"Octobre 2026"},{value:"Novembre 2026"},{value:"Décembre 2026"}];
+ evalIn('demoTransactionType="expense";demoSetOwner("B");demoSetScope("month")');
+ element("amountInput").value="17.45";
+ element("categorySelect").value="groceries";
+ element("transactionDateInput").value="2026-11-22";
+ element("transactionDateInput").min="2026-11-01";
+ element("transactionDateInput").max="2026-11-30";
+ element("transactionLabel").value="Courses fictives";
+ const previous=evalIn("state.transactions.length");
+ evalIn("demoSaveTransaction({preventDefault(){}})");
+ assert.equal(evalIn("state.transactions.length"),previous+1);
+ assert.equal(evalIn('state.transactions.at(-1).owner'),"B");
+ assert.equal(evalIn('state.transactions.at(-1).amount'),17.45);
+ assert.equal(evalIn('state.transactions.at(-1).label'),"Courses fictives");
+ assert.equal(evalIn('metrics().expMap.groceries'),203.45);
+ evalIn('demoTransactionType="income";demoSetOwner("common");demoSetScope("forward")');
+ element("amountInput").value="55.50";
+ element("categorySelect").value="salary";
+ element("transactionDateInput").value="2026-11-22";
+ element("transactionLabel").value="Prime fictive";
+ const beforeRecurring=evalIn("state.transactions.length");
+ evalIn("demoSaveTransaction({preventDefault(){}})");
+ assert.equal(evalIn("state.transactions.length"),beforeRecurring+2,"November and December only");
+ assert.equal(evalIn('state.transactions.at(-1).date'),"2026-12-22");
+ assert.equal(evalIn('state.transactions.at(-1).recurrent'),true);
+ assert.equal(evalIn('metrics().incMap.salary'),1755.5);
+ evalIn('state.selectedMonth="Décembre 2026"');
+ assert.equal(evalIn('metrics().incMap.salary'),55.5);
+ const untracked=evalIn('record("income","salary",11,"common","2026-12-23","Autre opération")');
+ box.extraTransaction=untracked;
+ evalIn('state.transactions.push(extraTransaction)');
+ // A separate transaction must not be removed when undoing the last simulated creation.
+ const txBefore=evalIn("state.transactions.length");
+ const lastGroup=evalIn('state.transactions.filter(t=>t.recurrenceId&&t.label==="Prime fictive").map(t=>t.id)');
+ box.recurIds=lastGroup;
+ evalIn('state.transactions=state.transactions.filter(t=>!new Set(recurIds).has(t.id))');
+ assert.equal(evalIn("state.transactions.length"),txBefore-2);
+ assert.equal(evalIn("metrics().incMap.salary"),11);
+ assert.match(read("preview/category-distribution/demo-chrome.js"),/showUndoToast\(created\.length/);
+ const source=read("preview/category-distribution/demo-chrome.js").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,"");
+ assert.doesNotMatch(source,/\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b|supabase|cloudflare/i);
 });
