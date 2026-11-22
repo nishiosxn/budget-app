@@ -41,3 +41,16 @@ Si ce prototype est refusé : revenir aux états du commit antérieur dans la PR
 - Les modales d'édition reprennent les champs et actions réels : réel, prévu, nom, attribution, période, création et suppression, avec surfaces et boutons cohérents en clair et en sombre.
 - Le prototype conserve les données fictives exclusivement en mémoire et désactive toute connexion applicative. La source de l'interface et des handlers vient de Smart Budget actuellement publié, complétée par le filtre introduit dans la PR #49.
 - Avant validation finale de la charte, comparer les vrais rendus et interactions desktop/mobile. La présente charte n'autorise aucune refonte du reste de Smart Budget.
+
+
+## Essai 31ug — priorités validées (22 novembre 2026)
+
+- **Colonnes :** Obligatoires / Abonnements / Vie courante restent trois colonnes sur desktop, sans traits verticaux ; les familles non reconnues s'affichent en dessous dans une section Autres si nécessaire.
+- **Séparateurs :** une seule fine ligne **horizontale entre catégories sœurs**, pas sous le dernier élément. Même logique pour revenus et épargne. Aucun trait superflu sous les titres de section.
+- **Survol / sélection :** noms et chevrons neutres au hover et à l'ouverture ; sélection de légende sur une surface neutre. Violet de marque #5C29D6 conservé pour les actions primaires et le contour de focus clavier.
+- **Chiffres :** propriétaire indiqué une fois sans répéter le mot Prévu ; « Total inchangé » si des enveloppes changent mais que le total net mensuel reste identique.
+- **Interaction :** le filtre s'applique immédiatement après sélection. Le bouton « Voir les catégories » redondant est retiré de la sélection ; le raccourci « Modifier le budget », l'effacement du filtre et la liste détaillée sont préservés.
+- **Fenêtres :** piège de focus Tab et retour au déclencheur ajoutés à la prévisualisation isolée ; ce comportement doit être porté dans l'application principale et vérifié avant fusion.
+- **Couverture :** tests d'équivalence entre CSS/JS de source et de démo, catégories inattendues, net zéro, raccourcis existants, focus et mode clair/sombre. La validation visuelle réelle 320/390/1280/1440, iPhone et lecteur d'écran reste à effectuer.
+
+La charte reste **une proposition**, pas une refonte approuvée de l'ensemble de Smart Budget. Pas de publication en production ni fusion de la PR #49.
