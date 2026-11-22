@@ -318,3 +318,137 @@
 @media(prefers-reduced-motion:reduce){
   #categories .category-group :where(*,*::before,*::after){transition:none!important;animation:none!important}
 }
+
+
+/* PR49 31uf — Quiet structural chrome.
+ * The budgets and their bars carry the information, not separator stacks.
+ */
+#categories .budget-distribution,
+#categories .category-group{
+ box-shadow:none;
+}
+#categories .category-group{
+ gap:.875rem;
+}
+#categories .category-group-head{
+ border:0;
+ padding:0 0 .25rem;
+}
+#categories .bd-heading{border:0;padding-bottom:.25rem}
+#categories .bd-changes{border-top:0;padding-top:.375rem}
+#categories .category-cards:not(.income-cards){
+ column-gap:clamp(1rem,2vw,1.75rem);
+}
+#categories .category-cards:not(.income-cards) .cat-section,
+#categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
+ padding-inline:0;
+ border:0;
+}
+#categories .cat-section-head{margin:0;padding:0 0 .55rem}
+#categories .cat-section-title{font-size:.875rem;font-weight:600}
+#categories .cat-section-total{font-size:.8125rem;margin:.2rem 0 0}
+#categories .cat-item{
+ border:0;
+ border-radius:.6rem;
+ padding:.625rem 0;
+}
+#categories .cat-item:not(.menu-open):hover{background:transparent}
+#categories .cat-name{font-weight:550}
+#categories .cat-planned-button{
+ color:var(--muted);
+}
+#categories .cat-value-button{font-variant-numeric:tabular-nums}
+#categories .bd-toolbar .is-active,
+#categories .bd-level .is-active,
+#categories .bd-toolbar .is-active:hover,
+#categories .bd-level .is-active:hover,
+#categories .bd-toolbar .is-active:focus-visible,
+#categories .bd-level .is-active:focus-visible{
+ color:var(--text)!important;
+ background:var(--panel)!important;
+ box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+#categories .bd-toolbar button,
+#categories .bd-level button{color:var(--muted)}
+#categories .bd-toolbar button:hover:not(.is-active),
+#categories .bd-level button:hover:not(.is-active){color:var(--text)}
+#categories .bd-sort{display:flex;align-items:center;gap:.6rem}
+#categories .bd-sort-picker{position:relative;min-width:0}
+#categories .bd-sort-trigger{
+ display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+ min-height:2.5rem;min-width:9rem;max-width:100%;
+ padding:.5rem .65rem .5rem .8rem;
+ background:var(--panel);color:var(--text);
+ border:.0625rem solid var(--line);border-radius:.7rem;
+ font:inherit;font-size:.8125rem;font-weight:550;text-align:left;
+ cursor:pointer;
+}
+#categories .bd-sort-trigger svg{width:1rem;height:1rem;flex:0 0 auto;stroke:currentColor;stroke-width:1.8;fill:none;transition:transform .18s ease}
+#categories .bd-sort-trigger[aria-expanded=true] svg{transform:rotate(180deg)}
+#categories .bd-sort-menu{
+ position:absolute;z-index:80;
+ top:calc(100% + .35rem);right:0;min-width:max(12.5rem,100%);
+ padding:.3rem;background:var(--panel);color:var(--text);
+ border:.0625rem solid var(--line);border-radius:.75rem;
+ box-shadow:0 .9rem 2rem rgba(0,0,0,.16);
+}
+#categories .bd-sort-menu[hidden]{display:none!important}
+#categories .bd-sort-menu button{
+ display:block;width:100%;min-height:2.5rem;
+ padding:.55rem .7rem;
+ border:0;border-radius:.5rem;
+ background:transparent;color:var(--text);
+ text-align:left;font:inherit;font-size:.8125rem;font-weight:500;
+ cursor:pointer;
+}
+#categories .bd-sort-menu button:hover,
+#categories .bd-sort-menu button:focus-visible,
+#categories .bd-sort-menu button[aria-selected=true]{
+ background:var(--panel-2);color:var(--text);
+}
+#categories .bd-sort-menu button[aria-selected=true]{
+ font-weight:650;
+}
+#categories .bd-sort-trigger:focus-visible,
+#categories .bd-sort-menu button:focus-visible{
+ outline:.15rem solid #5c29d6;outline-offset:.12rem;
+}
+#categories .category-menu,
+#categories .cat-section-menu{
+ background:var(--panel)!important;
+ border-color:var(--line)!important;
+ box-shadow:0 .8rem 2rem rgba(0,0,0,.15);
+}
+#categories .category-menu button,
+#categories .cat-section-menu button{
+ color:var(--text);
+}
+#categories .category-menu button.danger,
+#categories .cat-section-menu button.danger{color:var(--expense)}
+#categories .cat-quick-fill{
+ background:var(--panel-2);
+ border-color:var(--line);
+ color:var(--income);
+}
+#categories .cat-bulk.fill{
+ background:var(--panel-2);
+ border-color:var(--line);
+ color:var(--income);
+}
+@media(max-width:56rem){
+ #categories .category-cards:not(.income-cards) .cat-section,
+ #categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
+  padding:.75rem 0;border:0;
+ }
+ #categories .category-cards:not(.income-cards) .cat-section:first-child{padding-top:0}
+ #categories .category-cards:not(.income-cards) .cat-section:last-child{padding-bottom:0}
+}
+@media(max-width:38rem){
+ #categories .bd-sort-trigger{min-width:8rem}
+ #categories .bd-sort-menu{max-width:min(16rem,90vw)}
+ #categories .category-group{gap:.75rem}
+ #categories .cat-item{padding-block:.5rem}
+}
+@media(prefers-reduced-motion:reduce){
+ #categories .bd-sort-trigger svg{transition:none}
+}
