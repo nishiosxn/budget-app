@@ -187,8 +187,20 @@ function renderCategories(m){
  const savingGroup='<section class="category-group card saving-group" aria-labelledby="cg-savings"><div class="category-group-head"><h2 id="cg-savings">Épargne</h2>'+
   '<div class="cg-head-end">'+sectionFigures(savingActual,savingPlanned)+(showExtras?categoryBulkButtons("expense","__savings__","Épargne"):"")+'</div></div>'+
   '<div class="category-cards income-cards">'+savingCard+'</div></section>';
- document.getElementById("categoryGrid").innerHTML=banner+
-  ((!filter||filter.type==="income")?incomeGroup:"")+
-  ((!filter||filter.type==="expense")?expenseGroup:"")+
-  (!filter?savingGroup:"");
+ const gridHost=document.getElementById("categoryGrid");
+ const visibleIncome=(!filter||filter.type==="income")?incomeGroup:"";
+ const visibleExpense=(!filter||filter.type==="expense")?expenseGroup:"";
+ const visibleSaving=!filter?savingGroup:"";
+ if(gridHost?.dataset?.layout==="hybrid"){
+  // Preserve the chart's node and delegated category listeners on every render.
+  // Only the generated group contents are refreshed; no handlers/data are rebuilt.
+  document.getElementById("categoryFilterSlot").innerHTML=banner;
+  document.getElementById("categoryIncomeSlot").innerHTML=visibleIncome;
+  document.getElementById("categoryExpenseSlot").innerHTML=visibleExpense;
+  document.getElementById("categorySavingSlot").innerHTML=visibleSaving;
+  gridHost.dataset.filterType=filter?.type||"all";
+ }else{
+  // DOM-light regression harnesses still use the legacy single target.
+  gridHost.innerHTML=banner+visibleIncome+visibleExpense+visibleSaving;
+ }
 }
