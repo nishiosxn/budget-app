@@ -228,7 +228,7 @@ test("PR49 31ui: actual published category rows render against local-only fixtur
  vm.runInContext("renderCategories(metrics())",box);
  const html=grid.innerHTML;
  assert.match(html,/Répartition|Revenus/);
- for(const key of ["Dépenses","Épargne","Obligatoires","Abonnements","Vie courante","data-fill-category","data-demo-settings","data-delete-category","data-edit-actual","data-edit-planned","data-add-category","data-add-saving","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
+ for(const key of ["Dépenses","Épargne","Obligatoires","Abonnements","Vie courante","data-demo-fill-category","data-demo-settings","data-delete-category","data-edit-actual","data-edit-planned","data-add-category","data-add-saving","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
   assert.ok(html.includes(key),key);
  }
  assert.ok(html.includes("cat-section-actions"));
@@ -380,7 +380,7 @@ test("PR49 31ui: full category tile functionality renders in vertical financial 
  vm.runInContext("renderCategories(metrics())",box);
  const html=grid.innerHTML;
  assert.ok(html.indexOf("Obligatoires")<html.indexOf("Abonnements")&&html.indexOf("Abonnements")<html.indexOf("Vie courante"));
- for(const key of ["cat-budget-list","cat-budget-tile","cat-progress-track","data-fill-category","data-edit-actual","data-edit-planned","data-demo-settings","data-delete-category","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
+ for(const key of ["cat-budget-list","cat-budget-tile","cat-progress-track","data-demo-fill-category","data-edit-actual","data-edit-planned","data-demo-settings","data-delete-category","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
   assert.ok(html.includes(key),key);
  }
  assert.ok(html.includes("Tout remplir")&&html.includes("Tout vider"));
@@ -439,8 +439,12 @@ test("PR49 31ui: grouped fill and clear restore real amounts without touching pl
  const probe=expr=>vm.runInContext(expr,box);
  assert.equal(probe("metrics().expMap.groceries"),186);
  assert.equal(probe("metrics().expMap.car"),54);
- assert.equal(probe('prototypeBulkActual("expense","Vie courante","fill")'),2);
- assert.equal(probe("metrics().expMap.groceries"),250);
+ assert.equal(probe('prototypeBulkActual("expense","Vie courante","fill-empty")'),0);
+ assert.equal(probe("metrics().expMap.groceries"),186,"existing real must remain untouched");
+ assert.equal(probe("metrics().expMap.car"),54);
+ probe('setCategoryActual("car",0,"expense")');
+ assert.equal(probe('prototypeBulkActual("expense","Vie courante","fill-empty")'),1);
+ assert.equal(probe("metrics().expMap.groceries"),186);
  assert.equal(probe("metrics().expMap.car"),120);
  assert.equal(probe('visibleExpenseCategories().find(c=>c.id==="car").budget'),120);
  assert.equal(probe('prototypeBulkActual("expense","Vie courante","clear")'),2);
@@ -462,7 +466,9 @@ test("PR49 31ui: grouped fill and clear restore real amounts without touching pl
  probe('openCategorySettings("car","expense")');
  element("categorySettingsSection").value="Abonnements";
  callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
- assert.equal(probe('categorySectionOf(catById("car","expense"))'),"Abonnements");
+ assert.equal(probe('visibleExpenseCategories().find(c=>c.id==="car").section'),"Abonnements");
+ assert.equal(probe('planForCategory(catById("car"),"2026-10").section'),"Vie courante");
+ assert.equal(probe('planForCategory(catById("car"),"2026-12").section'),"Vie courante");
  probe('openCategorySettings("salary","income")');
  assert.equal(element("categorySettingsSectionField").hidden,true);
  probe('openCategorySettings("reserve","expense")');
@@ -480,7 +486,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  assert.ok(html.includes('category-prototype.js?v=31ui'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
- assert.match(js,/categoryTransactionSnapshot/);
+ assert.match(js,/revertPrototypeAdjustments/);
  assert.match(js,/showUndoToast/);
  assert.match(js,/setCategoryActual/);
  assert.match(js,/setCategoryPlan/);
