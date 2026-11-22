@@ -197,7 +197,7 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
  for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31uj"),key);
+  assert.ok(page.includes(key+"?v=31ul"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -483,7 +483,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31uj'));
+ assert.ok(html.includes('category-prototype.js?v=31ul'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
