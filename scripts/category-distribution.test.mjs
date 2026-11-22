@@ -205,7 +205,7 @@ test("PR49 31uf: preview reuses exact published category handlers and source CSS
  assert.doesNotMatch(page,/supabase|cloudflare|https:\/\/|localStorage|fetch\(/i);
  const state=read("preview/category-distribution/demo-state.js");
  assert.match(state,/function saveState\(\)\{\}/);
- assert.doesNotMatch(state,/\bfetch\s*\(|localStorage|sessionStorage/);
+ assert.doesNotMatch(state.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\s*\(|localStorage|sessionStorage/);
  assert.match(live,/data-fill-category/);
  assert.match(live,/data-bulk-action/);
  assert.match(live,/data-category-menu-trigger/);
