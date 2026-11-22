@@ -5,7 +5,8 @@
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; form-action 'none'; base-uri 'none'">
 <title>Catégories · Smart Budget — prévisualisation PR49</title>
-<link rel="stylesheet" href="./app-style.css?v=31ul">
+<link rel="stylesheet" href="./app-style.css?v=31um">
+<link rel="stylesheet" href="./mobile-ui.css?v=31um">
 <style>
 :root{
  color-scheme:light;
@@ -40,38 +41,125 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
 #demoToast button{color:var(--panel);border:.0625rem solid currentColor;background:transparent;border-radius:.45rem;padding:.3rem .45rem;font:inherit;cursor:pointer}
 @media(max-width:38rem){.demo-controls{width:100%}.demo-controls>label{flex:1}.demo-controls select{width:100%}}
 </style>
-<link rel="stylesheet" href="./category-distribution.css?v=31ul">
-<link rel="stylesheet" href="./preview-polish.css?v=31ul">
-<script defer src="./demo-state.js?v=31ul"></script>
-<script defer src="./category-render-live.js?v=31ul"></script>
-<script defer src="./categories-live.js?v=31ul"></script>
-<script defer src="./category-prototype.js?v=31ul"></script>
-<script defer src="./category-distribution.js?v=31ul"></script>
-<script defer src="./demo-init.js?v=31ul"></script>
+<link rel="stylesheet" href="./demo-shell.css?v=31um">
+<link rel="stylesheet" href="./category-distribution.css?v=31um">
+<link rel="stylesheet" href="./preview-polish.css?v=31um">
+<script defer src="./demo-state.js?v=31um"></script>
+<script defer src="./category-render-live.js?v=31um"></script>
+<script defer src="./categories-live.js?v=31um"></script>
+<script defer src="./category-prototype.js?v=31um"></script>
+<script defer src="./category-distribution.js?v=31um"></script>
+<script defer src="./demo-chrome.js?v=31um"></script>
+<script defer src="./demo-init.js?v=31um"></script>
 </head>
 <body>
-<div class="shell">
- <header class="demo-header">
-  <div class="demo-brand"><div class="demo-symbol" aria-hidden="true">✓</div><h1>Smart Budget</h1></div>
-  <div class="demo-controls">
-   <label for="demoMonth">Mois <select id="demoMonth"><option value="Octobre 2026">Octobre 2026</option><option value="Novembre 2026" selected>Novembre 2026</option><option value="Décembre 2026">Décembre 2026</option></select></label>
-   <button id="themeToggle" type="button">Mode clair</button>
-  </div>
- </header>
- <p class="demo-notice">Données fictives · Aucun compte connecté · Modifications temporaires</p>
- <main id="categories">
-  <div id="categoryGrid" class="category-layout" data-layout="hybrid">
-   <div id="categoryFilterSlot"></div>
-   <div class="category-top">
-    <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
-    <div id="categoryIncomeSlot"></div>
+<div class="app demo-app">
+ <main class="shell">
+  <header class="topbar">
+   <div class="brand">
+    <div class="logo" aria-hidden="true">
+     <svg class="theme-logo" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>
+    </div>
+    <div class="brand-copy"><h1 id="householdTitle">Foyer fictif</h1><p>Smart Budget</p></div>
    </div>
-   <div id="categoryExpenseSlot"></div>
-   <div id="categorySavingSlot"></div>
+   <div class="topbar-cloud-tools">
+    <span class="cloud-sync-status demo-sync-status" data-state="offline" role="status">Démo locale</span>
+    <button id="themeToggle" class="settings-trigger demo-theme-trigger" type="button" aria-label="Passer en mode clair" title="Mode clair / sombre">
+     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.64 5.64l1.42 1.42m9.88 9.88 1.42 1.42m0-12.72-1.42 1.42m-9.88 9.88-1.42 1.42"/><circle cx="12" cy="12" r="4"/></svg>
+    </button>
+    <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres (aperçu visuel)" title="Paramètres — aperçu visuel">
+     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34 1.7 1.7 0 0 0-1.03-1.56v-.08H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+    </button>
+   </div>
+  </header>
+  <div class="nav-row">
+   <nav class="tabs" aria-label="Navigation Smart Budget">
+    <button class="tab" type="button" disabled title="Vue d'ensemble non incluse dans la prévisualisation">Vue d'ensemble</button>
+    <button class="tab active" type="button" aria-current="page">Catégories</button>
+    <button class="tab" type="button" disabled title="Historique non inclus dans la prévisualisation">Historique</button>
+    <button class="tab" type="button" disabled title="Suivi non inclus dans la prévisualisation">Suivi</button>
+   </nav>
+   <div class="top-actions nav-primary-actions">
+    <div class="month-nav" aria-label="Navigation entre les mois">
+     <button id="prevMonth" class="month-arrow" type="button" aria-label="Mois précédent" title="Mois précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+     <div class="month-wrap demo-month-wrap">
+      <label class="demo-sr-only" for="demoMonth">Choisir le mois</label>
+      <select id="demoMonth" class="demo-month-select"><option value="Octobre 2026">Octobre 2026</option><option value="Novembre 2026" selected>Novembre 2026</option><option value="Décembre 2026">Décembre 2026</option></select>
+     </div>
+     <button id="nextMonth" class="month-arrow" type="button" aria-label="Mois suivant" title="Mois suivant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <button class="btn btn-income" type="button" data-demo-add="income">＋ Rentrée d'argent</button>
+    <button class="btn btn-expense" type="button" data-demo-add="expense">＋ Dépense</button>
+   </div>
   </div>
+  <p class="demo-notice">Données fictives · Aucun compte connecté · Modifications temporaires</p>
+  <section id="categories">
+   <div id="categoryGrid" class="category-layout" data-layout="hybrid">
+    <div id="categoryFilterSlot"></div>
+    <div class="category-top">
+     <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
+     <div id="categoryIncomeSlot"></div>
+    </div>
+    <div id="categoryExpenseSlot"></div>
+    <div id="categorySavingSlot"></div>
+   </div>
+  </section>
  </main>
+ <nav class="mobile-bottom-nav" aria-label="Navigation principale mobile">
+  <div class="mobile-bottom-nav__inner">
+   <button class="mobile-nav-item" type="button" disabled title="Vue d'ensemble non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3Z"/></svg></span><span class="mobile-nav-label">Accueil</span></button>
+   <button class="mobile-nav-item is-active" type="button" aria-current="page"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7H3z"/></svg></span><span class="mobile-nav-label">Catégories</span></button>
+   <button class="mobile-nav-item mobile-nav-add" type="button" id="mobileAddButton" aria-label="Ajouter une dépense ou un revenu" aria-haspopup="dialog" aria-controls="mobileQuickAdd" aria-expanded="false"><span class="mobile-nav-add__circle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="mobile-nav-label">Ajouter</span></button>
+   <button class="mobile-nav-item" type="button" disabled title="Historique non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l4 2"/></svg></span><span class="mobile-nav-label">Historique</span></button>
+   <button class="mobile-nav-item" type="button" disabled title="Suivi non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 16l4-5 4 2 5-7"/></svg></span><span class="mobile-nav-label">Suivi</span></button>
+  </div>
+ </nav>
+ <div id="mobileQuickAdd" class="mobile-quick-add" aria-hidden="true">
+  <button class="mobile-quick-add__scrim" type="button" aria-label="Fermer les actions d'ajout"></button>
+  <div class="mobile-quick-add__panel" role="dialog" aria-label="Ajouter une opération">
+   <button class="mobile-quick-add__option" type="button" data-demo-add="expense"><span class="mobile-quick-add__option-icon expense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M10 17h7v-7"/></svg></span><span><strong>Ajouter une dépense</strong><small>Achat, facture, abonnement…</small></span></button>
+   <button class="mobile-quick-add__option" type="button" data-demo-add="income"><span class="mobile-quick-add__option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 17 7 7M14 7H7v7"/></svg></span><span><strong>Ajouter un revenu</strong><small>Salaire, aide, remboursement…</small></span></button>
+  </div>
+ </div>
 </div>
 <div id="demoToast" role="status" hidden></div>
+<div id="modalBackdrop" class="modal-backdrop demo-transaction-backdrop" aria-hidden="true">
+ <div class="modal demo-transaction-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-head">
+   <div><h3 id="modalTitle">Ajouter une dépense</h3><div id="modalKind" class="modal-kind">Dépense</div></div>
+   <button class="close" type="button" id="closeModal" aria-label="Fermer">×</button>
+  </div>
+  <form id="demoTransactionForm">
+   <div class="amount-wrap">
+    <div class="amount-stepper" aria-label="Ajuster le montant">
+     <button type="button" class="amount-step" id="amountUp" aria-label="Augmenter le montant">+</button>
+     <button type="button" class="amount-step" id="amountDown" aria-label="Diminuer le montant">−</button>
+    </div>
+    <label class="demo-sr-only" for="amountInput">Montant en euros</label>
+    <input id="amountInput" class="amount-input" type="number" inputmode="decimal" min="0.01" max="99999999" step="0.01" placeholder="0,00" required>
+    <span class="euro">€</span>
+   </div>
+   <div class="field"><label for="transactionLabel">LIBELLÉ <span class="demo-optional">(FACULTATIF)</span></label><input id="transactionLabel" class="category-form-input transaction-label" type="text" maxlength="70" placeholder="Ex. Courses Lidl, salaire, restaurant…"></div>
+   <div class="field"><label for="transactionDateInput">DATE DE L'OPÉRATION</label><input id="transactionDateInput" class="category-form-input" type="date" required></div>
+   <div class="field"><label id="ownerSwitchLabel">QUI A PAYÉ ?</label>
+    <div id="ownerSwitch" class="owner-switch" role="group" aria-label="Attribuer l'opération">
+     <button type="button" class="owner-option active" data-owner="common" aria-pressed="true">À deux</button>
+     <button type="button" class="owner-option" data-owner="B" aria-pressed="false">Personne 1</button>
+     <button type="button" class="owner-option" data-owner="A" aria-pressed="false">Personne 2</button>
+    </div>
+   </div>
+   <div class="field"><label for="categorySelect">CATÉGORIE</label><div class="select-wrap demo-category-wrap"><select id="categorySelect" class="category-form-input" required></select></div></div>
+   <div class="field" id="transactionScopeField"><label>PÉRIODE</label>
+    <div id="transactionScopeSwitch" class="owner-switch plan-scope-switch" role="group" aria-label="Période de l'opération">
+     <button type="button" class="owner-option active" data-transaction-scope="month" aria-pressed="true">Ce mois seulement</button>
+     <button type="button" class="owner-option" data-transaction-scope="forward" aria-pressed="false">À partir de ce mois</button>
+    </div>
+    <div id="transactionScopeHint" class="scope-hint">Cette opération sera comptée uniquement sur le mois affiché.</div>
+   </div>
+   <button id="saveTransaction" class="btn btn-expense save" type="submit">Ajouter la dépense</button>
+  </form>
+ </div>
+</div>
 <div id="categoryEditBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="categoryEditTitle">
     <div class="modal-head"><div><h3 id="categoryEditTitle">Modifier le budget</h3><div id="categoryEditKind" class="modal-kind"></div></div><button class="close" id="closeCategoryEdit" aria-label="Fermer">×</button></div>
