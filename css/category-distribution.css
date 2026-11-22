@@ -470,7 +470,8 @@
  background:transparent;
 }
 #categories .cat-name-toggle:hover .cat-name,
-#categories .cat-name-toggle:focus-visible .cat-name{
+#categories .cat-name-toggle:focus-visible .cat-name,
+#categories .cat-value-button.is-matched{
  color:var(--text);
 }
 #categories .cat-item.details-open .cat-detail-chevron{
