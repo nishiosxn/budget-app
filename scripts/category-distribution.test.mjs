@@ -298,3 +298,73 @@ test("PR49 31uf: actual category actions mutate only fixture memory",()=>{
  assert.match(ids.get("categoryGrid").innerHTML,/Jouets/);
  assert.ok(!("supabase" in box));
 });
+
+
+test("PR49 31ug: orphan groups are visible, grouped and included in real and planned totals",()=>{
+ const grid={innerHTML:""};
+ const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ vm.runInContext('EXPENSE_CATEGORIES.push({id:"misc",name:"Taxi",section:"Déplacements",budget:25,owner:"B"});state.transactions.push({id:"misc-actual",type:"expense",category:"misc",amount:14,date:"2026-11-12",owner:"B"});renderCategories(metrics())',box);
+ const html=grid.innerHTML;
+ assert.match(html,/Autres/);
+ assert.match(html,/Taxi/);
+ assert.match(html,/14,00/);
+ assert.match(html,/25,00/);
+ assert.equal((html.match(/Taxi/g)||[]).length,1);
+ assert.doesNotMatch(html,/Prévu · Personne/);
+ const realUI=read("js/ui.js");
+ for(const fragment of ["function categorySectionOf","categorySectionOf(c)===section","sections.push(\"Autres\")","categorySectionOf(c)!==section"]){
+  assert.ok(realUI.includes(fragment),fragment);
+ }
+});
+test("PR49 31ug: balanced monthly budget movements are not mislabeled as no changes",()=>{
+ const host={dataset:{},innerHTML:"",addEventListener(){},contains(){return true}};
+ const grid={innerHTML:""};
+ const current=[{id:"rent",section:"Obligatoires",name:"Loyer",budget:510},
+  {id:"food",section:"Vie courante",name:"Courses",budget:190}];
+ const previous=[{id:"rent",section:"Obligatoires",name:"Loyer",budget:500},
+  {id:"food",section:"Vie courante",name:"Courses",budget:200}];
+ const {model}=setup({
+  document:{getElementById:id=>id==="categoryDistribution"?host:id==="categoryGrid"?grid:null},
+  state:{selectedMonth:"novembre 2026",createdMonth:"2026-09"},
+  visibleExpenseCategories:month=>month==="2026-10"?previous:current,
+  visibleIncomeCategories:()=>[],
+  monthKey:()=> "2026-11",
+  previousMonthKey:()=> "2026-10"
+ });
+ model.render();
+ assert.match(host.innerHTML,/2 enveloppes modifiées/);
+ assert.match(host.innerHTML,/Total inchangé/);
+ assert.doesNotMatch(host.innerHTML,/Aucune modification/);
+ const source=read("js/category-distribution.js");
+ const summary=source.slice(source.indexOf("function summaryMarkup"),source.indexOf("function changesMarkup"));
+ assert.doesNotMatch(summary,/data-bd-action="view"/,"selected filter already updates the list");
+ assert.match(summary,/data-bd-action="edit"/,"quick edit remains available");
+});
+test("PR49 31ug: only one horizontal list divider, three desktop columns and neutral category hover",()=>{
+ const css=read("css/category-distribution.css");
+ const polish=read("preview/category-distribution/preview-polish.css");
+ assert.match(css,/PR49 31ug — Category rows and neutral states/);
+ assert.match(css,/\.cat-item \+ \.cat-item\{\s*border-top:\.0625rem solid var\(--line\)/);
+ assert.match(css,/\.category-cards:not\(\.income-cards\)\{\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.doesNotMatch(css,/\.cat-section:not\(:last-child\)\{\s*border-right:\.0625rem/);
+ assert.match(css,/\.cat-name-toggle:hover \.cat-name,[\s\S]*?color:var\(--text\)/);
+ assert.match(css,/\.cat-item\.details-open \.cat-detail-chevron\{\s*color:var\(--muted\)/);
+ assert.match(css,/\.bd-legend-row\.is-active\{\s*background:var\(--panel-2\)/);
+ assert.match(css,/@media\(max-width:56rem\)\{[\s\S]*?grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(polish,/#categoryEditBackdrop \.modal/);
+ assert.equal(css,read("preview/category-distribution/category-distribution.css"));
+});
+test("PR49 31ug: test-only dialogs trap focus and restore it without persistent storage",()=>{
+ const boot=read("preview/category-distribution/demo-init.js");
+ const page=read("preview/category-distribution/index.html");
+ for(const part of ["MutationObserver","event.key===\"Tab\"","event.shiftKey","requestAnimationFrame(returnFocus)","target.focus({preventScroll:true})","event.key===\"Escape\""]){
+  assert.ok(boot.includes(part),part);
+ }
+ assert.match(page,/aria-modal="true"/);
+ assert.match(page,/connect-src 'none'/);
+ assert.doesNotMatch(boot,/\bfetch\(|localStorage|sessionStorage/);
+});
