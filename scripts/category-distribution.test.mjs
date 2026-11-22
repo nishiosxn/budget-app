@@ -752,6 +752,17 @@ test("PR49 31um: isolated add-operation controller supports local month and recu
  assert.equal(evalIn('demoTransactionCategories("income").length'),2);
  assert.ok(evalIn('demoTransactionCategories("expense").some(c=>c.group==="Épargne")'));
  element("demoMonth").options=[{value:"Octobre 2026"},{value:"Novembre 2026"},{value:"Décembre 2026"}];
+ evalIn('openDemoTransactionModal("expense")');
+ assert.equal(element("modalBackdrop").classList.contains("open"),true);
+ assert.equal(element("modalTitle").textContent,"Ajouter une dépense");
+ assert.ok(element("categorySelect").children.length>=3,"expense groups are available");
+ assert.equal(element("transactionDateInput").value,"2026-11-22");
+ evalIn('closeDemoTransactionModal()');
+ assert.equal(element("modalBackdrop").classList.contains("open"),false);
+ evalIn('openDemoTransactionModal("income")');
+ assert.equal(element("modalTitle").textContent,"Ajouter une rentrée d'argent");
+ assert.ok(element("categorySelect").children.length>=1,"income groups are available");
+ evalIn('closeDemoTransactionModal()');
  evalIn('demoTransactionType="expense";demoSetOwner("B");demoSetScope("month")');
  element("amountInput").value="17.45";
  element("categorySelect").value="groceries";
