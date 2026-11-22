@@ -182,3 +182,22 @@ Un passage en vrai navigateur desktop et iPhone, modes clair/sombre, 320/390/128
 - Le viewport 16:9 est une **référence visuelle desktop**, pas une contrainte de hauteur CSS sur la vraie page.
 
 **Limites et autorisations** : uniquement la prévisualisation de PR #49, sans déployer le nouveau layout en production ni déplacer la logique de données. Vérifications de rendu navigateur desktop/iPhone et tests lecteurs d'écran à effectuer avant une éventuelle intégration.
+
+
+## Essai 31up — actions primaires et survols financiers
+
+Cette passe ne change **ni** la disposition validée A + C **ni** la position du bouton clair/sombre, de la navigation, du mois, ou de la barre inférieure mobile. La version 31un a été archivée, sans modification, dans previews/pr-49/versions/31un/ ; la 31um reste également archivée.
+
+**Audit :** les boutons « Rentrée d'argent » et « Dépense » avaient deux traitements de surface très différents (violet pâle contre texte/contraste inversé), alors que tous deux déclenchent la même famille d'action. Le survol de chaque catégorie ajoutait un rectangle coloré non justifié autour d'une ligne qui n'est pas elle-même cliquable. Les jauges réelles/prévues restaient informatives mais ne fournissaient pas la décomposition utilisé / budget / reste au survol. La barre de répartition présentait déjà une infobulle mais affichait seulement les montants prévus.
+
+**Direction :** chrome silencieux, une seule action primaire (Dépense) avec le violet Smart Budget #5C29D6, Rentrée d'argent en contour neutre. Les boutons des modales reprennent le violet de marque et conservent le même comportement. Icône + au même style que le bouton de navigation mobile. Aucun rouge/vert décoratif sur des boutons de navigation.
+
+**9 passes Unslop ciblées** : conserver espacements, palette neutre, icônes cohérentes, microcopy actuelle, montants tabulaires, layout A + C, supprimer l'affordance de carte non cliquable, réserver le détail financier au seul survol/focus des barres, et éviter toute animation gratuite.
+
+- **Catégories Dépenses / Revenus / Épargne :** pas de changement de fond ni de bordure sur la carte au hover ; seuls les boutons conservent leurs affordances.
+- **Toutes les jauges de catégories :** l'infobulle indique le montant utilisé (ou reçu/épargné), le budget prévu et le reste (ou le dépassement). Pas de budget : afficher explicitement « Sans budget ». Le libellé accessible au clavier comprend les trois informations.
+- **Répartition des budgets :** les segments colorés affichent la même décomposition au survol et au focus, selon le réel de leurs catégories. Le filtre tactile affiche aussi le détail réel/prévu/restant après sélection.
+- **Téléphone :** toucher une jauge ouvre son détail ; toucher à nouveau ou ailleurs le referme ; fermeture au défilement et par Échap. Une zone de contact transparente élargit la barre visuelle à 2,75rem, sans épaissir la jauge.
+- **Conservation :** 31un et 31um restent disponibles pour comparaison ; code nouveau limité à la prévisualisation isolée et à ses tests. Ni logique métier, ni données de compte, ni production ne sont modifiées.
+
+Tests JavaScript, focus, responsive, couleurs et résultat sur véritable iPhone/desktop devront être validés avant tout portage.
