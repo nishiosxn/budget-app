@@ -74,7 +74,7 @@ function prototypeReadAmount(id){
  return Math.round(Number(value)*100)/100;
 }
 categorySettingsForm.addEventListener("input",event=>{
- if(event.target instanceof HTMLInputElement)event.target.setCustomValidity("");
+ if(typeof event.target?.setCustomValidity==="function")event.target.setCustomValidity("");
 });
 categorySettingsForm.addEventListener("submit",event=>{
  event.preventDefault();
@@ -132,12 +132,15 @@ categoryGrid.addEventListener("click",event=>{
  categoryGrid.querySelectorAll("[data-demo-clear-all]").forEach(button=>{
   button.dataset.demoArmed="false";
   button.querySelector("span").textContent="Tout vider";
+  button.setAttribute("aria-label","Remettre tous les réels à zéro");
  });
  clear.dataset.demoArmed="true";
+ clear.setAttribute("aria-label","Confirmer la remise à zéro des montants réels");
  clear.querySelector("span").textContent="Confirmer";
  clearArmTimer=setTimeout(()=>{
   if(!clear.isConnected)return;
   clear.dataset.demoArmed="false";
   clear.querySelector("span").textContent="Tout vider";
+  clear.setAttribute("aria-label","Remettre tous les réels à zéro");
  },4500);
 });
