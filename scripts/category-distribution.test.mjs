@@ -494,7 +494,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  assert.match(js,/setCategoryActual/);
  assert.match(js,/setCategoryPlan/);
  assert.match(js,/renameCategory/);
- assert.match(boot,/backdrops=\[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop\]/);
+ assert.match(boot,/backdrops=\[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop,demoTransactionBackdrop\]/);
  assert.match(boot,/event\.shiftKey/);
  assert.match(boot,/closeCategorySettings\(\)/);
  assert.match(css,/\.sb-settings-field\[hidden\]\{display:none!important\}/);
