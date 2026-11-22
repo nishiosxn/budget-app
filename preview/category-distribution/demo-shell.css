@@ -1,0 +1,205 @@
+/* PR49 31um — isolated Smart Budget chrome (same navigation grammar as published app).
+ * The only live view is Catégories. Other tabs are intentionally disabled.
+ * Unslop: quiet chrome, #5C29D6 brand, mobile-first readable controls.
+ */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html[data-demo-theme="dark"]{color-scheme:dark}
+html[data-demo-theme="light"]{color-scheme:light}
+.demo-app{min-height:100dvh;color:var(--text);background:var(--bg)}
+.demo-app .shell{
+ width:min(70rem,calc(100% - 2rem));
+ margin-inline:auto;
+ padding:clamp(1rem,2vw,2rem) 0 calc(4rem + env(safe-area-inset-bottom));
+}
+.demo-app .topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.875rem}
+.demo-app .brand{display:flex;align-items:center;gap:.75rem;min-width:0}
+.demo-app .logo{width:2.75rem;height:2.75rem;flex:0 0 2.75rem;color:#5c29d6}
+.demo-app .logo svg{display:block;width:100%;height:100%}
+.demo-app .brand-copy{min-width:0}
+.demo-app .brand-copy h1{margin:0;color:var(--text);font-size:1.125rem;font-weight:700;line-height:1.2;letter-spacing:-.025em}
+.demo-app .brand-copy p{margin:.2rem 0 0;font-size:.75rem;color:var(--muted)}
+.demo-app .topbar-cloud-tools{display:flex;align-items:center;gap:.5rem;flex:0 0 auto}
+.demo-app .demo-sync-status{
+ display:inline-flex;align-items:center;gap:.375rem;
+ padding:.4rem .65rem;border:.0625rem solid var(--line);
+ border-radius:.625rem;background:var(--panel);
+ color:var(--muted);font-size:.75rem;font-weight:550;
+ white-space:nowrap;
+}
+.demo-app .demo-sync-status::before{content:"";width:.4rem;height:.4rem;flex:0 0 .4rem;border-radius:50%;background:var(--muted);opacity:.65}
+.demo-app .settings-trigger{
+ display:grid;place-items:center;
+ width:2.75rem;height:2.75rem;padding:0;
+ border:.0625rem solid var(--line);border-radius:.75rem;
+ color:var(--text);background:var(--panel);
+ cursor:pointer;box-shadow:none;
+}
+.demo-app .settings-trigger svg{display:block;width:1.2rem;height:1.2rem;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.demo-app .settings-trigger:hover{border-color:var(--muted);background:var(--panel-2)}
+.demo-app .nav-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.875rem;margin-bottom:1.125rem}
+.demo-app .tabs{display:flex;align-items:center;gap:.25rem;padding:.25rem;margin:0;border-radius:.75rem;background:var(--panel-2);border:.0625rem solid var(--line);width:max-content}
+.demo-app .tab{min-height:2.5rem;padding:.5rem .75rem;border:0;border-radius:.5625rem;background:transparent;font-size:.8125rem;font-weight:600;color:var(--muted)}
+.demo-app .tab.active{background:var(--panel);color:var(--text);box-shadow:0 .1rem .35rem rgba(0,0,0,.07)}
+.demo-app .tab:disabled{cursor:default;opacity:.7}
+.demo-app .nav-primary-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.55rem;margin-left:auto}
+.demo-app .month-nav{display:flex;gap:.35rem;align-items:center}
+.demo-app .month-arrow{
+ display:grid;place-items:center;
+ width:2.75rem;height:2.75rem;padding:0;
+ border:.0625rem solid var(--line);border-radius:.7rem;
+ background:var(--panel);color:var(--text);box-shadow:none;
+}
+.demo-app .month-arrow svg{width:1.125rem;height:1.125rem;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.demo-app .month-arrow:hover:not(:disabled){background:var(--panel-2);border-color:var(--muted);transform:none}
+.demo-app .month-arrow:disabled{opacity:.4;cursor:default}
+.demo-app .demo-month-wrap{position:relative;min-width:10.875rem}
+.demo-app .demo-month-wrap::after{
+ content:"";pointer-events:none;position:absolute;right:.95rem;top:50%;margin-top:-.2rem;
+ width:.45rem;height:.45rem;border-right:.11rem solid var(--muted);border-bottom:.11rem solid var(--muted);transform:rotate(45deg);
+}
+.demo-app .demo-month-select{
+ display:block;width:100%;min-height:2.75rem;appearance:none;
+ border:.0625rem solid var(--line);border-radius:.7rem;
+ background:var(--panel);color:var(--text);
+ padding:.6rem 2.1rem .6rem .8rem;
+ font:inherit;font-size:.8125rem;font-weight:600;
+ cursor:pointer;
+}
+.demo-app .demo-month-select:hover,.demo-app .demo-month-select:focus-visible{border-color:var(--muted)}
+.demo-app .btn{
+ min-height:2.75rem;display:inline-flex;justify-content:center;align-items:center;
+ border:0;border-radius:.7rem;padding:.6rem .875rem;gap:.35rem;font-size:.8125rem;font-weight:650;
+ white-space:nowrap;box-shadow:none;transform:none;
+}
+.demo-app .btn:hover{transform:none;filter:brightness(1.04)}
+.demo-app .btn-income{background:var(--accent-soft);color:var(--text)}
+.demo-app .btn-expense{background:var(--text);color:var(--panel)}
+.demo-app .demo-notice{margin:0 0 1rem;text-align:right;color:var(--muted);font-size:.75rem}
+.demo-sr-only{position:absolute!important;width:1px!important;height:1px!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;overflow:hidden!important;white-space:nowrap!important}
+.demo-app .mobile-nav-item:disabled{opacity:.62;cursor:default}
+.demo-app .mobile-nav-item:not(:disabled){cursor:pointer}
+.demo-app .mobile-bottom-nav{background:var(--panel);border-color:var(--line)}
+.demo-app .mobile-nav-icon{color:var(--muted)}
+.demo-app .mobile-nav-item.is-active{color:var(--text)}
+.demo-app .mobile-nav-item.is-active .mobile-nav-icon{background:var(--accent-soft);color:#5c29d6}
+.demo-app .mobile-nav-add__circle{background:#5c29d6;color:#fff}
+.demo-app .mobile-quick-add__panel{background:var(--panel);border:.0625rem solid var(--line)}
+.demo-app .mobile-quick-add__option{color:var(--text);background:var(--panel)}
+.demo-app .mobile-quick-add__option-icon{background:var(--accent-soft);color:#5c29d6}
+.demo-app .mobile-quick-add__option-icon.expense{color:var(--expense);background:color-mix(in srgb,var(--expense) 10%,var(--panel))}
+.demo-app .mobile-quick-add__option small{color:var(--muted)}
+.demo-transaction-backdrop{z-index:190}
+#modalBackdrop .demo-transaction-modal{
+ width:min(29.375rem,100%);
+ max-height:min(92dvh,49rem);
+ overflow:auto;
+ background:var(--panel);color:var(--text);
+ border:.0625rem solid var(--line);border-radius:1.15rem;
+ box-shadow:0 1.25rem 3.75rem rgba(0,0,0,.18);
+ padding:clamp(1rem,2.5vw,1.5rem);
+}
+#modalBackdrop .modal-head{display:flex;align-items:center;justify-content:space-between;gap:.875rem}
+#modalBackdrop .modal-head h3{font-size:1.125rem;font-weight:650}
+#modalBackdrop .close{
+ display:grid;place-items:center;flex:0 0 2.75rem;
+ width:2.75rem;height:2.75rem;
+ border:.0625rem solid var(--line);background:var(--panel-2);color:var(--text);
+}
+#modalBackdrop .amount-wrap{margin:1rem 0 1.25rem;display:grid;grid-template-columns:2.5rem minmax(0,1fr) 1.5rem;gap:.5rem;align-items:center}
+#modalBackdrop .amount-stepper{height:3rem;border:.0625rem solid var(--line);background:var(--panel-2)}
+#modalBackdrop .amount-step:hover{background:var(--panel);color:var(--text)}
+#modalBackdrop .amount-input{background:transparent;color:var(--text);font-size:clamp(1.875rem,6vw,2.75rem);font-weight:700;line-height:1.2}
+#modalBackdrop .amount-input::placeholder{color:var(--muted);opacity:.5}
+#modalBackdrop .euro{color:var(--muted)}
+#modalBackdrop .field{margin-top:.875rem}
+#modalBackdrop .field label{display:block;margin-bottom:.45rem;color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:0}
+#modalBackdrop .demo-optional{font-weight:400;color:var(--muted)}
+#modalBackdrop .category-form-input{
+ width:100%;min-height:2.75rem;height:auto;padding:.65rem .75rem;
+ color:var(--text);background:var(--panel-2);
+ border:.0625rem solid var(--line);border-radius:.65rem;
+ font:inherit;font-size:1rem;font-weight:500;
+ box-shadow:none;
+}
+#modalBackdrop .category-form-input:focus{background:var(--panel);border-color:#5c29d6;box-shadow:none;outline:.15rem solid #5c29d6;outline-offset:.1rem}
+#modalBackdrop .demo-category-wrap select{position:static!important;opacity:1!important;pointer-events:auto!important;height:auto!important}
+#modalBackdrop .owner-switch{background:var(--panel-2);border:.0625rem solid var(--line);padding:.25rem;gap:.25rem;border-radius:.75rem}
+#modalBackdrop .owner-option{min-height:2.75rem;border-radius:.55rem;color:var(--muted);background:transparent;font-size:.8125rem;font-weight:550;padding:.5rem}
+#modalBackdrop .owner-option.active{background:var(--panel);color:var(--text);box-shadow:0 .08rem .4rem rgba(0,0,0,.06)}
+#modalBackdrop .owner-option:hover{color:var(--text);background:var(--panel)}
+#modalBackdrop .scope-hint{font-size:.75rem;line-height:1.45}
+#modalBackdrop .save{width:100%;min-height:2.875rem;margin-top:1.125rem}
+#modalBackdrop .save:disabled{opacity:.45;cursor:default}
+#modalBackdrop button:focus-visible,#modalBackdrop select:focus-visible,#modalBackdrop input:focus-visible,
+.demo-app button:focus-visible,.demo-app select:focus-visible{
+ outline:.15rem solid #5c29d6;outline-offset:.12rem;
+}
+html[data-demo-theme="dark"] .demo-app .demo-sync-status,
+html[data-demo-theme="dark"] .demo-app .month-arrow,
+html[data-demo-theme="dark"] .demo-app .demo-month-select,
+html[data-demo-theme="dark"] .demo-app .settings-trigger{
+ background:var(--panel);color:var(--text);box-shadow:none;
+}
+html[data-demo-theme="dark"] .demo-app .tabs{background:var(--panel-2)}
+html[data-demo-theme="dark"] .demo-app .tab.active{background:var(--panel)}
+html[data-demo-theme="dark"] .demo-app .mobile-quick-add__panel{box-shadow:0 .75rem 2.25rem rgba(0,0,0,.35)}
+html[data-demo-theme="dark"] #modalBackdrop .modal{background:var(--panel);color:var(--text)}
+html[data-demo-theme="dark"] #modalBackdrop .owner-switch{background:var(--panel-2)}
+html[data-demo-theme="dark"] #modalBackdrop .owner-option.active{background:var(--panel);color:var(--text)}
+/* Keep the money heading physically anchored when the chart is stretched beside Revenus.
+   Grid auto-rows formerly stretched variably when switching Revenus/Dépenses. */
+#categories .budget-distribution{
+ align-content:start;
+ grid-auto-rows:max-content;
+ gap:1rem;
+}
+#categories .budget-distribution .bd-heading{min-height:1.75rem}
+#categories .budget-distribution .bd-toolbar{min-height:3rem}
+#categories .budget-distribution .bd-total{min-height:4.25rem;align-items:start}
+#categories .budget-distribution .bd-total>div{align-content:start}
+#categories .budget-distribution .bd-total strong{line-height:1.12}
+#categories .budget-distribution .bd-level-placeholder{visibility:hidden;pointer-events:none}
+#categories .budget-distribution .bd-level-placeholder span{
+ display:inline-grid;place-items:center;
+ min-width:6.8rem;min-height:2.3rem;padding:.5rem .65rem;
+ font:inherit;font-size:.75rem;font-weight:600;
+}
+@media(max-width:56.25rem){
+ .demo-app .shell{padding-bottom:calc(7.5rem + env(safe-area-inset-bottom))}
+ .demo-app .nav-row .tabs{display:none!important}
+ .demo-app .nav-primary-actions .btn{display:none!important}
+ .demo-app .mobile-bottom-nav{display:block}
+ .demo-app .mobile-quick-add{display:block}
+ .demo-app .demo-sync-status{font-size:.75rem}
+}
+@media(max-width:42.5rem){
+ .demo-app .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+ .demo-app .brand-copy p{display:none}
+ .demo-app .nav-row{display:block}
+ .demo-app .nav-primary-actions{width:100%;margin:0}
+ .demo-app .month-nav{display:grid;grid-template-columns:2.75rem minmax(0,1fr) 2.75rem;width:100%;gap:.45rem}
+ .demo-app .demo-month-wrap{min-width:0;width:100%}
+ .demo-app .month-arrow{width:100%}
+ .demo-app .brand-copy h1{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .demo-app .demo-sync-status{font-size:0;width:2.75rem;height:2.75rem;justify-content:center;padding:0}
+ .demo-app .demo-sync-status::before{width:.55rem;height:.55rem;flex-basis:.55rem}
+ #modalBackdrop{align-items:flex-end;padding:0}
+ #modalBackdrop .demo-transaction-modal{
+  width:100%;max-height:calc(94dvh - env(safe-area-inset-top));
+  border-radius:1.15rem 1.15rem 0 0;
+  padding:1.125rem 1rem calc(1.125rem + env(safe-area-inset-bottom));
+ }
+ #modalBackdrop .owner-option{font-size:.75rem}
+}
+@media(max-width:24rem){
+ .demo-app .topbar-cloud-tools{gap:.25rem}
+ .demo-app .logo{width:2.375rem;height:2.375rem;flex-basis:2.375rem}
+ .demo-app .brand-copy h1{font-size:1rem}
+ #modalBackdrop .owner-option{font-size:.6875rem;padding-inline:.25rem}
+}
+@media(prefers-reduced-motion:reduce){
+ html,.demo-app,.demo-app *,#modalBackdrop,#modalBackdrop *{
+  scroll-behavior:auto!important;animation:none!important;transition:none!important;
+ }
+}
