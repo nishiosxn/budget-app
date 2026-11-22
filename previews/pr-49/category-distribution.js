@@ -291,8 +291,14 @@
    if(event.key==="Escape"&&ui.hovered){ui.hovered=null;tooltipFor(null)}
   });
  }
- root.SmartBudgetCategoryDistribution=Object.freeze({buildModel,render(){attach();renderBudgetCard()},filter,clear(){
-  ui.selected=null;renderBudgetCard();updateGrid();
- }});
+ root.SmartBudgetCategoryDistribution=Object.freeze({
+  buildModel,
+  render(){attach();renderBudgetCard()},
+  filter,
+  // Purely visual: gives the shared follow-tooltip controller the current
+  // segment's formatted details, without selecting or modifying any budget.
+  preview(key){tooltipFor(key||null)},
+  clear(){ui.selected=null;renderBudgetCard();updateGrid()}
+ });
  attach();
 })(globalThis);

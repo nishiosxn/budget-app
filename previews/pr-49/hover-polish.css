@@ -226,3 +226,100 @@
   transition:none!important;
  }
 }
+
+
+/* PR49 31uq — one floating, lightly translucent finance inspector.
+ * A 68ms exponential follow is handled in progress-hover.js, not CSS transitions.
+ * The original inline tooltips are retained as content sources and no-JS fallback.
+ */
+html.sb-follow-enabled #categories .cat-progress-tooltip,
+html.sb-follow-enabled #categories .bd-tooltip{
+ display:none!important;
+}
+.sb-follow-tip{
+ position:fixed;
+ inset:0 auto auto 0;
+ z-index:95;
+ visibility:hidden;
+ opacity:0;
+ pointer-events:none;
+ width:max-content;
+ min-width:min(12rem,calc(100vw - 1.125rem));
+ max-width:min(15.25rem,calc(100vw - 1.125rem));
+ padding:.6875rem .8125rem;
+ border:.0625rem solid var(--line);
+ border-radius:.75rem;
+ background:color-mix(in srgb,var(--panel) 95%,transparent);
+ color:var(--text);
+ box-shadow:0 .5rem 1.375rem rgba(0,0,0,.16);
+ text-align:left;
+ font-size:.8125rem;
+ line-height:1.45;
+ transform:translate3d(-200vw,-200vh,0);
+ will-change:transform;
+ transition:opacity .12s ease,visibility .12s linear;
+}
+.sb-follow-tip.is-visible{opacity:1;visibility:visible}
+.sb-follow-tip>strong{
+ display:block;
+ margin-bottom:.4375rem;
+ font-size:.8125rem;
+ font-weight:650;
+ line-height:1.35;
+ overflow-wrap:anywhere;
+}
+.sb-follow-tip dl{
+ display:grid;
+ gap:.25rem;
+ padding:0;
+ margin:0;
+}
+.sb-follow-tip dl>div{
+ display:flex;
+ align-items:baseline;
+ justify-content:space-between;
+ gap:.75rem;
+}
+.sb-follow-tip dt{
+ font-weight:450;
+ opacity:.7;
+ color:var(--text);
+}
+.sb-follow-tip dd{
+ margin:0;
+ font-weight:650;
+ font-variant-numeric:tabular-nums;
+ color:var(--text);
+ white-space:nowrap;
+ text-align:right;
+}
+.sb-follow-tip>small{
+ display:block;
+ margin-top:.4rem;
+ font-size:.6875rem;
+ opacity:.68;
+}
+#categories .cat-progress-track[data-progress-track]{
+ touch-action:none;
+}
+#categories .bd-track,
+#categories .bd-segment[data-bd-key]{
+ touch-action:none;
+}
+#categories .bd-segment[data-bd-key]{
+ position:relative;
+}
+#categories .bd-segment[data-bd-key]::after{
+ content:"";
+ position:absolute;
+ inset:-.75rem 0;
+ z-index:1;
+ background:transparent;
+ pointer-events:auto;
+}
+@media(hover:none){
+ .sb-follow-tip{min-width:min(11.75rem,calc(100vw - 1.125rem))}
+}
+@media(prefers-reduced-motion:reduce){
+ .sb-follow-tip{transition:none;will-change:auto}
+}
