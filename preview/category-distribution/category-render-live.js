@@ -151,7 +151,7 @@ function renderCategories(m){
    '<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un revenu</button>':"")+'</article>';
  const sections=["Obligatoires","Abonnements","Vie courante"];
  const expenseVisible=visibleExpenseCategories();
- if([...EXPENSE_CATEGORIES,...Object.values(LEGACY_CATEGORY_DEFS)].some(c=>!c.saving&&categorySectionOf(c)==="Autres"))sections.push("Autres");
+ if(expenseVisible.some(c=>categorySectionOf(c)==="Autres")||[...EXPENSE_CATEGORIES,...Object.values(LEGACY_CATEGORY_DEFS)].some(c=>!c.saving&&categorySectionOf(c)==="Autres"))sections.push("Autres");
  const expenseSummary=[];
  const expenseCards=sections.map(section=>{
   const cats=selected(expenseVisible.filter(c=>categorySectionOf(c)===section),"expense");
