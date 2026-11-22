@@ -98,3 +98,27 @@ Contrastes réels, capture mobile 320/390 et desktop 1280/1440, longues catégor
 ### Vérifications encore requises
 
 Un passage en vrai navigateur desktop et iPhone, modes clair/sombre, 320/390/1280/1440, zoom 200 %, VoiceOver/lecteur d'écran, parcours de suppression, de récurrence et synchronisation reste nécessaire avant tout portage. Un succès des tests JS ne constitue pas une validation visuelle.
+
+
+## Essai 31ul — disposition hybride A, priorité au téléphone
+
+**Audit ciblé avant modification.** Dans la 31uj, les blocs Répartition, Revenus, Dépenses et Épargne étaient exclusivement empilés ; chacune des familles de dépenses présentait des catégories sur une colonne même sur un large desktop. Cette densité verticale obligeait à défiler longuement pour lire un foyer avec beaucoup de catégories. Les traitements d'écriture fictifs, l'historique, les modales et les filtres étaient déjà cohérents ; ils ne doivent pas être réécrits par un changement de layout.
+
+**Direction Unslop** (Damir Sokolovsky, CC BY 4.0) :
+- Produit : gestion des montants réels et des enveloppes prévues d'un foyer sur PC et téléphone.
+- Caractère : posé, précis, immédiat.
+- Univers : tableau de contrôle des finances domestiques, surfaces graphite et détails sémantiques.
+- Moments : barre segmentée de répartition et jauges réel/prévu.
+- Signature : violet Smart Budget #5C29D6 réservé à la marque et aux états financiers pertinents.
+
+**Disposition proposée, à valider visuellement :**
+1. Desktop suffisamment large (supérieur à 68rem de viewport) : Répartition des budgets à gauche (~52 %) et Revenus à droite (~48 %), avec deux petites catégories de revenus par ligne.
+2. Dépenses sur toute la largeur en dessous : familles **Obligatoires**, **Abonnements**, **Vie courante** puis **Autres** le cas échéant ; à l'intérieur, deux catégories par ligne à partir de 47rem.
+3. Épargne en dessous, deux catégories par ligne à partir de 47rem.
+4. Tablette/intermédiaire (68rem et moins) : Répartition puis Revenus, chacun en pleine largeur. Les catégories peuvent rester sur deux colonnes lorsqu'elles ont de l'espace.
+5. Téléphone (47rem et moins) : tous les panneaux et toutes les catégories sur une seule colonne ; actions de catégorie et boutons au moins 2.75rem, montants non tronqués et cartes qui se réorganisent sans débordement.
+6. États et animations : éviter les labels décoratifs, les nouvelles bordures verticales, les survols violets et l'animation permanente. Conserver les focus visibles, les couleurs sémantiques contrastées, la préférence de réduction des mouvements, la sélection des segments et l'interaction de toutes les modales.
+7. **Contrat technique :** le nœud categoryDistribution reste physiquement monté ; les sections sont rendues dans les emplacements dédiés à l'intérieur de categoryGrid afin de ne pas perdre les écouteurs d'événement délégués et l'état du graphique lors des filtres, changements de mois ou modifications. Aucun accès réseau ni écriture sur un foyer réel.
+8. **Pas d'intégration avant validation :** cette version n'est que le prototype 31ul sur la PR #49. Refaire une recette réelle 320/390/768/1280/1440, clair/sombre et zoom, puis seulement porter la disposition dans l'application.
+
+**Portée de la passe** : HTML, rendu JS, CSS du prototype et tests ; aucune modification de la production Smart Budget, des fonctionnalités de Smart Assistant, des données Supabase, des montants fictifs ni de la navigation de l'application.
