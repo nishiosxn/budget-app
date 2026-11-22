@@ -104,19 +104,19 @@
   return '<div class="bd-selection" role="status"><div class="bd-selection-heading"><strong>'+esc(item.name)+'</strong>'+
    '<button type="button" class="bd-clear" data-bd-action="clear" aria-label="Retirer le filtre">Effacer le filtre ×</button></div>'+
    '<p>'+esc(money(item.amount))+' · '+esc(percent(item.amount,model.total))+' du total'+
-   (single?"":" · "+item.ids.length+" catégories")+'</p><div class="bd-selection-actions">'+
-   '<button type="button" class="bd-action" data-bd-action="view">Voir '+(single?"la catégorie":"les catégories")+'</button>'+
-   (single?'<button type="button" class="bd-action bd-action-secondary" data-bd-action="edit">Modifier le budget</button>':"")+
-   '</div><span class="sr-only">Filtre appliqué à la liste des catégories de '+kind+'.</span></div>';
+   (single?"":" · "+item.ids.length+" catégories")+'</p>'+
+   (single?'<div class="bd-selection-actions"><button type="button" class="bd-action bd-action-secondary" data-bd-action="edit">Modifier le budget</button></div>':"")+
+   '<span class="sr-only">Filtre appliqué à la liste des catégories de '+kind+'.</span></div>';
  }
  function changesMarkup(model,month){
   if(!model.changes.length)return "";
   const sign=model.delta>0?"+":model.delta<0?"−":"";
   const delta=Math.abs(model.delta);
+  const deltaLabel=model.delta===0?"Total inchangé":sign+money(delta);
   const visible=ui.showChanges;
   return '<div class="bd-changes"><button type="button" class="bd-changes-trigger" data-bd-action="changes" aria-expanded="'+visible+'">'+
    '<span><strong>'+model.changes.length+' enveloppe'+(model.changes.length>1?"s":"")+' modifiée'+(model.changes.length>1?"s":"")+'</strong>'+
-   '<small>Par rapport à '+esc(monthName(previousMonthKey(month)))+'</small></span><span class="bd-changes-delta">'+sign+esc(money(delta))+
+   '<small>Par rapport à '+esc(monthName(previousMonthKey(month)))+'</small></span><span class="bd-changes-delta">'+esc(deltaLabel)+
    '</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>'+
    (visible?'<div class="bd-changes-list">'+model.changes.map(c=>'<div class="bd-change">'+
     '<span>'+esc(c.name)+'</span><span>'+esc(money(c.before))+' → <strong>'+esc(money(c.after))+'</strong></span>'+
@@ -262,7 +262,10 @@
     event.preventDefault();
     if(menu?.hidden){openSort(host);return}
     const options=[...menu.querySelectorAll("button")],index=options.indexOf(document.activeElement);
-    options[(index+(event.key==="ArrowDown"?1:options.length-1))%options.length]?.focus();
+    if(!options.length)return;
+    const next=index<0?(event.key==="ArrowDown"?0:options.length-1):
+     (index+(event.key==="ArrowDown"?1:options.length-1))%options.length;
+    options[next]?.focus();
     return;
    }
    if(event.key==="Escape"&&ui.hovered){ui.hovered=null;tooltipFor(null)}
