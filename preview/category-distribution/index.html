@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; form-action 'none'; base-uri 'none'">
 <title>Catégories · Smart Budget — prévisualisation PR49</title>
-<link rel="stylesheet" href="./app-style.css?v=31ui">
+<link rel="stylesheet" href="./app-style.css?v=31uj">
 <style>
 :root{
  color-scheme:light;
@@ -40,14 +40,14 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
 #demoToast button{color:var(--panel);border:.0625rem solid currentColor;background:transparent;border-radius:.45rem;padding:.3rem .45rem;font:inherit;cursor:pointer}
 @media(max-width:38rem){.demo-controls{width:100%}.demo-controls>label{flex:1}.demo-controls select{width:100%}}
 </style>
-<link rel="stylesheet" href="./category-distribution.css?v=31ui">
-<link rel="stylesheet" href="./preview-polish.css?v=31ui">
-<script defer src="./demo-state.js?v=31ui"></script>
-<script defer src="./category-render-live.js?v=31ui"></script>
-<script defer src="./categories-live.js?v=31ui"></script>
-<script defer src="./category-prototype.js?v=31ui"></script>
-<script defer src="./category-distribution.js?v=31ui"></script>
-<script defer src="./demo-init.js?v=31ui"></script>
+<link rel="stylesheet" href="./category-distribution.css?v=31uj">
+<link rel="stylesheet" href="./preview-polish.css?v=31uj">
+<script defer src="./demo-state.js?v=31uj"></script>
+<script defer src="./category-render-live.js?v=31uj"></script>
+<script defer src="./categories-live.js?v=31uj"></script>
+<script defer src="./category-prototype.js?v=31uj"></script>
+<script defer src="./category-distribution.js?v=31uj"></script>
+<script defer src="./demo-init.js?v=31uj"></script>
 </head>
 <body>
 <div class="shell">
@@ -87,7 +87,7 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
   <form id="categorySettingsForm">
    <div class="sb-settings-grid">
     <div class="sb-settings-field is-full">
-     <label for="categorySettingsName">Nom</label>
+     <label for="categorySettingsName">Nom · tous les mois</label>
      <input id="categorySettingsName" type="text" maxlength="60" required autocomplete="off">
     </div>
     <div class="sb-settings-field">
@@ -116,7 +116,7 @@ body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
      </select>
     </div>
     <div class="sb-settings-field is-full">
-     <label for="categorySettingsScope">Période du prévu</label>
+     <label for="categorySettingsScope">Période du budget et de la famille</label>
      <select id="categorySettingsScope">
       <option value="month">Ce mois</option>
       <option value="forward">Ce mois et les suivants</option>
