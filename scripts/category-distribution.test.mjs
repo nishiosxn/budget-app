@@ -621,3 +621,67 @@ test("PR49 31uj: progress copy, warnings and dark/light contrast are meaningful"
  for(const color of ["#93550f","#a52e35","#f1bb6f","#ff9998"])
   assert.ok(css.includes(color),color);
 });
+
+
+test("PR49 31ul: hybrid composition keeps the chart mounted and preserves category delegation",()=>{
+ const host={dataset:{layout:"hybrid"},innerHTML:"chart-node-must-survive"};
+ const slots=Object.fromEntries(["categoryFilterSlot","categoryIncomeSlot","categoryExpenseSlot","categorySavingSlot"].map(name=>[name,{innerHTML:""}]));
+ const doc={getElementById:id=>id==="categoryGrid"?host:slots[id]||null};
+ const box={document:doc};vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ const inspect=code=>vm.runInContext(code,box);
+ inspect("renderCategories(metrics())");
+ assert.equal(host.innerHTML,"chart-node-must-survive");
+ assert.match(slots.categoryIncomeSlot.innerHTML,/cg-revenues/);
+ assert.match(slots.categoryExpenseSlot.innerHTML,/cg-expenses/);
+ assert.match(slots.categorySavingSlot.innerHTML,/cg-savings/);
+ assert.equal(slots.categoryFilterSlot.innerHTML,"");
+ for(const code of ["data-demo-settings","data-edit-actual","data-edit-planned","data-demo-fill-category"]){
+  assert.ok(slots.categoryIncomeSlot.innerHTML.includes(code),code+" revenue");
+  assert.ok(slots.categoryExpenseSlot.innerHTML.includes(code),code+" expense");
+  assert.ok(slots.categorySavingSlot.innerHTML.includes(code),code+" saving");
+ }
+ inspect('globalThis.SmartBudgetCategoryDistribution={filter(){return {type:"expense",ids:["groceries"],label:"Courses"}}}');
+ inspect("renderCategories(metrics())");
+ assert.equal(host.innerHTML,"chart-node-must-survive");
+ assert.equal(host.dataset.filterType,"expense");
+ assert.equal(slots.categoryIncomeSlot.innerHTML,"");
+ assert.equal(slots.categorySavingSlot.innerHTML,"");
+ assert.match(slots.categoryFilterSlot.innerHTML,/Tout afficher/);
+ assert.match(slots.categoryExpenseSlot.innerHTML,/Courses/);
+ assert.doesNotMatch(slots.categoryExpenseSlot.innerHTML,/Carburant/);
+ inspect('globalThis.SmartBudgetCategoryDistribution={filter(){return null}}');
+ inspect("renderCategories(metrics())");
+ assert.equal(host.dataset.filterType,"all");
+ assert.match(slots.categoryIncomeSlot.innerHTML,/Revenus/);
+ assert.match(slots.categorySavingSlot.innerHTML,/Épargne/);
+ const page=read("preview/category-distribution/index.html");
+ for(const id of ["categoryGrid","categoryFilterSlot","categoryDistribution","categoryIncomeSlot","categoryExpenseSlot","categorySavingSlot"]){
+  assert.ok(page.includes('id="'+id+'"'),id);
+ }
+ assert.match(page,/id="categoryGrid" class="category-layout" data-layout="hybrid"/);
+ assert.ok(page.indexOf('id="categoryDistribution"')<page.indexOf('id="categoryIncomeSlot"'));
+ assert.ok(page.indexOf('id="categoryIncomeSlot"')<page.indexOf('id="categoryExpenseSlot"'));
+ assert.ok(page.indexOf('id="categoryExpenseSlot"')<page.indexOf('id="categorySavingSlot"'));
+});
+test("PR49 31ul: hybrid A grid is two-up on desktop and one-up on phones",()=>{
+ const css=read("preview/category-distribution/preview-polish.css");
+ const preview=read("preview/category-distribution/index.html");
+ assert.match(css,/PR49 31uk — A-hybrid layout, mobile-first/);
+ assert.match(css,/#categories \.category-top\{\s*display:grid;\s*grid-template-columns:minmax\(0,1\.08fr\) minmax\(0,1fr\)/);
+ assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list\{\s*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/#categories \.category-top \.income-card \.cat-budget-list,[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/#categories #categorySavingSlot \.saving-card \.cat-budget-list/);
+ assert.match(css,/@media\(max-width:68rem\)\{[\s\S]*?#categories \.category-top\{\s*grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:47rem\)\{[\s\S]*?#categories #categoryExpenseSlot \.cat-budget-list\{\s*grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:47rem\)\{[\s\S]*?#categories \.category-top \.income-card \.cat-budget-list,[\s\S]*?grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:40rem\)\{[\s\S]*?width:2\.75rem;\s*height:2\.75rem/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(css,/#categories \.cat-budget-tile \.cat-tile-money-button\{\s*max-width:100%/);
+ assert.match(preview,/connect-src 'none'/);
+ const js=read("preview/category-distribution/category-render-live.js");
+ assert.match(js,/gridHost\?\.dataset\?\.layout==="hybrid"/);
+ assert.match(js,/gridHost\.dataset\.filterType=filter\?\.type\|\|"all"/);
+ assert.match(js,/document\.getElementById\("categoryExpenseSlot"\)\.innerHTML=visibleExpense/);
+});
