@@ -383,7 +383,7 @@ test("PR49 31ui: full category tile functionality renders in vertical financial 
  for(const key of ["cat-budget-list","cat-budget-tile","cat-progress-track","data-demo-fill-category","data-edit-actual","data-edit-planned","data-demo-settings","data-delete-category","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
   assert.ok(html.includes(key),key);
  }
- assert.ok(html.includes("Tout remplir")&&html.includes("Tout vider"));
+ assert.ok(html.includes("Remplir les vides")&&html.includes("Tout vider"));
  assert.ok(!html.includes("data-category-menu-trigger"),"settings and delete are no longer hidden inside a menu");
  assert.equal((html.match(/data-category-row="/g)||[]).length,11);
  const polish=read("preview/category-distribution/preview-polish.css");
