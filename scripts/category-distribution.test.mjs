@@ -134,8 +134,8 @@ test("interactive selection, scope switch and month refresh are isolated from fi
 test("integration retires only the obsolete card, while recurring transactions and their code remain intact",()=>{
  const html=read("index.html"),ui=read("js/ui.js"),categories=read("js/categories.js"),distrib=read("js/category-distribution.js"),css=read("css/category-distribution.css");
  assert.match(html,/id="categoryDistribution"/);
- assert.match(html,/js\/category-distribution\.js\?v=31ub/);
- assert.match(html,/css\/category-distribution\.css\?v=31ub/);
+ assert.match(html,/js\/category-distribution\.js\?v=31ug/);
+ assert.match(html,/css\/category-distribution\.css\?v=31ug/);
  assert.doesNotMatch(html,/id="subscriptionsOverview"/);
  assert.doesNotMatch(html,/js\/subscriptions-overview\.js/);
  assert.match(ui,/SmartBudgetCategoryDistribution\?\.render\(\);renderCategories\(m\)/);
@@ -190,13 +190,13 @@ test("PR49 standalone preview assets mirror the actual read-only category compon
 
 
 
-test("PR49 31uf: preview reuses exact published category handlers and source CSS",()=>{
+test("PR49 31ug: preview reuses exact published category handlers and source CSS",()=>{
  const live=read("preview/category-distribution/categories-live.js");
  const repoHandlers=read("js/categories.js");
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
  for(const key of ["category-render-live.js","categories-live.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31uf"),key);
+  assert.ok(page.includes(key+"?v=31ug"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -218,7 +218,7 @@ test("PR49 31uf: preview reuses exact published category handlers and source CSS
  for(const s of ["data-category-details-toggle","data-category-menu","data-section-menu","cat-quick-fill","restorableBlock","archivedBlock"])
   assert.ok(renderer.includes(s),s);
 });
-test("PR49 31uf: actual published category rows render against local-only fixture",()=>{
+test("PR49 31ug: actual published category rows render against local-only fixture",()=>{
  const grid={innerHTML:""};
  const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
  vm.createContext(box);
@@ -238,7 +238,7 @@ test("PR49 31uf: actual published category rows render against local-only fixtur
  assert.equal(state.insurance,0);
  assert.equal(state.insurancePlanned,75);
 });
-test("PR49 31uf: sort choices are an accessible listbox and active text is neutral",()=>{
+test("PR49 31ug: sort choices are an accessible listbox and active text is neutral",()=>{
  const source=read("js/category-distribution.js"),css=read("css/category-distribution.css");
  for(const token of ['data-bd-sort-trigger','data-bd-sort-menu','data-bd-sort-option','role="listbox"','aria-selected','closeSort(host,true)']){
   assert.ok(source.includes(token),token);
@@ -247,11 +247,11 @@ test("PR49 31uf: sort choices are an accessible listbox and active text is neutr
  assert.match(css,/\.bd-sort-menu/);
  assert.match(css,/\.bd-toolbar \.is-active:hover/);
  assert.match(css,/color:var\(--text\)!important/);
- assert.match(css,/PR49 31uf/);
+ assert.match(css,/PR49 31ug/);
 });
 
 
-test("PR49 31uf: actual category actions mutate only fixture memory",()=>{
+test("PR49 31ug: actual category actions mutate only fixture memory",()=>{
  const ids=new Map(),events=new Map();
  const node=(id)=>({
   dataset:{},style:{},value:"",textContent:"",innerHTML:"",hidden:false,
