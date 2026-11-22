@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fr" data-demo-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Catégories · Smart Budget — prévisualisation PR49</title>
+<link rel="stylesheet" href="./app-style.css?v=31un">
+<link rel="stylesheet" href="./mobile-ui.css?v=31un">
+<style>
+:root{
+ color-scheme:light;
+ --bg:#f5f6f8;--panel:#fff;--panel-2:#f5f6f8;
+ --text:#222734;--muted:#5b6473;--line:#e4e6eb;
+ --accent:#5c29d6;--accent-soft:#efe9fe;
+ --income:#18664b;--expense:#b2484c;--radius:1.2rem;
+ --shadow:0 .45rem 1.35rem rgba(16,24,40,.035);
+ font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+html[data-demo-theme="dark"]{
+ color-scheme:dark;
+ --bg:#0e1014;--panel:#191c22;--panel-2:#22262e;
+ --text:#f5f6f9;--muted:#a7afbb;--line:#343b45;
+ --accent:#5c29d6;--accent-soft:#32264b;
+ --income:#5bd6a3;--expense:#ff9296;--shadow:none;
+}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);min-height:100dvh}
+.shell{width:min(70rem,calc(100% - 2rem));margin:0 auto;padding:clamp(1rem,2vw,2rem) 0 4rem}
+.demo-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin:0 0 1.25rem}
+.demo-brand{display:flex;align-items:center;gap:.75rem}
+.demo-symbol{width:2.5rem;height:2.5rem;border-radius:.75rem;background:#5c29d6;color:#fff;display:grid;place-items:center;font-weight:650}
+.demo-brand h1{margin:0;font-size:1.125rem;font-weight:650}
+.demo-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem}
+.demo-controls>label{display:flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.8125rem}
+.demo-controls select,.demo-controls button{min-height:2.5rem;padding:.5rem .8rem;border:.0625rem solid var(--line);border-radius:.65rem;background:var(--panel);color:var(--text);font:inherit;font-size:.875rem;cursor:pointer}
+.demo-notice{margin:0 0 1rem;text-align:right;color:var(--muted);font-size:.75rem}
+#categoryGrid{min-width:0}
+#demoToast{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:250;max-width:calc(100vw - 1.5rem);display:flex;align-items:center;gap:.75rem;background:var(--text);color:var(--panel);padding:.7rem .9rem;border-radius:.8rem;box-shadow:0 .75rem 2rem rgba(0,0,0,.18);font-size:.8125rem}
+#demoToast[hidden]{display:none}
+#demoToast button{color:var(--panel);border:.0625rem solid currentColor;background:transparent;border-radius:.45rem;padding:.3rem .45rem;font:inherit;cursor:pointer}
+@media(max-width:38rem){.demo-controls{width:100%}.demo-controls>label{flex:1}.demo-controls select{width:100%}}
+</style>
+<link rel="stylesheet" href="./demo-shell.css?v=31un">
+<link rel="stylesheet" href="./category-distribution.css?v=31un">
+<link rel="stylesheet" href="./preview-polish.css?v=31un">
+<link rel="stylesheet" href="./variant-ac.css?v=31un">
+<script defer src="./demo-state.js?v=31un"></script>
+<script defer src="./category-render-live.js?v=31un"></script>
+<script defer src="./categories-live.js?v=31un"></script>
+<script defer src="./category-prototype.js?v=31un"></script>
+<script defer src="./category-distribution.js?v=31un"></script>
+<script defer src="./demo-chrome.js?v=31un"></script>
+<script defer src="./demo-init.js?v=31un"></script>
+</head>
+<body>
+<div class="app demo-app">
+ <main class="shell">
+  <header class="topbar">
+   <div class="brand">
+    <div class="logo" aria-hidden="true">
+     <svg class="theme-logo" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="16" fill="currentColor"/><path d="M32 16 A16 16 0 1 0 48 32 H38 A6 6 0 1 1 32 26 Z" fill="#F4F5F1"/></svg>
+    </div>
+    <div class="brand-copy"><h1 id="householdTitle">Foyer fictif</h1><p>Smart Budget</p></div>
+   </div>
+   <div class="topbar-cloud-tools">
+    <span class="cloud-sync-status demo-sync-status" data-state="offline" role="status">Démo locale</span>
+    <button id="themeToggle" class="settings-trigger demo-theme-trigger" type="button" aria-label="Passer en mode clair" title="Mode clair / sombre">
+     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.64 5.64l1.42 1.42m9.88 9.88 1.42 1.42m0-12.72-1.42 1.42m-9.88 9.88-1.42 1.42"/><circle cx="12" cy="12" r="4"/></svg>
+    </button>
+    <button id="settingsBtn" class="settings-trigger" type="button" aria-label="Paramètres (aperçu visuel)" title="Paramètres — aperçu visuel">
+     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.36a1.7 1.7 0 0 0-1.88.34 1.7 1.7 0 0 0-1.03-1.56v-.08H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.88L4.24 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.06 4.64a1.7 1.7 0 0 0 1.88-.34L17 4.24 19.83 7l-.06.06a1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+    </button>
+   </div>
+  </header>
+  <div class="nav-row">
+   <nav class="tabs" aria-label="Navigation Smart Budget">
+    <button class="tab" type="button" disabled title="Vue d'ensemble non incluse dans la prévisualisation">Vue d'ensemble</button>
+    <button class="tab active" type="button" aria-current="page">Catégories</button>
+    <button class="tab" type="button" disabled title="Historique non inclus dans la prévisualisation">Historique</button>
+    <button class="tab" type="button" disabled title="Suivi non inclus dans la prévisualisation">Suivi</button>
+   </nav>
+   <div class="top-actions nav-primary-actions">
+    <div class="month-nav" aria-label="Navigation entre les mois">
+     <button id="prevMonth" class="month-arrow" type="button" aria-label="Mois précédent" title="Mois précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+     <div class="month-wrap demo-month-wrap">
+      <label class="demo-sr-only" for="demoMonth">Choisir le mois</label>
+      <select id="demoMonth" class="demo-month-select"><option value="Octobre 2026">Octobre 2026</option><option value="Novembre 2026" selected>Novembre 2026</option><option value="Décembre 2026">Décembre 2026</option></select>
+     </div>
+     <button id="nextMonth" class="month-arrow" type="button" aria-label="Mois suivant" title="Mois suivant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <button class="btn btn-income" type="button" data-demo-add="income">＋ Rentrée d'argent</button>
+    <button class="btn btn-expense" type="button" data-demo-add="expense">＋ Dépense</button>
+   </div>
+  </div>
+  <p class="demo-notice">Données fictives · Aucun compte connecté · Modifications temporaires</p>
+  <section id="categories">
+   <div id="categoryGrid" class="category-layout" data-layout="hybrid">
+    <div id="categoryFilterSlot"></div>
+    <div class="category-top">
+     <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
+     <div id="categoryIncomeSlot"></div>
+    </div>
+    <div id="categoryExpenseSlot"></div>
+    <div id="categorySavingSlot"></div>
+   </div>
+  </section>
+ </main>
+ <nav class="mobile-bottom-nav" aria-label="Navigation principale mobile">
+  <div class="mobile-bottom-nav__inner">
+   <button class="mobile-nav-item" type="button" disabled title="Vue d'ensemble non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3Z"/></svg></span><span class="mobile-nav-label">Accueil</span></button>
+   <button class="mobile-nav-item is-active" type="button" aria-current="page"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7H3z"/></svg></span><span class="mobile-nav-label">Catégories</span></button>
+   <button class="mobile-nav-item mobile-nav-add" type="button" id="mobileAddButton" aria-label="Ajouter une dépense ou un revenu" aria-haspopup="dialog" aria-controls="mobileQuickAdd" aria-expanded="false"><span class="mobile-nav-add__circle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="mobile-nav-label">Ajouter</span></button>
+   <button class="mobile-nav-item" type="button" disabled title="Historique non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l4 2"/></svg></span><span class="mobile-nav-label">Historique</span></button>
+   <button class="mobile-nav-item" type="button" disabled title="Suivi non disponible"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 16l4-5 4 2 5-7"/></svg></span><span class="mobile-nav-label">Suivi</span></button>
+  </div>
+ </nav>
+ <div id="mobileQuickAdd" class="mobile-quick-add" aria-hidden="true">
+  <button class="mobile-quick-add__scrim" type="button" aria-label="Fermer les actions d'ajout"></button>
+  <div class="mobile-quick-add__panel" role="dialog" aria-label="Ajouter une opération">
+   <button class="mobile-quick-add__option" type="button" data-demo-add="expense"><span class="mobile-quick-add__option-icon expense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M10 17h7v-7"/></svg></span><span><strong>Ajouter une dépense</strong><small>Achat, facture, abonnement…</small></span></button>
+   <button class="mobile-quick-add__option" type="button" data-demo-add="income"><span class="mobile-quick-add__option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 17 7 7M14 7H7v7"/></svg></span><span><strong>Ajouter un revenu</strong><small>Salaire, aide, remboursement…</small></span></button>
+  </div>
+ </div>
+</div>
+<div id="demoToast" role="status" hidden></div>
+<div id="modalBackdrop" class="modal-backdrop demo-transaction-backdrop" aria-hidden="true">
+ <div class="modal demo-transaction-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-head">
+   <div><h3 id="modalTitle">Ajouter une dépense</h3><div id="modalKind" class="modal-kind">Dépense</div></div>
+   <button class="close" type="button" id="closeModal" aria-label="Fermer">×</button>
+  </div>
+  <form id="demoTransactionForm">
+   <div class="amount-wrap">
+    <div class="amount-stepper" aria-label="Ajuster le montant">
+     <button type="button" class="amount-step" id="amountUp" aria-label="Augmenter le montant">+</button>
+     <button type="button" class="amount-step" id="amountDown" aria-label="Diminuer le montant">−</button>
+    </div>
+    <label class="demo-sr-only" for="amountInput">Montant en euros</label>
+    <input id="amountInput" class="amount-input" type="number" inputmode="decimal" min="0.01" max="99999999" step="0.01" placeholder="0,00" required>
+    <span class="euro">€</span>
+   </div>
+   <div class="field"><label for="transactionLabel">LIBELLÉ <span class="demo-optional">(FACULTATIF)</span></label><input id="transactionLabel" class="category-form-input transaction-label" type="text" maxlength="70" placeholder="Ex. Courses Lidl, salaire, restaurant…"></div>
+   <div class="field"><label for="transactionDateInput">DATE DE L'OPÉRATION</label><input id="transactionDateInput" class="category-form-input" type="date" required></div>
+   <div class="field"><label id="ownerSwitchLabel">QUI A PAYÉ ?</label>
+    <div id="ownerSwitch" class="owner-switch" role="group" aria-label="Attribuer l'opération">
+     <button type="button" class="owner-option active" data-owner="common" aria-pressed="true">À deux</button>
+     <button type="button" class="owner-option" data-owner="B" aria-pressed="false">Personne 1</button>
+     <button type="button" class="owner-option" data-owner="A" aria-pressed="false">Personne 2</button>
+    </div>
+   </div>
+   <div class="field"><label for="categorySelect">CATÉGORIE</label><div class="select-wrap demo-category-wrap"><select id="categorySelect" class="category-form-input" required></select></div></div>
+   <div class="field" id="transactionScopeField"><label>PÉRIODE</label>
+    <div id="transactionScopeSwitch" class="owner-switch plan-scope-switch" role="group" aria-label="Période de l'opération">
+     <button type="button" class="owner-option active" data-transaction-scope="month" aria-pressed="true">Ce mois seulement</button>
+     <button type="button" class="owner-option" data-transaction-scope="forward" aria-pressed="false">À partir de ce mois</button>
+    </div>
+    <div id="transactionScopeHint" class="scope-hint">Cette opération sera comptée uniquement sur le mois affiché.</div>
+   </div>
+   <button id="saveTransaction" class="btn btn-expense save" type="submit">Ajouter la dépense</button>
+  </form>
+ </div>
+</div>
+<div id="categoryEditBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="categoryEditTitle">
+    <div class="modal-head"><div><h3 id="categoryEditTitle">Modifier le budget</h3><div id="categoryEditKind" class="modal-kind"></div></div><button class="close" id="closeCategoryEdit" aria-label="Fermer">×</button></div>
+    <div class="field" id="categoryNameField"><label for="categoryNameInput">NOM DU CHAMP</label><input id="categoryNameInput" class="category-form-input" type="text" maxlength="60" placeholder="Ex. Assurance animaux"></div>
+    <div class="field" id="categorySectionField" style="display:none"><label>GROUPE</label><div id="categorySectionSwitch" class="owner-switch category-section-switch" role="group" aria-label="Groupe de dépense"><button type="button" class="owner-option" data-category-section="Obligatoires">Obligatoires</button><button type="button" class="owner-option" data-category-section="Abonnements">Abonnements</button><button type="button" class="owner-option active" data-category-section="Vie courante">Vie courante</button></div></div>
+    <div class="field" id="categoryOwnerField" style="display:none"><label id="categoryOwnerLabel">ATTRIBUTION</label><div id="categoryOwnerSwitch" class="owner-switch" role="group" aria-label="Attribuer ce champ"><button type="button" class="owner-option active" data-category-owner="common">À deux</button><button type="button" class="owner-option" data-category-owner="B" data-person-label="B">Personne 1</button><button type="button" class="owner-option" data-category-owner="A" data-person-label="A">Personne 2</button></div></div>
+    <div class="field"><label id="categoryAmountLabel" for="categoryBudgetInput">MONTANT PRÉVU</label><div class="budget-input-wrap"><input id="categoryBudgetInput" class="category-form-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00"><span class="currency-suffix">€</span></div></div>
+    <div class="field" id="categoryPlanScopeField" style="display:none"><label>APPLIQUER CE PRÉVU</label><div class="owner-switch plan-scope-switch" role="group" aria-label="Période du budget prévu"><button type="button" class="owner-option" data-plan-scope="month">Ce mois seulement</button><button type="button" class="owner-option active" data-plan-scope="forward">À partir de ce mois</button></div><div class="scope-hint" id="categoryPlanScopeHint">Les mois précédents restent inchangés.</div></div>
+    <button id="saveCategoryEdit" class="btn btn-income save">Enregistrer</button>
+  </div>
+</div>
+
+
+<div id="categorySettingsBackdrop" class="modal-backdrop" aria-hidden="true">
+ <section class="sb-settings-modal" role="dialog" aria-modal="true" aria-labelledby="categorySettingsTitle">
+  <div class="sb-settings-head">
+   <h3 id="categorySettingsTitle">Paramètres</h3>
+   <button id="categorySettingsClose" type="button" aria-label="Fermer les paramètres">×</button>
+  </div>
+  <form id="categorySettingsForm">
+   <div class="sb-settings-grid">
+    <div class="sb-settings-field is-full">
+     <label for="categorySettingsName">Nom · tous les mois</label>
+     <input id="categorySettingsName" type="text" maxlength="60" required autocomplete="off">
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsActual">Réel (€)</label>
+     <input id="categorySettingsActual" type="number" min="0" step="0.01" inputmode="decimal" required>
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsPlanned">Prévu (€)</label>
+     <input id="categorySettingsPlanned" type="number" min="0" step="0.01" inputmode="decimal" required>
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsOwner">Attribution</label>
+     <select id="categorySettingsOwner">
+      <option value="common">À deux</option>
+      <option value="B">Personne 1</option>
+      <option value="A">Personne 2</option>
+     </select>
+    </div>
+    <div class="sb-settings-field" id="categorySettingsSectionField">
+     <label for="categorySettingsSection">Famille</label>
+     <select id="categorySettingsSection">
+      <option value="Obligatoires">Obligatoires</option>
+      <option value="Abonnements">Abonnements</option>
+      <option value="Vie courante">Vie courante</option>
+      <option value="Autres">Autres</option>
+     </select>
+    </div>
+    <div class="sb-settings-field is-full">
+     <label for="categorySettingsScope">Période du budget et de la famille</label>
+     <select id="categorySettingsScope">
+      <option value="month">Ce mois</option>
+      <option value="forward">Ce mois et les suivants</option>
+     </select>
+    </div>
+   </div>
+   <button class="sb-settings-submit" type="submit">Enregistrer</button>
+  </form>
+ </section>
+</div>
+
+<div id="categoryDeleteBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
+    <div class="modal-head"><div><h3 id="categoryDeleteTitle">Supprimer le champ</h3><div id="categoryDeleteKind" class="modal-kind"></div></div><button class="close" id="closeCategoryDelete" aria-label="Fermer">×</button></div>
+    <div class="delete-copy"><strong id="categoryDeleteName">Catégorie</strong><span>Choisis si ce champ doit disparaître uniquement du mois affiché ou de tous les mois. Les opérations déjà enregistrées restent conservées dans l’historique.</span></div>
+    <div class="delete-actions">
+      <button id="deleteCategoryMonth" class="btn btn-delete-month" type="button">Supprimer pour ce mois</button>
+      <button id="deleteCategoryAll" class="btn btn-delete-all" type="button">Supprimer pour tous les mois</button>
+      <button id="cancelCategoryDelete" class="btn btn-cancel-delete" type="button">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
