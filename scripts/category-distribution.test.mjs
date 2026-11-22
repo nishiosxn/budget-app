@@ -369,3 +369,125 @@ test("PR49 31ui: test-only dialogs trap focus and restore it without persistent 
  assert.match(page,/connect-src 'none'/);
  assert.doesNotMatch(boot.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\(|localStorage|sessionStorage/);
 });
+
+
+test("PR49 31ui: full category tile functionality renders in vertical financial groups",()=>{
+ const grid={innerHTML:""};
+ const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ vm.runInContext("renderCategories(metrics())",box);
+ const html=grid.innerHTML;
+ assert.ok(html.indexOf("Obligatoires")<html.indexOf("Abonnements")&&html.indexOf("Abonnements")<html.indexOf("Vie courante"));
+ for(const key of ["cat-budget-list","cat-budget-tile","cat-progress-track","data-fill-category","data-edit-actual","data-edit-planned","data-demo-settings","data-delete-category","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
+  assert.ok(html.includes(key),key);
+ }
+ assert.ok(html.includes("Tout remplir")&&html.includes("Tout vider"));
+ assert.ok(!html.includes("data-category-menu-trigger"),"settings and delete are no longer hidden inside a menu");
+ assert.equal((html.match(/data-category-row="/g)||[]).length,11);
+ const polish=read("preview/category-distribution/preview-polish.css");
+ assert.match(polish,/PR49 31uh — Budget tiles/);
+ assert.match(polish,/\.category-cards:not\(\.income-cards\),[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/);
+ assert.match(polish,/\.cat-budget-list>\.cat-budget-tile \+ \.cat-budget-tile/);
+ assert.match(polish,/\.cat-progress-fill\.is-warning/);
+ assert.match(polish,/\.cat-progress-fill\.is-danger/);
+ assert.match(polish,/@media\(max-width:22rem\)/);
+ assert.match(polish,/@media\(prefers-reduced-motion:reduce\)/);
+});
+test("PR49 31ui: progress bar distinguishes normal, warning, danger, saving and no-plan",()=>{
+ const grid={innerHTML:""};
+ const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ const probe=(expr)=>vm.runInContext(expr,box);
+ const low=probe('categoryProgressMarkup({name:"Courses",budget:250},186,"expense")');
+ assert.match(low,/is-normal/);assert.match(low,/74 %/);
+ const warning=probe('categoryProgressMarkup({name:"Carburant",budget:90},102,"expense")');
+ assert.match(warning,/is-warning/);assert.match(warning,/\+12,00/);
+ const danger=probe('categoryProgressMarkup({name:"Musique",budget:12},22,"expense")');
+ assert.match(danger,/is-danger/);assert.match(danger,/183 %/);
+ const savings=probe('categoryProgressMarkup({name:"Épargne",budget:80,saving:true},100,"expense")');
+ assert.match(savings,/is-saving/);assert.doesNotMatch(savings,/is-danger|is-warning/);
+ const income=probe('categoryProgressMarkup({name:"Salaire",budget:1900},2200,"income")');
+ assert.match(income,/is-income/);assert.doesNotMatch(income,/is-danger|is-warning/);
+ const none=probe('categoryProgressMarkup({name:"Santé",budget:0},12,"expense")');
+ assert.match(none,/Sans budget/);assert.match(none,/width:0%/);
+ probe('state.selectedMonth="Décembre 2026";renderCategories(metrics())');
+ assert.match(grid.innerHTML,/is-warning/);
+ assert.match(grid.innerHTML,/is-danger/);
+});
+test("PR49 31ui: grouped fill and clear restore real amounts without touching plans",()=>{
+ const nodes=new Map(),callbacks=new Map();
+ const element=id=>{
+  if(nodes.has(id))return nodes.get(id);
+  const el={value:"",textContent:"",innerHTML:"",hidden:false,dataset:{},style:{},
+   classList:{add(){},remove(){},contains(){return false},toggle(){}},
+   addEventListener:(name,fn)=>{callbacks.set(id+":"+name,fn)},
+   setAttribute(){},focus(){},select(){},reportValidity(){return true},setCustomValidity(){},
+   querySelectorAll(){return []},querySelector(){return null}};
+  nodes.set(id,el);return el;
+ };
+ const document={getElementById:element,querySelectorAll(){return []},addEventListener(){}};
+ const box={document,setTimeout:()=>0,clearTimeout:()=>{}};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-render-live.js"),box);
+ vm.runInContext(read("preview/category-distribution/categories-live.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-prototype.js"),box);
+ const probe=expr=>vm.runInContext(expr,box);
+ assert.equal(probe("metrics().expMap.groceries"),186);
+ assert.equal(probe("metrics().expMap.car"),54);
+ assert.equal(probe('prototypeBulkActual("expense","Vie courante","fill")'),2);
+ assert.equal(probe("metrics().expMap.groceries"),250);
+ assert.equal(probe("metrics().expMap.car"),120);
+ assert.equal(probe('visibleExpenseCategories().find(c=>c.id==="car").budget'),120);
+ assert.equal(probe('prototypeBulkActual("expense","Vie courante","clear")'),2);
+ assert.equal(probe("metrics().expMap.groceries"),0);
+ assert.equal(probe("metrics().expMap.car"),0);
+ assert.equal(probe("metrics().saving"),80);
+ probe('openCategorySettings("rent","expense")');
+ element("categorySettingsName").value="Loyer principal";
+ element("categorySettingsActual").value="600";
+ element("categorySettingsPlanned").value="640";
+ element("categorySettingsOwner").value="common";
+ element("categorySettingsSection").value="Obligatoires";
+ element("categorySettingsScope").value="month";
+ callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
+ assert.equal(probe('visibleExpenseCategories().find(c=>c.id==="rent").name'),"Loyer principal");
+ assert.equal(probe('visibleExpenseCategories().find(c=>c.id==="rent").budget'),640);
+ assert.equal(probe('metrics().expMap.rent'),600);
+ assert.equal(probe('planForCategory(catById("rent","expense"),"2026-10").budget'),530,"month-only setting cannot rewrite last month");
+ probe('openCategorySettings("car","expense")');
+ element("categorySettingsSection").value="Abonnements";
+ callbacks.get("categorySettingsForm:submit")({preventDefault(){}});
+ assert.equal(probe('categorySectionOf(catById("car","expense"))'),"Abonnements");
+ probe('openCategorySettings("salary","income")');
+ assert.equal(element("categorySettingsSectionField").hidden,true);
+ probe('openCategorySettings("reserve","expense")');
+ assert.equal(element("categorySettingsSectionField").hidden,true);
+ assert.ok(!("supabase" in box));
+});
+test("PR49 31ui: settings modal and preview preserve isolation and keyboard behavior",()=>{
+ const html=read("preview/category-distribution/index.html");
+ const js=read("preview/category-distribution/category-prototype.js");
+ const boot=read("preview/category-distribution/demo-init.js");
+ const css=read("preview/category-distribution/preview-polish.css");
+ for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
+  assert.match(html,new RegExp('id="'+s+'"'),s);
+ }
+ assert.ok(html.includes('category-prototype.js?v=31ui'));
+ assert.match(html,/connect-src 'none'/);
+ assert.match(js,/prototypeBulkActual/);
+ assert.match(js,/categoryTransactionSnapshot/);
+ assert.match(js,/showUndoToast/);
+ assert.match(js,/setCategoryActual/);
+ assert.match(js,/setCategoryPlan/);
+ assert.match(js,/renameCategory/);
+ assert.match(boot,/backdrops=\[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop\]/);
+ assert.match(boot,/event\.shiftKey/);
+ assert.match(boot,/closeCategorySettings\(\)/);
+ assert.match(css,/\.sb-settings-field\[hidden\]\{display:none!important\}/);
+ assert.doesNotMatch(js.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b/);
+});
