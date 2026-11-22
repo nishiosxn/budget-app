@@ -199,8 +199,8 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  const repoHandlers=read("js/categories.js");
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
- for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","demo-chrome.js","demo-shell.css","mobile-ui.css","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31un"),key);
+ for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","demo-chrome.js","demo-shell.css","mobile-ui.css","app-style.css","preview-polish.css","variant-ac.css","hover-polish.css","progress-hover.js"]){
+  assert.ok(page.includes(key+"?v=31up"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -486,7 +486,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31un'));
+ assert.ok(html.includes('category-prototype.js?v=31up'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
@@ -820,8 +820,8 @@ test("PR49 31un: A+C uses fluid wide shell while keeping chart, income and savin
  assert.ok(page.indexOf('id="categoryDistribution"') < page.indexOf('id="categoryIncomeSlot"'));
  assert.ok(page.indexOf('id="categoryIncomeSlot"') < page.indexOf('id="categoryExpenseSlot"'));
  assert.ok(page.indexOf('id="categoryExpenseSlot"') < page.indexOf('id="categorySavingSlot"'));
- assert.match(page,/variant-ac\.css\?v=31un/);
- assert.ok(page.indexOf('preview-polish.css?v=31un') < page.indexOf('variant-ac.css?v=31un'));
+ assert.match(page,/variant-ac\.css\?v=31up/);
+ assert.ok(page.indexOf('preview-polish.css?v=31up') < page.indexOf('variant-ac.css?v=31up'));
  assert.match(page,/connect-src 'none'/);
  assert.doesNotMatch(css,/backdrop-filter:|linear-gradient\(/i);
 });
@@ -844,4 +844,105 @@ test("PR49 31un: C expense families form three compact columns, without vertical
  }
  assert.match(demo,/id="categoryGrid" class="category-layout" data-layout="hybrid"/);
  assert.match(css,/color-mix\(in srgb,var\(--panel-2\) 45%,transparent\)/);
+});
+
+
+
+test("PR49 31up: expense tiles never gain a hover rectangle, and top actions use one brand CTA",()=>{
+ const css=read("preview/category-distribution/hover-polish.css");
+ const html=read("preview/category-distribution/index.html");
+ assert.match(css,/PR49 31up — focused CTA and gauge interaction pass/);
+ assert.match(css,/\.demo-app \.nav-primary-actions>\.btn-income,[\s\S]*?background:var\(--panel\)/);
+ assert.match(css,/\.demo-app \.nav-primary-actions>\.btn-expense,[\s\S]*?background:#5c29d6/);
+ assert.match(css,/#modalBackdrop \.save\.btn-income,[\s\S]*?background:#5c29d6/);
+ assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list>\.cat-budget-tile,[\s\S]*?background:transparent!important/);
+ assert.match(css,/#categories \.category-top \.cat-budget-list>\.cat-budget-tile:hover,[\s\S]*?background:var\(--panel-2\)!important/);
+ assert.match(css,/#categories \.cat-budget-tile\{cursor:default/);
+ assert.match(css,/#categories \.cat-tile-name:not\(button\)\{cursor:default/);
+ assert.doesNotMatch(css,/linear-gradient\(|radial-gradient\(|box-shadow:0 0 [\d.]+rem [^\n]*#5c29d6/i);
+ assert.match(html,/class="btn btn-income"[^>]*data-demo-add="income"[^>]*aria-label="Ajouter une rentrée d'argent"/);
+ assert.match(html,/class="btn btn-expense"[^>]*data-demo-add="expense"[^>]*aria-label="Ajouter une dépense"/);
+ assert.match(html,/hover-polish\.css\?v=31up/);
+ assert.match(html,/progress-hover\.js\?v=31up/);
+ assert.match(html,/connect-src 'none'/);
+});
+test("PR49 31up: category gauges explain real, planned and remaining for every financial type",()=>{
+ const box={document:{getElementById(){return {innerHTML:""}}}};
+ vm.createContext(box);
+ for(const path of ["demo-state.js","category-render-live.js"]){
+  vm.runInContext(read("preview/category-distribution/"+path),box);
+ }
+ const markup=x=>vm.runInContext(x,box);
+ const exp=markup('categoryProgressMarkup({id:"groceries",name:"Courses",budget:250},186,"expense")');
+ assert.match(exp,/data-progress-track/);
+ assert.match(exp,/role="progressbar" tabindex="0"/);
+ assert.match(exp,/aria-describedby="category-progress-expense-groceries"/);
+ assert.match(exp,/role="tooltip"/);
+ assert.match(exp,/<dt>Utilisé<\/dt><dd>186/);
+ assert.match(exp,/<dt>Budget prévu<\/dt><dd>250/);
+ assert.match(exp,/<dt>Reste<\/dt><dd>64/);
+ const over=markup('categoryProgressMarkup({id:"music",name:"Musique",budget:12},22,"expense")');
+ assert.match(over,/<dt>Dépassement<\/dt><dd>10/);
+ assert.match(over,/is-danger/);
+ const income=markup('categoryProgressMarkup({id:"salary",name:"Salaire",budget:1900},1700,"income")');
+ assert.match(income,/<dt>Reçu<\/dt><dd>1/);
+ assert.match(income,/<dt>À recevoir<\/dt><dd>200/);
+ const saving=markup('categoryProgressMarkup({id:"reserve",name:"Réserve",saving:true,budget:100},60,"expense")');
+ assert.match(saving,/<dt>Épargné<\/dt><dd>60/);
+ assert.match(saving,/<dt>À épargner<\/dt><dd>40/);
+ const none=markup('categoryProgressMarkup({id:"unexpected",name:"Sans budget",budget:0},20,"expense")');
+ assert.match(none,/<dt>Reste<\/dt><dd>Sans budget<\/dd>/);
+ assert.match(none,/width:0%/);
+ const css=read("preview/category-distribution/hover-polish.css");
+ assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]:hover ~ \.cat-progress-tooltip/);
+ assert.match(css,/#categories \.cat-progress-track\[data-progress-track\]:focus-visible ~ \.cat-progress-tooltip/);
+ assert.match(css,/#categories \.cat-progress-row\[data-tooltip-open="true"\] \.cat-progress-tooltip/);
+ assert.match(css,/@media\(max-width:40rem\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+test("PR49 31up: chart selection reports actual used, planned and remaining for expenses and incomes",()=>{
+ const handlers=new Map();
+ const host={dataset:{},innerHTML:"",addEventListener(k,v){handlers.set(k,v)},
+  contains(){return true},querySelectorAll(){return []},querySelector(){return null}};
+ const doc={
+  getElementById(id){return id==="categoryDistribution"?host:null},
+  addEventListener(){},
+  activeElement:null
+ };
+ const box={document:doc};
+ vm.createContext(box);
+ vm.runInContext(read("preview/category-distribution/demo-state.js"),box);
+ vm.runInContext(read("preview/category-distribution/category-distribution.js"),box);
+ vm.runInContext("SmartBudgetCategoryDistribution.render()",box);
+ assert.ok(handlers.has("click"),"chart click handler is present");
+ let match=host.innerHTML.match(/data-bd-key="([^"]+)"/);
+ assert.ok(match,"at least one budget segment");
+ const choose=dataset=>handlers.get("click")({target:{closest:selector=>selector==="button"?{dataset}:null}});
+ choose({bdKey:match[1]});
+ assert.match(host.innerHTML,/class="bd-finance-breakdown"/);
+ assert.match(host.innerHTML,/<dt>Utilisé<\/dt>/);
+ assert.match(host.innerHTML,/<dt>Budget prévu<\/dt>/);
+ assert.match(host.innerHTML,/<dt>Reste<\/dt>|<dt>Dépassement<\/dt>/);
+ choose({bdScope:"income"});
+ match=host.innerHTML.match(/data-bd-key="([^"]+)"/);
+ assert.ok(match,"income chart segment available");
+ choose({bdKey:match[1]});
+ assert.match(host.innerHTML,/<dt>Reçu<\/dt>/);
+ assert.match(host.innerHTML,/<dt>Budget prévu<\/dt>/);
+ assert.match(host.innerHTML,/<dt>À recevoir<\/dt>|<dt>Au-dessus du prévu<\/dt>/);
+ assert.match(read("preview/category-distribution/category-distribution.js"),/tip\.innerHTML='<strong>'\+esc\(item\.name\)\+'<\/strong>'\+breakdownMarkup\(item\)/);
+});
+test("PR49 31up: touch progress tooltips stay accessible and isolated",()=>{
+ const code=read("preview/category-distribution/progress-hover.js");
+ const css=read("preview/category-distribution/hover-polish.css");
+ assert.match(code,/pointerType!=="touch"&&event\.pointerType!=="pen"/);
+ assert.match(code,/event\.key==="Escape"/);
+ assert.match(code,/event\.key==="Enter"\|\|event\.key===" "/);
+ assert.match(code,/data-tooltip-dismissed/);
+ assert.match(code,/document\.addEventListener\("pointerdown"/);
+ assert.match(css,/\.cat-progress-row\[data-tooltip-dismissed="true"\] \.cat-progress-tooltip/);
+ assert.doesNotMatch(code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,""),/\bfetch\s*\(|localStorage|sessionStorage|supabase/i);
+ for(const path of ["category-render-live.js","category-distribution.js","progress-hover.js"]){
+  assert.doesNotThrow(()=>new Function(read("preview/category-distribution/"+path)),path);
+ }
 });
