@@ -200,7 +200,7 @@ test("PR49 31ui: preview reuses exact published category handlers and source CSS
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
  for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","demo-chrome.js","demo-shell.css","mobile-ui.css","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31um"),key);
+  assert.ok(page.includes(key+"?v=31un"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -486,7 +486,7 @@ test("PR49 31ui: settings modal and preview preserve isolation and keyboard beha
  for(const s of ["categorySettingsBackdrop","categorySettingsActual","categorySettingsPlanned","categorySettingsOwner","categorySettingsSection","categorySettingsScope","categorySettingsForm"]){
   assert.match(html,new RegExp('id="'+s+'"'),s);
  }
- assert.ok(html.includes('category-prototype.js?v=31um'));
+ assert.ok(html.includes('category-prototype.js?v=31un'));
  assert.match(html,/connect-src 'none'/);
  assert.match(js,/prototypeBulkActual/);
  assert.match(js,/revertPrototypeAdjustments/);
@@ -803,4 +803,45 @@ test("PR49 31um: isolated add-operation controller supports local month and recu
  assert.match(read("preview/category-distribution/demo-chrome.js"),/showUndoToast\(created\.length/);
  const source=read("preview/category-distribution/demo-chrome.js").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,"");
  assert.doesNotMatch(source,/\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b|supabase|cloudflare/i);
+});
+
+
+
+test("PR49 31un: A+C uses fluid wide shell while keeping chart, income and savings in A order",()=>{
+ const css=read("preview/category-distribution/variant-ac.css");
+ const page=read("preview/category-distribution/index.html");
+ assert.match(css,/PR49 31un — A \+ C dashboard experiment/);
+ assert.match(css,/--sb-page-max:115rem/);
+ assert.match(css,/--sb-page-gutter:clamp\(1rem,2\.25vw,2\.75rem\)/);
+ assert.match(css,/\.demo-app main\.shell\{\s*width:min\(var\(--sb-page-max\),calc\(100% - 2 \* var\(--sb-page-gutter\)\)\)/);
+ assert.match(css,/#categories \.category-top\{\s*grid-template-columns:minmax\(0,1\.02fr\) minmax\(0,1\.08fr\)/);
+ assert.match(css,/#categories \.category-top \.income-card \.cat-budget-list,[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/#categories #categorySavingSlot \.saving-card \.cat-budget-list/);
+ assert.ok(page.indexOf('id="categoryDistribution"') < page.indexOf('id="categoryIncomeSlot"'));
+ assert.ok(page.indexOf('id="categoryIncomeSlot"') < page.indexOf('id="categoryExpenseSlot"'));
+ assert.ok(page.indexOf('id="categoryExpenseSlot"') < page.indexOf('id="categorySavingSlot"'));
+ assert.match(page,/variant-ac\.css\?v=31un/);
+ assert.ok(page.indexOf('preview-polish.css?v=31un') < page.indexOf('variant-ac.css?v=31un'));
+ assert.match(page,/connect-src 'none'/);
+ assert.doesNotMatch(css,/backdrop-filter:|linear-gradient\(/i);
+});
+test("PR49 31un: C expense families form three compact columns, without vertical borders",()=>{
+ const css=read("preview/category-distribution/variant-ac.css");
+ const source=read("preview/category-distribution/category-render-live.js");
+ const demo=read("preview/category-distribution/index.html");
+ assert.match(css,/#categories #categoryExpenseSlot \.category-cards:not\(\.income-cards\)\{\s*display:grid;\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/);
+ assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list > \.cat-budget-tile,[\s\S]*?border-top:\.0625rem solid var\(--sb-hairline\)!important/);
+ assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list > \.cat-budget-tile:last-child\{\s*border-bottom:\.0625rem solid var\(--sb-hairline\)!important/);
+ assert.match(css,/#categories #categoryExpenseSlot \.cat-budget-list > \.cat-budget-tile[\s\S]*?border:0!important/);
+ assert.doesNotMatch(css,/border-(?:right|left):/);
+ assert.match(css,/@media\(max-width:78rem\)\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+ assert.match(css,/@media\(max-width:50rem\)\{[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/);
+ assert.match(css,/@media\(max-width:47rem\)\{[\s\S]*?grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:40rem\)\{[\s\S]*?min-width:2\.75rem;min-height:2\.75rem/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ for(const key of ["Obligatoires","Abonnements","Vie courante","data-demo-fill-all","data-demo-clear-all","data-demo-fill-category","data-edit-actual","data-edit-planned","data-demo-settings","data-delete-category","data-category-details-toggle","categoryProgressMarkup"]){
+  assert.ok(source.includes(key),key);
+ }
+ assert.match(demo,/id="categoryGrid" class="category-layout" data-layout="hybrid"/);
+ assert.match(css,/color-mix\(in srgb,var\(--panel-2\) 45%,transparent\)/);
 });
