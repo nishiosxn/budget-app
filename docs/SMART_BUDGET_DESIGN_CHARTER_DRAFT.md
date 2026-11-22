@@ -54,3 +54,28 @@ Si ce prototype est refusé : revenir aux états du commit antérieur dans la PR
 - **Couverture :** tests d'équivalence entre CSS/JS de source et de démo, catégories inattendues, net zéro, raccourcis existants, focus et mode clair/sombre. La validation visuelle réelle 320/390/1280/1440, iPhone et lecteur d'écran reste à effectuer.
 
 La charte reste **une proposition**, pas une refonte approuvée de l'ensemble de Smart Budget. Pas de publication en production ni fusion de la PR #49.
+
+## Prototype 31ui — interaction centrée sur les catégories (essai non validé)
+
+**Source méthodologique :** Unslop (Damir Sokolovsky), CC BY 4.0.
+
+- **Produit :** lecture et modification des enveloppes réelles et prévues d'un foyer
+- **Caractère :** précis, autonome, posé
+- **Univers :** tableau de bord financier domestique et regroupements de comptes
+- **Moment :** jauges réel / prévu et barre de répartition, couleur uniquement lorsqu'elle informe
+- **Signature :** violet Smart Budget #5C29D6 pour marque, sélection et focus ; jamais pour la couleur du texte au simple survol
+
+### Nouvelle organisation expérimentale
+
+1. Les panneaux restent Répartition, Revenus, Dépenses, Épargne. Les familles de **Dépenses** s'empilent dans l'ordre Obligatoires, Abonnements, Vie courante, puis Autres si nécessaire.
+2. Chaque catégorie est une unité visuelle compacte, bordée d'un fin filet sur tout le périmètre : nom et chevron centré, propriétaire, réel cliquable, prévu cliquable, barre de progression, coche immédiate, engrenage et corbeille. Aucune action usuelle enfouie dans un sous-menu.
+3. L'engrenage ouvre **une seule fiche de paramètres** (nom, réel, prévu, attribution, famille lorsqu'elle existe, portée du budget). L'édition simple du réel ou du prévu reste possible directement depuis son montant, en un clic.
+4. « Tout remplir » aligne tous les réels ayant un prévu strictement positif, y compris les montants déjà renseignés, puis propose Annuler. « Tout vider » remet tous les réels à zéro après une seconde pression de confirmation, puis propose Annuler. Les catégories sans prévu ne sont pas effacées par Tout remplir.
+5. Pour les dépenses, progression normale violette, dépassement de 0 à 15 % orange et au-delà de 15 % rouge, avec delta et pourcentage visibles ; pour les revenus et l'épargne, dépasser l'objectif reste une progression positive (vert). Sans budget prévu, jauge grise et mention pertinente « Sans budget » si le réel est non nul.
+6. Les détails d'opérations se déplient uniquement si des opérations existent. Le chevron et les libellés restent neutres, jamais violets au survol.
+7. Mobile : une catégorie par ligne, boutons tactiles, montants réorganisés sans troncature ; modal de paramètres adaptée en feuille basse. Conserver mode clair/sombre, accessibilité et prefers-reduced-motion.
+8. Toutes les données de la prévisualisation restent fictives et uniquement en mémoire ; aucune interaction avec Supabase. Le nouveau code est exclusivement dans \`preview/category-distribution/\` et \`previews/pr-49/\` tant que la maquette n'est pas validée.
+
+### À contrôler avant généralisation
+
+Contrastes réels, capture mobile 320/390 et desktop 1280/1440, longues catégories, dialogues clavier, état sans budget, dépassement, revenu supérieur au prévu, dates, mois, filtre famille et retour au tout. **Les tests automatisés ne sont pas une preuve de conformité visuelle.**
