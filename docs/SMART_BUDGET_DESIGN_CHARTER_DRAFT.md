@@ -122,3 +122,22 @@ Un passage en vrai navigateur desktop et iPhone, modes clair/sombre, 320/390/128
 8. **Pas d'intégration avant validation :** cette version n'est que le prototype 31ul sur la PR #49. Refaire une recette réelle 320/390/768/1280/1440, clair/sombre et zoom, puis seulement porter la disposition dans l'application.
 
 **Portée de la passe** : HTML, rendu JS, CSS du prototype et tests ; aucune modification de la production Smart Budget, des fonctionnalités de Smart Assistant, des données Supabase, des montants fictifs ni de la navigation de l'application.
+
+
+
+## Essai 31um — chrome du produit et modales d'opérations
+
+**Audit préalable :** le prototype 31ul ne montrait ni la navigation principale, ni le sélecteur de mois avec les flèches, ni la barre inférieure mobile, ni les boutons d'ajout. La carte « Répartition des budgets » était étirée verticalement en face des Revenus ; ses rangées CSS de grille automatiques se répartissaient l'espace selon le contenu, déplaçant visuellement le total lors du passage entre Dépenses et Revenus.
+
+**Direction :** reproduire l'habillage publié de Smart Budget pour une seule page, sans recréer les autres pages ni connecter un foyer. Conserver le violet #5C29D6, les contrôles natifs lisibles sur iOS, le mode sombre/clair et les espaces du prototype hybride A.
+
+- En-tête visuel conforme à l'application : identité du foyer fictif, statut « Démo locale », boutons thème et paramètres.
+- Navbar desktop : Vue d'ensemble / Catégories / Historique / Suivi, avec Catégories seule active ; les autres pages ne sont ni construites ni accessibles dans le prototype.
+- Sélecteur de mois avec flèches et liste native (octobre à décembre 2026), interactif et relié au simulateur.
+- Actions « Rentrée d'argent » et « Dépense » visibles sur desktop et proposées dans la feuille d'actions du bouton + de la navbar mobile. Reprise des icônes, classes et du CSS de la navigation mobile publiée.
+- Les deux fenêtres d'ajout reprennent les champs métier essentiels de Smart Budget : montant (avec stepper), libellé facultatif, date, attribution, catégorie, période « Ce mois seulement / À partir de ce mois » et validation.
+- L'ajout ne crée que des transactions fictives en mémoire ; la récurrence de démonstration s'étend seulement aux mois disponibles. L'action peut être annulée sans toucher aux autres opérations. Aucun backend, stockage ou compte.
+- Le panneau Répartition utilise les propriétés CSS align-content:start et grid-auto-rows:max-content ; le bloc de montant garde une empreinte verticale fixe, et le niveau de détail côté Revenus conserve un emplacement invisible sur desktop. Le total n'est plus repositionné par l'étirement automatique des rangées.
+- Modes et UX : menu mobile au-dessus de la barre de navigation, dialogues tactiles en feuille basse, focus clavier confiné dans les modales, fermeture par Échap ou fond, contrôle du zoom iOS et préférence de réduction des animations.
+
+**Limite :** les tests JS/DOM légers valident l'assemblage, les actions fictives et le contrat CSS, mais ne démontrent pas encore la correspondance visuelle exacte des rendus dans un navigateur desktop ou sur iPhone. À vérifier avant intégration.
