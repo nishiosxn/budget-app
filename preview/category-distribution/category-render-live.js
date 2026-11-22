@@ -67,7 +67,7 @@ function categoryProgressMarkup(c,actual,type){
  const exceeded=expense&&planned>.005&&current>planned+.005;
  const over=current-planned;
  const severity=exceeded?(over/planned>.15?"danger":"warning"):"normal";
- const fill=pct===null?(current>.005?100:0):Math.max(0,Math.min(100,pct));
+ const fill=pct===null?0:Math.max(0,Math.min(100,pct));
  const text=pct===null?(current>.005?"Sans budget":"—"):
   exceeded?"+"+euro(over)+" · "+pct+" %":pct+" %";
  const progressInfo=pct===null?(current>.005?"Montant réel sans budget prévu":"Aucun budget prévu"):
