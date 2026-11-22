@@ -134,8 +134,8 @@ test("interactive selection, scope switch and month refresh are isolated from fi
 test("integration retires only the obsolete card, while recurring transactions and their code remain intact",()=>{
  const html=read("index.html"),ui=read("js/ui.js"),categories=read("js/categories.js"),distrib=read("js/category-distribution.js"),css=read("css/category-distribution.css");
  assert.match(html,/id="categoryDistribution"/);
- assert.match(html,/js\/category-distribution\.js\?v=31ug/);
- assert.match(html,/css\/category-distribution\.css\?v=31ug/);
+ assert.match(html,/js\/category-distribution\.js\?v=31ui/);
+ assert.match(html,/css\/category-distribution\.css\?v=31ui/);
  assert.doesNotMatch(html,/id="subscriptionsOverview"/);
  assert.doesNotMatch(html,/js\/subscriptions-overview\.js/);
  assert.match(ui,/SmartBudgetCategoryDistribution\?\.render\(\);renderCategories\(m\)/);
@@ -180,6 +180,7 @@ test("PR49 Unslop page rhythm: all financial groups share an internal title and 
  assert.match(preview,/Données fictives · Aucun compte connecté/);
  assert.match(preview,/id="categoryEditBackdrop"/);
  assert.match(preview,/id="categoryDeleteBackdrop"/);
+ assert.match(preview,/id="categorySettingsBackdrop"/);
 });
 
 
@@ -190,13 +191,13 @@ test("PR49 standalone preview assets mirror the actual read-only category compon
 
 
 
-test("PR49 31ug: preview reuses exact published category handlers and source CSS",()=>{
+test("PR49 31ui: preview reuses exact published category handlers and source CSS",()=>{
  const live=read("preview/category-distribution/categories-live.js");
  const repoHandlers=read("js/categories.js");
  assert.equal(live,repoHandlers,"demo behavior remains identical to app category handler");
  const page=read("preview/category-distribution/index.html");
- for(const key of ["category-render-live.js","categories-live.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
-  assert.ok(page.includes(key+"?v=31ug"),key);
+ for(const key of ["category-render-live.js","categories-live.js","category-prototype.js","demo-state.js","demo-init.js","app-style.css","preview-polish.css"]){
+  assert.ok(page.includes(key+"?v=31ui"),key);
  }
  for(const id of ["categoryEditBackdrop","categoryDeleteBackdrop","categoryNameInput","categoryOwnerField","categoryPlanScopeHint","categoryBudgetInput","saveCategoryEdit"]){
   assert.match(page,new RegExp('id="'+id+'"'),id);
@@ -215,10 +216,10 @@ test("PR49 31ug: preview reuses exact published category handlers and source CSS
  assert.match(live,/data-delete-category/);
  assert.match(live,/data-restore-category/);
  const renderer=read("preview/category-distribution/category-render-live.js");
- for(const s of ["data-category-details-toggle","data-category-menu","data-section-menu","cat-quick-fill","restorableBlock","archivedBlock"])
+ for(const s of ["data-category-details-toggle","data-demo-settings","data-demo-fill-all","data-demo-clear-all","cat-budget-tile","role=\"progressbar\"","restorableBlock","archivedBlock"])
   assert.ok(renderer.includes(s),s);
 });
-test("PR49 31ug: actual published category rows render against local-only fixture",()=>{
+test("PR49 31ui: actual published category rows render against local-only fixture",()=>{
  const grid={innerHTML:""};
  const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
  vm.createContext(box);
@@ -227,7 +228,7 @@ test("PR49 31ug: actual published category rows render against local-only fixtur
  vm.runInContext("renderCategories(metrics())",box);
  const html=grid.innerHTML;
  assert.match(html,/Répartition|Revenus/);
- for(const key of ["Dépenses","Épargne","Obligatoires","Abonnements","Vie courante","data-fill-category","data-category-menu-trigger","data-edit-actual","data-edit-planned","data-add-category","data-add-saving","data-bulk-action","data-category-details-toggle"]){
+ for(const key of ["Dépenses","Épargne","Obligatoires","Abonnements","Vie courante","data-fill-category","data-demo-settings","data-delete-category","data-edit-actual","data-edit-planned","data-add-category","data-add-saving","data-demo-fill-all","data-demo-clear-all","data-category-details-toggle","role=\"progressbar\""]){
   assert.ok(html.includes(key),key);
  }
  assert.ok(html.includes("cat-section-actions"));
@@ -238,7 +239,7 @@ test("PR49 31ug: actual published category rows render against local-only fixtur
  assert.equal(state.insurance,0);
  assert.equal(state.insurancePlanned,75);
 });
-test("PR49 31ug: sort choices are an accessible listbox and active text is neutral",()=>{
+test("PR49 31ui: sort choices are an accessible listbox and active text is neutral",()=>{
  const source=read("js/category-distribution.js"),css=read("css/category-distribution.css");
  for(const token of ['data-bd-sort-trigger','data-bd-sort-menu','data-bd-sort-option','role="listbox"','aria-selected','closeSort(host,true)']){
   assert.ok(source.includes(token),token);
@@ -247,11 +248,11 @@ test("PR49 31ug: sort choices are an accessible listbox and active text is neutr
  assert.match(css,/\.bd-sort-menu/);
  assert.match(css,/\.bd-toolbar \.is-active:hover/);
  assert.match(css,/color:var\(--text\)!important/);
- assert.match(css,/PR49 31ug/);
+ assert.match(css,/PR49 31ui/);
 });
 
 
-test("PR49 31ug: actual category actions mutate only fixture memory",()=>{
+test("PR49 31ui: actual category actions mutate only fixture memory",()=>{
  const ids=new Map(),events=new Map();
  const node=(id)=>({
   dataset:{},style:{},value:"",textContent:"",innerHTML:"",hidden:false,
@@ -300,7 +301,7 @@ test("PR49 31ug: actual category actions mutate only fixture memory",()=>{
 });
 
 
-test("PR49 31ug: orphan groups are visible, grouped and included in real and planned totals",()=>{
+test("PR49 31ui: orphan groups are visible, grouped and included in real and planned totals",()=>{
  const grid={innerHTML:""};
  const box={document:{getElementById:id=>id==="categoryGrid"?grid:null}};
  vm.createContext(box);
@@ -319,7 +320,7 @@ test("PR49 31ug: orphan groups are visible, grouped and included in real and pla
   assert.ok(realUI.includes(fragment),fragment);
  }
 });
-test("PR49 31ug: balanced monthly budget movements are not mislabeled as no changes",()=>{
+test("PR49 31ui: balanced monthly budget movements are not mislabeled as no changes",()=>{
  const host={dataset:{},innerHTML:"",addEventListener(){},contains(){return true}};
  const grid={innerHTML:""};
  const current=[{id:"rent",section:"Obligatoires",name:"Loyer",budget:510},
@@ -343,10 +344,10 @@ test("PR49 31ug: balanced monthly budget movements are not mislabeled as no chan
  assert.doesNotMatch(summary,/data-bd-action="view"/,"selected filter already updates the list");
  assert.match(summary,/data-bd-action="edit"/,"quick edit remains available");
 });
-test("PR49 31ug: only one horizontal list divider, three desktop columns and neutral category hover",()=>{
+test("PR49 31ui: only one horizontal list divider, three desktop columns and neutral category hover",()=>{
  const css=read("css/category-distribution.css");
  const polish=read("preview/category-distribution/preview-polish.css");
- assert.match(css,/PR49 31ug — Category rows and neutral states/);
+ assert.match(css,/PR49 31ui — Category rows and neutral states/);
  assert.match(css,/\.cat-item \+ \.cat-item\{\s*border-top:\.0625rem solid var\(--line\)/);
  assert.match(css,/\.category-cards:not\(\.income-cards\)\{\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(css,/\.cat-section:not\(:last-child\)\{\s*border-right:\.0625rem/);
@@ -358,7 +359,7 @@ test("PR49 31ug: only one horizontal list divider, three desktop columns and neu
  assert.match(polish,/#categoryEditBackdrop \.modal/);
  assert.equal(css,read("preview/category-distribution/category-distribution.css"));
 });
-test("PR49 31ug: test-only dialogs trap focus and restore it without persistent storage",()=>{
+test("PR49 31ui: test-only dialogs trap focus and restore it without persistent storage",()=>{
  const boot=read("preview/category-distribution/demo-init.js");
  const page=read("preview/category-distribution/index.html");
  for(const part of ["MutationObserver","event.key!==\"Tab\"","event.shiftKey","requestAnimationFrame(returnFocus)","target.focus({preventScroll:true})","event.key===\"Escape\""]){
