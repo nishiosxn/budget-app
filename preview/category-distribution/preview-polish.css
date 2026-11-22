@@ -605,3 +605,5 @@
  #categories .cat-tile-icon,
  #categories .cat-detail-chevron{transition:none!important;animation:none!important}
 }
+
+.sb-settings-field[hidden]{display:none!important}
