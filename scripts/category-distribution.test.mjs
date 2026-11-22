@@ -248,7 +248,7 @@ test("PR49 31ui: sort choices are an accessible listbox and active text is neutr
  assert.match(css,/\.bd-sort-menu/);
  assert.match(css,/\.bd-toolbar \.is-active:hover/);
  assert.match(css,/color:var\(--text\)!important/);
- assert.match(css,/PR49 31ui/);
+ assert.match(css,/PR49 31uf/);
 });
 
 
@@ -347,7 +347,7 @@ test("PR49 31ui: balanced monthly budget movements are not mislabeled as no chan
 test("PR49 31ui: only one horizontal list divider, three desktop columns and neutral category hover",()=>{
  const css=read("css/category-distribution.css");
  const polish=read("preview/category-distribution/preview-polish.css");
- assert.match(css,/PR49 31ui — Category rows and neutral states/);
+ assert.match(css,/PR49 31ug — Category rows and neutral states/);
  assert.match(css,/\.cat-item \+ \.cat-item\{\s*border-top:\.0625rem solid var\(--line\)/);
  assert.match(css,/\.category-cards:not\(\.income-cards\)\{\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(css,/\.cat-section:not\(:last-child\)\{\s*border-right:\.0625rem/);
