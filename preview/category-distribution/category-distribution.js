@@ -142,7 +142,7 @@
    '<div class="bd-subtoolbar">'+
    (!income?'<div class="bd-level" role="group" aria-label="Niveau de détail">'+
    '<button type="button" data-bd-level="family" aria-pressed="'+(ui.level==="family")+'" class="'+(ui.level==="family"?"is-active":"")+'">Par famille</button>'+
-   '<button type="button" data-bd-level="category" aria-pressed="'+(ui.level==="category")+'" class="'+(ui.level==="category"?"is-active":"")+'">Par catégorie</button></div>':"<span></span>")+
+   '<button type="button" data-bd-level="category" aria-pressed="'+(ui.level==="category")+'" class="'+(ui.level==="category"?"is-active":"")+'">Par catégorie</button></div>':'<div class="bd-level bd-level-placeholder" aria-hidden="true"><span>Par famille</span><span>Par catégorie</span></div>')+
    '<div class="bd-sort"><span>Trier</span><div class="bd-sort-picker">'+
    '<button type="button" class="bd-sort-trigger" data-bd-sort-trigger aria-haspopup="listbox" aria-expanded="false">'+
    '<span>'+(ui.sort==="amount"?"Par montant":"Ordre des catégories")+'</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>'+
