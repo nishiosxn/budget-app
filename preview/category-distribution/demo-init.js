@@ -16,17 +16,20 @@ document.addEventListener("DOMContentLoaded",()=>{
  theme.addEventListener("click",()=>{
   const isDark=root.dataset.demoTheme!=="dark";
   root.dataset.demoTheme=isDark?"dark":"light";
-  theme.textContent=isDark?"Mode clair":"Mode sombre";
   theme.setAttribute("aria-label",isDark?"Passer en mode clair":"Passer en mode sombre");
+  theme.title=isDark?"Passer en mode clair":"Passer en mode sombre";
+  theme.innerHTML=isDark?
+   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.64 5.64l1.42 1.42m9.88 9.88 1.42 1.42m0-12.72-1.42 1.42m-9.88 9.88-1.42 1.42"/><circle cx="12" cy="12" r="4"/></svg>':
+   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.1A8.5 8.5 0 0 1 9.9 3.5 8.5 8.5 0 1 0 20.5 14.1Z"/></svg>';
  });
  // Keep the original category dialogs, adding a test-only focus contract.
- const backdrops=[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop];
+ const backdrops=[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop,demoTransactionBackdrop];
  let lastTrigger=null;
  let lastTriggerData=null;
  document.addEventListener("click",event=>{
-  const button=event.target.closest?.("#categoryGrid button,#categoryDistribution button");
+  const button=event.target.closest?.("#categoryGrid button,#categoryDistribution button,[data-demo-add]");
   if(!button)return;
-  lastTrigger=button;
+  lastTrigger=button.closest("#mobileQuickAdd")?document.getElementById("mobileAddButton"):button;
   lastTriggerData={
    action:button.dataset.demoSettings?"settings":button.dataset.editActual?"editActual":button.dataset.editPlanned?"editPlanned":
     button.dataset.deleteCategory?"deleteCategory":button.dataset.addCategory?"addCategory":
@@ -70,6 +73,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    event.preventDefault();
    if(active===categoryEditBackdrop)closeCategoryEditor();
    else if(active===categorySettingsBackdrop)closeCategorySettings();
+   else if(active===demoTransactionBackdrop)closeDemoTransactionModal();
    else closeCategoryDelete();
    return;
   }
