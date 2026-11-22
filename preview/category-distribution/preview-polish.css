@@ -1,0 +1,176 @@
+/* PR49 — Original Smart Budget category controls, offline visual trial.
+ * Source UI is copied from the published app; no Supabase service is loaded.
+ */
+#categories .category-group .category-cards{
+ align-items:start;
+}
+#categories .category-group .category-cards.income-cards .income-list{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ column-gap:clamp(1rem,2vw,1.75rem);
+}
+#categories .cat-item .cat-line{align-items:center}
+#categories .cat-item .cat-amount,
+#categories .cat-item .cat-planned{color:var(--text)}
+#categories .cat-item .cat-planned{color:var(--muted)}
+#categories .cat-item .cat-meta{color:var(--muted)}
+#categories .cat-item .category-menu{right:0;max-width:100%}
+#categories .cat-amount.is-empty{color:var(--muted)}
+#categories .cat-amount.is-different{color:var(--text)}
+#categories .income-card .cat-amount{color:var(--income)}
+#categories .saving-card .cat-amount{color:var(--income)}
+#categories .cat-item .cat-name-toggle:focus-visible,
+#categories .cat-item .cat-value-button:focus-visible,
+#categories .cat-item .cat-planned-button:focus-visible,
+#categories .cat-item .category-menu-trigger:focus-visible,
+#categories .cat-item .cat-quick-fill:focus-visible{
+ outline:.15rem solid #5c29d6;
+ outline-offset:.15rem;
+}
+#categories .cat-details{
+ margin:.5rem 0 .1rem;
+ background:var(--panel-2);
+ border:0;border-radius:.7rem;
+}
+#categories .cat-detail-row{border-color:var(--line)}
+#categories .cat-detail-amount,
+#categories .cat-detail-label{color:var(--text)}
+#categories .cat-detail-meta{color:var(--muted)}
+#categories .restorable-categories summary{cursor:pointer}
+#categories .cat-section-actions button{min-width:2rem;min-height:2rem}
+#categories .category-menu-trigger{min-width:2.25rem;min-height:2.25rem}
+#categories .cat-section-menu{z-index:90}
+#categories .category-filter-banner button{color:var(--text)}
+#categoryEditBackdrop,
+#categoryDeleteBackdrop{
+ backdrop-filter:blur(.3rem);
+ background:rgba(6,8,13,.65);
+ z-index:160;
+}
+#categoryEditBackdrop .modal,
+#categoryDeleteBackdrop .modal{
+ width:min(29rem,100%);
+ max-height:min(90dvh,46rem);
+ overflow:auto;
+ color:var(--text);
+ background:var(--panel);
+ border:.0625rem solid var(--line);
+ border-radius:1.15rem;
+ padding:clamp(1rem,2.5vw,1.5rem);
+ box-shadow:0 1.5rem 4rem rgba(0,0,0,.2);
+}
+#categoryEditBackdrop .modal>.modal-head,
+#categoryDeleteBackdrop .modal>.modal-head{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:1rem;
+ padding:0 0 .95rem;
+ border-bottom:.0625rem solid var(--line);
+}
+#categoryEditBackdrop .modal h3,
+#categoryDeleteBackdrop .modal h3{
+ margin:0;font-size:1.125rem;font-weight:650;letter-spacing:-.02em;
+}
+#categoryEditBackdrop .modal-kind,
+#categoryDeleteBackdrop .modal-kind{
+ color:var(--muted);
+ font-size:.8125rem;
+ margin-top:.3rem;
+}
+#categoryEditBackdrop .close,
+#categoryDeleteBackdrop .close{
+ flex:0 0 2.5rem;width:2.5rem;height:2.5rem;
+ display:grid;place-items:center;
+ border:.0625rem solid var(--line);border-radius:.65rem;
+ background:var(--panel-2);color:var(--muted);
+ font-size:1.25rem;
+}
+#categoryEditBackdrop .field{margin-top:1rem}
+#categoryEditBackdrop .field label{
+ margin-bottom:.5rem;
+ font-size:.8125rem;
+ letter-spacing:0;
+ color:var(--muted);
+}
+#categoryEditBackdrop .category-form-input{
+ width:100%;min-height:3rem;
+ border:.0625rem solid var(--line);
+ border-radius:.7rem;
+ background:var(--panel-2);color:var(--text);
+ padding:.75rem .875rem;font-size:1rem;font-weight:550;
+}
+#categoryEditBackdrop .category-form-input:hover{background:var(--panel-2)}
+#categoryEditBackdrop .category-form-input:focus-visible{
+ outline:.15rem solid #5c29d6;
+ outline-offset:.12rem;
+ border-color:#5c29d6;
+ box-shadow:none;background:var(--panel);
+}
+#categoryEditBackdrop .currency-suffix{color:var(--muted)}
+#categoryEditBackdrop .owner-switch{
+ display:grid;gap:.3rem;
+ border-radius:.75rem;
+ padding:.3rem;background:var(--panel-2);
+ border:.0625rem solid var(--line);
+}
+#categoryEditBackdrop .owner-option{
+ min-height:2.5rem;padding:.55rem .5rem;
+ border:0;border-radius:.55rem;
+ background:transparent;color:var(--muted);
+ font-size:.8125rem;font-weight:550;
+}
+#categoryEditBackdrop .owner-option.active,
+#categoryEditBackdrop .owner-option:hover{
+ background:var(--panel);color:var(--text);
+ box-shadow:0 .1rem .45rem rgba(0,0,0,.05);
+}
+#categoryEditBackdrop .scope-hint{
+ margin:.45rem 0 0;
+ font-size:.75rem;color:var(--muted);
+}
+#categoryEditBackdrop .save{
+ margin-top:1.25rem;
+ width:100%;min-height:2.75rem;
+ border:0;border-radius:.7rem;
+ color:#fff!important;background:#5c29d6!important;
+ font-size:.875rem;font-weight:650;
+}
+#categoryEditBackdrop .save:hover{filter:brightness(1.06)}
+#categoryDeleteBackdrop .delete-copy{
+ margin:1rem 0 1.25rem;
+ padding:1rem;
+ border:.0625rem solid var(--line);
+ border-radius:.75rem;
+ background:var(--panel-2);color:var(--muted);
+ line-height:1.5;
+}
+#categoryDeleteBackdrop .delete-copy strong{color:var(--text)}
+#categoryDeleteBackdrop .delete-actions button{
+ min-height:2.75rem;border-radius:.7rem;font-weight:550;
+}
+#categoryDeleteBackdrop .btn-delete-month{
+ background:var(--panel-2);color:var(--text);border-color:var(--line);
+}
+#categoryDeleteBackdrop .btn-delete-all{
+ background:#a6403e;color:#fff;border-color:#a6403e;
+}
+#categoryDeleteBackdrop .btn-cancel-delete{
+ background:var(--panel);color:var(--text);border-color:var(--line);
+}
+#categoryEditBackdrop button:focus-visible,
+#categoryDeleteBackdrop button:focus-visible{
+ outline:.15rem solid #5c29d6;
+ outline-offset:.1rem;
+}
+@media(max-width:40rem){
+ #categories .category-group .category-cards.income-cards .income-list{grid-template-columns:1fr}
+ #categoryEditBackdrop .modal-backdrop,
+ #categoryDeleteBackdrop .modal-backdrop{padding:0}
+ #categoryEditBackdrop .modal,
+ #categoryDeleteBackdrop .modal{
+  width:100%;max-height:90dvh;
+  border-radius:1.15rem 1.15rem 0 0;
+  padding:1.125rem 1rem calc(1.125rem + env(safe-area-inset-bottom));
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #categoryEditBackdrop *,#categoryDeleteBackdrop *{transition:none!important;animation:none!important}
+}
