@@ -209,12 +209,12 @@
   host.dataset.bound="1";
   host.addEventListener("click",event=>{
    const b=event.target.closest("button");if(!b||!host.contains(b))return;
-   if(b.hasAttribute("data-bd-sort-trigger")){
+   if(b.dataset.bdSortTrigger!==undefined){
     const menu=host.querySelector("[data-bd-sort-menu]");
     if(menu?.hidden)openSort(host);else closeSort(host,true);
     return;
    }
-   if(b.hasAttribute("data-bd-sort-option")){
+   if(b.dataset.bdSortOption!==undefined){
     ui.sort=b.dataset.bdSortOption==="order"?"order":"amount";
     renderBudgetCard();updateGrid();
     host.querySelector("[data-bd-sort-trigger]")?.focus();
@@ -232,7 +232,7 @@
     if(id&&typeof openCategoryEditor==="function")openCategoryEditor(id,null,"planned",ui.scope);
    }
   });
-  document.addEventListener("pointerdown",event=>{
+  document.addEventListener?.("pointerdown",event=>{
    if(!host.contains(event.target)||!event.target.closest(".bd-sort-picker"))closeSort(host);
   });
   host.addEventListener("pointerover",event=>{
