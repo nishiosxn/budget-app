@@ -134,5 +134,8 @@ state.transactions.push(
  record("expense","rent",530,"common","2026-10-06","Loyer"),
  record("expense","groceries",198,"common","2026-10-15","Courses"),
  record("expense","car",105,"B","2026-10-20","Carburant"),
- record("expense","reserve",80,"B","2026-10-21","Épargne")
+ record("expense","reserve",80,"B","2026-10-21","Épargne"),
+ // Scenario accessible in December: moderate and major overspending.
+ record("expense","car",102,"B","2026-12-09","Carburant"),
+ record("expense","music",22,"B","2026-12-10","Musique")
 );
