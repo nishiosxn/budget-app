@@ -118,7 +118,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     const bounds=float.getBoundingClientRect();
     tipSize={width:bounds.width,height:bounds.height};
    }
-   moveTo(x,y,kind,!same);
+   // Keep the floating panel's inertia when scrubbing to an adjacent segment.
+   moveTo(x,y,kind,false);
   }
  }
  function hoverZone(element,x,y){
@@ -158,7 +159,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const element=barFromEvent(event);
   if(!element){if(active)close();return}
   cancelLinger();
-  pressed={id:event.pointerId,element,startX:event.clientX,startY:event.clientY,moved:false};
+  pressed={id:event.pointerId,element,current:element,startX:event.clientX,startY:event.clientY,moved:false};
   suppressChartClick=false;
   try{element.setPointerCapture?.(event.pointerId)}catch{}
   show(element,event.clientX,event.clientY,"touch");
@@ -168,7 +169,17 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(Math.hypot(event.clientX-pressed.startX,event.clientY-pressed.startY)>9){
    pressed.moved=true;
   }
-  show(pressed.element,event.clientX,event.clientY,"touch");
+  // Scrub neighbouring distribution segments horizontally, but keep following
+  // the finger freely in both axes once it leaves the chart's proximity.
+  if(pressed.element.matches(".bd-segment[data-bd-key]")){
+   const track=chart.querySelector(".bd-track");
+   const rect=track?.getBoundingClientRect?.();
+   if(rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&
+      event.clientY>=rect.top-36&&event.clientY<=rect.bottom+36){
+    pressed.current=nearestSegment(track,event.clientX)||pressed.current;
+   }
+  }
+  show(pressed.current,event.clientX,event.clientY,"touch");
  }
  function touchEnd(event){
   if(!pressed||event.pointerId!==pressed.id)return;
