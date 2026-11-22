@@ -201,3 +201,22 @@ Cette passe ne change **ni** la disposition validée A + C **ni** la position du
 - **Conservation :** 31un et 31um restent disponibles pour comparaison ; code nouveau limité à la prévisualisation isolée et à ses tests. Ni logique métier, ni données de compte, ni production ne sont modifiées.
 
 Tests JavaScript, focus, responsive, couleurs et résultat sur véritable iPhone/desktop devront être validés avant tout portage.
+
+
+## Essai 31uq — infobulles magnétiques
+
+**Point de restauration** : l'ensemble des 16 fichiers de la version 31up a été figé dans previews/pr-49/versions/31up/ sur gh-pages. Les archives 31un et 31um sont également conservées. La disposition générale et les interactions du foyer fictif ne changent pas.
+
+**Audit Unslop, ciblé sur l'animation** : les infobulles 31up étaient figées au-dessus des jauges ou des segments de répartition. Un déplacement du doigt ne déplaçait pas le détail financier, et le rendu manquait de continuité pour un geste tactile. La bonne matière visuelle est la jauge elle-même, pas un effet décoratif. Conserver le violet #5C29D6, l'économie de bordures, la typographie et les montants tabulaires. Pas de halo, de flou de mouvement, de mouvement automatique ou de nouvelle couleur.
+
+**Comportement 31uq** :
+- Une seule infobulle flottante, légèrement translucide (surface à 95 %), petite et au bord discret ; elle reprend les données réelles/prévues/restantes de chaque barre ou de la répartition, sans recalculer les budgets.
+- Ordinateur : la souris fait apparaître l'infobulle et la déplace en x/y. Une marge virtuelle de 40 px en hauteur et de 12–18 px sur les côtés évite sa disparition brutale autour de la barre.
+- Téléphone/tablette : un doigt posé sur une jauge active la capture du pointeur ; l'infobulle suit le doigt en x/y même au-delà de la barre. L'infobulle est au-dessus du doigt, puis en dessous si elle manque de place en haut. Les coordonnées sont contraintes par le viewport visible pour éviter les sorties d'écran.
+- Les segments colorés de Répartition utilisent exactement la même mécanique. Un glissement horizontal sur plusieurs segments peut afficher leurs valeurs successives. Les petits déplacements de la souris dans la zone voisine ne coupent pas l'affichage.
+- **Motion** : interpolation exponentielle via requestAnimationFrame (constante environ 68 ms), sans effet de flou. La préférence prefers-reduced-motion supprime toute inertie et transition.
+- **Accessibilité** : un focus clavier montre le même contenu, Escape le masque. Les libellés ARIA existants gardent les trois informations. L'infobulle flottante n'intercepte aucun clic.
+- **Gestes sans effets secondaires** : un tap sur un segment de répartition garde sa fonction de filtre ; un glissement tactile ne doit pas déclencher ce filtre. Le touch-action:none est limité aux jauges, pour préserver le défilement normal depuis les autres zones.
+- **Performance** : un seul overlay, mesure des dimensions seulement quand son contenu change, animation annulée à la fermeture et nettoyage au changement de page/mois, redimensionnement ou défilement.
+
+**Périmètre** : source et CSS isolés dans la prévisualisation de la PR #49 ; aucun portage vers l'application, les comptes, la production, Supabase ou Smart Assistant. Validation visuelle réelle sur iPhone et desktop toujours nécessaire.
