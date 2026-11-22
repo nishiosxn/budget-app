@@ -312,7 +312,7 @@ test("PR49 31ug: orphan groups are visible, grouped and included in real and pla
  assert.match(html,/Taxi/);
  assert.match(html,/14,00/);
  assert.match(html,/25,00/);
- assert.equal((html.match(/Taxi/g)||[]).length,1);
+ assert.equal((html.match(/data-category-row="misc"/g)||[]).length,1);
  assert.doesNotMatch(html,/Prévu · Personne/);
  const realUI=read("js/ui.js");
  for(const fragment of ["function categorySectionOf","categorySectionOf(c)===section","sections.push(\"Autres\")","categorySectionOf(c)!==section"]){
@@ -361,7 +361,7 @@ test("PR49 31ug: only one horizontal list divider, three desktop columns and neu
 test("PR49 31ug: test-only dialogs trap focus and restore it without persistent storage",()=>{
  const boot=read("preview/category-distribution/demo-init.js");
  const page=read("preview/category-distribution/index.html");
- for(const part of ["MutationObserver","event.key===\"Tab\"","event.shiftKey","requestAnimationFrame(returnFocus)","target.focus({preventScroll:true})","event.key===\"Escape\""]){
+ for(const part of ["MutationObserver","event.key!==\"Tab\"","event.shiftKey","requestAnimationFrame(returnFocus)","target.focus({preventScroll:true})","event.key===\"Escape\""]){
   assert.ok(boot.includes(part),part);
  }
  assert.match(page,/aria-modal="true"/);
