@@ -78,9 +78,21 @@ function categoryProgressMarkup(c,actual,type){
  else label=euro(difference)+" restants · "+pct+" %";
  const progressInfo=pct===null?(current>.005?euro(current)+" de réel sans budget prévu":"Aucun budget prévu"):
   pct+" % du prévu"+(exceeded?", dépassement de "+euro(-difference):"");
- return '<div class="cat-progress-row"><div class="cat-progress-track'+(pct===null&&current>.005?" is-unbudgeted":"")+'" role="progressbar" aria-label="'+escapeHtml(c.name)+' — réel / prévu" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+fill+'" aria-valuetext="'+escapeHtml(progressInfo)+'">'+
+ const usedName=type==="income"?"Reçu":isSaving?"Épargné":"Utilisé";
+ const remainingName=planned<=.005?"Reste":difference<-.005?(expense?"Dépassement":"Au-dessus du prévu"):
+  type==="income"?"À recevoir":isSaving?"À épargner":"Reste";
+ const remainingValue=planned<=.005?"Sans budget":euro(Math.abs(difference));
+ const detailId="category-progress-"+type+"-"+c.id;
+ const tip='<div id="'+escapeHtml(detailId)+'" class="cat-progress-tooltip" role="tooltip">'+
+  '<strong>'+escapeHtml(c.name)+'</strong>'+
+  '<dl><div><dt>'+usedName+'</dt><dd>'+euro(current)+'</dd></div>'+
+  '<div><dt>Budget prévu</dt><dd>'+euro(planned)+'</dd></div>'+
+  '<div><dt>'+remainingName+'</dt><dd>'+remainingValue+'</dd></div></dl></div>';
+ const accessibleDetails=usedName+" : "+euro(current)+", budget prévu : "+euro(planned)+", "+remainingName+" : "+remainingValue;
+ return '<div class="cat-progress-row"><div class="cat-progress-track'+(pct===null&&current>.005?" is-unbudgeted":"")+'" role="progressbar" tabindex="0" data-progress-track aria-describedby="'+escapeHtml(detailId)+'" aria-label="'+escapeHtml(c.name)+" — "+escapeHtml(accessibleDetails)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+fill+'" aria-valuetext="'+escapeHtml(progressInfo)+'">'+
   '<span class="cat-progress-fill is-'+severity+(isSaving?" is-saving":type==="income"?" is-income":"")+'" style="width:'+fill+'%"></span></div>'+
-  '<span class="cat-progress-caption '+(exceeded?"is-"+severity:"")+'">'+escapeHtml(label)+'</span></div>';
+  '<span class="cat-progress-caption '+(exceeded?"is-"+severity:"")+'">'+escapeHtml(label)+'</span>'+
+  tip+'</div>';
 }
 function categoryActionIcon(name){
  if(name==="check")return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4L19 6.5"/></svg>';
