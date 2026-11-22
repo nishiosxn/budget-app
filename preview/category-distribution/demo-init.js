@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   state.selectedMonth=select.value;
   closeCategoryEditor();
   closeCategoryDelete();
+  closeCategorySettings();
   render();
  });
  theme.addEventListener("click",()=>{
@@ -19,7 +20,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   theme.setAttribute("aria-label",isDark?"Passer en mode clair":"Passer en mode sombre");
  });
  // Keep the original category dialogs, adding a test-only focus contract.
- const backdrops=[categoryEditBackdrop,categoryDeleteBackdrop];
+ const backdrops=[categoryEditBackdrop,categoryDeleteBackdrop,categorySettingsBackdrop];
  let lastTrigger=null;
  let lastTriggerData=null;
  document.addEventListener("click",event=>{
@@ -27,10 +28,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(!button)return;
   lastTrigger=button;
   lastTriggerData={
-   action:button.dataset.editActual?"editActual":button.dataset.editPlanned?"editPlanned":
+   action:button.dataset.demoSettings?"settings":button.dataset.editActual?"editActual":button.dataset.editPlanned?"editPlanned":
     button.dataset.deleteCategory?"deleteCategory":button.dataset.addCategory?"addCategory":
     button.dataset.addSaving?"addSaving":null,
-   id:button.dataset.editActual||button.dataset.editPlanned||button.dataset.deleteCategory||"",
+   id:button.dataset.demoSettings||button.dataset.editActual||button.dataset.editPlanned||button.dataset.deleteCategory||"",
    section:button.dataset.addCategory||"",
    type:button.dataset.categoryType||"expense"
   };
@@ -40,12 +41,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   const d=lastTriggerData;
   if(!target&&d?.action){
    const selectors={
-    editActual:'[data-edit-actual]',editPlanned:'[data-edit-planned]',
+    settings:'[data-demo-settings]',editActual:'[data-edit-actual]',editPlanned:'[data-edit-planned]',
     deleteCategory:'[data-delete-category]',addCategory:'[data-add-category]',addSaving:'[data-add-saving]'
    };
    const selector=selectors[d.action];
    target=[...document.querySelectorAll("#categoryGrid "+selector)].find(node=>
-    (node.dataset.editActual||node.dataset.editPlanned||node.dataset.deleteCategory||"")===d.id&&
+    (node.dataset.demoSettings||node.dataset.editActual||node.dataset.editPlanned||node.dataset.deleteCategory||"")===d.id&&
     (node.dataset.addCategory||"")===d.section&&
     (node.dataset.categoryType||"expense")===d.type)||null;
   }
@@ -67,7 +68,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(!active)return;
   if(event.key==="Escape"){
    event.preventDefault();
-   if(active===categoryEditBackdrop)closeCategoryEditor();else closeCategoryDelete();
+   if(active===categoryEditBackdrop)closeCategoryEditor();
+   else if(active===categorySettingsBackdrop)closeCategorySettings();
+   else closeCategoryDelete();
    return;
   }
   if(event.key!=="Tab")return;
