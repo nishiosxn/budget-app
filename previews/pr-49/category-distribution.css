@@ -237,9 +237,6 @@
 }
 #categories .category-cards:not(.income-cards) .cat-section:first-child{padding-left:0}
 #categories .category-cards:not(.income-cards) .cat-section:last-child{padding-right:0}
-#categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
-  border-right:.0625rem solid var(--line);
-}
 #categories .cat-section-single{padding:0}
 #categories .category-cards.income-cards .cat-section{padding:0}
 #categories .cat-section-head{
@@ -451,4 +448,73 @@
 }
 @media(prefers-reduced-motion:reduce){
  #categories .bd-sort-trigger svg{transition:none}
+}
+
+
+/* PR49 31ug — Category rows and neutral states.
+ * Keep three desktop expense columns but never draw vertical dividers.
+ * Each category list has exactly one quiet hairline between siblings.
+ */
+#categories .category-cards:not(.income-cards){
+ grid-template-columns:repeat(3,minmax(0,1fr));
+}
+#categories .category-cards .cat-section,
+#categories .category-cards:not(.income-cards) .cat-section,
+#categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
+ border-inline:0;
+}
+#categories .category-cards .cat-item + .cat-item{
+ border-top:.0625rem solid var(--line);
+}
+#categories .cat-item:not(.menu-open):hover{
+ background:transparent;
+}
+#categories .cat-name-toggle:hover .cat-name,
+#categories .cat-name-toggle:focus-visible .cat-name,
+#categories .cat-value-button.is-matched{
+ color:var(--text);
+}
+#categories .cat-item.details-open .cat-detail-chevron{
+ color:var(--muted);
+}
+#categories .cat-name-toggle:hover .cat-detail-chevron{
+ color:var(--text);
+}
+#categories .bd-legend-row.is-active{
+ background:var(--panel-2);
+ border-color:var(--line);
+}
+#categories .bd-legend-row:hover,
+#categories .bd-legend-row.is-previewed{
+ color:var(--text);
+ background:var(--panel-2);
+}
+#categories .bd-clear{
+ color:var(--text);
+}
+#categories .cat-quick-fill:hover,
+#categories .cat-quick-fill:focus-visible,
+#categories .cat-bulk.fill:hover,
+#categories .add-category:hover,
+#categories .category-menu button:hover,
+#categories .cat-section-menu button:hover{
+ background:var(--panel-2);
+ border-color:var(--line);
+ color:var(--text);
+ transform:none;
+}
+#categories .cat-quick-fill:focus-visible,
+#categories .cat-bulk.fill:focus-visible,
+#categories .add-category:focus-visible{
+ outline:.15rem solid #5c29d6;
+ outline-offset:.12rem;
+}
+@media(max-width:56rem){
+ #categories .category-cards:not(.income-cards){
+  grid-template-columns:minmax(0,1fr);
+ }
+ #categories .category-cards:not(.income-cards) .cat-section,
+ #categories .category-cards:not(.income-cards) .cat-section:not(:last-child){
+  border:0;
+ }
 }

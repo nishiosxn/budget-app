@@ -83,7 +83,7 @@ function categoryRow(c,actual,type,m){
   </div>
   <div class="cat-meta">
    <button class="cat-planned cat-planned-button" type="button" data-edit-planned="${escapeHtml(c.id)}" data-category-type="${type}" aria-label="Modifier le budget prévu de ${escapeHtml(c.name)}" title="Modifier le prévu">Prévu ${euro(planned)}</button>
-   <span class="cat-meta-side"><span class="cat-owner">Prévu · ${escapeHtml(ownerLabel(c.owner))}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
+   <span class="cat-meta-side"><span class="cat-owner">${escapeHtml(ownerLabel(c.owner))}</span><button class="category-menu-trigger" type="button" data-category-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions pour ${escapeHtml(c.name)}" title="Plus d’actions">⋯</button></span>
   </div>
   ${details.html}
   <div class="category-menu" data-category-menu role="menu" hidden>
@@ -95,7 +95,11 @@ function categoryRow(c,actual,type,m){
  </div>`;
 }
 function archivedCategoryRow(c,actual,type){return `<div class="cat-item archived"><div class="cat-line"><div class="cat-name">${escapeHtml(c.name)} <span class="archive-badge">Archivée</span></div><div class="cat-amount">${euro(actual)}</div></div><div class="cat-meta"><span>Mouvements conservés pour expliquer le total</span><span>${ownerLabel(transactionOwner({category:c.id,type,date:`${monthKey(state.selectedMonth)}-01`}))}</span></div></div>`}
-function archivedCategoriesFor(type,section,m){const base=type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES,legacy=Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type===type),list=[...base,...legacy],totals=type==="income"?m.incMap:m.expMap;return list.filter(c=>{if(type==="expense"){if(section==="__savings__"&&!c.saving)return false;if(section!=="__savings__"&&(c.saving||c.section!==section))return false}const hidden=c.legacy||!isCategoryVisible(c.id,state.selectedMonth,type);return hidden&&Math.abs(totals[c.id]||0)>.005}).map(c=>c.legacy?c:categoryView(c,type))}
+// Normalize legacy and custom groups to the same set used by the chart.
+function categorySectionOf(c){
+ return ["Obligatoires","Abonnements","Vie courante"].includes(c?.section)?c.section:"Autres";
+}
+function archivedCategoriesFor(type,section,m){const base=type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES,legacy=Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type===type),list=[...base,...legacy],totals=type==="income"?m.incMap:m.expMap;return list.filter(c=>{if(type==="expense"){if(section==="__savings__"&&!c.saving)return false;if(section!=="__savings__"&&(c.saving||categorySectionOf(c)!==section))return false}const hidden=c.legacy||!isCategoryVisible(c.id,state.selectedMonth,type);return hidden&&Math.abs(totals[c.id]||0)>.005}).map(c=>c.legacy?c:categoryView(c,type))}
 function archivedBlock(cats,totals,type){return cats.length?`<div class="archived-wrap"><div class="archived-label">Archivées ce mois</div>${cats.map(c=>archivedCategoryRow(c,totals[c.id]||0,type)).join("")}</div>`:""}
 function restorableCategoriesFor(type,section){
  const source=type==="income"?INCOME_CATEGORIES:EXPENSE_CATEGORIES,key=monthKey(state.selectedMonth);
@@ -103,7 +107,7 @@ function restorableCategoriesFor(type,section){
   if(key<categoryCreatedFrom(c.id,type)||isCategoryVisible(c.id,state.selectedMonth,type))return false;
   if(type==="income")return true;
   if(section==="__savings__")return !!c.saving;
-  return !c.saving&&c.section===section;
+  return !c.saving&&categorySectionOf(c)===section;
  }).map(c=>categoryView(c,type));
 }
 function restorableBlock(cats,type){
@@ -139,14 +143,15 @@ function renderCategories(m){
    '<button class="add-category" type="button" data-add-category="Revenus" data-category-type="income">＋ Ajouter un champ</button>':"")+'</article>';
  const sections=["Obligatoires","Abonnements","Vie courante"];
  const expenseVisible=visibleExpenseCategories();
+ if([...EXPENSE_CATEGORIES,...Object.values(LEGACY_CATEGORY_DEFS)].some(c=>!c.saving&&categorySectionOf(c)==="Autres"))sections.push("Autres");
  const expenseSummary=[];
  const expenseCards=sections.map(section=>{
-  const cats=selected(expenseVisible.filter(c=>c.section===section),"expense");
+  const cats=selected(expenseVisible.filter(c=>categorySectionOf(c)===section),"expense");
   if(filter&&!cats.length)return "";
   const archived=showExtras?archivedCategoriesFor("expense",section,m):[];
   const actual=filter?sum(cats.map(c=>m.expMap[c.id]||0)):
-   sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&c.section===section).map(c=>m.expMap[c.id]||0))+
-   sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&c.section===section).map(c=>m.expMap[c.id]||0));
+   sum(EXPENSE_CATEGORIES.filter(c=>!c.saving&&categorySectionOf(c)===section).map(c=>m.expMap[c.id]||0))+
+   sum(Object.values(LEGACY_CATEGORY_DEFS).filter(c=>c.type==="expense"&&!c.saving&&categorySectionOf(c)===section).map(c=>m.expMap[c.id]||0));
   const planned=sum(cats.map(c=>c.budget));
   expenseSummary.push({actual,planned});
   return '<article class="cat-section"><div class="cat-section-head"><div class="cat-section-title">'+escapeHtml(section)+
