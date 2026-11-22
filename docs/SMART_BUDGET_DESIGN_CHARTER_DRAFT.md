@@ -30,3 +30,14 @@ Source méthodologique : *Unslop*, Damir Sokolovsky, CC BY 4.0 — https://githu
 Comparer visuellement à 320, 390, 1280 et 1440 px, clair et sombre. Tester sélection d'un segment, filtre, retour à la liste, édition, changement de mois, épargne, aucune enveloppe, plusieurs catégories, survol, focus, `Escape` et animations réduites. Vérifier la cohérence de calculs et l'absence d'écriture réseau dans la démo.
 
 Si ce prototype est refusé : revenir aux états du commit antérieur dans la PR #49 ; aucune modification en production.
+
+
+## Révision expérimentale 31uf — moins de traits, davantage de structure
+
+- Limiter les bordures à l'enveloppe externe de chaque panneau et aux séparations qui portent un changement réel de contexte. Ne pas ajouter une ligne sous chaque titre, chaque famille et chaque catégorie.
+- Les catégories restent des lignes interactives compactes avec le fonctionnement réel de l'application, plutôt que des lignes fictives ne reproduisant qu'un bouton « Modifier ».
+- Les boutons sélectionnés « Dépenses / Revenus » et « Par famille / Par catégorie » utilisent des **textes neutres**, jamais du texte violet. Le violet de marque sert à l'action et au focus.
+- « Trier » ouvre un popover stylisé et utilisable au clavier, avec sélection visible et fermeture par Échap.
+- Les modales d'édition reprennent les champs et actions réels : réel, prévu, nom, attribution, période, création et suppression, avec surfaces et boutons cohérents en clair et en sombre.
+- Le prototype conserve les données fictives exclusivement en mémoire et désactive toute connexion applicative. La source de l'interface et des handlers vient de Smart Budget actuellement publié, complétée par le filtre introduit dans la PR #49.
+- Avant validation finale de la charte, comparer les vrais rendus et interactions desktop/mobile. La présente charte n'autorise aucune refonte du reste de Smart Budget.
