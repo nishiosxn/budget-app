@@ -151,14 +151,18 @@ export async function connected(t){
     };
    }),{anon:status.ANON_KEY,h})};
  }
- async function startAssistant(h,actors){
+ async function startAssistant(h,actors,{legacy=false}={}){
+  if(legacy){assert.equal(actors.length,1);assert.ok(process.env.SB_TEST_EDGE30_ROOT,"Pinned v30 source is required");}
   for(const id of actors)sql("insert into private.v31_pilot_rule_members(household_id,user_id) values("+uuid(h)+","+uuid(id)+") on conflict do nothing");
   const env={...process.env,SUPABASE_URL:origin,SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,
    SMART_ASSISTANT_SUPABASE_PUBLISHABLE:status.ANON_KEY,SMART_ASSISTANT_MODEL:"@cf/google/gemma-4-26b-a4b-it",
    SMART_ASSISTANT_ENABLED:"true",SMART_ASSISTANT_EXTENDED_MOVEMENTS:"true",SMART_ASSISTANT_ATOMIC_REVIEW:"true",
    SMART_ASSISTANT_TEST_HOUSEHOLDS:h,SMART_ASSISTANT_TEST_USERS:actors.join(","),
-   SMART_ASSISTANT_FREE_PLAN_CONFIRMED:"false",SMART_ASSISTANT_CF_ACCOUNT_ID:"",SMART_ASSISTANT_CF_TOKEN:""};
-  const processHandle=spawn("deno",["run","--allow-env","--allow-net=0.0.0.0:8000,127.0.0.1:54321","supabase/functions/smart-assistant/index.ts"],
+   // v30 requires nonempty provider config even for local commands. These are deliberately fake;
+   // Deno network permissions below deny all access to the real provider.
+   SMART_ASSISTANT_FREE_PLAN_CONFIRMED:legacy?"true":"false",SMART_ASSISTANT_CF_ACCOUNT_ID:legacy?"00000000000000000000000000000000":"",SMART_ASSISTANT_CF_TOKEN:legacy?"fixture-only-not-a-credential":""};
+  const entry=legacy?resolve(process.env.SB_TEST_EDGE30_ROOT,"supabase/functions/smart-assistant/index.ts"):"supabase/functions/smart-assistant/index.ts";
+  const processHandle=spawn("deno",["run","--allow-env","--allow-net=0.0.0.0:8000,127.0.0.1:54321",entry],
    {env,stdio:"ignore"});
   let failed=false;
   processHandle.on("error",()=>{failed=true});

@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — Compatibilité Edge historique 8B.5B (validation en attente)
+
+- Provenance des six fichiers Edge v30 vérifiée avec le commit historique 31ap ; recette locale de l'ancien protocole sur le schéma migré, avec fournisseur inaccessible et RPC de consultation du quota reproduite dans le fixture.
+
 ## V3.1 — Recette coexistence 8B.5A (validation en attente)
 
 - Correction des délimiteurs SQL introduits en 8B.4C, préparation de la recette sur les vraies pages V3.0/V3.1 et de la reprise d'un Builder interrompu. Protocole de compatibilité Edge historique et limites consignés.

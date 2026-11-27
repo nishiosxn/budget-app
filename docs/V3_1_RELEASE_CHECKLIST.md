@@ -42,6 +42,10 @@ La rétention des propositions Assistant efface leur champ `actions` après 24 h
 
 Voir [le protocole de coexistence](V3_1_COEXISTENCE.md). La CI de 8B.4C a révélé une erreur de syntaxe SQL, corrigée en source. Le nouveau test utilise les véritables pages V3.0 épinglées et V3.1, avec comptes fictifs et reprise du Builder. La CI et l'identité exacte de l'Edge v30 restent à valider ; aucune autorisation hébergée n'est implicite.
 
+## Edge historique 8B.5B (à valider)
+
+Les six fichiers v30 récupérés en lecture seule sont identiques à 3b6a340352432428b8145aab086741a995cb6f8a. La recette CI exporte ce commit, teste les confirmations historiques et le quota sur le schéma jetable migré, sans fournisseur externe. Voir [protocole](V3_1_COEXISTENCE.md). CI à confirmer ; comparaison avant/après sur deux états et client historique 31ap encore ouverts.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

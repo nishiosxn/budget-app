@@ -134,6 +134,7 @@ create temporary view preexisting_ledger as
 create temporary table preexisting_before as table preexisting_ledger;
 
 \ir ../../supabase/migrations/20261117235347_smart_assistant_quota_pilot.sql
+\ir historical-quota-status.sql
 \ir ../../supabase/migrations/20261121183000_smart_assistant_pilot_category_creation.sql
 \ir ../../supabase/migrations/20261121194000_smart_assistant_pilot_category_expense_atomic.sql
 \ir ../../supabase/migrations/20261121195500_smart_assistant_pilot_atomic_batch.sql

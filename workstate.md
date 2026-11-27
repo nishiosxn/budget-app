@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 8B.5B — Source Edge v30 identifiée, recette préparée (CI à confirmer)
+
+- CI 889d0e8 : intégrité et PostgreSQL verts (46083350925), recette connectée en cours lors du relevé (46083350897).
+- Lecture seule Supabase : six fichiers de l’Edge v30 strictement identiques au commit 3b6a340352432428b8145aab086741a995cb6f8a, JWT actif. Définition historique de smart_assistant_quota_status_v1 reproduite uniquement dans le schéma CI ; aucune consommation réelle consultée.
+- Workflow et test de compatibilité Edge v30 sur schéma local après migration, sans réseau fournisseur (permissions Deno loopback, valeurs fictives), quota/confirmation/rejeu/dépense/plan/isolation. Tests nouveaux non confirmés ; comparaison avant/après sur deux états du schéma et client 31ap restent à compléter. Voir [protocole](docs/V3_1_COEXISTENCE.md).
+- Aucun déploiement, aucune écriture Supabase hébergé, aucune fusion ni publication. 94 % maintenus jusqu’à la validation de la CI et des points ouverts.
+
 ## Lot 8B.5A — Correction CI et recette coexistence (à confirmer)
 
 - CI 8B.4C : application réussie, PostgreSQL en échec (46083142843), délimiteurs dollar SQL altérés dans la migration de purge et le contrat local ; réparés. CI 8B.4B : application/PostgreSQL réussis, recette connectée en cours lors du relevé.

@@ -1,0 +1,56 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {randomUUID} from "node:crypto";
+import {connected} from "./harness.mjs";
+import {completeSetup,rows,verified} from "./financial-fixture.mjs";
+
+test("historical Edge v30 retains quota reads, local proposals, confirmations and isolation after V3.1 migrations",async t=>{
+ const env=await connected(t);
+ const owner=await env.session(env.users[0]), outsider=await env.session(env.users[2]);
+ const {h}=await completeSetup(owner,"solo");
+ const {h:other}=await completeSetup(outsider,"solo");
+ await env.startAssistant(h,[owner.user.id],{legacy:true});
+ const usage=async()=> (await verified(owner.assistant({action:"usage",householdId:h}))).quota;
+ const initial=await usage();
+ assert.equal(initial.limit,8000);
+ assert.equal(initial.requestLimit,100);
+ assert.equal((await owner.rpc("smart_assistant_quota_status_v1",{})).ok,false);
+ const analyze=async command=>{
+  const response=await verified(owner.assistant({householdId:h,command,context:{}}),command);
+  assert.equal(response.metering.source,"local-rules");
+  assert.equal(response.metering.reservedNeurons,0);
+  assert.equal(response.metering.tokens.total,0);
+  return response;
+ };
+ const expense=await analyze("J’ai dépensé 28 € chez Lidl.");
+ assert.equal(expense.result.kind,"draft");
+ const requestId=randomUUID(),body={action:"confirm",householdId:h,requestId,draft:expense.result};
+ assert.deepEqual(await rows(owner,"transactions",h),[]);
+ const receipt=await verified(owner.assistant(body));
+ assert.equal(receipt.commit.count,1);
+ assert.deepEqual(await verified(owner.assistant(body)),receipt);
+ const ledger=await rows(owner,"transactions",h);
+ assert.equal(ledger.length,1);
+ assert.equal(Math.round(Number(ledger[0].amount)*100),2800);
+ assert.equal((await outsider.assistant(body)).status,403);
+ assert.equal((await owner.assistant({...body,householdId:other})).status,403);
+ assert.deepEqual(await rows(outsider,"transactions",other),[]);
+ const command="Augmente mon budget Restaurants de 10 €.";
+ const plan=await analyze(command);
+ assert.equal(plan.result.kind,"draft");
+ assert.equal(plan.planPreviews.length,1);
+ const batch={action:"confirm_batch",householdId:h,requestId:randomUUID(),command,draft:plan.result,
+  expectedPlans:plan.planPreviews.map(p=>({index:p.index,beforeCents:p.beforeCents}))};
+ const first=await verified(owner.assistant(batch));
+ assert.equal(first.commit.count,1);
+ assert.equal(first.commit.created,true);
+ const replay=await verified(owner.assistant(batch));
+ assert.equal(replay.commit.requestId,first.commit.requestId);
+ assert.equal(replay.commit.created,false);
+ const cats=await rows(owner,"categories",h);
+ const restaurant=cats.find(c=>c.legacy_id==="restaurants");
+ const budgets=await rows(owner,"budgets",h,"&category_id=eq."+restaurant.id);
+ assert.ok(budgets.some(b=>Math.round(Number(b.planned_amount)*100)===11000));
+ assert.equal((await rows(owner,"transactions",h)).length,1);
+ assert.deepEqual(await usage(),initial);
+});
