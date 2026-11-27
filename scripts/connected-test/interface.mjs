@@ -85,7 +85,7 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  const viewport=two.viewportSize();
  await two.setViewportSize({width:390,height:844});
  await two.emulateMedia({colorScheme:"dark",reducedMotion:"reduce"});
- assert.equal(await two.locator("html").getAttribute("data-budget-theme"),"dark");
+ await two.waitForFunction(()=>document.documentElement.dataset.budgetTheme==="dark");
  await two.locator("#settingsBtn").click();
  await two.locator("#budgetTheme").selectOption("light");
  assert.equal(await two.locator("html").getAttribute("data-budget-theme"),"light");
@@ -119,6 +119,7 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  const box=await segment.boundingBox();
  const cdp=await two.context().newCDPSession(two);
  await cdp.send("Emulation.setTouchEmulationEnabled",{enabled:true});
+ await cdp.send("Emulation.setDeviceMetricsOverride",{width:390,height:844,deviceScaleFactor:1,mobile:true});
  await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:2});
  assert.equal(await two.evaluate(()=>window.visualViewport.scale),2);
  await visual.shot(two,"categories-zoom-200");
@@ -130,6 +131,7 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  await visual.shot(two,"categories-touch-390-dark");
  await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
  await cdp.send("Emulation.setTouchEmulationEnabled",{enabled:false});
+ await cdp.send("Emulation.clearDeviceMetricsOverride");
  await cdp.detach();
  await two.setViewportSize(viewport);
  await two.emulateMedia({colorScheme:"light",reducedMotion:"reduce"});

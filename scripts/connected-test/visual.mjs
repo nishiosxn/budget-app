@@ -8,7 +8,13 @@ export async function visualRecorder(t){
  const measurements=[];
  if(output){
   await mkdir(output,{recursive:true});
-  t.after(()=>writeFile(join(output,"measurements.json"),JSON.stringify(measurements,null,2)));
+  t.after(async()=>{
+   await writeFile(join(output,"measurements.json"),JSON.stringify(measurements,null,2));
+   console.log("Visual layout metrics "+JSON.stringify({
+    samples:measurements.length,
+    overflow:measurements.filter(row=>row.content>row.viewport+1).map(({page,width,theme,viewport,content})=>({page,width,theme,viewport,content}))
+   }));
+  });
  }
  return {async shot(page,name){
   if(output)await page.screenshot({path:join(output,name+".png"),animations:"disabled"});
@@ -18,6 +24,15 @@ export async function visualRecorder(t){
   try{
    for(const theme of ["light","dark"]){
     await page.emulateMedia({colorScheme:theme,reducedMotion:"reduce"});
+    const themeKey=await page.evaluate(()=>{
+     const data=document.documentElement.dataset;
+     return ["budgetTheme","assistantTheme","theme","demoTheme"].find(key=>data[key])||null;
+    });
+    if(themeKey==="theme")await page.reload();
+    if(themeKey==="demoTheme"&&await page.locator("html").getAttribute("data-demo-theme")!==theme){
+     await page.locator("#themeToggle").click();
+    }
+    if(themeKey)await page.waitForFunction(({themeKey,theme})=>document.documentElement.dataset[themeKey]===theme,{themeKey,theme});
     for(const width of widths){
      await page.setViewportSize({width,height:width<600?844:960});
      await page.evaluate(()=>document.fonts.ready.then(()=>true));
@@ -28,7 +43,7 @@ export async function visualRecorder(t){
        const box=element.getBoundingClientRect();
        return box.left>=0&&box.right>root.clientWidth+1&&!element.closest(".table-wrap");
       }).slice(0,12).map(element=>element.id||element.className);
-      return {viewport:root.clientWidth,content:root.scrollWidth,outside,appTheme:root.dataset.budgetTheme||root.dataset.assistantTheme};
+      return {viewport:root.clientWidth,content:root.scrollWidth,outside,appTheme:root.dataset.budgetTheme||root.dataset.assistantTheme||root.dataset.theme||root.dataset.demoTheme};
      });
      measurements.push({page:name,width,theme,...layout});
      if(width===390||width===1440)await page.screenshot({path:join(output,`${name}-${width}-${theme}.png`),animations:"disabled"});

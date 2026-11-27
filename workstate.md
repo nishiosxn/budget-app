@@ -6,6 +6,7 @@
 - Le test PWA de CI mesure trois démarrages Chromium, vérifie le manifeste et les icônes, simule une révision du service worker et contrôle le hors ligne sans cache financier. La recette ajoute le passage Système → Clair → Système et le zoom visuel à 200 %.
 - Fichiers : `js/assistant-lab.js`, `js/budget-theme.js`, `js/pwa.js`, workflow, tests navigateur, README et changelog. Le [rapport](docs/V3_1_VISUAL_ACCEPTANCE.md) contient le protocole iPhone. CI connectée du 7C réussie (46080030871). Les styles app Catégories sont isolés dans le thème pour conserver l'identité de la feuille de référence PR49 contrôlée par App integrity.
 - Prochaine action : vérifier les mesures et les deux workflows sur la tête finale de la PR #52. La validation iPhone physique et le benchmark Gemma restent à planifier.
+- Reprise CI (46080535537) : manifeste, purge historique, chargement à la demande et changement du worker ont été atteints. Le test attend désormais l'événement du thème système et coupe le transport du serveur jetable pour vérifier le hors ligne du worker. Les 319 tests Node et App integrity ont réussi. La comparaison a également rendu la référence Assistant de `gh-pages` avec une proposition fictive en clair et sombre.
 
 ## Lot 7C V3.1 — Responsive et accessibilité
 

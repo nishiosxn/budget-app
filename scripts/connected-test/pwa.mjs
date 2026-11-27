@@ -11,8 +11,9 @@ const labFiles=["assistant-core","assistant-planner","assistant-voice","assistan
 
 test("the PWA updates on a local origin, purges old cache, and stays cloud-only offline",async t=>{
  const root=resolve("."),sdk=await readFile(process.env.SB_TEST_SDK);
- let revision=1;
+ let revision=1,networkDown=false;
  const server=createServer(async(req,res)=>{
+  if(networkDown){res.destroy();return}
   const pathname=new URL(req.url,"http://localhost").pathname;
   function send(type,body){
    res.writeHead(200,{"Content-Type":type,"Cache-Control":"no-store","X-Fixture-Revision":String(revision)});
@@ -91,8 +92,12 @@ test("the PWA updates on a local origin, purges old cache, and stays cloud-only 
   });
   assert.equal(await page.evaluate(async()=>(await fetch("index.html",{cache:"no-store"})).headers.get("X-Fixture-Revision")),"2");
   await ctx.setOffline(true);
+  // Chromium can keep the worker connected to loopback despite page emulation.
+  // Close the test origin's sockets as well to exercise a real transport failure.
+  networkDown=true;
   assert.equal(await page.evaluate(()=>fetch("index.html",{cache:"no-store"}).then(()=>true,()=>false)),false);
   assert.deepEqual(await page.evaluate(()=>caches.keys()),["unrelated-fixture-cache"]);
+  networkDown=false;
   await ctx.setOffline(false);
   assert.equal(await page.evaluate(()=>fetch("index.html",{cache:"no-store"}).then(response=>response.ok)),true);
   await ctx.close();
