@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 4B V3.1 · Revalidation et écritures atomiques du pilote
+
+- Implémenté : préparation sans écriture financière, lot PostgreSQL unique, reçu partagé avec le pilote et versions des catégories et budgets relues au moment de confirmer. Les mouvements réutilisent la transaction existante. Les mois seuls préservent la reconduction du budget de départ.
+- Périmètre : service seul, foyer et utilisateurs de test autorisés, 12 actions maximum, aucune mutation à l’inférence. Activation contrôlée par `SMART_ASSISTANT_ATOMIC_REVIEW` avec les mouvements étendus.
+- Fichiers : migration `20261127220000_assistant_atomic_review.sql`, passerelle Edge et validation, moteur partagé, fixtures/tests de recette et ce journal.
+- Tests : validation passerelle et scénarios PostgreSQL ajoutés pour les erreurs entre écritures, le rejeu, les changements concurrents et l’isolation. CI PostgreSQL en attente.
+- En cours : lot 4C. Prochaine action : relier les confirmations Unslop à ce parcours et retrouver le reçu après rechargement avec un identifiant sans données financières.
+
 ## Lot 4A V3.1 · Planification déterministe des demandes mixtes
 
 - Terminé : les huit demandes de recette produisent une proposition locale complète. Le moteur traite notamment la dépense et le budget dans une seule demande, le mois dernier, l’épargne liée à un revenu, les payeurs relatifs et les abonnements mensuels. La proposition reste distincte de l’écriture.

@@ -693,15 +693,17 @@
   return validateAssistantResult({kind:"query",query:"categories",month,compareMonth:null,categoryId:matched[0].id,owner:null},c);
  }
  // Mirror the app: exact month overrides latest forward, then the zero baseline.
- function readBudgetCents(rows,month){
+ function readBudgetBaseline(rows,month){
   if(!Array.isArray(rows)||!validMonth(month))return null;
   const eligible=rows.filter(r=>String(r.month).slice(0,7)<=month);
   const exact=eligible.filter(r=>String(r.month).slice(0,7)===month&&r.scope==="month");
   const forward=eligible.filter(r=>r.scope==="forward").sort((a,b)=>String(b.month).localeCompare(String(a.month)));
   if(exact.length>1||forward.length>1&&String(forward[0].month)===String(forward[1].month))return null;
-  const r=exact[0]||forward[0];if(!r)return 0;
-  const amount=Number(r.planned_amount),n=Math.round(amount*100);return Number.isFinite(amount)&&Number.isSafeInteger(n)&&n>=0?n:null;
+  const r=exact[0]||forward[0];if(!r)return {beforeCents:0,budgetVersion:null};
+  const amount=Number(r.planned_amount),n=Math.round(amount*100);
+  return Number.isFinite(amount)&&Number.isSafeInteger(n)&&n>=0?{beforeCents:n,budgetVersion:r.updated_at??null}:null;
  }
+ const readBudgetCents=(rows,month)=>readBudgetBaseline(rows,month)?.beforeCents??null;
  function categoryReport({month,categoryId,categoryUuid,budgets,transactions,recurrences}){
   const plannedCents=readBudgetCents(budgets,month);if(plannedCents===null||!Array.isArray(transactions)||!Array.isArray(recurrences))return null;
   let actualCents=0,recurringCents=0;
@@ -1185,5 +1187,5 @@
   // Do not let a model silently turn an unsupported creation into a budget edit.
   return direct||(creationRequested(normalized)?creationClarification(normalized,ctx):null);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickExpenseInCategory,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,readBudgetBaseline,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickExpenseInCategory,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);

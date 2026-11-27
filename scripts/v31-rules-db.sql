@@ -45,4 +45,5 @@ do $$ begin
 end $$;
 \ir v31-movements-db.sql
 \ir v31-backup-db.sql
+\ir v31-atomic-review-db.sql
 rollback;

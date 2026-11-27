@@ -3,6 +3,7 @@ import {createAssistantGateway} from "./gateway.mjs";
 import {createTransactionCommit} from "./commit.mjs";
 import {createCategoryCommit} from "./category-commit.mjs";
 import {createBatchCommit} from "./batch-commit.mjs";
+import {createAtomicReview} from "./atomic-review.mjs";
 
 const originAllowed="https://nishiosxn.github.io";
 const env=(name:string)=>Deno.env.get(name)||"";
@@ -13,6 +14,7 @@ const uuidPattern=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}
 const allowlist=new Set(env("SMART_ASSISTANT_TEST_HOUSEHOLDS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
 const allowedUsers=new Set(env("SMART_ASSISTANT_TEST_USERS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
 const extendedMovements=env("SMART_ASSISTANT_EXTENDED_MOVEMENTS")==="true";
+const atomicReviewEnabled=extendedMovements&&env("SMART_ASSISTANT_ATOMIC_REVIEW")==="true";
 const monthPattern=/^\d{4}-(0[1-9]|1[0-2])$/;
 const headersFor=(token:string)=>({apikey:publishable,Authorization:"Bearer "+token,"Content-Type":"application/json"});
 const timeout=()=>AbortSignal.timeout(10000);
@@ -39,7 +41,7 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  if(!Array.isArray(member)||member.length!==1||!["A","B"].includes(member[0].slot))return null;
  const [households,rows]=await Promise.all([
   rest(token,"/rest/v1/households",{select:"person_b_label,person_a_label,household_mode",id:"eq."+householdId,limit:"1"}),
-  rest(token,"/rest/v1/categories",{select:"id,legacy_id,name,type,is_saving,owner_slot,created_from,excluded_months",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"})
+  rest(token,"/rest/v1/categories",{select:"id,legacy_id,name,type,is_saving,owner_slot,created_from,excluded_months,updated_at",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"})
  ]);
  if(!Array.isArray(households)||households.length!==1||!Array.isArray(rows)||rows.length>300)return null;
  const h=households[0],solo=h.household_mode==="solo",actor=member[0].slot;
@@ -52,7 +54,11 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  const firstMonth=categories.map(c=>c.createdFrom).sort()[0]||currentMonth;
  const lastMonth=String(Number(currentMonth.slice(0,4))+2)+"-12";
  if(selectedMonth<firstMonth||selectedMonth>lastMonth)return null;
- return {userId:user.id,context:{movementCommit:extendedMovements,today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
+ if(atomicReviewEnabled){
+  const versions=new Map(rows.map(r=>[r.legacy_id||r.id,r.updated_at]));
+  for(const category of categories)Object.assign(category,{version:versions.get(category.id)});
+ }
+ return {userId:user.id,context:{movementCommit:extendedMovements,atomicReview:atomicReviewEnabled,today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
 }
 async function reserve(_token:string,_householdId:string,units:number){
  // This RPC is server-only. The gateway has already authenticated and authorized
@@ -86,11 +92,11 @@ async function planPreview(token:string,householdId:string,result:any,context:an
  for(const {o,i} of plans){
   const matches=cats.filter((c:any)=>(c.legacy_id||c.id)===o.categoryId);if(matches.length!==1)continue;
   const month=o.date.slice(0,7)+"-01";
-  const rows=await rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope",household_id:"eq."+householdId,category_id:"eq."+matches[0].id,archived_at:"is.null",month:"lte."+month,order:"month.desc",limit:"301"});
+  const rows=await rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope,updated_at",household_id:"eq."+householdId,category_id:"eq."+matches[0].id,archived_at:"is.null",month:"lte."+month,order:"month.desc",limit:"301"});
   if(!Array.isArray(rows)||rows.length>300)continue;
-  const before=(globalThis as any).SmartBudgetAssistantCore.readBudgetCents(rows,month.slice(0,7));if(before===null)continue;
-  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,before);
-  if(computed)previews.push({index:i,...computed});
+  const baseline=(globalThis as any).SmartBudgetAssistantCore.readBudgetBaseline(rows,month.slice(0,7));if(!baseline)continue;
+  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,baseline.beforeCents);
+  if(computed)previews.push({index:i,...computed,budgetVersion:baseline.budgetVersion});
  }
  return previews;
 }
@@ -193,7 +199,24 @@ async function commitMovements({householdId,userId,requestId,draft,context}:any)
   return {status:200,body:{commit:{requestId,count:result.count}}};
  }catch{return {status:503,body:{error:"confirm_unavailable"}}}
 }
-const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements});
+const atomicReview=createAtomicReview({
+ validateReview,validateCategoryDraft,recognize:quickExpense,
+ validateMixedDraft:(v:unknown,c:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateMixedDraft(v,c),
+ normalizeCategory:(globalThis as any).SmartBudgetAssistantCore.normalizeCategory,
+ write:async ({action,householdId,userId,requestId,actions}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!atomicReviewEnabled||!key||!allowlist.has(householdId)||!allowedUsers.has(userId))
+   return {status:"forbidden"};
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_atomic_review",{
+   method:"POST",headers:{...headersFor(key),apikey:key,"x-smart-budget-sync-version":"20261116-hf1"},
+   body:JSON.stringify({p_household:householdId,p_actor:userId,p_roster:[...allowedUsers],p_request:requestId,p_action:action,p_actions:actions}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic review RPC unavailable");
+  return await r.json();
+ }
+});
+const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements,atomicReview});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }
