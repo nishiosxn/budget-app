@@ -13,7 +13,7 @@ test("permitted authenticated request and reservation order",async()=>{const {ha
 test("disabled and unauthorized never invoke provider",async()=>{let {handler,calls}=setup({enabled:false});assert.equal((await handler(request)).status,503);assert.deepEqual(calls,[]);({handler,calls}=setup({authorize:async()=>null}));assert.equal((await handler(request)).status,403);assert.deepEqual(calls,[])});
 test("missing bearer and malformed body rejected before auth",async()=>{const {handler,calls}=setup();assert.equal((await handler({...request,token:""})).status,401);assert.equal((await handler({...request,body:{...request.body,evil:1}})).status,400);assert.deepEqual(calls,[])});
 test("quota failure fails closed",async()=>{for(const reserve of [async()=>false,async()=>{throw Error("unavailable")}]){const {handler,calls}=setup({reserve});assert.equal([429,503].includes((await handler(request)).status),true);assert.equal(calls.includes("infer"),false)}});
-test("unknown model cannot run",async()=>{const {handler,calls}=setup({model:"not-approved"});assert.equal((await handler(request)).status,503);assert.equal(calls.length,0)});
+test("unknown model cannot reserve quota or run",async()=>{const {handler,calls}=setup({model:"not-approved"});assert.equal((await handler(request)).status,503);assert.deepEqual(calls,["auth"])});
 test("malicious or malformed outputs cannot become proposals",async()=>{for(const output of [{kind:"delete_all"},{...valid,operations:[{...valid.operations[0],categoryId:"unknown"}]},"not json"]){const {handler}=setup({infer:async()=>({result:{response:output}})});assert.equal([422,502].includes((await handler(request)).status),true)}});
 test("supports both REST output variants; rejects extra text",()=>{assert.equal(decodeModelResponse({result:{response:valid}}),valid);assert.equal(decodeModelResponse({result:{choices:[{message:{content:JSON.stringify(valid)}}]}}).kind,"draft");assert.throws(()=>decodeModelResponse({result:{response:"Here is JSON: "+JSON.stringify(valid)}}))});
 test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_completion_tokens,1024);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
@@ -81,9 +81,13 @@ test("oversized context is rejected before quota or provider",async()=>{
  const {handler}=setup({authorize:async()=>({context:tooLarge}),reserve:async()=>{invoked=true;return true},infer:async()=>{invoked=true;return {result:{response:valid}}}});
  assert.equal((await handler(request)).status,413);assert.equal(invoked,false);
 });
-test("unpriced alternative disabled during pilot",async()=>{
- const {handler,calls}=setup({model:"@cf/zai-org/glm-4.7-flash"});
- assert.equal((await handler(request)).status,503);assert.equal(calls.length,0);
+test("unpriced alternative disabled during pilot, without disabling the local engine",async()=>{
+ const {handler,calls}=setup({model:"@cf/zai-org/glm-4.7-flash",quickExpense:core.quickCommand});
+ const unsupported=await handler(request);
+ assert.equal(unsupported.status,503);assert.equal(unsupported.body.error,"model_unavailable");
+ const local=await handler({...request,body:{...request.body,command:"J’ai payé 20 € chez Lidl."}});
+ assert.equal(local.body.metering.tokens.total,0);
+ assert.deepEqual(calls,["auth","auth"]);
 });
 
 test("server returns only its validated catalog context",async()=>{const {handler}=setup();const result=await handler({...request,body:{...request.body,context:{secret:"untrusted",selectedMonth:"2026-11"}}});assert.equal(result.status,200);assert.deepEqual(result.body.context,ctx);assert.equal(result.body.context.secret,undefined);});

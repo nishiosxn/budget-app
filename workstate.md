@@ -4,7 +4,7 @@
 
 - Benchmark local comparatif : 208 demandes fictives, 55 résultats locaux exacts contre 20 au départ, et 55 demandes traitées sans IA contre 24. Le score initial a été recalculé sur le même corpus final, avec une enseigne inconnue sans nom d’activité classant.
 - Neurones réservés estimés par appel de repli : 123,71 en moyenne, 124 au maximum, contre 167,86 et 168. Le rapport distingue ces estimations des tokens Cloudflare et des neurones réellement imputés.
-- Passerelle : dédoublonnage en cours par utilisateur et foyer, distinction délai/réseau/réponse invalide, conservation des tokens communiqués sur une réponse invalide, aucune relance automatique. Contrôles de quota, de confirmation et d’isolation conservés.
+- Passerelle : dédoublonnage en cours par utilisateur et foyer, distinction délai/réseau/réponse invalide, conservation des tokens communiqués sur une réponse invalide, aucune relance automatique. Un identifiant de modèle erroné bloque uniquement le repli IA et laisse le moteur local utilisable. Contrôles de quota, de confirmation et d’isolation conservés.
 - Tests : 319 tests Node et audit applicatif réussis localement. Fichiers : benchmark, tests passerelle, message d’état de l’Assistant et `docs/V3_1_ASSISTANT_BENCHMARK.md`.
 - Blocage : aucun accès Workers Free vérifiable ni jeton de test disponible. Zéro appel réel à Gemma. L’efficacité du prompt raccourci chez le fournisseur reste à mesurer avant activation.
 - Prochaine action avant clôture : vérifier la CI de la PR #52. Le lot 7 reste en attente.
