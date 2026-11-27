@@ -5,8 +5,9 @@
 - État repris : aucun changement local, `7920af0` publié. La CI connectée 46073305927 et App integrity/PostgreSQL 46073305780 sont vertes. Les résultats des sous-lots 5A à 5C restent acquis.
 - Contrôle indépendant ajouté : les véritables pages de l’application et leur SDK Supabase épinglé s’ouvrent sur le runner avec deux sessions Auth fictives. La recette vérifie le Builder, les actions Catégories, la Vue d’ensemble du second appareil et le reçu Assistant après rechargement.
 - L’environnement de test redirige uniquement vers Supabase et l’Edge locales. La comparaison du schéma hébergé exige toujours un export sans données ou une liaison en lecture autorisée.
-- Prochaine action : vérifier la CI de la recette des pages et consigner le résultat.
 - CI 46075836490 : le scénario a franchi le Builder dans les vraies pages et vérifié les montants enregistrés. Le premier test de propagation a révélé que le schéma de recette ne publiait pas les tables du foyer et des membres auxquelles l’application s’abonne. La publication de test et l’attente d’abonnement ont été corrigées.
+- Terminé : CI connectée 46076171432 et App integrity/PostgreSQL 46076171436 réussies sur `f02bd90`. Le Builder duo, le remplissage et son annulation entre deux écrans, puis la reprise du reçu Assistant après une coupure ont réussi sur les pages du dépôt et le SDK épinglé. Le second navigateur a affiché une seule dépense de 28 €.
+- Reste hors de la recette isolée : comparer le schéma et les six déclencheurs historiques du projet hébergé. Toute migration ou tout déploiement hébergé nécessite une autorisation distincte. Le lot 6 attend une nouvelle consigne.
 
 ## Lot 5C V3.1 · Smart Assistant, concurrence et isolation
 
