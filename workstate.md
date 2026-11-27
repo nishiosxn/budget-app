@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 6B V3.1 · Optimisation mesurée
+
+- Règles locales étendues aux formulations de courtoisie bornées, à une variante d’enseigne, aux débuts de récurrence explicites, aux catégories d’épargne personnelles et à une consultation mensuelle par catégorie. Contrôles de calendrier et d’appartenance conservés.
+- Prompt système réduit de 4 702 à 1 474 octets. Contexte fournisseur limité aux champs métier utiles, historique conservé uniquement pour une correction ou une réponse courte à une clarification. Plafonds inchangés.
+- Mesure intermédiaire : 55/208 cas exacts et traités localement. 211 tests Assistant réussis. Les chiffres fournisseur restent indisponibles faute d’accès au compte gratuit.
+- Fichiers : moteur client et miroir Edge, passerelle et tests de consommation/corpus. Prochaine action : fiabiliser le résultat en cas de délai, réponse incomplète ou appel doublé, puis publier le rapport.
+
 ## Lot 6A V3.1 · Corpus et mesure initiale
 
 - Corpus fictif historique de 200 commandes complété par huit cas annotés de libellés et de modes budgétaires. Le score vérifie les opérations complètes et les champs attendus.

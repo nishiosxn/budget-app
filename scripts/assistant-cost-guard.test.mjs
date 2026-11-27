@@ -74,3 +74,13 @@ test("if local parser fails, model path can make no more than one provider call"
  assert.equal(requests,1);
  assert.deepEqual(called,["quota"]);
 });
+test("provider context excludes sync metadata and prior independent requests",()=>{
+ const enriched={...context,atomicReview:true,movementCommit:true,privateMarker:"internal-only",
+  categories:context.categories.map(c=>({...c,version:"revision-only",hiddenMonths:["2026-10"]}))};
+ const history=[{command:"unrelated history",result:{kind:"clarify",message:"Précise le montant."}}];
+ const body=JSON.parse(makeModelRequest("Une nouvelle demande",enriched,history).messages[1].content);
+ assert.equal(body.history,undefined);
+ assert.doesNotMatch(JSON.stringify(body),/privateMarker|atomicReview|movementCommit|revision-only|hiddenMonths/);
+ const correction=JSON.parse(makeModelRequest("Corrige le montant",enriched,history).messages[1].content);
+ assert.equal(correction.history.length,1);
+});

@@ -489,6 +489,10 @@
   if(rule){
    const names=new Set([rule.name,...rule.aliases].map(normalizeCategory));
    const candidates=available.filter(c=>c.kind===rule.kind&&names.has(normalizeCategory(c.name)));
+   if(rule.key==="saving"&&candidates.length===0&&op.kind==="saving"){
+    const owned=available.filter(c=>c.kind==="saving"&&c.owner===op.owner);
+    if(owned.length===1)return {categoryId:owned[0].id,ruleKey:rule.key,source:"rule"};
+   }
    if(candidates.length===1)return {categoryId:candidates[0].id,ruleKey:rule.key,source:"rule"};
    if(candidates.length>1){if(supplied&&candidates.some(c=>c.id===supplied.id))return {categoryId:supplied.id,ruleKey:rule.key,source:"existing"};return {categoryId:null,ruleKey:null,source:"ambiguous"}}
    // Never manufacture an ID, or suggest duplicates of an unavailable category.
@@ -527,7 +531,7 @@
   return rule;
  }
  // Recognize only complete, unambiguous single-expense sentences. No partial matching.
- const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","decathlon":"Décathlon","boulangerie":"Boulangerie","king jouet":"King Jouet","essence":"Essence","carburant":"Carburant"});
+ const quickMerchants=Object.freeze({"zara":"Zara","mcdo":"McDonald's","mc do":"McDonald's","mc donald s":"McDonald's","mcdonalds":"McDonald's","mcdonald":"McDonald's","lidl":"Lidl","aldi":"Aldi","leclerc":"Leclerc","e leclerc":"E.Leclerc","carrefour":"Carrefour","intermarche":"Intermarché","auchan":"Auchan","action":"Action","ikea":"IKEA","steam":"Steam","burger king":"Burger King","kfc":"KFC","quick":"Quick","subway":"Subway","uniqlo":"Uniqlo","kiabi":"Kiabi","h m":"H&M","netflix":"Netflix","spotify":"Spotify","courses":"Courses","tacos":"Tacos","kebab":"Kebab","decathlon":"Décathlon","boulangerie":"Boulangerie","king jouet":"King Jouet","essence":"Essence","carburant":"Carburant"});
  function quickExpense(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string"||command.length>1600)return null;
   const text=command.trim().replace(/’/g,"'").replace(/\s+/g," ");
@@ -679,10 +683,13 @@
  function quickCategoryQuery(command,c){
   if(!contextOK(c)||typeof command!=="string"||command.length>1600)return null;
   const t=normalizeCategory(command);
-  const m=t.match(/^(?:(?:de )?combien (?:etait|est|s elevait) (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|quel etait (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|combien (?:ai je|j ai) depense (?:en |dans |pour )?)(.+?) (le mois dernier|le mois precedent|ce mois ci)$/);
+  const named=creationMonth(command.trim().replace(/[.!?]$/,""),c);
+  const exactPeriod=normalizeCategory(named.text).match(/^montant total (?:de |des |du )(.+?) du foyer$/);
+  const m=exactPeriod&&named.text!==command.trim().replace(/[.!?]$/,"")?
+   [null,exactPeriod[1],null]:t.match(/^(?:(?:de )?combien (?:etait|est|s elevait) (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|quel etait (?:mon |le )?budget (?:reel |prevu )?(?:de |des |d |pour )?|combien (?:ai je|j ai) depense (?:en |dans |pour )?)(.+?) (le mois dernier|le mois precedent|ce mois ci)$/);
   if(!m)return null;
   const current=c.today.slice(0,7),[y,n]=current.split("-").map(Number),d=new Date(Date.UTC(y,n-2,1));
-  const month=m[2]==="ce mois ci"?current:d.toISOString().slice(0,7);
+  const month=m[2]===null?named.month:m[2]==="ce mois ci"?current:d.toISOString().slice(0,7);
   if(month<c.firstMonth)return {ok:true,value:{kind:"answer",message:"Aucune donnée de ce foyer n’est disponible pour "+month+"."}};
   const key=m[1],op={kind:"expense",date:month+"-01",label:key,categoryId:null};
   const available=availableCategories(op,c),exactMatches=available.filter(x=>normalizeCategory(x.name)===key);
@@ -766,6 +773,8 @@
   t=t.replace(/(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?=\s*(?:€|euros?|balles?)\b|\s*€)/giu,m=>m.replace(/\s/g,""));
   t=t.replace(/(\d+(?:[,.]\d{1,2})?)\s+balles?\b/giu,"$1 euros");
   t=t.replace(/^(?:s'il te plaît[,.]?\s+|peux-tu\s+|stp[,.]?\s+)/iu,"").replace(/(?:[,.]?\s+(?:s'il te plaît|merci|stp))[.!?]?$/iu,"");
+  // Remove only complete courtesy sentences. Keep all financial clauses intact.
+  t=t.replace(/(?:[.!?]\s+)(?:peux-tu gérer ça|c'est pour le budget|fais attention aux catégories|vérifie bien|pour smart budget|merci de prendre en compte ma demande)[.!?]?$/iu,"");
   t=t.replace(/^j[' ]ai (?:claqué|claque|déboursé|debourse|lâché|lache|réglé|regle) /iu,"J'ai dépensé ").replace(/^j[' ]ai (?:touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne) /iu,"J'ai reçu ");
   t=t.replace(/^rajoute /iu,"Ajoute ").replace(/^réduis /iu,"Diminue ");
   // A category bundle can be dictated without punctuation. Normalize only after explicit creation intent.
@@ -1047,6 +1056,7 @@
    const day=new Date(ctx.today+"T12:00:00Z");
    day.setUTCDate(day.getUTCDate()-(moment==="hier"?1:2));date=day.toISOString().slice(0,10);
   }
+  if(moment)t=t.replace(/[.!?]$/,"");
   // Bounded natural-language shortcuts, no unqualified amount is accepted.
   const passive=t.match(/^(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+(?:reçus?|recus?|touchés?|touches?)\s+(de |d')([\p{L}][\p{L}' -]{0,49})$/iu);
   if(passive)t="J'ai reçu "+passive[1]+" euros "+passive[2]+passive[3];
@@ -1106,7 +1116,22 @@
  }
  function quickRecurringMovement(command,ctx){
   const m=command.match(/^ajoute (?:un|une) (abonnement|dépense|revenu|salaire) de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:par mois|chaque mois|tous les mois)[.!?]?$/iu);
-  if(!m)return null;
+  if(!m){
+   const dated=command.match(/^(?:ajoute|crée|cree) mon (salaire mensuel|abonnement (?:Netflix|Spotify)) de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)(?: chaque mois)? (?:à|a) partir du (\d{1,2}) ([\p{L}]+) (\d{4})[.!?]?$/iu);
+   if(!dated)return null;
+   const month=frenchMonthNames[normalizeCategory(dated[4])];
+   if(!month)return null;
+   const date=dated[5]+"-"+String(month).padStart(2,"0")+"-"+dated[3].padStart(2,"0");
+   const income=normalizeCategory(dated[1])==="salaire mensuel";
+   const label=income?"Salaire":merchantName(dated[1].slice("abonnement ".length));
+   const candidates=availableCategories({kind:"income",date},ctx).filter(c=>
+    c.owner===ctx.actor&&/^salaire\b/.test(normalizeCategory(c.name)));
+   const op={kind:income?"income":"expense",categoryId:income&&candidates.length===1?candidates[0].id:null,owner:ctx.actor,
+    amountCents:centsFromText(dated[2]),date,label,frequency:"monthly"};
+   if(op.categoryId)return validateReview({kind:"draft",operations:[op]},ctx);
+   const checked=normalizeModelDraft({kind:"draft",operations:[{...op,categoryHint:income?"salary":"subscriptions"}]},ctx,command);
+   return checked.ok?checked:null;
+  }
   const intent=normalizeCategory(m[1]),income=intent==="revenu"||intent==="salaire";
   const labels={abonnement:"Abonnement",depense:"Dépense récurrente",revenu:"Revenu récurrent",salaire:"Salaire"};
   const hints={abonnement:"subscriptions",revenu:"extra",salaire:"salary"};
