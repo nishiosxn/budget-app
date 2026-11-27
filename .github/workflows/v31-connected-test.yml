@@ -21,6 +21,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: "2.90.0"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.5.0"
       - name: Start a disposable Supabase instance
         shell: bash
         run: |
@@ -50,7 +53,7 @@ jobs:
         run: |
           SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
           SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
-          node --test --test-concurrency=1 scripts/connected-test/auth.mjs scripts/connected-test/builder-categories.mjs
+          node --test --test-concurrency=1 scripts/connected-test/auth.mjs scripts/connected-test/builder-categories.mjs scripts/connected-test/assistant.mjs
       - name: Stop the disposable stack
         if: always()
         shell: bash

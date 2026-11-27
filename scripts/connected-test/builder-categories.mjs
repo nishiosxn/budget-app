@@ -80,6 +80,8 @@ test("two sessions sync adjustments, opening balances, transactions and recurrin
  assert.equal(amount(bb,"restaurants"),15.02);
  assert.equal(amount(bb,"groceries"),240);
  assert.equal(bb.run("metrics().expense"),aa.run("metrics().expense"));
+ assert.equal(bb.run("SmartBudgetCategoryDistribution.buildModel({expenses:visibleExpenseCategories()}).total"),
+              bb.run("Math.round(metrics().plannedExpense*100)"));
  aa.month("Février 2025");
  aa.undo();await aa.push();await bb.pull();
  assert.equal(amount(bb,"groceries"),0);

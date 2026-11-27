@@ -2,10 +2,13 @@ import fs from "node:fs/promises";
 import {randomUUID} from "node:crypto";
 import assert from "node:assert/strict";
 import {pathToFileURL} from "node:url";
+import {spawn} from "node:child_process";
+import {setTimeout as wait} from "node:timers/promises";
 
 export async function connected(t){
  const status=JSON.parse(await fs.readFile(process.env.SB_STACK_STATUS,"utf8"));
  const origin="http://127.0.0.1:54321";
+ const edge="http://127.0.0.1:8000";
  assert.equal(status.API_URL,origin,"A disposable local Supabase stack is required");
  assert.match(status.DB_URL,/^postgresql:\/\/postgres:postgres@127\.0\.0\.1:54322\/postgres$/);
  assert.ok(status.ANON_KEY&&status.SERVICE_ROLE_KEY&&status.ANON_KEY!==status.SERVICE_ROLE_KEY);
@@ -28,8 +31,19 @@ export async function connected(t){
 
  async function session(user){
   const ctx=await browser.newContext();
+  let drop=false;
   // All network access from the browser stays within the disposable stack.
-  await ctx.route("**/*",route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+  await ctx.route("**/*",async route=>{
+   const url=new URL(route.request().url());
+   if(url.origin!==origin)return route.abort();
+   if(url.pathname!=="/__assistant_for_test")return route.continue();
+   // Same-origin bridge to the real local Edge process, without modifying its production CORS policy.
+   const headers=await route.request().allHeaders();
+   delete headers.origin;delete headers.host;
+   const response=await route.fetch({url:edge,headers,maxRedirects:0});
+   if(drop){drop=false;return route.abort("connectionreset")}
+   return route.fulfill({response});
+  });
   const page=await ctx.newPage();
   await page.goto(origin+"/auth/v1/health");
   const call=(path,options={})=>page.evaluate(async ({path,options,anon})=>{
@@ -57,7 +71,46 @@ export async function connected(t){
   }
   await login();
   return {call,context:ctx,page,user,login,logout,
-   rpc:(name,body)=>call("/rest/v1/rpc/"+name,{method:"POST",body})};
+   rpc:(name,body)=>call("/rest/v1/rpc/"+name,{method:"POST",body}),
+   assistant:body=>call("/__assistant_for_test",{method:"POST",body}),
+   dropNextAssistantResponse:()=>{drop=true},
+   watchTransactions:h=>page.evaluate(({anon,h})=>new Promise((resolve,reject)=>{
+    const jwt=JSON.parse(sessionStorage.getItem("test-session")).access_token;
+    const url=new URL("/realtime/v1/websocket",location.href);url.protocol="ws:";
+    url.search=new URLSearchParams({apikey:anon,vsn:"1.0.0"});
+    const socket=new WebSocket(url),topic="realtime:pilot-test";
+    globalThis.fixtureChanges=[];
+    const timeout=setTimeout(()=>reject(Error("Realtime subscription timeout")),15000);
+    socket.onerror=()=>reject(Error("Realtime socket unavailable"));
+    socket.onopen=()=>socket.send(JSON.stringify({topic,event:"phx_join",ref:"1",payload:{access_token:jwt,
+     config:{private:false,broadcast:{ack:false,self:false},presence:{enabled:false,key:""},
+      postgres_changes:[{event:"INSERT",schema:"public",table:"transactions",filter:"household_id=eq."+h}]}}}));
+    socket.onmessage=e=>{
+     const msg=JSON.parse(e.data);
+     if(msg.event==="phx_reply"&&msg.ref==="1"){
+      clearTimeout(timeout);
+      if(msg.payload.status==="ok")resolve();else reject(Error("Realtime join rejected"));
+     }
+     if(msg.event==="postgres_changes")globalThis.fixtureChanges.push(msg.payload.data.record);
+    };
+   }),{anon:status.ANON_KEY,h})};
  }
- return {origin,users,session};
+ async function startAssistant(h,actors){
+  const env={...process.env,SUPABASE_URL:origin,SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,
+   SMART_ASSISTANT_SUPABASE_PUBLISHABLE:status.ANON_KEY,SMART_ASSISTANT_MODEL:"@cf/google/gemma-4-26b-a4b-it",
+   SMART_ASSISTANT_ENABLED:"true",SMART_ASSISTANT_EXTENDED_MOVEMENTS:"true",SMART_ASSISTANT_ATOMIC_REVIEW:"true",
+   SMART_ASSISTANT_TEST_HOUSEHOLDS:h,SMART_ASSISTANT_TEST_USERS:actors.join(","),
+   SMART_ASSISTANT_FREE_PLAN_CONFIRMED:"false",SMART_ASSISTANT_CF_ACCOUNT_ID:"",SMART_ASSISTANT_CF_TOKEN:""};
+  const processHandle=spawn("deno",["run","--allow-env","--allow-net=0.0.0.0:8000,127.0.0.1:54321","supabase/functions/smart-assistant/index.ts"],
+   {env,stdio:"ignore"});
+  let failed=false;
+  processHandle.on("error",()=>{failed=true});
+  t.after(()=>processHandle.kill());
+  for(let i=0;i<50&&!failed&&processHandle.exitCode===null;i++){
+   if(await fetch(edge,{signal:AbortSignal.timeout(1000)}).then(r=>r.status===405,()=>false))return;
+   await wait(150);
+  }
+  throw Error("Disposable Edge Function failed to start.");
+ }
+ return {origin,users,session,startAssistant};
 }

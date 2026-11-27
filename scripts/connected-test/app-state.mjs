@@ -23,7 +23,7 @@ export function apiClient(session){
 
 export function appState(session,h,role){
  let undo;
- const node={addEventListener(){},querySelectorAll:()=>[]};
+ const node={dataset:{},addEventListener(){},querySelectorAll:()=>[]};
  const context=vm.createContext({
   document:{getElementById:()=>node,querySelectorAll:()=>[],addEventListener(){}},
   window:{addEventListener(){}},
