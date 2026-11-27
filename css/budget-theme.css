@@ -1,0 +1,24 @@
+:root{--sb-brand:#5C29D6;--focus-ring:var(--accent,var(--sb-brand))}
+:root[data-budget-theme="dark"]{
+ color-scheme:dark;--bg:#141414;--panel:#1e1e1e;--panel-2:#252525;--text:#f5f5f7;--muted:#b3b3bd;--line:#45454d;
+ --income:#77d6a0!important;--expense:#ff9595;--warning:#f3c778;--shadow:0 .5rem 1.5rem rgb(0 0 0/.18);
+ --accent-soft:color-mix(in srgb,var(--theme-color,var(--sb-brand)) 26%,#242424)!important;
+ --accent-deep:color-mix(in srgb,var(--theme-color,var(--sb-brand)) 40%,white)!important;
+ --focus-ring:var(--accent-deep)
+}
+:root[data-budget-theme="dark"] :is(.card,.tabs,.modal,.setup-builder-panel,.mobile-bottom-nav__inner,.mobile-quick-add__panel,.cloud-gate-card,.settings-section,.category-group,.cat-section,.setup-builder-card,.appearance-picker-group,.category-menu,.custom-select-menu,.sb-settings-modal){background:var(--panel);color:var(--text);border-color:var(--line)}
+:root[data-budget-theme="dark"] :is(.setup-builder-item,.setup-builder-summary>div,.setup-builder-recap,.setup-builder-appearance-card,.appearance-font,.setup-builder-mode button,.setup-builder-add,.cat-tile,.bd-summary,.settings-appearance){background:var(--panel-2);color:var(--text);border-color:var(--line)}
+:root[data-budget-theme="dark"] :is(input,textarea,select,.month-arrow,.custom-select-trigger,.btn-ghost,.tab,.setup-builder-rename,.bd-sort-trigger,.cat-tile-action,.mobile-quick-add__option){background:var(--panel-2);color:var(--text);border-color:var(--line)}
+:root[data-budget-theme="dark"] :is(.tab.active,.bd-toolbar .is-active,.appearance-font.active,.setup-builder-mode .active,.btn-income){background:var(--accent-soft);color:var(--accent-deep)}
+:root[data-budget-theme="dark"] :is(.setup-builder-title h3,.setup-builder-title p,.setup-builder-head h2,.setup-builder-check strong,.setup-builder-name-wrap strong,.setup-builder-money b,.cg-figures strong,.cat-tile-name,.setup-builder-summary strong){color:var(--text)}
+:root[data-budget-theme="dark"] .btn-expense{background:var(--text);color:var(--bg)}
+:root[data-budget-theme="dark"] :is(.pwa-install-panel,.pwa-install-step,.pwa-install-close){background:var(--panel);color:var(--text);border-color:var(--line)}
+:root[data-budget-theme="dark"] :is(.pwa-install-copy,.pwa-install-note,.pwa-install-subtitle){color:var(--muted)}
+:root :is(button,input,textarea,select,a):focus-visible{outline:.125rem solid var(--focus-ring);outline-offset:.15rem}
+@media(max-width:40rem){
+ #categories .category-top #categoryIncomeSlot .category-group-head{display:grid;grid-template-columns:minmax(0,1fr);height:auto;gap:.5rem}
+ #categories .category-group-head{flex-wrap:wrap}
+ #categories .category-group-head>.cg-head-end{min-width:0;max-width:100%;flex-wrap:wrap;flex:1 1 100%;width:auto}
+ #categories .cg-figures{min-width:0;flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){.setup-builder-progress *,.category-group *{scroll-behavior:auto;transition-duration:0s}}

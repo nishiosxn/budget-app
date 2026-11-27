@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/assistant.css?v=31d" />
   <link rel="stylesheet" href="css/category-distribution.css?v=31ug" />
   <link rel="stylesheet" href="css/category-controls.css" />
-</head>
+<link rel="stylesheet" href="css/budget-theme.css"><script defer src="js/budget-theme.js"></script></head>
 <body>
 <div id="sbBootScreen" class="sb-boot sb-open" role="status" aria-live="polite" aria-label="Chargement du budget"><div class="sb-boot-card"><strong>Smart Budget</strong><span class="sb-loading-label">Préparation du budget…</span></div></div>
 <div class="app">
@@ -381,7 +381,7 @@
           <div><span>APPARENCE</span><strong>Personnaliser mon interface</strong></div>
           <p>La couleur et la police sont personnelles à ton compte et ne modifient pas l’affichage des autres membres du foyer.</p>
         </div>
-        <div id="settingsAppearancePicker"></div>
+        <label for="budgetTheme">Thème</label><select id="budgetTheme"><option value="system">Système</option><option value="light">Clair</option><option value="dark">Sombre</option></select><div id="settingsAppearancePicker"></div>
         <button id="saveAppearanceBtn" class="btn btn-income" type="button">Enregistrer l’apparence</button>
       </div>
       <p class="settings-copy">Les données actives sont chargées depuis Supabase et synchronisées en continu. Aucun mode hors ligne n’est utilisé. Si un envoi échoue, le bouton de relance près de l’état de synchronisation renvoie toute la session vers le cloud.</p>

@@ -1,5 +1,14 @@
 # Workstate — Budget foyer
 
+## Thèmes et largeur mobile · 27 novembre 2026
+
+- Terminé : correction de l’en-tête des revenus qui agrandissait la page de 43 px sur téléphone. Préférence système, claire ou sombre dans Paramètres, surfaces et focus communs, feuille de style de la fenêtre d’installation PWA.
+- Fichiers : index.html, css/budget-theme.css, js/budget-theme.js, workstate.md.
+- Tests : Chrome local, données synthétiques, 320/390/1280/1440 px, clair et sombre, réduction des animations. Parcours des sept étapes du Builder à chaque format. Largeur document égale à la largeur cible après correction. Audit applicatif et 9 tests documentaires réussis.
+- En cours : entrée Smart Assistant avec la session active. Restent les confirmations étendues, la synchro des règles, les validations sur foyer de test et iPhone.
+- Prochaine action : raccorder les entrées de navigation au pilote, vérifier le foyer actif à chaque requête et tester les transitions de session.
+
+
 ## Reprise V3.1 · 27 novembre 2026
 
 - Branche work/v3.1-integration, PR brouillon #52 vers develop. Arbre local et GitHub identiques sur 3b949c6. Aucun conflit ni changement en attente.
