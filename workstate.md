@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 7D V3.1 — Performances et recette PWA
+
+- Le laboratoire charge son moteur seulement à l'ouverture. Les ressources modifiées ont des clés d'URL actualisées. Le service worker vérifie ses mises à jour sans cache HTTP et conserve le contrat réseau direct. La couleur du chrome Safari suit le thème.
+- Le test PWA de CI mesure trois démarrages Chromium, vérifie le manifeste et les icônes, simule une révision du service worker et contrôle le hors ligne sans cache financier. La recette ajoute le passage Système → Clair → Système et le zoom visuel à 200 %.
+- Fichiers : `js/assistant-lab.js`, `js/budget-theme.js`, `js/pwa.js`, workflow, tests navigateur, README et changelog. Le [rapport](docs/V3_1_VISUAL_ACCEPTANCE.md) contient le protocole iPhone. CI connectée du 7C réussie (46080030871). Les styles app Catégories sont isolés dans le thème pour conserver l'identité de la feuille de référence PR49 contrôlée par App integrity.
+- Prochaine action : vérifier les mesures et les deux workflows sur la tête finale de la PR #52. La validation iPhone physique et le benchmark Gemma restent à planifier.
+
 ## Lot 7C V3.1 — Responsive et accessibilité
 
 - Les dialogues conservent le focus dans la couche active, neutralisent les contrôles derrière elle et rendent le focus au déclencheur à la fermeture. La saisie rapide mobile le rend au bouton Ajouter, et son cycle clavier inclut Smart Assistant. Le champ de montant possède un nom accessible.

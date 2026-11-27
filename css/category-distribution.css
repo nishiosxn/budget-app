@@ -1,6 +1,6 @@
 /* V3.1 — Répartition des enveloppes : styles scellés à l'onglet Catégories. */
 #categories .budget-distribution{
-  --bd-accent:var(--accent-ink,var(--accent));
+  --bd-accent:#5c29d6;
   --bd-tint:color-mix(in srgb,var(--bd-accent) 10%,var(--panel));
   display:grid;
   gap:1rem;
@@ -79,7 +79,7 @@
 #categories .bd-clear{border:0;background:transparent;color:var(--bd-accent);font:inherit;font-size:.75rem;font-weight:700;cursor:pointer}
 #categories .bd-selection p{margin:0;font-size:.8125rem;color:var(--muted)}
 #categories .bd-selection-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
-#categories .bd-action{min-height:2.75rem;border-radius:.65rem;border:.0625rem solid var(--accent);background:var(--accent);color:#fff;padding:.55rem .9rem;font:inherit;font-size:.75rem;font-weight:700;cursor:pointer}
+#categories .bd-action{min-height:2.5rem;border-radius:.65rem;border:.0625rem solid var(--bd-accent);background:var(--bd-accent);color:#fff;padding:.55rem .9rem;font:inherit;font-size:.75rem;font-weight:700;cursor:pointer}
 #categories .bd-action-secondary{background:transparent;color:var(--bd-accent)}
 #categories .bd-changes{border-top:.0625rem solid var(--line);padding-top:.75rem;min-width:0}
 #categories .bd-changes-trigger{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto 1rem;gap:.7rem;align-items:center;text-align:left;background:transparent;border:0;padding:.3rem .15rem;color:var(--text);cursor:pointer}
@@ -134,6 +134,7 @@
  * Scoped to this view: no shared components, other pages or financial data change.
  */
 #categories{
+  --accent:#5c29d6;
   --accent-soft:color-mix(in srgb,var(--accent) 10%,var(--panel));
   --cat-panel-padding:clamp(1rem,calc(.8rem + 1vw),1.5rem);
   --cat-heading-size:clamp(1rem,calc(.96rem + .25vw),1.1875rem);

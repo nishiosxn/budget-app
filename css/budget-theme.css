@@ -1,4 +1,4 @@
-:root{--sb-brand:#5C29D6;--accent-ink:var(--accent,var(--sb-brand));--focus-ring:var(--accent-ink);--control-min:2.75rem}
+:root{--sb-brand:#5C29D6;--shell-accent:var(--accent,var(--sb-brand));--accent-ink:var(--shell-accent);--focus-ring:var(--accent-ink);--control-min:2.75rem}
 :root[data-budget-theme="dark"]{
  color-scheme:dark;--bg:#141414;--panel:#1e1e1e;--panel-2:#252525;--text:#f5f5f7;--muted:#b3b3bd;--line:#45454d;
  --income:#77d6a0!important;--expense:#ff9595;--warning:#f3c778;--shadow:0 .5rem 1.5rem rgb(0 0 0/.18);
@@ -26,6 +26,9 @@
 .tracking-head .eyebrow{color:var(--muted)}
 :root:not([data-budget-theme="dark"]) .tracking-kpi.tracking-balance>:is(span,small){color:white}
 .mobile-nav-item.is-active{color:var(--accent-ink)}
+#categories{--accent:var(--shell-accent)}
+#categories .budget-distribution{--bd-accent:var(--accent-ink)}
+#categories .bd-action:not(.bd-action-secondary){min-block-size:var(--control-min);border-color:var(--shell-accent);background:var(--shell-accent)}
 :root[data-budget-theme="dark"] :is(.settings-trigger,.cloud-force-sync,.cloud-sync-status){background:var(--panel-2);color:var(--text);border-color:var(--line)}
 :root[data-budget-theme="dark"] .cloud-sync-status[data-state="error"]{color:var(--expense)}
 :root[data-budget-theme="dark"] :is(.tracking-month-row.current-selected,.tracking-month-row.future,.progress){background:var(--panel-2)}

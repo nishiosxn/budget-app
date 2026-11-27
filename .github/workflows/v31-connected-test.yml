@@ -66,6 +66,15 @@ jobs:
           SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
           SB_VISUAL_OUTPUT="$RUNNER_TEMP/smart-budget-visual" \
           node --test scripts/connected-test/interface.mjs
+      - name: Check PWA updates and measure local startup
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/smart-budget-visual"
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_VISUAL_OUTPUT="$RUNNER_TEMP/smart-budget-visual" \
+          node --test --test-timeout=45000 scripts/connected-test/pwa.mjs
       - name: Keep browser screenshots and measurements
         if: always()
         uses: actions/upload-artifact@v4

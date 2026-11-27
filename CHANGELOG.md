@@ -1,5 +1,12 @@
 # Changelog
 
+## V3.1 intégrée — Recette visuelle et PWA
+
+- Thème cohérent sur Connexion, Navigation, Suivi et Administration. Les accents personnalisés du texte interactif conservent le contraste du premier plan.
+- Progression mobile du Builder avec étape courante repérable et transition réduite selon la préférence système. Les dialogues restituent le focus au déclencheur.
+- Le laboratoire de l'Assistant charge ses scripts à l'ouverture. Les mises à jour du service worker sont vérifiées hors cache HTTP. Le fonctionnement financier reste en ligne.
+- Captures sur comptes fictifs, contrôles Chromium et protocole iPhone dans [la recette](docs/V3_1_VISUAL_ACCEPTANCE.md).
+
 
 ## Pilote V3.1 — Smart Engine 31ap (22 novembre 2026)
 

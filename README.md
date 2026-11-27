@@ -131,7 +131,7 @@ La promotion `develop` → `main` utilise une PR de release distincte. La public
 
 La V2.5 conserve l'architecture cloud de V2.4/V2.4.1 mais remplace la stratégie « dernier écrivain gagnant » par une fusion optimiste basée sur une baseline locale et les `updated_at` Supabase.
 
-L'identité Smart Budget validée est conservée dans `icons/icon.svg`. Les fichiers `favicon.ico`, `icon-192.png`, `icon-512.png` et `apple-touch-icon.png` du même dossier en sont les déclinaisons. Toute nouvelle version créée depuis `v2.5` doit reprendre le dossier `icons/`, les liens du document HTML, les entrées du manifest et le précache du service worker, puis incrémenter le nom de son cache PWA.
+L'identité Smart Budget validée est conservée dans `icons/icon.svg` et les déclinaisons ICO, PNG et Apple du même dossier. La PWA est installable et les données restent gérées en ligne. Le service worker efface les anciens caches applicatifs puis utilise le réseau. Les ressources frontend modifiées portent un suffixe de version dans le document HTML. Voir la [recette visuelle et PWA V3.1](docs/V3_1_VISUAL_ACCEPTANCE.md).
 
 Principes :
 - les changements locaux et distants sur des éléments différents sont conservés ;
