@@ -73,10 +73,56 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  await two.locator('[data-tab="overview"]').click();
  await two.locator("#settingsBtn").click();
  await visual.capture(two,"settings");
- await two.locator("#closeSettings").click();
+ assert.equal(await two.locator(".app").evaluate(app=>app.inert),true);
+ await two.locator("#closeSettings").focus();
+ await two.keyboard.press("Shift+Tab");
+ assert.equal(await two.evaluate(()=>document.getElementById("settingsBackdrop").contains(document.activeElement)),true);
+ await two.keyboard.press("Escape");
+ assert.equal(await two.evaluate(()=>document.activeElement.id),"settingsBtn");
  await two.locator('[data-add="expense"]').filter({visible:true}).first().click();
  await visual.capture(two,"transaction");
  await two.locator("#closeModal").click();
+ const viewport=two.viewportSize();
+ await two.setViewportSize({width:390,height:844});
+ await two.emulateMedia({colorScheme:"dark",reducedMotion:"reduce"});
+ await two.locator("#mobileAddButton").click();
+ await two.locator('#mobileQuickAdd [data-add="expense"]').click();
+ await two.locator("#amountInput").waitFor();
+ assert.ok(await two.getByRole("spinbutton",{name:"Montant en euros"}).isVisible());
+ await two.keyboard.press("Escape");
+ assert.equal(await two.evaluate(()=>document.activeElement.id),"mobileAddButton");
+ const appearance=await two.evaluate(()=>{
+  const original=currentUserAppearance(),results=[];
+  for(const customColor of ["#FFFF00","#36DDC8","#181129","#5C29D6"]){
+   applyUserAppearance({color:"custom",customColor,font:"current"});
+   const root=getComputedStyle(document.documentElement),ink=root.getPropertyValue("--accent").trim();
+   results.push({
+    base:root.getPropertyValue("--theme-color").trim(),
+    contrast:(appearanceLuminance("#F4F5F1")+.05)/(appearanceLuminance(ink)+.05)
+   });
+  }
+  applyUserAppearance(original);
+  return results;
+ });
+ assert.deepEqual(appearance.map(item=>item.base),["#FFFF00","#36DDC8","#181129","#5C29D6"]);
+ assert.ok(appearance.every(item=>item.contrast>=4.5),JSON.stringify(appearance));
+ await two.locator('[data-mobile-tab="categories"]').click();
+ const segment=two.locator(".bd-segment[data-bd-key]").first();
+ await segment.scrollIntoViewIfNeeded();
+ const box=await segment.boundingBox();
+ const cdp=await two.context().newCDPSession(two);
+ await cdp.send("Emulation.setTouchEmulationEnabled",{enabled:true});
+ const touch={x:box.x+box.width/2,y:box.y+box.height/2};
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[touch]});
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{x:touch.x+14,y:touch.y}]});
+ await two.locator(".sb-follow-tip.is-visible").waitFor();
+ await visual.shot(two,"categories-touch-390-dark");
+ await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+ await cdp.send("Emulation.setTouchEmulationEnabled",{enabled:false});
+ await cdp.detach();
+ await two.setViewportSize(viewport);
+ await two.emulateMedia({colorScheme:"light",reducedMotion:"reduce"});
+ await two.locator('[data-tab="overview"]').click();
  await one.locator('[data-tab="categories"]').click();
  await one.locator('[data-demo-fill-all][data-section="Obligatoires"]').click();
  try{await waitText(two,"#expenseTotal",/340,02/)}

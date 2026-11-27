@@ -10,7 +10,9 @@ export async function visualRecorder(t){
   await mkdir(output,{recursive:true});
   t.after(()=>writeFile(join(output,"measurements.json"),JSON.stringify(measurements,null,2)));
  }
- return {async capture(page,name){
+ return {async shot(page,name){
+  if(output)await page.screenshot({path:join(output,name+".png"),animations:"disabled"});
+ },async capture(page,name){
   if(!output)return;
   const originalViewport=page.viewportSize();
   try{

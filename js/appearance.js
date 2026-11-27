@@ -30,6 +30,18 @@ function appearanceLuminance(hex){
  const linear=value=>{const c=value/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};
  return .2126*linear(r)+.7152*linear(g)+.0722*linear(b);
 }
+function accessibleLightAccent(base){
+ const background=appearanceLuminance("#F4F5F1");
+ const contrast=color=>(background+.05)/(appearanceLuminance(color)+.05);
+ if(contrast(base)>=4.5)return base;
+ let low=0,high=1;
+ for(let step=0;step<12;step++){
+  const middle=(low+high)/2;
+  if(contrast(mixAppearanceHex(base,"#000000",middle))>=4.5)high=middle;
+  else low=middle;
+ }
+ return mixAppearanceHex(base,"#000000",high);
+}
 function normalizeUserAppearance(value){
  const color=value?.color==="custom"?"custom":APPEARANCE_COLORS[value?.color]?value.color:APPEARANCE_DEFAULT.color;
  const font=APPEARANCE_FONTS[value?.font]?value.font:APPEARANCE_DEFAULT.font;
@@ -40,16 +52,16 @@ function appearancePalette(value){
  const appearance=normalizeUserAppearance(value);
  if(appearance.color!=="custom"){
   const preset=APPEARANCE_COLORS[appearance.color];
-  return {...preset,base:preset.accent,surface:preset.accent};
+  const accent=accessibleLightAccent(preset.accent);
+  return {...preset,base:preset.accent,accent,surface:accent};
  }
- const base=appearance.customColor,luminance=appearanceLuminance(base);
- const accent=luminance>.52?mixAppearanceHex(base,"#000000",.38):base;
- const surface=luminance>.62?mixAppearanceHex(base,"#000000",.22):base;
+ const base=appearance.customColor;
+ const accent=accessibleLightAccent(base);
  return {
   label:"Personnalisé",
   base,
   accent,
-  surface,
+  surface:accent,
   deep:mixAppearanceHex(base,"#000000",.58),
   soft:mixAppearanceHex(base,"#FFFFFF",.88),
   border:mixAppearanceHex(base,"#FFFFFF",.60)

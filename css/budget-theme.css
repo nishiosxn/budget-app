@@ -24,11 +24,17 @@
 .cloud-gate-status.error{color:var(--expense)}
 .cloud-gate-status.success{color:var(--income)}
 .tracking-head .eyebrow{color:var(--muted)}
+:root:not([data-budget-theme="dark"]) .tracking-kpi.tracking-balance>:is(span,small){color:white}
 .mobile-nav-item.is-active{color:var(--accent-ink)}
 :root[data-budget-theme="dark"] :is(.settings-trigger,.cloud-force-sync,.cloud-sync-status){background:var(--panel-2);color:var(--text);border-color:var(--line)}
 :root[data-budget-theme="dark"] .cloud-sync-status[data-state="error"]{color:var(--expense)}
 :root[data-budget-theme="dark"] :is(.tracking-month-row.current-selected,.tracking-month-row.future,.progress){background:var(--panel-2)}
 :root[data-budget-theme="dark"] .tracking-month-row.future .planned-value{color:var(--muted)}
+:root .cloud-gate :is(input,textarea)::placeholder{color:var(--muted);opacity:1}
+:root :is(.settings-trigger,.month-arrow,.modal .close,.sb-settings-modal button[aria-label]){min-inline-size:var(--control-min);min-block-size:var(--control-min)}
+@media(max-width:40rem){
+ .modal-backdrop.open{padding-inline:max(.5rem,env(safe-area-inset-left)) max(.5rem,env(safe-area-inset-right))}
+}
 @media(max-width:40rem){
  #categories .category-top #categoryIncomeSlot .category-group-head{display:grid;grid-template-columns:minmax(0,1fr);height:auto;gap:.5rem}
  #categories .category-group-head{flex-wrap:wrap}

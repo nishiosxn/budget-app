@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 7C V3.1 — Responsive et accessibilité
+
+- Les dialogues conservent le focus dans la couche active, neutralisent les contrôles derrière elle et rendent le focus au déclencheur à la fermeture. La saisie rapide mobile le rend au bouton Ajouter, et son cycle clavier inclut Smart Assistant. Le champ de montant possède un nom accessible.
+- Le contraste des accents de texte et de bouton est adapté aux couleurs claires personnalisées. Le logo et la préférence gardent la couleur choisie. Les fermetures et réglages de mois gardent une cible de 44 px. Le zoom manuel et le correctif de taille des champs tactiles sont conservés.
+- Fichiers : `js/modal-focus.js`, `js/appearance.js`, `js/mobile-ui.js`, `js/app.js`, styles de thème et scénario Chromium. La recette de focus, couleurs et infobulle tactile est ajoutée à la CI.
+- Prochaine action : valider sur le runner et contrôler le manifeste, le service worker et les mesures de chargement avant la recette finale.
+
 ## Lot 7B V3.1 — Harmonisation des écrans
 
 - Les captures avant correction montrent le fond clair résiduel de la connexion sombre, le contraste insuffisant de l'onglet mobile actif, une palette d'administration héritée et des repères de progression du Builder moins clairs que dans la maquette.
