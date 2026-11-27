@@ -1,5 +1,16 @@
 # Workstate — Budget foyer
 
+## Reprise V3.1 · 27 novembre 2026
+
+- Branche work/v3.1-integration, PR brouillon #52 vers develop. Arbre local et GitHub identiques sur 3b949c6. Aucun conflit ni changement en attente.
+- Socle repris de #47 (68d0890), avec le CORS de #48 et le dossier crédité de #50 identiques. Lot Catégories 057c1db, Builder 3b949c6.
+- Fichiers des lots précédents : index.html, js/ui.js, js/categories.js, js/category-*.js, css/category-*.css, js/setup-builder.js, css/style.css, références preview/, tests et workflow validate.yml.
+- CI verte au dernier commit. 280 tests sur le premier lot et 4 contrôles supplémentaires du Builder. Chrome local a parcouru les sept étapes. Les essais utilisent des données synthétiques.
+- Partiel : finitions de la maquette Builder, sauvegarde et reprise après déconnexion, alertes et répartition. Deux défauts visuels observés : débordement du groupe de montants sur téléphone, fond clair en préférence sombre.
+- Restent la navigation et la session Assistant, les règles entre appareils, les confirmations étendues et la recette de bout en bout. Le pilote historique conserve ses restrictions. Les identifiants fournisseur pour le benchmark ne sont pas disponibles ici. initdb local a échoué avant démarrage.
+- Prochaine action : corriger la grille des en-têtes Catégories aux petites largeurs, harmoniser les surfaces clair/sombre et refaire les captures de 320 à 1440 px.
+
+
 
 ## Lot 31ap — vocabulaire français étendu et Smart Engine local (pilote publié)
 
