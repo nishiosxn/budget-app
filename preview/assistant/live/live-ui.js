@@ -1,5 +1,6 @@
 (()=>{"use strict";
  const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),form=$("sbAssistantForm"),send=$("send");
+ const appSession=globalThis.SmartBudgetAssistantSession;
  const core=globalThis.SmartBudgetAssistantCore;
  let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0,confirmationStarted=false;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
@@ -15,7 +16,7 @@
  });
  const kinds={expense:"Dépense",income:"Revenu",saving:"Mise en épargne",plan:"Budget prévu"};
  const queries={summary:"Résumé",categories:"Catégories",transactions:"Transactions",comparison:"Comparaison"};
- const errorMessages={assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Conflit détecté : un budget a changé, une catégorie existe déjà ou la demande a été modifiée. Aucune opération partielle enregistrée.",confirm_budget_baseline_required:"Budget actuel indisponible. Actualise le foyer avant de confirmer.",confirm_not_supported:"Cette opération ne peut pas être enregistrée dans le pilote."};
+ const errorMessages={local_only:"Smart Engine ne reconnaît pas toute la demande. Reformule-la ou autorise Gemma.",assistant_not_enabled:"Assistant non activé côté serveur. Vérifie les secrets d’activation.",authentication_required:"Reconnecte-toi.",household_not_authorized:"Ce foyer n’est pas autorisé pour le pilote.",authorization_unavailable:"Vérification du foyer indisponible.",quota_exhausted:"Quota de test atteint. Réessaie demain (UTC).",quota_unavailable:"Compteur indisponible : aucune demande IA envoyée.",context_too_large:"Demande trop volumineuse.",invalid_history:"Brouillon périmé. Commence une nouvelle demande.",budget_preview_unavailable:"Impossible de lire le budget actuel. Aucune modification effectuée.",invalid_model_result:"La demande n’a pas pu être convertie en proposition fiable. Aucune opération enregistrée. Reformule en une commande simple.",model_unavailable_or_invalid:"Le modèle n’a pas fourni une réponse exploitable.",confirm_category_exists:"Cette catégorie existe déjà dans le foyer de test. Aucune création effectuée.",confirm_category_invalid:"Catégorie invalide ou modifiée. Aucune création effectuée.",confirm_creation_not_requested:"La création doit être demandée explicitement. Aucune catégorie créée.",confirm_category_not_supported:"Cette demande multiple ne peut pas encore être enregistrée d’un seul coup.",confirm_category_limit:"Limite de catégories du foyer de test atteinte.",confirm_conflict:"Conflit détecté : un budget a changé, une catégorie existe déjà ou la demande a été modifiée. Aucune opération partielle enregistrée.",confirm_budget_baseline_required:"Budget actuel indisponible. Actualise le foyer avant de confirmer.",confirm_not_supported:"Cette opération ne peut pas être enregistrée dans le pilote."};
  // Single-line default. Expand only for actual line breaks or visual wrapping.
  function resizeComposer(){
   input.style.height="auto";
@@ -803,7 +804,7 @@
  function wipe(){confirmationStarted=false;$("pilotAssistant").dataset.state="initial";$("pilotExamples").open=true;pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true});focusInput()}
  function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
- async function json(path,options){const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
+ async function json(path,options){if(appSession&&session){const active=await appSession.current();if(active.userId!==session.userId||active.householdId!==session.householdId)throw Error("Session modifiée.");options.headers=headers(active.token)}const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
  const number=n=>new Intl.NumberFormat("fr-FR").format(n);
  function resetMeter(){$("pilotQuotaBar").value=0;$("pilotQuotaText").textContent="— / 8 000";$("pilotRequests").textContent="— demandes IA";$("pilotQuotaRemaining").textContent="Quota UTC";$("pilotLastUsage").textContent="Dernier prompt : —"}
  function displayQuota(quota){
@@ -830,7 +831,26 @@
   }catch{if(current===usageRequest&&session?.token===token)$("pilotQuotaText").textContent="Quota indisponible"}
  }
 
- $("pilotLoginForm").addEventListener("submit",async e=>{
+ if(appSession){
+  let generation=0;
+  const invalidate=()=>{generation++;logout();$("pilotLoginStatus").textContent="La session ou le foyer a changé. Reviens dans Smart Budget.";};
+  appSession.onChange(invalidate);
+  (async()=>{
+   const at=generation;
+   try{
+    const active=await appSession.current();
+    // Usage verifies the server-side allowlist before any category data is requested.
+    const check=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(active.token),body:JSON.stringify({householdId:active.householdId,action:"usage"})});
+    if(at!==generation)return;
+    if(check.status===403||check.status===401)throw Error("Ce foyer n’a pas accès au pilote de test.");
+    if(!check.ok&&check.body?.error!=="quota_unavailable")throw Error("Assistant indisponible pour le moment.");
+    session=active;resetMeter();readPersonal();showRules();wipe();
+    $("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;
+    if(!displayQuota(check.body.quota))$("pilotQuotaText").textContent="Quota indisponible";
+    void loadRuleCategories();focusInput();
+   }catch(error){if(at===generation)$("pilotLoginStatus").textContent=error.message}
+  })();
+ }else $("pilotLoginForm").addEventListener("submit",async e=>{
   e.preventDefault();if($("pilotSignIn").disabled)return;
   const pw=$("pilotPassword").value;$("pilotPassword").value="";$("pilotSignIn").disabled=true;$("pilotLoginStatus").textContent="Connexion…";
   try{
@@ -853,7 +873,7 @@
   const command=input.value.trim();if(!command)return;if(!await askDiscard()||busy||send.disabled)return;$("pilotAssistant").dataset.state="analysis";$("pilotExamples").open=false;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   let receivedResponse=false;
-  try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:{},...(history.length?{history}:{})})});
+  try{const r=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({householdId:session.householdId,command,context:appSession?appSession.context():{},...(appSession&&!$("allowGemma").checked?{localOnly:true}:{}),...(history.length?{history}:{})})});
    if(current!==epoch)return;
    receivedResponse=true;
    if(r.body.metering)displayLastMeter(r.body.metering);

@@ -163,7 +163,7 @@ test("analysis releases busy before rendering a valid review, while saving remai
   const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{}});return nodes.get(id)};
   const state={kind},observed=[];
   const ctx={
-   session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
+   appSession:null,session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
    send:{disabled:false},input:{value:"test prompt"},status:{dataset:{}},result:{replaceChildren(){}},
    form:{addEventListener(type,callback){assert.equal(type,"submit");ctx.submit=callback}},
    $:node,voice:{stop(){}},resizeComposer(){},headers(){return {}},

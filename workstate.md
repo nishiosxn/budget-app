@@ -1,5 +1,14 @@
 # Workstate — Budget foyer
 
+## Assistant dans la navigation · 27 novembre 2026
+
+- Réalisé : entrée desktop et action Ajouter sur mobile, session Supabase existante, foyer actif et mois sélectionné, vérification d’accès au pilote avant lecture des catégories. Le laboratoire reste accessible. Les composants et styles du pilote sont partagés.
+- Gemma sur accord explicite dans l’entrée intégrée. Le serveur exécute d’abord le moteur déterministe et renvoie la consommation nulle lorsqu’une demande reste locale. Code Edge en revue.
+- Fichiers : index.html, assistant/index.html, assistant/session.js, js/app.js, css/budget-theme.css, preview/assistant/live/live-ui.js, gateway.mjs, index.ts, scripts/assistant-live.test.mjs et scripts/v31-assistant-session.test.mjs.
+- Tests : 287 tests Node réussis et audit applicatif vert. Vérifications de changement de foyer, changement de compte, ressources de la page intégrée et absence de réservation/appel IA en mode local.
+- Restent : règles synchronisées, mouvements étendus, benchmark réel et validation avec deux sessions de test. Prochaine action : implémenter une sauvegarde concurrente des associations par foyer et vérifier la politique RLS sur PostgreSQL isolé.
+
+
 ## Thèmes et largeur mobile · 27 novembre 2026
 
 - Terminé : correction de l’en-tête des revenus qui agrandissait la page de 43 px sur téléphone. Préférence système, claire ou sombre dans Paramètres, surfaces et focus communs, feuille de style de la fenêtre d’installation PWA.

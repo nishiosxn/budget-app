@@ -22,3 +22,8 @@
  #categories .cg-figures{min-width:0;flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){.setup-builder-progress *,.category-group *{scroll-behavior:auto;transition-duration:0s}}
+
+.assistant-nav{display:inline-flex;align-items:center;padding:.5rem .75rem;color:var(--text);font-weight:600;text-decoration:none}
+.assistant-nav:hover,.assistant-local summary:hover{text-decoration:underline}
+.assistant-local{margin-block:0 .75rem}.assistant-local summary{cursor:pointer;color:var(--muted);font-size:.875rem}
+.mobile-quick-add__option[href]{color:var(--text);text-decoration:none}

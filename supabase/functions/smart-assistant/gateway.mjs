@@ -60,7 +60,7 @@ export function decodeModelResponse(raw){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null}){
+export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
@@ -74,7 +74,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    if(Object.keys(body).length!==4||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft))return response(400,{error:"invalid_request"});
   }else if(usageOnly){
    if(Object.keys(body).length!==2||!uuid(body.householdId))return response(400,{error:"invalid_request"});
-  }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context))return response(400,{error:"invalid_request"});
+  }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history","localOnly"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context)||("localOnly" in body&&typeof body.localOnly!=="boolean"))return response(400,{error:"invalid_request"});
   let auth;
   try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly||confirmCategoryOnly||confirmMissingOnly||confirmBatchOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
   if(!auth)return response(403,{error:"household_not_authorized"});
@@ -110,6 +110,7 @@ export function createAssistantGateway({enabled,model,authorize,reserve,infer,va
    let previews=[],report=null;try{if(["draft","mixedDraft"].includes(quick.value.kind))previews=await planPreview(token,body.householdId,quick.value,auth.context);if(quick.value.kind==="query")report=await queryPreview(token,body.householdId,quick.value,auth.context)}catch{return response(503,{error:"budget_preview_unavailable"})}
    return response(200,{result:quick.value,model:"local-rules",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}},context:auth.context,...(previews.length?{planPreviews:previews}:{}),...(report?{categoryReport:report}:{}),...(quick.suggestions?.length?{categorySuggestions:quick.suggestions}:{}),...(quick.missingCategory?{missingCategory:quick.missingCategory}:{})});
   }
+  if(body.localOnly===true||!providerEnabled)return response(422,{error:"local_only",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}}});
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
   // Durable reservation must succeed before any provider invocation. No refund on failure.

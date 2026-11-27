@@ -25,3 +25,9 @@ document.addEventListener("keydown",e=>{
 syncHouseholdUi();
 render();
 initCloudAuth();
+
+document.querySelectorAll("[data-open-assistant]").forEach(link=>{
+ link.addEventListener("click",()=>{
+  if(activeHouseholdId)link.search=new URLSearchParams({month:monthKey(state.selectedMonth)}).toString();
+ });
+});
