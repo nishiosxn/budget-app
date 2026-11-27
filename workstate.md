@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 7B V3.1 — Harmonisation des écrans
+
+- Les captures avant correction montrent le fond clair résiduel de la connexion sombre, le contraste insuffisant de l'onglet mobile actif, une palette d'administration héritée et des repères de progression du Builder moins clairs que dans la maquette.
+- Connexion, navigation et Suivi utilisent les rôles de couleur existants. L'administration reprend l'identité violette et le thème partagé. Catégories utilise l'accent du foyer. Le Builder signale l'étape courante par un contour et anime les traits de progression par transformation.
+- Fichiers : `index.html`, `admin/`, `css/style.css`, `css/budget-theme.css`, `css/category-distribution.css`. Les rendus Chromium avant/après ont confirmé les corrections de fond et de navigation. Recette connectée 7A réussie (46079443956).
+- Prochaine action : vérifier la restitution du focus, les couleurs personnalisées et les interactions tactiles sur le même parcours.
+
 ## Lot 7A V3.1 — Audit graphique et protocole de recette
 
 - Point de départ publié `da28f70`. Design system et références Unslop consultés. Direction retenue : conserver les maquettes, le violet Smart Budget et la répartition financière comme repère graphique. Accorder les surfaces, l'alignement des montants, les libellés et les états interactifs par correctifs ciblés.
