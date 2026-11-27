@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 5A V3.1 · Environnement isolé et revue de migration
+
+- Revue réalisée : migrations depuis V3.0.2, ACL/RLS, dépendances Edge, compatibilité du provisionnement et sauvegarde/retour arrière. Les protections serveur historiques du 16 novembre ne sont pas intégralement versionnées.
+- Préparé : workflow isolé Auth, REST et PostgreSQL avec profils Chromium séparés. La base synthétique reconstitue les prérequis non inclus dans le dépôt et applique les migrations versionnées. Aucun accès à un foyer hébergé.
+- Fichiers : `docs/V3_1_CONNECTED_ACCEPTANCE.md`, `.github/workflows/v31-connected-test.yml`, `scripts/connected-test/` et ce journal.
+- Limites : Supabase CLI et Docker indisponibles sur ce poste. Premier démarrage et connexion réelle à vérifier en CI. Le connecteur hébergé requiert une liaison, aucun accès de recette hébergée établi.
+- Prochaine action : vérifier la CI locale isolée, puis tester le Builder, l’invitation et les données visibles dans deux sessions.
+
 ## Lot 4C V3.1 · Confirmation et reprise du Smart Assistant
 
 - Terminé en source : l’interface Unslop prépare puis confirme le lot revu. Elle affiche la réussite seulement après vérification du reçu. Une confirmation interrompue se retrouve après rechargement à partir d’un identifiant opaque lié à l’utilisateur et au foyer. L’analyse et les projections restent séparées de l’écriture.
@@ -7,7 +15,7 @@
 - Fichiers : Assistant intégré, module de confirmation et interface partagée, validation Edge, migration et scénarios PostgreSQL, tests navigateur et moteur ciblés, ce journal.
 - Tests locaux : 313 tests Node, audit applicatif et Chrome à 390 px réussis. Chrome a contrôlé la modification d’un budget et sa projection, le double clic, la réponse perdue et la récupération du reçu après rechargement avec une seule écriture simulée.
 - Limites : le navigateur utilise des données fictives. L’écriture réelle est validée sur PostgreSQL jetable, puis attend une recette hébergée autorisée. Les transferts internes se limitent à la mise en épargne représentée par le modèle existant. Les brouillons sans catégorie utilisable ou hors périmètre restent en simulation. Le benchmark Gemma reste réservé au lot 6.
-- En cours : CI de la PR #52 sur l’intégration finale. Prochaine action après validation : lot 5, recette connectée avec deux sessions et un foyer de test isolé après autorisation.
+- CI de la PR #52 réussie (46067361630, commit 17909ed). Suite au lot 5A.
 
 ## Lot 4B V3.1 · Revalidation et écritures atomiques du pilote
 
