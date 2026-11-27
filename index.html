@@ -16,10 +16,11 @@
   <link rel="stylesheet" href="css/style.css?v=31c" />
   <link rel="stylesheet" href="css/mobile-ui.css?v=20261116-v28a" />
   <link rel="stylesheet" href="css/history-filters.css?v=20261117-ios-focus" />
-  <link rel="stylesheet" href="css/subscriptions-overview.css?v=20261116-v29b" />
   <link rel="stylesheet" href="css/motion.css?v=20261117-v30c" />
   <link rel="stylesheet" href="css/touch-inputs.css?v=20261117-v302" />
   <link rel="stylesheet" href="css/assistant.css?v=31d" />
+  <link rel="stylesheet" href="css/category-distribution.css?v=31ug" />
+  <link rel="stylesheet" href="css/category-controls.css" />
 </head>
 <body>
 <div id="sbBootScreen" class="sb-boot sb-open" role="status" aria-live="polite" aria-label="Chargement du budget"><div class="sb-boot-card"><strong>Smart Budget</strong><span class="sb-loading-label">Préparation du budget…</span></div></div>
@@ -59,6 +60,7 @@
     </div>
 
     <section id="overview" class="view active">
+      <aside id="budgetAlerts" class="card" aria-label="À vérifier ce mois-ci" hidden></aside>
       <section class="card sb-assistant" aria-labelledby="sbAssistantTitle">
         <div class="sb-assistant-hero"><span class="sb-assistant-symbol"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z"/></svg></span><h2 id="sbAssistantTitle">Smart Assistant</h2><p>Que souhaites-tu faire aujourd’hui ?</p></div>
         <div class="sb-assistant-suggestions" aria-label="Suggestions"><button type="button" data-assistant-suggestion="J’ai dépensé 20 €"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3zM3 10h18"/></svg><span>J’ai dépensé 20 €</span></button><button type="button" data-assistant-suggestion="J’ai fait un virement"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/></svg><span>J’ai fait un virement</span></button><button type="button" data-assistant-suggestion="Ajoute 10 € au budget"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h16v14H3zM3 6V4h14v2M15 12h6v5h-6z"/></svg><span>Ajoute 10 € au budget</span></button></div>
@@ -120,7 +122,16 @@
       </div>
     </section>
 
-    <section id="categories" class="view"><section class="card subscriptions-panel" id="subscriptionsOverview" aria-label="Abonnements et récurrences du mois"></section><div class="category-layout" id="categoryGrid"></div></section>
+    <section id="categories" class="view"><div id="categoryGrid" class="category-layout" data-layout="hybrid">
+    <div id="categoryFilterSlot"></div>
+    <div class="category-top">
+     <section id="categoryDistribution" class="card budget-distribution" aria-label="Répartition interactive des budgets prévus"></section>
+     <div id="categoryIncomeSlot"></div>
+    </div>
+    <div id="categoryExpenseSlot"></div>
+    <div id="categorySavingSlot"></div>
+   </div>
+    </section>
     <section id="history" class="view">
       <div class="card history-toolbar" role="search" aria-label="Recherche et filtres d'historique">
         <div class="history-toolbar-title">
@@ -241,6 +252,57 @@
     <button id="saveCategoryEdit" class="btn btn-income save">Enregistrer</button>
   </div>
 </div>
+
+<div id="categorySettingsBackdrop" class="modal-backdrop" aria-hidden="true">
+ <section class="sb-settings-modal" role="dialog" aria-modal="true" aria-labelledby="categorySettingsTitle">
+  <div class="sb-settings-head">
+   <h3 id="categorySettingsTitle">Paramètres</h3>
+   <button id="categorySettingsClose" type="button" aria-label="Fermer les paramètres">×</button>
+  </div>
+  <form id="categorySettingsForm">
+   <div class="sb-settings-grid">
+    <div class="sb-settings-field is-full">
+     <label for="categorySettingsName">Nom · tous les mois</label>
+     <input id="categorySettingsName" type="text" maxlength="60" required autocomplete="off">
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsActual">Réel (€)</label>
+     <input id="categorySettingsActual" type="number" min="0" step="0.01" inputmode="decimal" required>
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsPlanned">Prévu (€)</label>
+     <input id="categorySettingsPlanned" type="number" min="0" step="0.01" inputmode="decimal" required>
+    </div>
+    <div class="sb-settings-field">
+     <label for="categorySettingsOwner">Attribution</label>
+     <select id="categorySettingsOwner">
+      <option value="common">À deux</option>
+      <option value="B">Personne 1</option>
+      <option value="A">Personne 2</option>
+     </select>
+    </div>
+    <div class="sb-settings-field" id="categorySettingsSectionField">
+     <label for="categorySettingsSection">Famille</label>
+     <select id="categorySettingsSection">
+      <option value="Obligatoires">Obligatoires</option>
+      <option value="Abonnements">Abonnements</option>
+      <option value="Vie courante">Vie courante</option>
+      <option value="Autres">Autres</option>
+     </select>
+    </div>
+    <div class="sb-settings-field is-full">
+     <label for="categorySettingsScope">Période du budget et de la famille</label>
+     <select id="categorySettingsScope">
+      <option value="month">Ce mois</option>
+      <option value="forward">Ce mois et les suivants</option>
+     </select>
+    </div>
+   </div>
+   <button class="sb-settings-submit" type="submit">Enregistrer</button>
+  </form>
+ </section>
+</div>
+
 
 <div id="categoryDeleteBackdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
@@ -417,8 +479,10 @@
 <script src="js/ui.js?v=20261116-v29a" defer></script>
 <script src="js/history-filters.js?v=20261116-v29a" defer></script>
 <script src="js/categories.js" defer></script>
+<script src="js/category-controls.js" defer></script>
+<script src="js/category-pointer.js" defer></script>
+<script src="js/category-distribution.js?v=31ug" defer></script>
 <script src="js/transactions.js?v=20261116-v29a" defer></script>
-<script src="js/subscriptions-overview.js?v=20261116-v29b" defer></script>
 <script src="js/settings.js?v=20261006-v27c" defer></script>
 <script src="js/tracking.js" defer></script>
 <script src="js/onboarding.js" defer></script>

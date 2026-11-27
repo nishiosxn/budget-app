@@ -86,13 +86,17 @@ const duplicateIds=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
 if(duplicateIds.length) fail("IDs HTML dupliqués: "+duplicateIds.join(", "));
 else ok("IDs HTML uniques");
 
-const domRefs=[...allJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+const activeJs=scripts.filter(name=>exists(path.join("js",name))).map(name=>read(path.join("js",name))).join("\n");
+// Optional legacy modules may stay in the repository for historical tests.
+// Check DOM references only in files actually loaded by this page.
+const domRefs=[...activeJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
 const dynamicIds=[...allJs.matchAll(/\.id\s*=\s*"([^"]+)"/g)].map(m=>m[1]);
 const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.includes(id)))];
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 
-const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+
 const missingScripts=scripts.filter(f=>!exists(path.join("js",f)));
 if(missingScripts.length) fail("Scripts HTML absents: "+missingScripts.join(", "));
 else if(scripts.length) ok("Scripts référencés présents");
@@ -218,14 +222,14 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   const categories=read("js/categories.js");
   const ui=read("js/ui.js");
   const categoryUxMarkers=[
-    'data-fill-category',
-    'data-category-menu-trigger',
-    'data-bulk-action="fill-empty"',
-    'data-bulk-clear'
+    'data-demo-fill-category',
+    'data-demo-settings',
+    'data-demo-fill-all',
+    'data-demo-clear-all'
   ];
   const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
-  if(missingCategoryUx.length)fail("UX Catégories V2.7 incomplète: "+missingCategoryUx.join(", "));
-  else ok("UX Catégories V2.7 présente");
+  if(missingCategoryUx.length)fail("UX Catégories V3.1 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V3.1 présente");
   if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
   else ok("Remplissage des vides préserve les montants déjà saisis");
   if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
