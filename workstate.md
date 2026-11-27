@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.1 — préparation Gemma et correctif recette historique (CI à confirmer)
+
+- CI 6bfdd56 : application/PostgreSQL réussis (46084383381), recette historique échouée au login navigateur (46084383401). Quatre ressources partagées manquaient dans la disposition de l'export historique ; export/copie depuis le même SHA et diagnostic de connexion ajoutés. Cause plausible à confirmer par CI ; lot 8B non clôturé.
+- Cloudflare : Workers Free 10 000 neurones/jour UTC, Gemma accessible ; forfait réel du compte non vérifié. Runner plan hors ligne des 153 cas fournisseur, plafonds 10 appels/2 000 neurones par lot, 6 000 par jour et marge 2 000, registre persistant et verrou, arrêt sur erreur/métriques absentes. Aucun appel live en CI ni aujourd'hui. Documentation actualisée. Avancement estimé 94 % inchangé.
+- Prochaines actions : CI de cette révision, clôturer 8B local si verte ; confirmer compte et solde Free avant un premier lot Gemma de 5 cas synthétiques. Aucune écriture Supabase, fusion, publication ou facturation.
+
 ## Lot 8B.5C — Recette avant/après et client 31ap (CI à confirmer)
 
 - Quatre workflows de 889d0e8 et 98f124d terminés avec succès : 46083350925, 46083350897, 46083514827, 46083514823. Aucune correction CI nécessaire.

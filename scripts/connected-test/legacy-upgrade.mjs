@@ -28,7 +28,8 @@ test("actual 31ap client and v30 Edge keep one ledger and receipts across the V3
  const page=await client.openApp(h,"preview/assistant/live/",root,{historicalLogin:true});
  await page.locator("#pilotPassword").fill(client.user.password);
  await page.locator("#pilotSignIn").click();
- await page.locator("#pilotAssistant").waitFor({state:"visible",timeout:15000});
+ try{await page.locator("#pilotAssistant").waitFor({state:"visible",timeout:15000})}
+ catch(error){throw Error("Historical pilot login status: "+(await page.locator("#pilotLoginStatus").textContent()),{cause:error})}
  const submit=async text=>{
   await page.locator("#sbAssistantInput").fill(text);
   await page.locator("#send").click();
@@ -66,7 +67,8 @@ test("actual 31ap client and v30 Edge keep one ledger and receipts across the V3
  const post=await next.openApp(h,"preview/assistant/live/",root,{historicalLogin:true});
  await post.locator("#pilotPassword").fill(next.user.password);
  await post.locator("#pilotSignIn").click();
- await post.locator("#pilotAssistant").waitFor({state:"visible",timeout:15000});
+ try{await post.locator("#pilotAssistant").waitFor({state:"visible",timeout:15000})}
+ catch(error){throw Error("Historical pilot login after upgrade: "+(await post.locator("#pilotLoginStatus").textContent()),{cause:error})}
  await post.locator("#sbAssistantInput").fill("J’ai dépensé 12 € chez Lidl.");
  await post.locator("#send").click();
  await post.getByRole("button",{name:"Confirmer",exact:true}).click({timeout:15000});

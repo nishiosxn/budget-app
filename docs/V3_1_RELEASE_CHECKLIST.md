@@ -50,6 +50,10 @@ Les six fichiers v30 récupérés en lecture seule sont identiques à 3b6a340352
 
 Les quatre workflows de 889d0e8 et 98f124d sont verts. Le nouveau scénario avant/après et client 31ap est ajouté ; attendre ses résultats avant de clôturer la recette locale. La perte définitive d'accès au compte nécessite une décision administrative de récupération distincte ; aucun contournement d'Auth, transfert ou suppression de brouillon automatique. Le contrat historique demeure synthétique, notamment les cascades et divergences de journal. La recette sur projet partagé reste soumise à une autorisation séparée, à une sauvegarde et à la vérification du schéma cible. Gemma réel reste non exécuté.
 
+## 8C.1 — préparation du benchmark
+
+Plan hors ligne des 153 cas fournisseur, verrou de gratuité et plafonds dans le runner. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). Aucun appel réel ; compte Free et solde à vérifier avant activation. Le dernier test historique 8B.5C a échoué à l'ouverture du client ; export des ressources historiques corrigé, CI à confirmer. Ne pas clôturer 8B avant succès.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

@@ -54,7 +54,13 @@ jobs:
           set -euo pipefail
           git fetch --no-tags --depth=1 origin 3b6a340352432428b8145aab086741a995cb6f8a
           mkdir "$RUNNER_TEMP/smart-budget-edge30"
-          git archive 3b6a340352432428b8145aab086741a995cb6f8a supabase/functions preview/assistant | tar -x -C "$RUNNER_TEMP/smart-budget-edge30"
+          root="$RUNNER_TEMP/smart-budget-edge30"
+          git archive 3b6a340352432428b8145aab086741a995cb6f8a supabase/functions preview/assistant js/assistant-core.js js/assistant-voice.js css/assistant.css icons/icon.svg | tar -x -C "$root"
+          # Recreate the historical publication layout from the exact pinned source.
+          mkdir -p "$root/preview/assistant/js" "$root/preview/assistant/css" "$root/preview/assistant/icons"
+          cp "$root/js/assistant-core.js" "$root/js/assistant-voice.js" "$root/preview/assistant/js/"
+          cp "$root/css/assistant.css" "$root/preview/assistant/css/"
+          cp "$root/icons/icon.svg" "$root/preview/assistant/icons/"
       - name: Exercise historical client and Edge before and after migration
         shell: bash
         run: |

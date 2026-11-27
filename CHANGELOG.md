@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Préparation Gemma 8C.1 (validation en attente)
+
+- Correction de l'export des ressources du client historique et diagnostic de connexion ; recette 8B non clôturée avant CI verte.
+- Plan hors ligne du benchmark des 153 cas fournisseur et garde-fous de réservation persistante, limites quotidiennes et contrôle préalable Workers Free. Aucun appel réel.
+
 ## V3.1 — Clôture locale conditionnelle 8B.5C
 
 - Workflows 8B.5A/B verts. Recette ajoutée du véritable client 31ap et de l'Edge v30 sur un registre fictif avant et après les quatre migrations, avec conservation des données et des reçus. Nouvelle CI à confirmer.
