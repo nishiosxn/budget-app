@@ -9,6 +9,8 @@ test("Builder results survive lost HTTP responses and are visible to the invited
  const env=await connected(t);
  const [owner,partner,outsider]=await Promise.all(env.users.map(u=>env.session(u)));
  const h=await provision(owner),req=randomUUID(),draft=payload("couple");
+ const appearance={color:"purple",font:"current",customColor:"#5C29D6"};
+ await verified(owner.call("/auth/v1/user",{method:"PUT",body:{data:{budget_appearance:appearance}}}));
  const device=await env.session(env.users[0]);
  assert.equal(await provision(device),h);
  await owner.context.setOffline(true);
@@ -26,6 +28,7 @@ test("Builder results survive lost HTTP responses and are visible to the invited
  await assert.rejects(setup(owner,h,"stage",req,draft));
  await owner.context.close();
  const resumed=await env.session(env.users[0]);
+ assert.deepEqual((await verified(resumed.call("/auth/v1/user"))).user_metadata.budget_appearance,appearance);
  assert.deepEqual((await setup(resumed,h,"status")).draft,draft);
  assert.equal((await rows(device,"categories",h)).length,0);
 
@@ -62,6 +65,7 @@ test("two sessions sync adjustments, opening balances, transactions and recurrin
  const env=await connected(t);
  const [a,b]=await Promise.all(env.users.slice(0,2).map(u=>env.session(u)));
  const {h}=await completeSetup(a,"couple");
+ const {h:personalHousehold}=await completeSetup(b,"solo");
  await invite(a,b,h);
  const categoryRows=await rows(a,"categories",h),id=name=>categoryRows.find(c=>c.legacy_id===name).id;
  await insert(a,"account_opening_balances",{household_id:h,owner_slot:"B",month:"2025-01-01",amount:34.56});
@@ -111,5 +115,9 @@ test("two sessions sync adjustments, opening balances, transactions and recurrin
  await Promise.all([aa.push(),bb.push()]);
  await aa.pull();await bb.pull();
  assert.equal(amount(aa,"restaurants"),18.59);
+ assert.equal(amount(bb,"restaurants"),18.59);
+ await bb.switchHousehold(personalHousehold,"owner");
+ assert.equal(amount(bb,"restaurants"),0);
+ await bb.switchHousehold(h,"member");
  assert.equal(amount(bb,"restaurants"),18.59);
 });

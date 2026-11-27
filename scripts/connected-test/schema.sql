@@ -104,6 +104,32 @@ end $$;
 \ir ../../supabase/migrations/20261003121500_v2_6_account_opening_balances.sql
 \ir ../../supabase/migrations/20261003123000_v2_6_account_opening_balances_realtime.sql
 \ir ../../supabase/migrations/20261006190000_v2_7_schema_alignment_and_index_cleanup.sql
+
+-- A synthetic V3.0.2 ledger stays present during the upgrade.
+insert into auth.users(id,email) values('90ce62fb-4c40-4f08-9d41-2e2847e67809','preexisting@example.test');
+insert into public.households(id,name,created_by,household_mode)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','Historique fictif','90ce62fb-4c40-4f08-9d41-2e2847e67809','solo');
+insert into public.household_members(household_id,user_id,role,display_name,slot)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','90ce62fb-4c40-4f08-9d41-2e2847e67809','owner','Ancien compte','B');
+insert into public.categories(id,household_id,legacy_id,name,type,created_from,owner_slot)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67811','90ce62fb-4c40-4f08-9d41-2e2847e67810','historical','Historique','expense','2025-01-01','B');
+insert into public.budgets(household_id,category_id,month,planned_amount,scope,owner_slot)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','90ce62fb-4c40-4f08-9d41-2e2847e67811','2025-01-01',250.01,'forward','B');
+insert into public.transactions(household_id,category_id,legacy_id,amount,transaction_date,owner_slot,archived_at)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','90ce62fb-4c40-4f08-9d41-2e2847e67811','archive',12.05,'2025-01-02','B','2025-02-01');
+insert into public.recurrences(household_id,category_id,start_month,start_day,amount,owner_slot)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','90ce62fb-4c40-4f08-9d41-2e2847e67811','2025-01-01',31,10.02,'B');
+insert into public.account_opening_balances(household_id,month,owner_slot,amount)
+ values('90ce62fb-4c40-4f08-9d41-2e2847e67810','2025-01-01','B',31.01);
+create temporary view preexisting_ledger as
+ select jsonb_build_array(to_jsonb(h),to_jsonb(m),to_jsonb(c),to_jsonb(b),to_jsonb(t),to_jsonb(r),to_jsonb(a)) as snapshot
+ from public.households h join public.household_members m on m.household_id=h.id
+ join public.categories c on c.household_id=h.id join public.budgets b on b.category_id=c.id
+ join public.transactions t on t.category_id=c.id join public.recurrences r on r.category_id=c.id
+ join public.account_opening_balances a on a.household_id=h.id
+ where h.id='90ce62fb-4c40-4f08-9d41-2e2847e67810';
+create temporary table preexisting_before as table preexisting_ledger;
+
 \ir ../../supabase/migrations/20261117235347_smart_assistant_quota_pilot.sql
 \ir ../../supabase/migrations/20261121183000_smart_assistant_pilot_category_creation.sql
 \ir ../../supabase/migrations/20261121194000_smart_assistant_pilot_category_expense_atomic.sql
@@ -113,4 +139,9 @@ end $$;
 \ir ../../supabase/migrations/20261127193000_assistant_confirm_movements.sql
 \ir ../../supabase/migrations/20261127210000_budget_builder_atomic.sql
 \ir ../../supabase/migrations/20261127220000_assistant_atomic_review.sql
+do $$ begin
+ assert (select count(*) from preexisting_before)=1;
+ assert (select count(*) from preexisting_ledger)=1;
+ assert (select snapshot from preexisting_before)=(select snapshot from preexisting_ledger);
+end $$;
 notify pgrst, 'reload schema';

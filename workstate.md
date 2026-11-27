@@ -4,7 +4,8 @@
 
 - Ajouté : exécution de l’Edge du dépôt sous Deno sur le runner, avec Auth, REST et PostgreSQL locaux. Les huit demandes passent par le moteur existant avec Gemma désactivé. Vérification des reçus et du rejeu, concurrence sur le même budget, événement Realtime, règles et accès directs inter-foyers.
 - CI 5B 46072225442 : trois comptes Auth et quatre sessions Chromium indépendantes vérifiés. Builder solo/duo, invitation et reprise après deux réponses perdues réussis. Le test Catégories s’est arrêté sur un élément de DOM de test incomplet, corrigé pour le prochain passage.
-- En cours : exécution de la recette connectée complète sur les scénarios finaux. Fichiers : workflow et `scripts/connected-test/`.
+- CI 46072568921 : Auth, Builder et synchronisation de Catégories réussis. Double confirmation Gundam exécutée sur l’Edge locale avec des reçus identiques. L’écoute Realtime n’a pas reçu l’événement attendu. Le test attend maintenant l’abonnement PostgreSQL effectif avant l’écriture et lance ses contrôles REST indépendamment.
+- Ajouté : comparaison d’un historique V3.0.2 fictif avant/après les migrations, changement de foyer, apparence Auth et vérifications inter-foyers supplémentaires. Exécution de ces contrôles en attente de CI. Fichiers : `scripts/connected-test/`.
 - Limites : les protections serveur historiques sont à confronter à une version de schéma autorisée. Le transport navigateur appelle des services Supabase réels locaux, avec un adaptateur de test pour le moteur applicatif. La recette de toutes les interactions d’interface et du projet hébergé reste distincte.
 - Prochaine action : lire les deux workflows et corriger si nécessaire un écart de fixture ou une anomalie confirmée. Le lot 6 attend la fin de la recette et une nouvelle instruction.
 

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {connected} from "./harness.mjs";
-import {completeSetup,invite,rows,verified} from "./financial-fixture.mjs";
+import {completeSetup,invite,rows,verified,insert} from "./financial-fixture.mjs";
 
 test("real local Edge executes eight deterministic requests and isolates confirmations and rules",async t=>{
  const env=await connected(t);
@@ -11,16 +11,17 @@ test("real local Edge executes eight deterministic requests and isolates confirm
  const {h:other}=await completeSetup(outsider,"solo");
  await invite(owner,partner,h);
  await env.startAssistant(h,[owner.user.id,partner.user.id]);
- await partner.watchTransactions(h);
+ const realtime=await partner.watchTransactions(h).then(()=>true,()=>false);
  const analyze=async(session,command)=>{
   const analysis=await verified(session.assistant({householdId:h,context:{},command,localOnly:true}),"Smart Engine");
   assert.equal(analysis.metering.tokens.total,0);
   assert.ok(["categoryDraft","draft","mixedDraft"].includes(analysis.result.kind));
   return analysis;
  };
- async function prepare(session,command){
+ async function prepare(session,command,edit){
   const response=await analyze(session,command);
   const draft=response.result,ops=draft.operations||[];
+  if(edit)edit(draft);
   const requestId=randomUUID();
   const base={householdId:h,requestId};
   const ready=await verified(session.assistant({...base,action:"prepare_atomic",command,draft,
@@ -36,7 +37,6 @@ test("real local Edge executes eight deterministic requests and isolates confirm
  const device=await env.session(env.users[0]);
  const receipts=await Promise.all([verified(create.commit()),verified(create.commit(device))]);
  assert.deepEqual(receipts[0],receipts[1]);
- await partner.page.waitForFunction(()=>globalThis.fixtureChanges?.some(row=>row?.label==="Gundam"));
  assert.equal((await rows(partner,"transactions",h,"&label=eq.Gundam")).length,1);
  const gundam=(await rows(partner,"categories",h,"&name=eq.Gundam"))[0];
  assert.equal(Number((await rows(partner,"budgets",h,"&category_id=eq."+gundam.id))[0].planned_amount),90);
@@ -87,6 +87,14 @@ test("real local Edge executes eight deterministic requests and isolates confirm
  ]);
  const competing=await Promise.all([first.commit(),second.commit()]);
  assert.deepEqual(competing.map(r=>r.status).sort(),[200,409]);
+ const shared=await prepare(partner,"J’ai dépensé 3 € chez Lidl.",draft=>{draft.operations[0].owner="common"});
+ await verified(shared.commit());
+ assert.equal((await rows(owner,"transactions",h,"&amount=eq.3"))[0].owner_slot,null);
+ const obsolete=await prepare(recovered,"J’ai dépensé 4 € chez Lidl.");
+ const grocery=(await rows(owner,"categories",h,"&legacy_id=eq.groceries"))[0];
+ await verified(owner.call("/rest/v1/categories?id=eq."+grocery.id,{method:"PATCH",body:{name:"Courses du foyer"}}));
+ assert.equal((await obsolete.commit()).status,409);
+ assert.deepEqual(await rows(partner,"transactions",h,"&amount=eq.4"),[]);
 
  const editRules=(session,householdId,revision,target)=>session.rpc("edit_smart_assistant_rule",{
   p_household_id:householdId,p_revision:revision,p_operation:"set",p_term:"magasin-fixture",p_target:target
@@ -97,6 +105,7 @@ test("real local Edge executes eight deterministic requests and isolates confirm
  assert.equal((await verified(editRules(partner,h,1,"rule:food"))).revision,2);
  assert.equal((await rows(device,"smart_assistant_household_rules",h))[0].rules["magasin-fixture"],"rule:food");
  assert.equal((await editRules(outsider,h,2,"rule:food")).ok,false);
+ await insert(outsider,"categories",{household_id:other,name:"Foyer voisin",type:"expense",legacy_id:"cross-household",created_from:"2025-01-01"});
  assert.equal((await editRules(owner,h,2,"id:cross-household")).ok,false);
 
  for(const table of ["categories","budgets","transactions","recurrences","account_opening_balances","smart_assistant_household_rules"]){
@@ -107,6 +116,11 @@ test("real local Edge executes eight deterministic requests and isolates confirm
   household_id:h,category_id:gundam.id,transaction_date:mix.response.context.today,amount:1
  }});
  assert.equal(forbiddenWrite.ok,false);
+ for(const [table,body] of Object.entries({categories:{name:"refusé"},budgets:{planned_amount:0},
+  transactions:{amount:0},recurrences:{amount:0},account_opening_balances:{amount:0},smart_assistant_household_rules:{rules:{}}})){
+  const response=await outsider.call("/rest/v1/"+table+"?household_id=eq."+h,{method:"PATCH",body,headers:{Prefer:"return=representation"}});
+  assert.ok(!response.ok||Array.isArray(response.data)&&response.data.length===0,table);
+ }
  const blocked=await outsider.rpc("smart_assistant_atomic_review",{
   p_household:h,p_actor:owner.user.id,p_roster:[owner.user.id,partner.user.id],p_request:create.base.requestId,p_action:"status",p_actions:null
  });
@@ -118,4 +132,8 @@ test("real local Edge executes eight deterministic requests and isolates confirm
   const read=await outsider.call("/rest/v1/"+table+"?household_id=eq."+h);
   assert.ok(!read.ok||read.data.length===0);
  }
+ const events=await partner.page.evaluate(()=>globalThis.fixtureRealtimeEvents);
+ assert.ok(realtime,"Realtime subscription: "+JSON.stringify(events));
+ assert.ok(await partner.page.evaluate(()=>globalThis.fixtureChanges?.some(row=>row?.label==="Gundam")),
+  "Realtime insertion: "+JSON.stringify(events));
 });

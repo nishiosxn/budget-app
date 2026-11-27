@@ -43,5 +43,10 @@ export function appState(session,h,role){
   vm.runInContext(fs.readFileSync("js/"+file+".js","utf8"),context,{filename:file+".js"});
  }
  return {run,pull:()=>run("cloudLoadState()"),push:()=>run("cloudPushLocalStateV25({force:true})"),
+  switchHousehold:async (next,role)=>{
+   context.activeHouseholdId=next;context.activeMembership={role};
+   run("switchHouseholdCache()");
+   return run("cloudLoadState()");
+  },
   undo:()=>undo?.(),month:label=>{context.monthLabel=label;run("state.selectedMonth=monthLabel")}};
 }

@@ -79,7 +79,7 @@ export async function connected(t){
     const url=new URL("/realtime/v1/websocket",location.href);url.protocol="ws:";
     url.search=new URLSearchParams({apikey:anon,vsn:"1.0.0"});
     const socket=new WebSocket(url),topic="realtime:pilot-test";
-    globalThis.fixtureChanges=[];
+    globalThis.fixtureChanges=[];globalThis.fixtureRealtimeEvents=[];
     const timeout=setTimeout(()=>reject(Error("Realtime subscription timeout")),15000);
     socket.onerror=()=>reject(Error("Realtime socket unavailable"));
     socket.onopen=()=>socket.send(JSON.stringify({topic,event:"phx_join",ref:"1",payload:{access_token:jwt,
@@ -87,11 +87,16 @@ export async function connected(t){
       postgres_changes:[{event:"INSERT",schema:"public",table:"transactions",filter:"household_id=eq."+h}]}}}));
     socket.onmessage=e=>{
      const msg=JSON.parse(e.data);
+     globalThis.fixtureRealtimeEvents.push([msg.event,msg.payload?.status,msg.payload?.extension,msg.payload?.message]);
      if(msg.event==="phx_reply"&&msg.ref==="1"){
-      clearTimeout(timeout);
-      if(msg.payload.status==="ok")resolve();else reject(Error("Realtime join rejected"));
+      if(msg.payload.status!=="ok"){clearTimeout(timeout);reject(Error("Realtime join rejected"))}
      }
-     if(msg.event==="postgres_changes")globalThis.fixtureChanges.push(msg.payload.data.record);
+     if(msg.event==="system"&&msg.payload.extension==="postgres_changes"){
+      clearTimeout(timeout);
+      if(msg.payload.status==="ok")resolve();else reject(Error("Realtime PostgreSQL subscription rejected"));
+     }
+     if(msg.event==="postgres_changes"||msg.event==="INSERT")
+      globalThis.fixtureChanges.push(msg.payload.data?.record||msg.payload.record);
     };
    }),{anon:status.ANON_KEY,h})};
  }
