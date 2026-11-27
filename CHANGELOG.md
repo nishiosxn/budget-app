@@ -1,5 +1,11 @@
 # Changelog
 
+## V3.1 — Préparation de livraison 8A
+
+- Consolidation documentée du Builder solo/duo, des actions Catégories, de Smart Assistant atomique et du design system commun. Référence applicative validée `3b46bc2`, PR #52.
+- Résultats acquis conservés dans les rapports des lots 5 à 7. Les mesures locales de performance et les tests fictifs sont identifiés avec leur environnement.
+- [Checklist de publication](docs/V3_1_RELEASE_CHECKLIST.md) avec procédure de préversion isolée et validations restantes. La préparation documentaire ne constitue pas une validation hébergée ni une publication.
+
 ## V3.1 intégrée — Recette visuelle et PWA
 
 - Thème cohérent sur Connexion, Navigation, Suivi et Administration. Les accents personnalisés du texte interactif conservent le contraste du premier plan.

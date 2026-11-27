@@ -1,5 +1,14 @@
 # Workstate — Budget foyer
 
+## Lot 8A V3.1 — Préparation documentaire terminée
+
+- Avancement global maintenu à 94 %. Branche `work/v3.1-integration`, PR #52. Code de référence publié sur la branche `3b46bc2`, arbre identique au commit local `db009f9` (historique local reconstruit).
+- Les workflows finaux du lot 7 sont verts : App integrity/PostgreSQL 46081173693 et recette connectée/PWA 46081173687. Résultats existants réutilisés, aucun benchmark ni audit complet relancé.
+- Fichiers du 8A : README, CHANGELOG, ce journal et `docs/V3_1_RELEASE_CHECKLIST.md`. Neuf tests documentaires réussis, contrôle direct des liens/versions et `git diff --check` réussis. Version du code conservée à V3.1.
+- Points ouverts centralisés : Gemma réel, schéma hébergé, six déclencheurs historiques, anciens clients, brouillon initial Builder, administration privilégiée, iPhone physique, sauvegarde/restauration représentative et autorisation de préversion.
+- Procédure préparée pour `/v3.1/integration/<SHA>/` avec backend de test isolé. Aucun paquet de publication créé et aucune configuration applicative changée pendant 8A.
+- Prochaine action exacte : obtenir ou identifier un projet Supabase de test isolé autorisé et son export de schéma sans données, puis confronter les migrations, les ACL/RLS et les six déclencheurs aux prérequis du rapport de recette. Préparer ensuite le paquet à revoir avant autorisation de publication.
+
 ## Lot 7D V3.1 — Performances et recette PWA
 
 - Le laboratoire charge son moteur seulement à l'ouverture. Les ressources modifiées ont des clés d'URL actualisées. Le service worker vérifie ses mises à jour sans cache HTTP et conserve le contrat réseau direct. La couleur du chrome Safari suit le thème.
