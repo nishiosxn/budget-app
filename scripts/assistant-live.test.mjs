@@ -1,7 +1,10 @@
 import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs";import vmFixture from "node:vm";
 const base="preview/assistant/live/",html=fs.readFileSync(base+"index.html","utf8"),js=fs.readFileSync(base+"live-ui.js","utf8"),conf=fs.readFileSync(base+"config.js","utf8");
 test("pilot keeps ephemeral login and no direct browser financial writes",()=>{assert.match(js,/testtest@id\.budget-foyer\.example\.com/);assert.match(js,/\/functions\/v1\/smart-assistant/);assert.match(js,/\/rest\/v1\/household_members\?/);assert.doesNotMatch(js,/sessionStorage|service_role|SUPABASE_SERVICE|refresh_token|method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);assert.match(js,/core\.validateResult\(r\.body\.result,ctx\)/);assert.doesNotMatch(html,/id="pilotConsent"/);assert.doesNotMatch(html,/id="confirm"/);assert.match(conf,/sb_publishable_/);assert.doesNotMatch(conf,/service_role|sb_secret_/);});
-test("pilot source requires explicit enablement, free plan, and exactly one authorized user and household",()=>{const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");assert.match(fn,/SMART_ASSISTANT_FREE_PLAN_CONFIRMED"\)==="true"/);assert.match(fn,/allowlist\.size===1&&allowedUsers\.size===1/);assert.match(fn,/if\(!solo\|\|actor!=="B"\)return null/);assert.match(fn,/allowedUsers\.has\(user\.id\)/);assert.match(fn,/pilotMembers\[0\]\.user_id!==user\.id/);});
+test("pilot requires explicit membership of every allowed user and a separate switch for duo",()=>{
+ const fn=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");
+ for(const guard of ['allowlist.size===1','extendedMovements&&allowedUsers.size===2','allowedUsers.has(user.id)','pilotMembers.length!==allowedUsers.size','!allowedUsers.has(m.user_id)','SMART_ASSISTANT_FREE_PLAN_CONFIRMED','SMART_ASSISTANT_EXTENDED_MOVEMENTS'])assert.ok(fn.includes(guard),guard);
+});
 
 test("pilot review has cache-busted assets and opt-in scoped categorization memory",()=>{assert.match(html,/assistant-core\.js\?v=31ap/);assert.match(html,/live-ui\.js\?v=31ao/);assert.match(html,/id="ruleEditor"/);assert.match(js,/smart-budget-v31-test-category-rules:/);assert.match(js,/localStorage\.setItem\(key,JSON\.stringify\(\{enabled:true/);assert.match(js,/draftCategorySuggestion/);assert.match(js,/Simulation terminée/);});
 
@@ -142,7 +145,7 @@ test("31u design system is scoped to pilot, with concentric radii, responsive an
 });
 
 test("explicit pilot write only through authenticated confirm route; unsupported drafts are simulated",()=>{
- assert.match(js,/action:"confirm",householdId:session\.householdId,requestId,draft/);
+ assert.match(js,/action:ctx\.movementCommit===true\?"confirm_movements":"confirm",householdId:session\.householdId,requestId,draft/);
  assert.match(js,/crypto\.randomUUID\(\)/);
  assert.match(js,/function canSavePilot/);
  assert.match(js,/if\(!real\)\{locked=true/);

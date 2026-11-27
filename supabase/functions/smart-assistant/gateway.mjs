@@ -60,23 +60,24 @@ export function decodeModelResponse(raw){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null}){
+export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null,commitMovements=null}){
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
+  const extendedConfirmation=obj(body)&&body.action==="confirm_movements";
   const usageOnly=obj(body)&&body.action==="usage",confirmOnly=obj(body)&&body.action==="confirm",confirmCategoryOnly=obj(body)&&body.action==="confirm_category",confirmMissingOnly=obj(body)&&body.action==="confirm_missing_category",confirmBatchOnly=obj(body)&&body.action==="confirm_batch";
   if(confirmBatchOnly){
    if(Object.keys(body).length!==6||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!Array.isArray(body.expectedPlans))return response(400,{error:"invalid_request"});
   }else if(confirmCategoryOnly||confirmMissingOnly){
    if(Object.keys(body).length!==5||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600)
     return response(400,{error:"invalid_request"});
-  }else if(confirmOnly){
+  }else if(confirmOnly||extendedConfirmation){
    if(Object.keys(body).length!==4||!uuid(body.householdId)||!uuid(body.requestId)||!obj(body.draft))return response(400,{error:"invalid_request"});
   }else if(usageOnly){
    if(Object.keys(body).length!==2||!uuid(body.householdId))return response(400,{error:"invalid_request"});
   }else if(!obj(body)||Object.keys(body).some(k=>!["householdId","command","context","history","localOnly"].includes(k))||!uuid(body.householdId)||typeof body.command!=="string"||!body.command.trim()||body.command.length>1600||!obj(body.context)||("localOnly" in body&&typeof body.localOnly!=="boolean"))return response(400,{error:"invalid_request"});
   let auth;
-  try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly||confirmCategoryOnly||confirmMissingOnly||confirmBatchOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
+  try{auth=await authorize(token,body.householdId,usageOnly||confirmOnly||extendedConfirmation||confirmCategoryOnly||confirmMissingOnly||confirmBatchOnly?{}:body.context)}catch{return response(503,{error:"authorization_unavailable"})}
   if(!auth)return response(403,{error:"household_not_authorized"});
   if(!auth.context||auth.context.categories?.length>300)return response(400,{error:"invalid_context"});
   if(confirmBatchOnly){
@@ -87,6 +88,10 @@ export function createAssistantGateway({enabled,providerEnabled=true,model,autho
   if(confirmCategoryOnly||confirmMissingOnly){
    if(!commitCategory)return response(503,{error:"confirm_unavailable"});
    return await commitCategory({token,householdId:body.householdId,userId:auth.userId,requestId:body.requestId,command:body.command,draft:body.draft,context:auth.context,missingIntent:confirmMissingOnly});
+  }
+  if(extendedConfirmation){
+   if(!commitMovements||auth.context.movementCommit!==true)return response(422,{error:"confirm_not_supported"});
+   return await commitMovements({token,householdId:body.householdId,userId:auth.userId,requestId:body.requestId,draft:body.draft,context:auth.context});
   }
   if(confirmOnly){
    if(!commitTransactions)return response(503,{error:"confirm_unavailable"});

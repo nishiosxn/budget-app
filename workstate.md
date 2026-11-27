@@ -1,5 +1,15 @@
 # Workstate — Budget foyer
 
+## Mouvements confirmés · 27 novembre 2026
+
+- Contrôle précédent : CI 46059261919 réussie au commit f2b75cf, migration des règles et isolation des foyers testées sur PostgreSQL 17 éphémère.
+- Implémenté en source : capacité serveur optionnelle pour les foyers de test seul ou à deux. Revalidation des membres et catégories, attribution A/B/commun, opérations ponctuelles, épargne et récurrences mensuelles, un seul reçu pour toute la transaction. Un virement vers un tiers reste une entrée ou sortie du budget suivant son sens.
+- Fichiers : index.ts et gateway.mjs de smart-assistant, preview/assistant/live/live-ui.js, migration 20261127193000_assistant_confirm_movements.sql, tests assistant-live/gateway et scripts/v31-movements-db.sql.
+- Tests : 288 tests Node et audit local verts. Nouveau scénario SQL du lot mixte, reprise du même reçu, changement de payeur, foyer différent, annulation de la première écriture si la deuxième échoue. Résultat PostgreSQL de cette révision à vérifier en CI.
+- Limites : budgets et création de catégorie des lots historiques restent limités au pilote solo. Aucune migration hébergée. Restent validation d’intégration navigateur, sauvegarde/restauration, benchmark, iPhone, recette connectée et revue des mutations.
+- Prochaine action : vérifier le nouveau job SQL, tester les interactions de la page intégrée depuis la navigation, puis vérifier la restauration sur données synthétiques.
+
+
 ## Associations partagées · 27 novembre 2026
 
 - Réalisé en source : lecture RLS par foyer, modification par RPC, contrôle de révision, rejet des catégories étrangères, limite de 200 associations, actualisation au retour sur la page, gestion explicite des conflits entre appareils. Le pilote historique conserve les règles locales.

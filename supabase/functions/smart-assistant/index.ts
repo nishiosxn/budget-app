@@ -12,6 +12,7 @@ const cfg={enabled:env("SMART_ASSISTANT_ENABLED")==="true",model:env("SMART_ASSI
 const uuidPattern=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const allowlist=new Set(env("SMART_ASSISTANT_TEST_HOUSEHOLDS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
 const allowedUsers=new Set(env("SMART_ASSISTANT_TEST_USERS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
+const extendedMovements=env("SMART_ASSISTANT_EXTENDED_MOVEMENTS")==="true";
 const monthPattern=/^\d{4}-(0[1-9]|1[0-2])$/;
 const headersFor=(token:string)=>({apikey:publishable,Authorization:"Bearer "+token,"Content-Type":"application/json"});
 const timeout=()=>AbortSignal.timeout(10000);
@@ -42,16 +43,16 @@ async function authorize(token:string,householdId:string,input:Record<string,unk
  ]);
  if(!Array.isArray(households)||households.length!==1||!Array.isArray(rows)||rows.length>300)return null;
  const h=households[0],solo=h.household_mode==="solo",actor=member[0].slot;
- if(!solo||actor!=="B")return null;
- const pilotMembers=await rest(token,"/rest/v1/household_members",{select:"user_id",household_id:"eq."+householdId,limit:"2"});
- if(!Array.isArray(pilotMembers)||pilotMembers.length!==1||pilotMembers[0].user_id!==user.id)return null;
+ if(solo?actor!=="B":!extendedMovements||h.household_mode!=="couple")return null;
+ const pilotMembers=await rest(token,"/rest/v1/household_members",{select:"user_id",household_id:"eq."+householdId,limit:"3"});
+ if(!Array.isArray(pilotMembers)||pilotMembers.length!==(solo?1:2)||pilotMembers.length!==allowedUsers.size||pilotMembers.some((m:{user_id:string})=>!allowedUsers.has(m.user_id)))return null;
  const current=nowInParis(),currentMonth=current.slice(0,7);
  const selectedMonth=typeof input.selectedMonth==="string"&&monthPattern.test(input.selectedMonth)?input.selectedMonth:currentMonth;
  const categories=rows.map(row=>({id:row.legacy_id||row.id,name:String(row.name).slice(0,120),kind:row.type==="income"?"income":row.is_saving?"saving":"expense",owner:solo?"B":row.owner_slot==="A"||row.owner_slot==="B"?row.owner_slot:"common",createdFrom:String(row.created_from).slice(0,7),hiddenMonths:(Array.isArray(row.excluded_months)?row.excluded_months:[]).filter(x=>typeof x==="string"&&monthPattern.test(x)).slice(0,240)})).filter(c=>c.id&&monthPattern.test(c.createdFrom));
  const firstMonth=categories.map(c=>c.createdFrom).sort()[0]||currentMonth;
  const lastMonth=String(Number(currentMonth.slice(0,4))+2)+"-12";
  if(selectedMonth<firstMonth||selectedMonth>lastMonth)return null;
- return {userId:user.id,context:{today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
+ return {userId:user.id,context:{movementCommit:extendedMovements,today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
 }
 async function reserve(_token:string,_householdId:string,units:number){
  // This RPC is server-only. The gateway has already authenticated and authorized
@@ -171,7 +172,28 @@ const commitBatch=createBatchCommit({
   return await r.json();
  }
 });
-const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&allowedUsers.size===1,providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch});
+async function commitMovements({householdId,userId,requestId,draft,context}:any){
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");
+ if(!extendedMovements||!context.movementCommit||!key||!allowlist.has(householdId)||!allowedUsers.has(userId))
+  return {status:403,body:{error:"household_not_authorized"}};
+ const checked=validateReview(draft,context);
+ if(!checked.ok||checked.value.operations.some((op:any)=>!op.categoryId||!["income","expense","saving"].includes(op.kind)))
+  return {status:422,body:{error:"confirm_not_supported"}};
+ try{
+  const response=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_confirm_movements",{
+   method:"POST",headers:{...headersFor(key),apikey:key,"x-smart-budget-sync-version":"20261116-hf1"},signal:timeout(),
+   body:JSON.stringify({p_household_id:householdId,p_actor:userId,p_test_users:[...allowedUsers],p_request_id:requestId,p_operations:checked.value.operations})
+  });
+  if(!response.ok)throw Error("Movement RPC unavailable");
+  const result=await response.json();
+  if(result?.status==="forbidden")return {status:403,body:{error:"household_not_authorized"}};
+  if(result?.status==="conflict")return {status:409,body:{error:"confirm_conflict"}};
+  if(result?.status==="invalid")return {status:422,body:{error:"confirm_not_supported"}};
+  if(!["created","same"].includes(result?.status)||result.count!==checked.value.operations.length)throw Error("Invalid receipt");
+  return {status:200,body:{commit:{requestId,count:result.count}}};
+ }catch{return {status:503,body:{error:"confirm_unavailable"}}}
+}
+const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }

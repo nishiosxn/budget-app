@@ -110,7 +110,7 @@ test("quota-reading RPC uses a server credential, never the caller bearer",()=>{
  const source=fs.readFileSync("supabase/functions/smart-assistant/index.ts","utf8");
  assert.match(source,/\/rest\/v1\/rpc\/smart_assistant_quota_status_v1/);
  assert.match(source,/Authorization:"Bearer "\+key/);
- assert.match(source,/getQuota,commitTransactions,commitCategory,commitBatch\}\);/);
+ assert.match(source,/getQuota,commitTransactions,commitCategory,commitBatch,commitMovements\}\);/);
 });
 
 test("mixed savings and arbitrary named income bypass quota and Gemma",async()=>{

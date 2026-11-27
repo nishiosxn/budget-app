@@ -661,13 +661,15 @@
    new Set(entries.filter(e=>e.op.kind==="plan").map(e=>e.op.categoryId)).size===entries.filter(e=>e.op.kind==="plan").length;
  }
  function canSavePilot(entries,ctx){
+  if(ctx.movementCommit===true)return entries.every(({op})=>["income","expense","saving"].includes(op.kind)&&op.categoryId!==null&&
+   (op.frequency==="once"||op.frequency==="monthly"&&op.kind!=="saving"));
   return ctx.solo&&ctx.actor==="B"&&entries.every(({op:o})=>["expense","income"].includes(o.kind)&&o.frequency==="once"&&o.categoryId!==null&&o.owner==="B");
  }
  async function saveBatchDraft(requestId,command,draft,expectedPlans){
   return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm_batch",householdId:session.householdId,requestId,command,draft,expectedPlans})});
  }
- async function savePilotDraft(requestId,draft){
-  return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:"confirm",householdId:session.householdId,requestId,draft})});
+ async function savePilotDraft(requestId,draft,ctx){
+  return json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify({action:ctx.movementCommit===true?"confirm_movements":"confirm",householdId:session.householdId,requestId,draft})});
  }
  function setSavingPilot(value){
   if(value)confirmationStarted=true;
@@ -812,7 +814,7 @@
     try{
      const batchDraft={kind:"draft",operations:entries.map(e=>e.op)};
      const expectation=entries.flatMap((entry,i)=>entry.op.kind==="plan"?[{index:i,beforeCents:entry.baseline?.beforeCents}]:[]);
-     const r=batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft);
+     const r=batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft,ctx);
      if(!r.ok&&[409,422].includes(r.status)){
       attempted=false;requestId=null;saveError=errorMessages[r.body?.error]||"Lot refusé, aucune écriture. Actualise les budgets.";
       status.textContent=saveError;return;
