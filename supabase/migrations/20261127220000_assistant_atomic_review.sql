@@ -19,7 +19,7 @@ revoke all on private.smart_assistant_reviews from public,anon,authenticated;
 create index smart_assistant_reviews_expired_payload_idx
  on private.smart_assistant_reviews(expires_at,household_id,request_id) where actions is not null;
 create function private.purge_expired_smart_assistant_reviews(p_limit integer default 500)
-returns integer language plpgsql security invoker set search_path='' as $
+returns integer language plpgsql security invoker set search_path='' as $$
 declare affected integer;
 begin
  if p_limit is null or p_limit not between 1 and 1000 then raise invalid_parameter_value;end if;
@@ -32,7 +32,7 @@ begin
  where r.household_id=e.household_id and r.request_id=e.request_id;
  get diagnostics affected=row_count;
  return affected;
-end $;
+end $$;
 revoke all on function private.purge_expired_smart_assistant_reviews(integer) from public,anon,authenticated,service_role;
 
 create function public.smart_assistant_atomic_review(

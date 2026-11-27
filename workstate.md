@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8B.5A — Correction CI et recette coexistence (à confirmer)
+
+- CI 8B.4C : application réussie, PostgreSQL en échec (46083142843), délimiteurs dollar SQL altérés dans la migration de purge et le contrat local ; réparés. CI 8B.4B : application/PostgreSQL réussis, recette connectée en cours lors du relevé.
+- Recette des vrais fichiers V3.0 figée sur e2072063b30712ffcd1a27dc1f6adffce0d27965, export temporaire CI, sessions séparées sur Supabase jetable ; reprise du Builder avec retrait/rétablissement de l'autorisation et échanges financiers entre les deux interfaces. Nouvelle CI à confirmer.
+- [Protocole coexistence/Edge/récupération](docs/V3_1_COEXISTENCE.md). Source historique 31ap retrouvée, mais correspondance exacte avec l'Edge v30 non prouvée ; test Edge ancien à terminer. Aucun accès à Supabase hébergé, aucune fusion/publication. Avancement 94 % maintenu.
+
 ## Lot 8B.4C V3.1 — Contrat RLS et rétention (CI à confirmer)
 
 - CI 8B.4A : application/PostgreSQL et étapes fonctionnelles connectées/Chromium/PWA réussies (46082768989, 46082768964). CI 8B.4B : application/PostgreSQL réussis (46082995837) ; recette connectée en cours lors de la préparation (46082995849).

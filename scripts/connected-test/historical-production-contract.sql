@@ -25,20 +25,20 @@ grant update(name,person_a_label,person_b_label,household_mode) on public.househ
 -- Complete the historical access contract observed in lot 8B. This fixture
 -- models browser privileges; it is not a production schema dump.
 create function private.user_is_household_member(p_household_id uuid,p_user_id uuid)
-returns boolean language sql stable security definer set search_path='' as $
+returns boolean language sql stable security definer set search_path='' as $$
  select exists(select 1 from public.household_members hm
   where hm.household_id=p_household_id and hm.user_id=p_user_id)
-$;
+$$;
 create function private.is_household_creator(p_household_id uuid)
-returns boolean language sql stable security definer set search_path='' as $
+returns boolean language sql stable security definer set search_path='' as $$
  select exists(select 1 from public.households h where h.id=p_household_id and h.created_by=(select auth.uid()))
-$;
+$$;
 revoke all on function private.user_is_household_member(uuid,uuid),private.is_household_creator(uuid) from public,anon,authenticated;
 grant execute on function private.user_is_household_member(uuid,uuid),private.is_household_creator(uuid) to authenticated;
 
 -- Retain the real membership policy for reads and require category owners to
 -- belong to the target household on both insert and update.
-do $
+do $$
 declare t text; predicate text;
 begin
  foreach t in array array['categories','budgets','transactions','recurrences'] loop
@@ -52,7 +52,7 @@ begin
   execute format('create policy members_update on public.%I for update to authenticated using(private.is_household_member(household_id)) with check (%s)',t,predicate);
   execute format('create policy members_delete on public.%I for delete to authenticated using(private.is_household_member(household_id))',t);
  end loop;
-end $;
+end $$;
 create policy owners_delete_household on public.households for delete to authenticated
  using(private.is_household_owner(id));
 create policy creators_insert_household on public.households for insert to authenticated

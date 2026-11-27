@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — Recette coexistence 8B.5A (validation en attente)
+
+- Correction des délimiteurs SQL introduits en 8B.4C, préparation de la recette sur les vraies pages V3.0/V3.1 et de la reprise d'un Builder interrompu. Protocole de compatibilité Edge historique et limites consignés.
+
 ## V3.1 — Contrat RLS et rétention 8B.4C (validation en attente)
 
 - Contrat CI complété avec des politiques et privilèges historiques, contraintes de dates et tests de refus inter-foyers.

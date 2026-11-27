@@ -81,11 +81,11 @@ export async function connected(t){
   }
   await login();
   let appRoutes=false;
-  async function openApp(h,path=""){
+  async function openApp(h,path="",fixtureRoot="."){
    const app=origin+"/__app/";
    if(!appRoutes){
     const sdk=await fs.readFile(process.env.SB_TEST_SDK);
-    const root=resolve(".");
+    const root=resolve(fixtureRoot);
     const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",
      ".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",
      ".ico":"image/x-icon",".json":"application/json",".webmanifest":"application/manifest+json"};

@@ -38,6 +38,10 @@ Le contrat local reproduit désormais les droits et prédicats RLS historiques p
 
 La rétention des propositions Assistant efface leur champ `actions` après 24 h, à la consultation ou via `private.purge_expired_smart_assistant_reviews(integer)` par lots bornés. Les tombstones (identifiant, empreinte et statut) et les reçus sont conservés afin de refuser une ancienne requête ou de restituer un reçu existant ; aucun effacement de l'historique financier. La fonction n'est pas callable par les rôles clients ni service_role. Après validation et autorisation distincte, prévoir une tâche administrative quotidienne avec limites, suivi du nombre de lignes et contrôle de la durée ; aucune planification n'est installée par cette migration. Les copies de sauvegarde suivent leur propre rétention ; le Builder non finalisé est exclu de cette purge.
 
+## Recette coexistence 8B.5A (à valider)
+
+Voir [le protocole de coexistence](V3_1_COEXISTENCE.md). La CI de 8B.4C a révélé une erreur de syntaxe SQL, corrigée en source. Le nouveau test utilise les véritables pages V3.0 épinglées et V3.1, avec comptes fictifs et reprise du Builder. La CI et l'identité exacte de l'Edge v30 restent à valider ; aucune autorisation hébergée n'est implicite.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.
