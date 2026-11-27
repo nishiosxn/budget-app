@@ -48,3 +48,7 @@ jobs:
         env:
           PGPASSWORD: local_ci_only
         run: psql -h 127.0.0.1 -U postgres -d smart_budget_ci -f scripts/v31-rules-db.sql
+      - name: Test atomic Builder setup on a disposable database
+        env:
+          PGPASSWORD: local_ci_only
+        run: psql -h 127.0.0.1 -U postgres -d smart_budget_ci -f scripts/v31-builder-db.sql

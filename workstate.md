@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 3 V3.1 · Transaction de création du budget initial
+
+- Implémenté côté serveur : provision idempotente, brouillon privé, validation transactionnelle des catégories et budgets du nouveau foyer, reçu de validation consultable après une coupure. Le verrou et les restrictions d’accès ciblent le propriétaire du foyer provisionné par le Builder.
+- Fichiers : migration `20261127210000_budget_builder_atomic.sql`, `scripts/v31-builder-db.sql`, workflow de validation et ce journal.
+- Tests : scénario PostgreSQL ajouté pour simuler une erreur à mi-parcours, rejouer la demande, vérifier les montants et protéger le foyer voisin. Exécution PostgreSQL en attente de CI.
+- En cours : intégration du Builder à la reprise serveur. Limite : la migration reste non appliquée sur Supabase hébergé.
+- Prochaine action : relier le provisionnement et les étapes Enregistrer/Valider du Builder au reçu et au brouillon serveur, puis tester la reprise après changement de session.
+
 ## Lot 2 V3.1 · Actions groupées de Catégories
 
 - Terminé : le remplissage complète les réels à zéro selon le prévu du mois. « Tout vider » demande une confirmation valable pour les mêmes foyer, mois et opérations. Échap, clic extérieur ou expiration annulent la demande. La remise à zéro ajoute des ajustements par payeur pour le mois et Annuler retire les seuls ajustements créés.
