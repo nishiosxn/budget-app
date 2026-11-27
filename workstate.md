@@ -1,5 +1,14 @@
 # Workstate — Budget foyer
 
+## Exercice de restauration ciblée · 27 novembre 2026
+
+- Terminé et testé sur PostgreSQL 17 jetable : confirmation solo/duo étendue, rejeu, lots mixtes, refus inter-foyers et rollback sur erreur (CI 46059836466, commit a262567).
+- En cours : exercice PostgreSQL des deux migrations historiques de sauvegarde avec variation de 0,01 €, comparaison des huit tables, capture pré-restauration et restitution d’une seule ligne synthétique.
+- Fichiers : scripts/v31-backup-db.sql, scripts/v31-rules-db.sql, workstate.md. Le dump hors site inclut le schéma public, les instantanés financiers internes couvrent huit tables.
+- Limites : exercice CI en attente sur ce commit, aucune restauration hébergée. Restent Builder, parcours navigateur Assistant et qualification connectée.
+- Prochaine action : vérifier les deux jobs GitHub puis harmoniser le bilan et la mensualisation des abonnements du Builder.
+
+
 ## Mouvements confirmés · 27 novembre 2026
 
 - Contrôle précédent : CI 46059261919 réussie au commit f2b75cf, migration des règles et isolation des foyers testées sur PostgreSQL 17 éphémère.

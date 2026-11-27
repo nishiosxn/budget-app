@@ -44,4 +44,5 @@ do $$ begin
  begin perform public.edit_smart_assistant_rule('10000000-0000-4000-8000-000000000001',2,'clear',null,null);raise exception 'cross-household edit accepted';exception when insufficient_privilege then null;end;
 end $$;
 \ir v31-movements-db.sql
+\ir v31-backup-db.sql
 rollback;
