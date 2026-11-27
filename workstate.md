@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 5 · Reprise et vérification des pages connectées
+
+- État repris : aucun changement local, `7920af0` publié. La CI connectée 46073305927 et App integrity/PostgreSQL 46073305780 sont vertes. Les résultats des sous-lots 5A à 5C restent acquis.
+- Contrôle indépendant ajouté : les véritables pages de l’application et leur SDK Supabase épinglé s’ouvrent sur le runner avec deux sessions Auth fictives. La recette vérifie le Builder, les actions Catégories, la Vue d’ensemble du second appareil et le reçu Assistant après rechargement.
+- L’environnement de test redirige uniquement vers Supabase et l’Edge locales. La comparaison du schéma hébergé exige toujours un export sans données ou une liaison en lecture autorisée.
+- Prochaine action : vérifier la CI de la recette des pages et consigner le résultat.
+
 ## Lot 5C V3.1 · Smart Assistant, concurrence et isolation
 
 - Ajouté : exécution de l’Edge du dépôt sous Deno sur le runner, avec Auth, REST et PostgreSQL locaux. Les huit demandes passent par le moteur existant avec Gemma désactivé. Vérification des reçus et du rejeu, concurrence sur le même budget, événement Realtime, règles et accès directs inter-foyers.

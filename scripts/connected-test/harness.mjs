@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {pathToFileURL} from "node:url";
 import {spawn} from "node:child_process";
 import {setTimeout as wait} from "node:timers/promises";
+import {resolve,sep,extname} from "node:path";
 
 export async function connected(t){
  const status=JSON.parse(await fs.readFile(process.env.SB_STACK_STATUS,"utf8"));
@@ -30,18 +31,20 @@ export async function connected(t){
  }
 
  async function session(user){
-  const ctx=await browser.newContext();
-  let drop=false;
+  const ctx=await browser.newContext({serviceWorkers:"block",reducedMotion:"reduce"});
+  let dropAction=null;
   // All network access from the browser stays within the disposable stack.
   await ctx.route("**/*",async route=>{
    const url=new URL(route.request().url());
    if(url.origin!==origin)return route.abort();
-   if(url.pathname!=="/__assistant_for_test")return route.continue();
+   if(!["/__assistant_for_test","/functions/v1/smart-assistant"].includes(url.pathname))return route.continue();
    // Same-origin bridge to the real local Edge process, without modifying its production CORS policy.
    const headers=await route.request().allHeaders();
    delete headers.origin;delete headers.host;
    const response=await route.fetch({url:edge,headers,maxRedirects:0});
-   if(drop){drop=false;return route.abort("connectionreset")}
+   if(dropAction==="*"||dropAction&&route.request().postDataJSON()?.action===dropAction){
+    dropAction=null;return route.abort("connectionreset");
+   }
    return route.fulfill({response});
   });
   const page=await ctx.newPage();
@@ -70,10 +73,50 @@ export async function connected(t){
    assert.equal((await call("/auth/v1/user")).ok,false);
   }
   await login();
+  let appRoutes=false;
+  async function openApp(h,path=""){
+   const app=origin+"/__app/";
+   if(!appRoutes){
+    const sdk=await fs.readFile(process.env.SB_TEST_SDK);
+    const root=resolve(".");
+    const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",
+     ".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".json":"application/json",".webmanifest":"application/manifest+json"};
+    await ctx.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js",
+     route=>route.fulfill({contentType:types[".js"],body:sdk}));
+    await ctx.route(app+"**",async route=>{
+     const url=new URL(route.request().url()),relative=decodeURIComponent(url.pathname.slice("/__app/".length));
+     const file=resolve(root,relative.endsWith("/")||!relative?relative+"index.html":relative);
+     if(!file.startsWith(root+sep)||route.request().method()!=="GET")return route.abort();
+     try{
+      let body=await fs.readFile(file);
+      const config={
+       "js/supabase-config.js":{SUPABASE_PROJECT_URL:origin},
+       "js/supabase-client.js":{SUPABASE_PUBLISHABLE_KEY:status.ANON_KEY},
+       "preview/assistant/live/config.js":{PILOT_URL:origin,PILOT_PUBLIC_KEY:status.ANON_KEY}
+      }[relative];
+      if(config){
+       body=body.toString("utf8");
+       for(const [name,value] of Object.entries(config))
+        body=body.replace(new RegExp("const "+name+'\\s*=\\s*"[^"]*"'),"const "+name+" = "+JSON.stringify(value));
+      }
+      return route.fulfill({contentType:types[extname(file)]||"application/octet-stream",body});
+     }catch{return route.fulfill({status:404,body:"Missing local fixture asset"});}
+    });
+    appRoutes=true;
+   }
+   await page.evaluate(({h})=>{
+    const session=JSON.parse(sessionStorage.getItem("test-session"));
+    localStorage.setItem("sb-127-auth-token",JSON.stringify(session));
+    localStorage.setItem("budget-foyer-v2.5-active-household",h);
+   },{h});
+   await page.goto(app+path);
+   return page;
+  }
   return {call,context:ctx,page,user,login,logout,
+   openApp,
    rpc:(name,body)=>call("/rest/v1/rpc/"+name,{method:"POST",body}),
    assistant:body=>call("/__assistant_for_test",{method:"POST",body}),
-   dropNextAssistantResponse:()=>{drop=true},
+   dropNextAssistantResponse:(action="*")=>{dropAction=action},
    watchTransactions:h=>page.evaluate(({anon,h})=>new Promise((resolve,reject)=>{
     const jwt=JSON.parse(sessionStorage.getItem("test-session")).access_token;
     const url=new URL("/realtime/v1/websocket",location.href);url.protocol="ws:";

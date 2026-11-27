@@ -54,6 +54,17 @@ jobs:
           SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
           SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
           node --test --test-concurrency=1 scripts/connected-test/auth.mjs scripts/connected-test/builder-categories.mjs scripts/connected-test/assistant.mjs
+      - name: Exercise the actual connected UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 \
+            https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js \
+            --output "$RUNNER_TEMP/smart-budget-browser/supabase.js"
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          node --test scripts/connected-test/interface.mjs
       - name: Stop the disposable stack
         if: always()
         shell: bash
