@@ -28,4 +28,10 @@ Le client conserve le contrat `x-smart-budget-sync-version: 20261116-hf1` et les
 
 La recette CI utilise les services locaux Auth, REST et PostgreSQL. Leurs comptes sont créés pour le test et disparaissent avec le runner. Les résultats de cette recette ne valent pas validation du projet hébergé, de ses triggers ni de ses paramètres de production.
 
+## Résultat de la recette isolée
+
+Quatre scénarios ont réussi sur le commit `d05c655` : Auth et reconnexion, Builder solo/duo et invitation, synchronisation de Catégories et Assistant avec les huit commandes de référence. Un changement de foyer, les budgets concurrents, l’événement Realtime, la reprise des reçus et les refus inter-foyers par API et RPC ont été vérifiés sur ces services locaux. L’historique fictif créé avant migration a conservé toutes ses lignes et leurs valeurs. [CI connectée](https://github.com/nishiosxn/budget-app/actions/runs/46072989316)
+
+La recette a utilisé Chromium pour les comptes Auth et le transport. Catégories a réutilisé le moteur de synchronisation de l’application via un adaptateur de test. La validation complète de l’interface et des anciennes versions sur le schéma hébergé reste à réaliser. Avant la réception serveur du brouillon Builder, l’avertissement de navigation peut éviter une fermeture involontaire. Une fermeture forcée perd encore la saisie. Le dépôt ne conserve aucun brouillon financier en clair dans le navigateur.
+
 Références Supabase · [CLI local](https://supabase.com/docs/guides/local-development/cli/getting-started), [environnements](https://supabase.com/docs/guides/deployment/managing-environments), [sauvegardes](https://supabase.com/docs/guides/platform/backups).
