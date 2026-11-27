@@ -26,6 +26,12 @@ Le quota Supabase gratuit de deux projets actifs a empêché la création d’un
 
 Le contrat CI et la limite Builder sont corrigés en source dans le lot 8B.4A ; confirmer les workflows sur la nouvelle révision. Restent la reconstitution complète des politiques/contraintes, la protection du brouillon contre V3.0, le filtrage pilote du Builder et des règles, la recette Edge v30 et la rétention des brouillons. La procédure de préversion isolée ci-dessous n’est pas remplacée par une autorisation de production.
 
+## Pilotage 8B.4B (à valider)
+
+Les migrations V3.1 non encore hébergées introduisent des listes privées, vides par défaut : `private.v31_pilot_builder_users` (comptes de test autorisés à créer/reprendre un Builder) et `private.v31_pilot_rule_members` (paires foyer/utilisateur autorisées pour les règles). L'opérateur doit faire approuver le périmètre exact avant toute inscription ; aucun UUID réel ni commande de déploiement n'est inclus. Les autorisations Edge restent distinctes. Pour un retrait de pilote avec brouillon non terminé, conserver l'accès de reprise jusqu'à finalisation ou élaborer une récupération administrative revue ; ne pas supprimer un brouillon sans autorisation. Les tests CI utilisent des identités jetables.
+
+Les gardes du Builder bloquent les écritures REST sur un foyer en attente et les invitations prématurées, tout en conservant le provisionneur historique. Vérifier les deux workflows et la recette V3.0/V3.1 avant migration ; le test REST ne remplace pas une recette des deux interfaces réelles.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

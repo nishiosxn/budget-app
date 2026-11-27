@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import {randomUUID} from "node:crypto";
 import assert from "node:assert/strict";
 import {pathToFileURL} from "node:url";
-import {spawn} from "node:child_process";
+import {spawn,execFileSync} from "node:child_process";
 import {setTimeout as wait} from "node:timers/promises";
 import {resolve,sep,extname} from "node:path";
 
@@ -18,6 +18,12 @@ export async function connected(t){
  t.after(()=>browser.close());
  const prefix=randomUUID();
  const synthetic=label=>({email:label+"-"+prefix+"@example.test",password:randomUUID()+"Bb!7"});
+ // Only the verified loopback disposable DB is eligible for fixture enrollment.
+ const sql=statement=>execFileSync("psql",[status.DB_URL,"-X","-v","ON_ERROR_STOP=1","-c",statement],{stdio:"pipe"});
+ const uuid=id=>{assert.match(id,/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i);return "'"+id+"'::uuid"};
+ const setBuilderPilot=(id,enabled=true)=>sql(enabled
+  ?"insert into private.v31_pilot_builder_users(user_id) values("+uuid(id)+") on conflict do nothing"
+  :"delete from private.v31_pilot_builder_users where user_id="+uuid(id));
  const users=[];
  for(const label of ["owner","partner","outsider"]){
   const credentials=synthetic(label);
@@ -28,6 +34,7 @@ export async function connected(t){
   const data=await r.json();
   assert.ok(data.id);
   users.push({...credentials,id:data.id});
+  setBuilderPilot(data.id);
  }
 
  async function session(user){
@@ -145,6 +152,7 @@ export async function connected(t){
    }),{anon:status.ANON_KEY,h})};
  }
  async function startAssistant(h,actors){
+  for(const id of actors)sql("insert into private.v31_pilot_rule_members(household_id,user_id) values("+uuid(h)+","+uuid(id)+") on conflict do nothing");
   const env={...process.env,SUPABASE_URL:origin,SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,
    SMART_ASSISTANT_SUPABASE_PUBLISHABLE:status.ANON_KEY,SMART_ASSISTANT_MODEL:"@cf/google/gemma-4-26b-a4b-it",
    SMART_ASSISTANT_ENABLED:"true",SMART_ASSISTANT_EXTENDED_MOVEMENTS:"true",SMART_ASSISTANT_ATOMIC_REVIEW:"true",
@@ -161,5 +169,5 @@ export async function connected(t){
   }
   throw Error("Disposable Edge Function failed to start.");
  }
- return {origin,users,session,startAssistant};
+ return {origin,users,session,startAssistant,setBuilderPilot};
 }

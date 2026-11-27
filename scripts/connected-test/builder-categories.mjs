@@ -32,6 +32,24 @@ test("Builder results survive lost HTTP responses and are visible to the invited
  assert.deepEqual((await setup(resumed,h,"status")).draft,draft);
  assert.equal((await rows(device,"categories",h)).length,0);
 
+ // Simulate the V3.0 provisioner and its direct, correctly versioned writes.
+ assert.equal(await verified(device.rpc("ensure_personal_household",{p_household_name:"Ancien client",p_display_name:"Test"})),h);
+ const oldWrites=[
+  ["/rest/v1/households?id=eq."+h,"PATCH",{name:"Ancien écrasement"}],
+  ["/rest/v1/categories","POST",{household_id:h,name:"Ancienne catégorie",type:"expense",created_from:"2025-01-01",legacy_id:"legacy-blocked"}],
+  ["/rest/v1/account_opening_balances","POST",{household_id:h,month:"2025-01-01",owner_slot:"B",amount:10}]
+ ];
+ for(const [path,method,body] of oldWrites){
+  const rejected=await device.call(path,{method,body});
+  assert.equal(rejected.ok,false,path);
+  assert.equal(rejected.data?.code,"55000",path);
+ }
+ const earlyInvite=await device.rpc("create_household_invite",{p_household_id:h,p_slot:"A"});
+ assert.equal(earlyInvite.ok,false);
+ assert.equal(earlyInvite.data?.code,"55000");
+ assert.deepEqual((await setup(device,h,"status")).draft,draft);
+ assert.deepEqual(await rows(device,"categories",h),[]);
+
  await resumed.page.route("**/rpc/budget_builder_setup",async route=>{
   const remote=await route.fetch();
   assert.ok(remote.ok());
@@ -153,4 +171,21 @@ test("historical write guards reject absent and obsolete headers on all six tabl
   assert.equal(written.length,1,table);
   for(const [key,value] of Object.entries(body))assert.equal(written[0][key],value,table+"."+key);
  }
+});
+
+test("non-pilot accounts retain legacy provisioning without gaining V3.1 RPC access",async t=>{
+ const env=await connected(t);
+ const user=await env.session(env.users[2]);
+ env.setBuilderPilot(user.user.id,false);
+ const blocked=await user.rpc("provision_budget_builder",{p_name:"Non pilote",p_display_name:"Test"});
+ assert.equal(blocked.ok,false);
+ assert.equal(blocked.data?.code,"42501");
+ const h=await verified(user.rpc("ensure_personal_household",{p_household_name:"Foyer V3.0",p_display_name:"Test"}));
+ assert.equal((await setup(user,h,"status")).status,"unavailable");
+ assert.equal((await user.rpc("budget_builder_setup",{p_household:h,p_action:"stage",p_request:randomUUID(),p_draft:payload("solo")})).ok,false);
+ const [category]=await insert(user,"categories",{household_id:h,name:"Legacy",type:"expense",created_from:"2025-01-01",legacy_id:"legacy-ok"});
+ assert.ok(category.id);
+ const blockedRule=await user.rpc("edit_smart_assistant_rule",{p_household_id:h,p_revision:0,p_operation:"set",p_term:"test",p_target:"rule:food"});
+ assert.equal(blockedRule.ok,false);
+ assert.equal(blockedRule.data?.code,"42501");
 });

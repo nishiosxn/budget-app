@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 8B.4B V3.1 — Pilotage fermé et protection Builder (CI à confirmer)
+
+- Préparation sur la branche uniquement : autorisations privées par utilisateur pour le provisionnement Builder, par couple foyer/utilisateur pour les règles. Aucun compte préautorisé à la migration ; inscription V3.0 conservée via le RPC historique. Les autorisations de l'Edge Assistant restent séparées.
+- Les écritures REST directes sur les six tables sont refusées pendant un Builder non finalisé ; le commit atomique privilégié reste possible. Les invitations/membres supplémentaires sont bloqués pendant cette phase, y compris via les RPC historiques. Le foyer finalisé retrouve le contrat V3.0 normal.
+- Tests SQL adaptés, autorisations de comptes fictifs injectées uniquement par psql sur l'instance locale vérifiée, tests REST de l'ancien provisionneur, du brouillon protégé et du compte hors pilote. Les résultats de la CI restent à confirmer ; 94 % maintenus.
+- Avant toute recette hébergée : prévoir une procédure de retrait/récupération d'un pilote avec brouillon en cours (ne jamais supprimer ses données), revoir le périmètre d'activation et la conservation des reçus. Reste aussi la comparaison complète des ACL/RLS et la coexistence des vraies pages/Edge v30. Aucun SQL hébergé exécuté, ni fusion ni publication.
+- Prochaine étape : vérifier les workflows de cette révision, résoudre les échecs puis préparer la recette de coexistence 8B.5.
+
 ## Lot 8B.4A V3.1 — Contrat historique et validation Builder (CI à confirmer)
 
 - Audit en lecture seule du projet hébergé : six protections historiques retrouvées, quatre migrations V3.1 du 27 novembre non enregistrées, ACL et contraintes comparées. Aucun export de lignes personnelles ni modification hébergée.

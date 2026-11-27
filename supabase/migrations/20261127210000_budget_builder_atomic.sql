@@ -1,3 +1,11 @@
+-- A separate explicit account allowlist permits new personal pilot households.
+-- Never populated automatically by migrations or browser code.
+create table private.v31_pilot_builder_users (
+ user_id uuid primary key references auth.users(id) on delete cascade
+);
+alter table private.v31_pilot_builder_users enable row level security;
+revoke all on private.v31_pilot_builder_users from public,anon,authenticated;
+
 -- A pending Builder can only be provisioned with a new personal household.
 create table private.budget_builder_setup (
  household_id uuid primary key references public.households(id) on delete cascade,
@@ -16,6 +24,8 @@ declare
  household uuid;
 begin
  if actor is null then raise insufficient_privilege; end if;
+ perform 1 from private.v31_pilot_builder_users p where p.user_id=actor for share;
+ if not found then raise insufficient_privilege; end if;
  -- Same lock as ensure_personal_household, including for older clients.
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(actor::text,0));
  select m.household_id into household from public.household_members m
@@ -56,6 +66,12 @@ begin
  end if;
  if p_action is null or p_action not in ('status','stage','commit') then
   raise exception 'Invalid builder action' using errcode='22023';
+ end if;
+ perform 1 from private.v31_pilot_builder_users p where p.user_id=actor for share;
+ if not found then
+  -- A normal existing or completed household still loads without pilot access.
+  if p_action='status' and setup.completed_at is not null then return jsonb_build_object('status','unavailable');end if;
+  raise insufficient_privilege;
  end if;
  if setup.completed_at is not null then
   return jsonb_build_object('status','complete','requestId',setup.request_id);
@@ -148,3 +164,65 @@ revoke all on function public.provision_budget_builder(text,text),
  public.budget_builder_setup(uuid,text,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.provision_budget_builder(text,text),
  public.budget_builder_setup(uuid,text,uuid,jsonb) to authenticated;
+
+-- The historical client may still discover the same household through its old
+-- provisioner, but cannot populate or archive it while the atomic Builder owns it.
+-- The helper exposes only the caller's own pending status; no client table access.
+create function private.v31_builder_pending(p_household uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+ select exists(select 1 from private.budget_builder_setup b
+  join public.household_members m on m.household_id=b.household_id
+  where b.household_id=p_household and b.completed_at is null and m.user_id=(select auth.uid()))
+$$;
+revoke all on function private.v31_builder_pending(uuid) from public,anon,authenticated;
+grant execute on function private.v31_builder_pending(uuid) to authenticated;
+
+-- Keep the invoker identity here: the atomic SECURITY DEFINER RPC can commit,
+-- whereas direct browser DML (including V3.0 with a valid sync header) cannot.
+create function private.v31_guard_pending_builder()
+returns trigger language plpgsql security invoker set search_path='' as $$
+declare
+ old_household uuid;
+ new_household uuid;
+begin
+ if current_user in ('authenticated','anon') then
+  if TG_OP<>'INSERT' then
+   old_household:=case when TG_TABLE_NAME='households' then (to_jsonb(OLD)->>'id')::uuid
+    else (to_jsonb(OLD)->>'household_id')::uuid end;
+  end if;
+  if TG_OP<>'DELETE' then
+   new_household:=case when TG_TABLE_NAME='households' then (to_jsonb(NEW)->>'id')::uuid
+    else (to_jsonb(NEW)->>'household_id')::uuid end;
+  end if;
+  if private.v31_builder_pending(old_household) or private.v31_builder_pending(new_household) then
+   raise exception 'Configuration V3.1 en cours. Termine le Builder dans la version de test.' using errcode='55000';
+  end if;
+ end if;
+ if TG_OP='DELETE' then return OLD; end if;
+ return NEW;
+end $$;
+revoke all on function private.v31_guard_pending_builder() from public,anon,authenticated;
+do $$
+declare t text;
+begin
+ foreach t in array array['households','categories','budgets','transactions','recurrences','account_opening_balances'] loop
+  execute format('create trigger v31_guard_pending_builder before insert or update or delete on public.%I for each row execute function private.v31_guard_pending_builder()',t);
+ end loop;
+end $$;
+
+-- Legacy invite RPCs are privileged. Refuse new invites/members until completion
+-- regardless of caller role; the initial owner is inserted before the setup row.
+create function private.v31_guard_pending_invites()
+returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if exists(select 1 from private.budget_builder_setup b
+  where b.household_id=NEW.household_id and b.completed_at is null) then
+  raise exception 'Termine le Builder avant d’inviter un membre.' using errcode='55000';
+ end if;
+ return NEW;
+end $$;
+revoke all on function private.v31_guard_pending_invites() from public,anon,authenticated;
+create trigger v31_guard_pending_invites before insert on public.household_invites
+ for each row execute function private.v31_guard_pending_invites();
+create trigger v31_guard_pending_members before insert on public.household_members
+ for each row execute function private.v31_guard_pending_invites();

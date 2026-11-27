@@ -20,6 +20,7 @@ create table public.budgets(household_id uuid references public.households,categ
  month date,planned_amount numeric check(planned_amount<>123.45),scope text,owner_slot text,primary key(category_id,month));
 create table public.transactions(household_id uuid references public.households);
 create table public.recurrences(household_id uuid references public.households);
+create table public.household_invites(household_id uuid references public.households);
 create table public.account_opening_balances(household_id uuid references public.households,owner_slot text,amount numeric);
 -- Minimal prerequisite contract of ensure_personal_household, exercised separately by the existing provisioner.
 create function public.ensure_personal_household(p_name text,p_display text) returns uuid
@@ -51,6 +52,8 @@ declare
  receipt jsonb;
 begin
  insert into auth.users values(actor),(other),(old_actor);
+ insert into private.v31_pilot_builder_users values(actor),(other);
+ assert not has_table_privilege('authenticated','private.v31_pilot_builder_users','insert');
  assert not has_table_privilege('authenticated','private.budget_builder_setup','select');
  assert not has_function_privilege('anon','public.budget_builder_setup(uuid,text,uuid,jsonb)','execute');
 
@@ -58,7 +61,11 @@ begin
  existing:=public.ensure_personal_household('Foyer existant','Pat');
  insert into public.transactions values(existing);
  insert into public.recurrences values(existing);
- assert public.provision_budget_builder('Autre','Autre')=existing;
+ begin
+  perform public.provision_budget_builder('Autre','Autre');
+  raise exception 'Non-pilot provision accepted';
+ exception when insufficient_privilege then null;
+ end;
  assert public.budget_builder_setup(existing)->>'status'='unavailable';
 
  perform set_config('request.jwt.claim.sub',actor::text,true);

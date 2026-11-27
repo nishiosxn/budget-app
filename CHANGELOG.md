@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Pilotage fermé 8B.4B (validation en attente)
+
+- Accès Builder et règles de catégorisation explicitement autorisés côté SQL, sans inscription automatique au pilote.
+- Protection des foyers en cours de configuration contre les écritures directes des anciens clients et les invitations prématurées. Tests jetables SQL/REST et conservation du provisionnement historique.
+
 ## V3.1 — Contrat historique 8B.4A (validation en attente)
 
 - Alignement des noms de catégories du Builder avec la limite SQL historique (100 caractères) et tests des deux côtés de la limite.

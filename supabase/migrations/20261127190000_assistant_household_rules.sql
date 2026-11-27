@@ -1,3 +1,20 @@
+-- Explicit pilot pairs; no browser role can enroll itself. Empty means closed.
+create table private.v31_pilot_rule_members (
+ household_id uuid not null references public.households(id) on delete cascade,
+ user_id uuid not null references auth.users(id) on delete cascade,
+ primary key(household_id,user_id)
+);
+alter table private.v31_pilot_rule_members enable row level security;
+revoke all on private.v31_pilot_rule_members from public,anon,authenticated;
+
+create function private.v31_can_read_rules(p_household uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+ select exists(select 1 from private.v31_pilot_rule_members p
+  where p.household_id=p_household and p.user_id=(select auth.uid()))
+$$;
+revoke all on function private.v31_can_read_rules(uuid) from public,anon,authenticated;
+grant execute on function private.v31_can_read_rules(uuid) to authenticated;
+
 -- Shared merchant associations. All financial tables remain read-only in this function.
 create table public.smart_assistant_household_rules (
  household_id uuid primary key references public.households(id) on delete cascade,
@@ -8,7 +25,7 @@ alter table public.smart_assistant_household_rules enable row level security;
 revoke all on public.smart_assistant_household_rules from public, anon, authenticated;
 grant select on public.smart_assistant_household_rules to authenticated;
 create policy household_members_read_rules on public.smart_assistant_household_rules
- for select to authenticated using (private.is_household_member(household_id));
+ for select to authenticated using (private.is_household_member(household_id) and private.v31_can_read_rules(household_id));
 
 create function public.edit_smart_assistant_rule(
  p_household_id uuid, p_revision bigint, p_operation text, p_term text, p_target text
@@ -19,6 +36,9 @@ declare
 begin
  perform 1 from public.household_members m where m.household_id=p_household_id
    and m.user_id=(select auth.uid()) for share;
+ if not found then raise insufficient_privilege; end if;
+ perform 1 from private.v31_pilot_rule_members p where p.household_id=p_household_id
+  and p.user_id=(select auth.uid()) for share;
  if not found then raise insufficient_privilege; end if;
  if p_revision is null or p_revision<0 or p_operation is null or p_operation not in ('set','remove','clear')
     or (p_operation in ('set','remove') and (p_term is null or p_term<>trim(p_term) or length(p_term) not between 1 and 80 or p_term ~ '[[:cntrl:]]'))

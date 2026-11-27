@@ -105,6 +105,8 @@ test("real local Edge executes eight deterministic requests and isolates confirm
  assert.equal((await verified(editRules(partner,h,1,"rule:food"))).revision,2);
  assert.equal((await rows(device,"smart_assistant_household_rules",h))[0].rules["magasin-fixture"],"rule:food");
  assert.equal((await editRules(outsider,h,2,"rule:food")).ok,false);
+ assert.equal((await editRules(outsider,other,0,"rule:food")).ok,false);
+ assert.deepEqual(await rows(outsider,"smart_assistant_household_rules",other),[]);
  await insert(outsider,"categories",{household_id:other,name:"Foyer voisin",type:"expense",legacy_id:"cross-household",created_from:"2025-01-01"});
  assert.equal((await editRules(owner,h,2,"id:cross-household")).ok,false);
 

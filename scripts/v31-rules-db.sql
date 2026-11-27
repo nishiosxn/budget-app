@@ -6,6 +6,7 @@ create role anon;
 create role authenticated;
 create schema auth;
 create schema private;
+create table auth.users(id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$
  select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 create table public.households(id uuid primary key);
@@ -20,6 +21,10 @@ insert into public.household_members values
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001'),
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002'),
  ('10000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000003');
+insert into auth.users select distinct user_id from public.household_members;
+insert into private.v31_pilot_rule_members values
+ ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001'),
+ ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002');
 insert into public.categories values ('30000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002','private-other',null);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000001',true);
@@ -42,6 +47,8 @@ select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000003'
 do $$ begin
  assert not exists(select from public.smart_assistant_household_rules);
  begin perform public.edit_smart_assistant_rule('10000000-0000-4000-8000-000000000001',2,'clear',null,null);raise exception 'cross-household edit accepted';exception when insufficient_privilege then null;end;
+ begin perform public.edit_smart_assistant_rule('10000000-0000-4000-8000-000000000002',0,'set','test','rule:food');raise exception 'non-pilot own household edit accepted';exception when insufficient_privilege then null;end;
+ assert not has_table_privilege('authenticated','private.v31_pilot_rule_members','insert');
 end $$;
 \ir v31-movements-db.sql
 \ir v31-backup-db.sql

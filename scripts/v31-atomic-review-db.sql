@@ -1,6 +1,5 @@
 -- Loaded only by v31-rules-db.sql inside a disposable PostgreSQL transaction.
-create table auth.users(id uuid primary key);
-insert into auth.users select distinct user_id from public.household_members;
+-- auth.users and synthetic membership identities are already loaded by v31-rules-db.sql.
 alter table public.categories alter column id set default gen_random_uuid(),
  add column name text, add column group_name text, add column owner_slot text,
  add column is_custom boolean, add column sort_order int, add column updated_at timestamptz not null default now();
