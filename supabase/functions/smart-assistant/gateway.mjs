@@ -57,6 +57,8 @@ export function makeModelRequest(command,context,history=[]){
 }
 export function decodeModelResponse(raw){
  const result=raw?.result??raw;
+ if(result?.choices?.some?.(choice=>["length","content_filter"].includes(choice?.finish_reason))||
+    ["length","content_filter"].includes(result?.finish_reason))throw Error("Incomplete model response");
  const content=result?.choices?.[0]?.message?.content??result?.response;
  if(typeof content==="string"){
   if(content.length>16000)throw Error("Response too large");
@@ -67,6 +69,7 @@ export function decodeModelResponse(raw){
 }
 const response=(status,body)=>({status,body});
 export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null,commitMovements=null,atomicReview=null}){
+ const inFlight=new Map();
  return async function handleAssistant({token,body}){
   if(!enabled||!validModel(model))return response(503,{error:"assistant_not_enabled"});
   if(typeof token!=="string"||token.length<20||token.length>8192)return response(401,{error:"authentication_required"});
@@ -135,16 +138,35 @@ export function createAssistantGateway({enabled,providerEnabled=true,model,autho
   if(body.localOnly===true||!providerEnabled)return response(422,{error:"local_only",metering:{source:"local-rules",reservedNeurons:0,tokens:{input:0,output:0,total:0}}});
   const payload=makeModelRequest(body.command.trim(),auth.context,history),units=estimateReservation(payload);
   if(units===null)return response(413,{error:"context_too_large"});
-  // Durable reservation must succeed before any provider invocation. No refund on failure.
-  try{if(await reserve(token,body.householdId,units)!==true)return response(429,{error:"quota_exhausted"})}catch{return response(503,{error:"quota_unavailable"})}
+  async function requestInference(){
+   // Reserve once per provider request. Cloudflare may already have consumed
+   // the request on a timeout or disconnect, so never refund or retry it.
+   try{if(await reserve(token,body.householdId,units)!==true)return {error:response(429,{error:"quota_exhausted"})}}
+   catch{return {error:response(503,{error:"quota_unavailable"})}}
+   try{return {raw:await infer(model,payload)}}
+   catch(error){
+    const metering={source:"cloudflare",reservedNeurons:units,tokens:null};
+    const timedOut=error?.name==="TimeoutError"||error?.name==="AbortError";
+    return {error:response(timedOut?504:502,{error:timedOut?"model_timeout":"model_unavailable",metering})};
+   }
+  }
+  // Shared only during the request and only with the same authenticated user
+  // in the same household. Validate each response against its server context.
+  const key=auth.userId?JSON.stringify([auth.userId,body.householdId,payload]):null;
+  if(key&&!inFlight.has(key))inFlight.set(key,requestInference().finally(()=>inFlight.delete(key)));
+  const inference=await (key?inFlight.get(key):requestInference());
+  if(inference.error)return inference.error;
+  const raw=inference.raw,metering={source:"cloudflare",reservedNeurons:units,tokens:extractTokenUsage(raw)};
+  let checked;
   try{
-   const raw=await infer(model,payload);
-   const metering={source:"cloudflare",reservedNeurons:units,tokens:extractTokenUsage(raw)};
-   const decoded=decodeModelResponse(raw),checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
-   if(!checked.ok){console.warn("smart-assistant invalid model result");return response(422,{error:"invalid_model_result",metering})}
+   const decoded=decodeModelResponse(raw);
+   checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
+   if(!checked.ok)return response(422,{error:"invalid_model_result",metering});
+  }catch{return response(422,{error:"invalid_model_result",metering})}
+  try{
    const previews=checked.value.kind==="draft"?await planPreview(token,body.householdId,checked.value,auth.context):[];
    const report=checked.value.kind==="query"?await queryPreview(token,body.householdId,checked.value,auth.context):null;
    return response(200,{result:checked.value,model,metering,context:auth.context,...(report?{categoryReport:report}:{}),...(previews.length?{planPreviews:previews}:{}),...(checked.suggestions?.length?{categorySuggestions:checked.suggestions}:{})});
-  }catch{return response(502,{error:"model_unavailable_or_invalid",metering:{source:"cloudflare",reservedNeurons:units,tokens:null}})}
+  }catch{return response(503,{error:"budget_preview_unavailable",metering})}
  };
 }

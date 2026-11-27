@@ -17,6 +17,45 @@ test("unknown model cannot run",async()=>{const {handler,calls}=setup({model:"no
 test("malicious or malformed outputs cannot become proposals",async()=>{for(const output of [{kind:"delete_all"},{...valid,operations:[{...valid.operations[0],categoryId:"unknown"}]},"not json"]){const {handler}=setup({infer:async()=>({result:{response:output}})});assert.equal([422,502].includes((await handler(request)).status),true)}});
 test("supports both REST output variants; rejects extra text",()=>{assert.equal(decodeModelResponse({result:{response:valid}}),valid);assert.equal(decodeModelResponse({result:{choices:[{message:{content:JSON.stringify(valid)}}]}}).kind,"draft");assert.throws(()=>decodeModelResponse({result:{response:"Here is JSON: "+JSON.stringify(valid)}}))});
 test("provider receives only sanitized context and command",()=>{const payload=makeModelRequest("20 euros",ctx);assert.equal(payload.stream,false);assert.equal(payload.max_completion_tokens,1024);assert.deepEqual(JSON.parse(payload.messages[1].content),{command:"20 euros",context:ctx});assert.doesNotMatch(JSON.stringify(payload),/test-token|householdId|service_role/i)});
+test("identical concurrent inference shares the reservation only within the same actor and household",async()=>{
+ let release;
+ const blocked=new Promise(resolve=>{release=resolve});
+ let reserved=0,invoked=0;
+ const {handler}=setup({
+  authorize:async token=>({userId:token,context:ctx}),
+  reserve:async()=>{reserved++;return true},
+  infer:async()=>{invoked++;await blocked;return {result:{response:valid}}}
+ });
+ const requests=[handler(request),handler(request),handler({...request,token:"another-fake-authenticated-token"}),
+  handler({...request,body:{...request.body,householdId:"22222222-2222-4222-8222-222222222222"}})];
+ try{
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(reserved,3);assert.equal(invoked,3);
+ }finally{release()}
+ assert.deepEqual((await Promise.all(requests)).map(r=>r.status),[200,200,200,200]);
+ await handler(request);
+ assert.equal(invoked,4,"completed inference is not cached");
+});
+test("timeout, disconnect and truncated provider output are distinct and leave local commands usable",async()=>{
+ const tokens={prompt_tokens:200,completion_tokens:50,total_tokens:250};
+ const cases=[
+  [504,"model_timeout",async()=>{throw new DOMException("Synthetic deadline","TimeoutError")},null],
+  [502,"model_unavailable",async()=>{throw new TypeError("Synthetic interrupted network")},null],
+  [422,"invalid_model_result",async()=>({result:{response:"{",usage:tokens}}),250],
+  [422,"invalid_model_result",async()=>({result:{choices:[{finish_reason:"length",message:{content:JSON.stringify(valid)}}],usage:tokens}}),250]
+ ];
+ for(const [status,code,infer,total] of cases){
+  let calls=0,cost=0;
+  const {handler}=setup({quickExpense:core.quickCommand,reserve:async()=>{cost++;return true},
+   infer:async()=>{calls++;return infer()}});
+  const response=await handler({...request,body:{...request.body,command:"Aide-moi à comprendre cette demande complexe."}});
+  assert.equal(response.status,status);assert.equal(response.body.error,code);
+  assert.equal(response.body.metering.tokens?.total??null,total);
+  const local=await handler({...request,body:{...request.body,command:"J’ai payé 20 € chez Lidl."}});
+  assert.equal(local.body.metering.tokens.total,0);
+  assert.equal(calls,1);assert.equal(cost,1);
+ }
+});
 test("shared client and server validator remain identical",()=>{assert.equal(fs.readFileSync("js/assistant-core.js","utf8"),fs.readFileSync("supabase/functions/_shared/smart-assistant-core.js","utf8"))});
 
 test("guarded conversation carries a bounded prior draft and question",async()=>{
