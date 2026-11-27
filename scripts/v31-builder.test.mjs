@@ -32,6 +32,26 @@ test("offline submit and household changes cannot mark setup complete",async()=>
  b.householdId="alpha";await b.finish();assert.match(status,/brouillon/);
  status="";b.householdId="beta";await b.finish();assert.equal(status,"");assert.equal(b.busy,false);
 });
+test("annual subscriptions use the same cent-rounded monthly amount in the review and saved budget",()=>{
+ const state={createdMonth:"2026-11",customExpenseCategories:[],categoryBudgets:{},categoryOwners:{}};
+ const b=builder({state,euro:amount=>amount.toFixed(2),escapeHtml:text=>text.replaceAll("<","&lt;")});
+ b.visibleBaseIncomes=b.visibleBaseExpenses=()=>[];
+ const subscriptions=Object.fromEntries(["netflix","spotify","disney","prime","icloud","discord","chatgpt"].map(id=>[id,{selected:false}]));
+ subscriptions.netflix={selected:true,name:"Abonnement test",amount:"99.99",period:"annual",plan:0};
+ b.draft={household:{mode:"solo"},subscriptions,customIncome:[],customExpense:[],customSubscriptions:[
+  {id:"annual",selected:true,name:"Annuel <test>",amount:"120",period:"annual"},
+  {id:"monthly",selected:true,name:"Mensuel test",amount:"0.02"}
+ ]};
+ assert.equal(b.totals().expense,18.35);
+ assert.deepEqual(Array.from(b.monthlyLines().subscriptions,x=>x.cents),[833,1000,2]);
+ b.step=6;
+ const review=b.stepMarkup();
+ assert.match(review,/<summary>Abonnements <strong>18\.35<\/strong><\/summary>/);
+ assert.match(review,/<dt>Annuel &lt;test><\/dt><dd>10\.00<\/dd>/);
+ b.applyCustomCategories();
+ assert.deepEqual(state.categoryBudgets,{"setup-sub-netflix":8.33,annual:10,monthly:0.02});
+ assert.equal(state.customExpenseCategories.find(row=>row.id==="annual").budget,10);
+});
 test("retry keeps stable IDs and preserves unrelated existing setup categories",()=>{
  const state={createdMonth:"2026-11",customExpenseCategories:[{id:"setup-expense-existing"}],customIncomeCategories:[],categoryBudgets:{},categoryOwners:{}};
  const b=builder({state});b.draft={household:{mode:"solo"},customExpense:[{id:"goal",name:"Voyage",amount:"30.25",saving:true,selected:true}],customIncome:[],customSubscriptions:[],subscriptions:{}};

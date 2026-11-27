@@ -27,3 +27,11 @@
 .assistant-nav:hover,.assistant-local summary:hover{text-decoration:underline}
 .assistant-local{margin-block:0 .75rem}.assistant-local summary{cursor:pointer;color:var(--muted);font-size:.875rem}
 .mobile-quick-add__option[href]{color:var(--text);text-decoration:none}
+.setup-breakdown{border-block-end:1px solid var(--line);padding:.75rem 0;color:var(--text)}
+.setup-breakdown summary{cursor:pointer;overflow-wrap:anywhere}
+.setup-breakdown summary strong{margin-inline-start:.5rem;font-variant-numeric:tabular-nums}
+.setup-breakdown dl{display:grid;gap:.45rem;margin:.75rem 0 0}
+.setup-breakdown dl div{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem}
+.setup-breakdown dt{overflow-wrap:anywhere;min-width:0}
+.setup-breakdown dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.setup-breakdown summary:focus-visible{outline:.125rem solid var(--focus-ring);outline-offset:.15rem}

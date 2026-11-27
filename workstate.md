@@ -1,12 +1,20 @@
 # Workstate — Budget foyer
 
+## Lot 1 V3.1 · Abonnements et bilan du Builder
+
+- Terminé : choix de facturation mensuelle ou annuelle, conversion au centime et détail repliable des revenus, charges, abonnements, épargne et budgets. Le bilan et la sauvegarde utilisent le même calcul de mensualisation. Changer de formule prédéfinie rétablit la périodicité mensuelle du tarif proposé.
+- Fichiers : `js/setup-builder.js`, `css/budget-theme.css`, `scripts/v31-builder.test.mjs` et ce journal. Fins de ligne LF d’origine conservées.
+- Tests locaux : 5 tests Builder réussis et audit applicatif réussi. Le scénario annuel vérifie le HTML du bilan ainsi que le budget et la catégorie enregistrés dans l’état applicatif de test.
+- En cours : vérification de la CI de la PR #52 sur ce lot. Aucune écriture Supabase hébergée.
+- Reste pour la feuille de route : recette des actions groupées Catégories, puis reprise après interruption de la création de foyer. Aucun blocage identifié sur le lot Builder local.
+- Prochaine action après validation du lot 1 : ouvrir Catégories avec des données de test, remplir les budgets vides, annuler puis changer de mois et contrôler l’historique, les abonnements et les récurrences.
+
 ## Exercice de restauration ciblée · 27 novembre 2026
 
 - Terminé et testé sur PostgreSQL 17 jetable : confirmation solo/duo étendue, rejeu, lots mixtes, refus inter-foyers et rollback sur erreur (CI 46059836466, commit a262567).
-- En cours : exercice PostgreSQL des deux migrations historiques de sauvegarde avec variation de 0,01 €, comparaison des huit tables, capture pré-restauration et restitution d’une seule ligne synthétique.
+- Terminé : exercice PostgreSQL des deux migrations historiques de sauvegarde avec variation de 0,01 €, comparaison des huit tables, capture pré-restauration et restitution d’une seule ligne synthétique. Les jobs App integrity et PostgreSQL ont réussi (CI 46059968944, commit ba96715).
 - Fichiers : scripts/v31-backup-db.sql, scripts/v31-rules-db.sql, workstate.md. Le dump hors site inclut le schéma public, les instantanés financiers internes couvrent huit tables.
-- Limites : exercice CI en attente sur ce commit, aucune restauration hébergée. Restent Builder, parcours navigateur Assistant et qualification connectée.
-- Prochaine action : vérifier les deux jobs GitHub puis harmoniser le bilan et la mensualisation des abonnements du Builder.
+- Limite : exercice effectué sur PostgreSQL jetable. La restauration hébergée reste hors périmètre.
 
 
 ## Mouvements confirmés · 27 novembre 2026

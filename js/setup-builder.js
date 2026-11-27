@@ -323,6 +323,11 @@ class SetupBuilderController{
   </div>`;
  }
 
+ subscriptionMonthlyCents(data){
+  const billedCents=Math.round(this.number(data.amount)*100);
+  return data.period==="annual"?Math.round(billedCents/12):billedCents;
+ }
+
  subscriptionRow(item,data,keyOverride=""){
   const key=keyOverride||`subscription:${item.id}`;
   const checkId=this.domId(key);
@@ -353,6 +358,9 @@ class SetupBuilderController{
       <b>€</b>
      </div>
     </label>
+    <label><span>Facturation</span><select data-setup-period="${escapeHtml(key)}" ${disabled}>
+     <option value="monthly">Mensuelle</option><option value="annual" ${data.period==="annual"?"selected":""}>Annuelle</option>
+    </select></label>
     ${this.isSolo()?"":`<label><span>Payé par</span><select data-setup-sub-owner="${escapeHtml(key)}" ${disabled}>${this.ownerOptions(data.owner)}</select></label>`}
    </div>
    ${!custom&&item.sourceUrl?`<a class="setup-builder-source" href="${item.sourceUrl}" target="_blank" rel="noopener">Source : ${escapeHtml(item.source)}</a>`:""}
@@ -442,7 +450,7 @@ class SetupBuilderController{
      ${this.draft.customSubscriptions.map(data=>this.subscriptionRow({id:data.id,name:data.name,plans:[]},data,`customSubscription:${data.id}`)).join("")}
      ${this.addCard("subscription","Ajouter un abonnement")}
     </div>
-    <p class="setup-builder-note">Les tarifs servent uniquement d’aide à la saisie. Le montant réellement facturé reste modifiable.</p>`;
+    <p class="setup-builder-note">Les tarifs servent uniquement d’aide à la saisie. Le budget mensuel d’un abonnement annuel correspond au montant saisi divisé par douze, arrondi au centime.</p>`;
   }
 
   if(this.step===4){
@@ -455,7 +463,8 @@ class SetupBuilderController{
    for(const data of this.draft.customExpense.filter(row=>row.envelope))rows.push(this.itemRow(data,data,"expense","customExpense:"+data.id));
    return '<div class="setup-builder-title"><span>Étape 6 sur 7</span><h3>Budgets du mois</h3><p>Répartis les montants prévus pour la vie courante.</p></div><div class="setup-builder-list">'+rows.join("")+this.addCard("envelope","Ajouter un budget")+'</div>';
   }
-  const totals=this.totals();
+  const groups=this.monthlyLines();
+  const totals=this.totals(groups);
   return `
    <div class="setup-builder-title"><span>Étape 7 sur 7</span><h3>Votre budget de départ</h3><p>Vérifiez le résultat avant la création des catégories.</p></div>
    <div class="setup-builder-summary">
@@ -465,8 +474,9 @@ class SetupBuilderController{
    </div>
    <div class="setup-builder-recap">
     <strong>${totals.count} catégorie${totals.count>1?"s":""} active${totals.count>1?"s":""}</strong>
-    <span>Mode ${this.isSolo()?"seul":"à deux"} · historique réel vide · tout reste modifiable ensuite.</span>
-   </div>`;
+    <span>Mode ${this.isSolo()?"seul":"à deux"} · prévisions mensuelles</span>
+   </div>
+   ${this.breakdown(groups)}`;
  }
 
  render({preserveScroll=true}={}){
@@ -641,6 +651,9 @@ class SetupBuilderController{
    const item=SETUP_SUBSCRIPTIONS.find(entry=>entry.id===id);
    const data=this.draft.subscriptions[id];
    if(!item||!data)return;
+   data.period="monthly";
+   const period=target.closest("[data-builder-row]")?.querySelector("[data-setup-period]");
+   if(period)period.value="monthly";
    const index=Math.max(0,Number(target.value)||0);
    data.plan=index;
    const price=item.plans[index]?.price;
@@ -651,6 +664,11 @@ class SetupBuilderController{
    return;
   }
 
+  if(target.dataset.setupPeriod){
+   const data=this.getData(target.dataset.setupPeriod);
+   if(data)data.period=target.value==="annual"?"annual":"monthly";
+   return;
+  }
   if(target.dataset.setupSubOwner){
    const data=this.getData(target.dataset.setupSubOwner);
    if(data)data.owner=target.value;
@@ -813,31 +831,36 @@ class SetupBuilderController{
   this.finish();
  }
 
- totals(){
-  let income=0,expense=0,count=0;
-
-  for(const item of this.visibleBaseIncomes()){
-   const data=this.draft.income[item.id];
-   if(data.selected){income+=Math.round(this.number(data.amount)*100);count++}
-  }
-  for(const data of this.draft.customIncome){
-   if(data.selected){income+=Math.round(this.number(data.amount)*100);count++}
-  }
+ monthlyLines(){
+  const groups={income:[],charges:[],subscriptions:[],savings:[],envelopes:[]};
+  const add=(group,data,cents=Math.round(this.number(data.amount)*100))=>{
+   if(data.selected)groups[group].push({name:data.name,cents});
+  };
+  for(const item of this.visibleBaseIncomes())add("income",this.draft.income[item.id]);
+  for(const data of this.draft.customIncome)add("income",data);
   for(const item of this.visibleBaseExpenses()){
-   const data=this.draft.expense[item.id];
-   if(data.selected){expense+=Math.round(this.number(data.amount)*100);count++}
+   const group=item.saving?"savings":["groceries","fuel"].includes(item.id)?"envelopes":"charges";
+   add(group,this.draft.expense[item.id]);
   }
-  for(const data of this.draft.customExpense){
-   if(data.selected){expense+=Math.round(this.number(data.amount)*100);count++}
-  }
-  for(const item of SETUP_SUBSCRIPTIONS){
-   const data=this.draft.subscriptions[item.id];
-   if(data.selected){expense+=Math.round(this.number(data.amount)*100);count++}
-  }
-  for(const data of this.draft.customSubscriptions){
-   if(data.selected){expense+=Math.round(this.number(data.amount)*100);count++}
-  }
-  return {income:income/100,expense:expense/100,count};
+  for(const data of this.draft.customExpense)add(data.saving?"savings":data.envelope?"envelopes":"charges",data);
+  const subscriptions=[...Object.values(this.draft.subscriptions),...this.draft.customSubscriptions];
+  for(const data of subscriptions)add("subscriptions",data,this.subscriptionMonthlyCents(data));
+  return groups;
+ }
+
+ totals(groups=this.monthlyLines()){
+  const sum=rows=>rows.reduce((total,row)=>total+row.cents,0);
+  const expenses=[...groups.charges,...groups.subscriptions,...groups.savings,...groups.envelopes];
+  return {income:sum(groups.income)/100,expense:sum(expenses)/100,count:groups.income.length+expenses.length};
+ }
+
+ breakdown(groups){
+  const labels={income:"Revenus",charges:"Charges fixes",subscriptions:"Abonnements",savings:"Épargne",envelopes:"Budgets du mois"};
+  return Object.entries(groups).filter(([,rows])=>rows.length).map(([group,rows])=>{
+   const total=rows.reduce((sum,row)=>sum+row.cents,0);
+   return `<details class="setup-breakdown"><summary>${labels[group]} <strong>${euro(total/100)}</strong></summary><dl>${rows.map(row=>
+    `<div><dt>${escapeHtml(row.name)}</dt><dd>${euro(row.cents/100)}</dd></div>`).join("")}</dl></details>`;
+  }).join("");
  }
 
  async skip(){
@@ -928,7 +951,7 @@ class SetupBuilderController{
    const id=`setup-sub-${item.id}`;
    const plan=item.plans[data.plan]||item.plans[0];
    const name=String(data.name||item.name).trim()||item.name;
-   const budget=this.number(data.amount);
+   const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
    state.customExpenseCategories.push({
     id,name,budget,owner,section:"Abonnements",
@@ -941,7 +964,7 @@ class SetupBuilderController{
   for(const data of this.draft.customSubscriptions){
    if(!data.selected)continue;
    const name=String(data.name||"Abonnement").trim()||"Abonnement";
-   const budget=this.number(data.amount);
+   const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
    state.customExpenseCategories.push({
     id:data.id,name,budget,owner,section:"Abonnements",
