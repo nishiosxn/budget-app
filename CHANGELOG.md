@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — Clôture locale conditionnelle 8B.5C
+
+- Workflows 8B.5A/B verts. Recette ajoutée du véritable client 31ap et de l'Edge v30 sur un registre fictif avant et après les quatre migrations, avec conservation des données et des reçus. Nouvelle CI à confirmer.
+
 ## V3.1 — Compatibilité Edge historique 8B.5B (validation en attente)
 
 - Provenance des six fichiers Edge v30 vérifiée avec le commit historique 31ap ; recette locale de l'ancien protocole sur le schéma migré, avec fournisseur inaccessible et RPC de consultation du quota reproduite dans le fixture.

@@ -46,6 +46,10 @@ Voir [le protocole de coexistence](V3_1_COEXISTENCE.md). La CI de 8B.4C a révé
 
 Les six fichiers v30 récupérés en lecture seule sont identiques à 3b6a340352432428b8145aab086741a995cb6f8a. La recette CI exporte ce commit, teste les confirmations historiques et le quota sur le schéma jetable migré, sans fournisseur externe. Voir [protocole](V3_1_COEXISTENCE.md). CI à confirmer ; comparaison avant/après sur deux états et client historique 31ap encore ouverts.
 
+## Clôture 8B.5C (conditionnelle)
+
+Les quatre workflows de 889d0e8 et 98f124d sont verts. Le nouveau scénario avant/après et client 31ap est ajouté ; attendre ses résultats avant de clôturer la recette locale. La perte définitive d'accès au compte nécessite une décision administrative de récupération distincte ; aucun contournement d'Auth, transfert ou suppression de brouillon automatique. Le contrat historique demeure synthétique, notamment les cascades et divergences de journal. La recette sur projet partagé reste soumise à une autorisation séparée, à une sauvegarde et à la vérification du schéma cible. Gemma réel reste non exécuté.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

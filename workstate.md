@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 8B.5C — Recette avant/après et client 31ap (CI à confirmer)
+
+- Quatre workflows de 889d0e8 et 98f124d terminés avec succès : 46083350925, 46083350897, 46083514827, 46083514823. Aucune correction CI nécessaire.
+- Nouveau test sur le même foyer fictif avant/après migration atomique locale : client historique 31ap et Edge v30 exacts, confirmation budget/dépense, conservation des lignes, rejeu d'un reçu, refus inter-foyers et quota inchangé. Le workflow exécute ensuite les suites V3.1 existantes. Aucune connexion externe de l'Edge.
+- Clôture conditionnelle au résultat de la nouvelle CI ; 94 % maintenus. Limites : contrat synthétique, perte définitive de compte Builder, sauvegarde/restauration et recette hébergée séparément autorisées. Voir [protocole](docs/V3_1_COEXISTENCE.md). Prochaine étape : contrôler CI puis préparer Gemma Free avec plafond strict, sans données réelles ni coût autorisé.
+- Aucune écriture Supabase hébergé, fusion ou publication.
+
 ## Lot 8B.5B — Source Edge v30 identifiée, recette préparée (CI à confirmer)
 
 - CI 889d0e8 : intégrité et PostgreSQL verts (46083350925), recette connectée en cours lors du relevé (46083350897).

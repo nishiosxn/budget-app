@@ -6,7 +6,7 @@ import {spawn,execFileSync} from "node:child_process";
 import {setTimeout as wait} from "node:timers/promises";
 import {resolve,sep,extname} from "node:path";
 
-export async function connected(t){
+export async function connected(t,{baseline=false}={}){
  const status=JSON.parse(await fs.readFile(process.env.SB_STACK_STATUS,"utf8"));
  const origin="http://127.0.0.1:54321";
  const edge="http://127.0.0.1:8000";
@@ -34,16 +34,21 @@ export async function connected(t){
   const data=await r.json();
   assert.ok(data.id);
   users.push({...credentials,id:data.id});
-  setBuilderPilot(data.id);
+  if(!baseline)setBuilderPilot(data.id);
  }
 
  async function session(user){
   const ctx=await browser.newContext({serviceWorkers:"block",reducedMotion:"reduce"});
   let dropAction=null;
+  let legacyLogin=false;
   // All network access from the browser stays within the disposable stack.
   await ctx.route("**/*",async route=>{
    const url=new URL(route.request().url());
    if(url.origin!==origin)return route.abort();
+   if(legacyLogin&&url.pathname==="/auth/v1/token"&&route.request().method()==="POST"){
+    const body=route.request().postDataJSON();
+    if(body?.email==="testtest@id.budget-foyer.example.com")return route.continue({postData:JSON.stringify({...body,email:user.email})});
+   }
    if(!["/__assistant_for_test","/functions/v1/smart-assistant"].includes(url.pathname))return route.continue();
    // Same-origin bridge to the real local Edge process, without modifying its production CORS policy.
    const headers=await route.request().allHeaders();
@@ -81,7 +86,8 @@ export async function connected(t){
   }
   await login();
   let appRoutes=false;
-  async function openApp(h,path="",fixtureRoot="."){
+  async function openApp(h,path="",fixtureRoot=".",{historicalLogin=false}={}){
+   legacyLogin=historicalLogin;
    const app=origin+"/__app/";
    if(!appRoutes){
     const sdk=await fs.readFile(process.env.SB_TEST_SDK);
@@ -153,7 +159,7 @@ export async function connected(t){
  }
  async function startAssistant(h,actors,{legacy=false}={}){
   if(legacy){assert.equal(actors.length,1);assert.ok(process.env.SB_TEST_EDGE30_ROOT,"Pinned v30 source is required");}
-  for(const id of actors)sql("insert into private.v31_pilot_rule_members(household_id,user_id) values("+uuid(h)+","+uuid(id)+") on conflict do nothing");
+  if(!legacy)for(const id of actors)sql("insert into private.v31_pilot_rule_members(household_id,user_id) values("+uuid(h)+","+uuid(id)+") on conflict do nothing");
   const env={...process.env,SUPABASE_URL:origin,SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,
    SMART_ASSISTANT_SUPABASE_PUBLISHABLE:status.ANON_KEY,SMART_ASSISTANT_MODEL:"@cf/google/gemma-4-26b-a4b-it",
    SMART_ASSISTANT_ENABLED:"true",SMART_ASSISTANT_EXTENDED_MOVEMENTS:"true",SMART_ASSISTANT_ATOMIC_REVIEW:"true",
@@ -173,5 +179,9 @@ export async function connected(t){
   }
   throw Error("Disposable Edge Function failed to start.");
  }
- return {origin,users,session,startAssistant,setBuilderPilot};
+ function upgradeV31(){
+  assert.ok(baseline,"Only the baseline fixture can be upgraded here");
+  execFileSync("psql",[status.DB_URL,"-X","-v","ON_ERROR_STOP=1","-f","scripts/connected-test/upgrade-v31.sql"],{stdio:"pipe"});
+ }
+ return {origin,users,session,startAssistant,setBuilderPilot,upgradeV31};
 }
