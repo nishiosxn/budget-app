@@ -2,18 +2,19 @@
 const categorySettingsBackdrop=document.getElementById("categorySettingsBackdrop");
 const categorySettingsForm=document.getElementById("categorySettingsForm");
 let categorySettingsTarget=null;
-let clearArmTimer=null;
+let pendingCategoryClear=null;
 
 function prototypeSectionCategories(type,section){
  if(type==="income")return visibleIncomeCategories();
  if(section==="__savings__")return visibleSavingCategories();
  return visibleExpenseCategories().filter(c=>categorySectionOf(c)===section);
 }
-function revertPrototypeAdjustments(ids){
- // Remove ONLY the adjustments created by this action, never restore a global snapshot.
- if(!ids.length)return;
+function revertPrototypeAdjustments(ids,household){
+ if(!ids.length||activeHouseholdId!==household)return;
  const created=new Set(ids);
- state.transactions=state.transactions.filter(t=>!created.has(t.id));
+ const remaining=state.transactions.filter(t=>!t.adjustment||!created.has(t.id));
+ if(remaining.length===state.transactions.length)return;
+ state.transactions=remaining;
  saveState();render();
 }
 function prototypeWriteActual(id,target,type,label,meta={}){
@@ -27,26 +28,45 @@ function prototypeBulkActual(type,section,operation){
  const categories=prototypeSectionCategories(type,section);
  const totals=totalsByCategory(type);
  const group=type==="income"?"Revenus":section==="__savings__"?"Épargne":section;
- const groupId="bulk-"+uid(),created=[];
+ const groupId="bulk-"+uid(),created=[],household=activeHouseholdId;
+ const label=operation==="fill-empty"?"Remplissage d’un montant vide":"Remise du réel à zéro";
+ const meta={bulkGroupId:groupId,bulkLabel:group+" · "+label};
+ const monthTransactions=operation==="clear"?getMonthTransactions():[];
+ const date=transactionDateForSelectedMonth();
+ let changed=0;
  for(const c of categories){
+  if(operation==="clear"){
+   // Reverse the amounts for each payer separately, including recurring occurrences.
+   const byOwner=new Map();
+   for(const tx of monthTransactions){
+    if(tx.type!==type||tx.category!==c.id)continue;
+    const owner=transactionOwner(tx);
+    byOwner.set(owner,(byOwner.get(owner)||0)+Math.round(Number(tx.amount||0)*100));
+   }
+   let adjusted=false;
+   for(const [owner,cents] of byOwner){
+    if(!cents)continue;
+    const id=uid();
+    state.transactions.push({id,type,category:c.id,owner,amount:-cents/100,date,seed:false,adjustment:true,adjustmentLabel:label,...meta});
+    created.push(id);adjusted=true;
+   }
+   if(adjusted)changed++;
+   continue;
+  }
   const actual=Number(totals[c.id]||0),planned=Number(c.budget||0);
   // "Remplir les vides" must never overwrite a real amount, including an overrun.
-  if(operation==="fill-empty"&&(Math.abs(actual)>=.005||planned<=.005))continue;
-  if(operation==="clear"&&Math.abs(actual)<.005)continue;
-  const target=operation==="fill-empty"?planned:0;
-  const label=operation==="fill-empty"?"Remplissage d'un montant vide":"Remise du réel à zéro";
-  const id=prototypeWriteActual(c.id,target,type,label,{bulkGroupId:groupId,bulkLabel:group+" · "+label});
-  if(id)created.push(id);
+  if(Math.abs(actual)>=.005||planned<=.005)continue;
+  const id=prototypeWriteActual(c.id,planned,type,label,meta);
+  if(id){created.push(id);changed++}
  }
  if(!created.length){
   showUndoToast(operation==="fill-empty"?"Aucun montant vide à compléter":"Montants déjà à zéro");
   return 0;
  }
  saveState();render();
- const changed=created.length;
  const message=operation==="fill-empty"?changed+" montant"+(changed>1?"s":"")+" vide"+(changed>1?"s":"")+" complété"+(changed>1?"s":""):
   changed+" réel"+(changed>1?"s":"")+" remis à zéro · opérations conservées";
- showUndoToast(message,()=>revertPrototypeAdjustments(created));
+ showUndoToast(message,()=>revertPrototypeAdjustments(created,household));
  return changed;
 }
 function prototypeFillOne(id,type,button){
@@ -74,8 +94,9 @@ function prototypeFillOne(id,type,button){
  }
  const created=prototypeWriteActual(id,planned,type,"Réel aligné au prévu (confirmé)");
  if(!created)return;
+ const household=activeHouseholdId;
  saveState();render();
- showUndoToast(c.name+" : réel aligné au prévu",()=>revertPrototypeAdjustments([created]));
+ showUndoToast(c.name+" : réel aligné au prévu",()=>revertPrototypeAdjustments([created],household));
 }
 function prototypeSettingsField(id){return document.getElementById(id)}
 function openCategorySettings(id,type="expense",focusField="name"){
@@ -161,6 +182,31 @@ categorySettingsBackdrop.addEventListener("click",event=>{
  if(event.target===categorySettingsBackdrop)closeCategorySettings();
 });
 document.getElementById("categorySettingsClose").addEventListener("click",closeCategorySettings);
+function cancelCategoryClear(){
+ if(!pendingCategoryClear)return;
+ const {button,label,text,timer}=pendingCategoryClear;
+ pendingCategoryClear=null;
+ clearTimeout(timer);
+ button.querySelector("span").textContent=text;
+ button.setAttribute("aria-label",label);
+}
+function confirmCategoryClear(button){
+ const type=button.dataset.categoryType||"expense",section=button.dataset.section||"";
+ const categories=prototypeSectionCategories(type,section);
+ const ids=new Set(categories.map(c=>c.id));
+ const fingerprint=JSON.stringify([
+  activeHouseholdId,state.selectedMonth,[...ids],
+  getMonthTransactions().filter(t=>t.type===type&&ids.has(t.category))
+   .map(t=>[t.id,transactionOwner(t),t.amount])
+ ]);
+ const confirmed=pendingCategoryClear?.button===button&&pendingCategoryClear.fingerprint===fingerprint;
+ cancelCategoryClear();
+ if(confirmed&&button.isConnected){prototypeBulkActual(type,section,"clear");return}
+ pendingCategoryClear={button,fingerprint,label:button.getAttribute("aria-label"),
+  text:button.querySelector("span").textContent,timer:setTimeout(cancelCategoryClear,4500)};
+ button.setAttribute("aria-label","Confirmer la remise à zéro des montants réels");
+ button.querySelector("span").textContent="Confirmer";
+}
 categoryGrid.addEventListener("click",event=>{
  const settings=event.target.closest("[data-demo-settings]");
  if(settings){
@@ -174,32 +220,17 @@ categoryGrid.addEventListener("click",event=>{
  }
  const fill=event.target.closest("[data-demo-fill-all]");
  if(fill){
-  clearTimeout(clearArmTimer);
+  cancelCategoryClear();
   prototypeBulkActual(fill.dataset.categoryType||"expense",fill.dataset.section||"","fill-empty");
   return;
  }
  const clear=event.target.closest("[data-demo-clear-all]");
- if(!clear)return;
- if(clear.dataset.demoArmed==="true"){
-  clearTimeout(clearArmTimer);
-  clear.dataset.demoArmed="false";
-  prototypeBulkActual(clear.dataset.categoryType||"expense",clear.dataset.section||"","clear");
-  return;
- }
- categoryGrid.querySelectorAll("[data-demo-clear-all]").forEach(button=>{
-  button.dataset.demoArmed="false";
-  button.querySelector("span").textContent="Tout vider";
-  button.setAttribute("aria-label","Remettre tous les réels à zéro");
- });
- clear.dataset.demoArmed="true";
- clear.setAttribute("aria-label","Confirmer la remise à zéro des montants réels");
- clear.querySelector("span").textContent="Confirmer";
- clearArmTimer=setTimeout(()=>{
-  if(!clear.isConnected)return;
-  clear.dataset.demoArmed="false";
-  clear.querySelector("span").textContent="Tout vider";
-  clear.setAttribute("aria-label","Remettre tous les réels à zéro");
- },4500);
+ if(clear&&event.detail<2)confirmCategoryClear(clear);
 });
 
-document.addEventListener("keydown",event=>{if(event.key==="Escape"&&categorySettingsTarget)closeCategorySettings()});
+document.addEventListener("click",event=>{if(!event.target.closest("[data-demo-clear-all]"))cancelCategoryClear()});
+document.addEventListener("keydown",event=>{
+ if(event.key!=="Escape")return;
+ cancelCategoryClear();
+ if(categorySettingsTarget)closeCategorySettings();
+});

@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 const read=path=>fs.readFileSync(path,"utf8");
 function setup(overrides={}){
- const box={...overrides};vm.createContext(box);
+ const box={labelFromYM:(year,month)=>year+"-"+String(month).padStart(2,"0"),...overrides};vm.createContext(box);
  vm.runInContext(read("js/category-distribution.js"),box);
  return {model:box.SmartBudgetCategoryDistribution,box};
 }

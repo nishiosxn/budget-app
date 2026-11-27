@@ -1,11 +1,20 @@
 # Workstate — Budget foyer
 
+## Lot 2 V3.1 · Actions groupées de Catégories
+
+- Terminé : le remplissage complète les réels à zéro selon le prévu du mois. « Tout vider » demande une confirmation valable pour les mêmes foyer, mois et opérations. Échap, clic extérieur ou expiration annulent la demande. La remise à zéro ajoute des ajustements par payeur pour le mois et Annuler retire les seuls ajustements créés.
+- Répartition : réels et budgets comparés en centimes, comparaison avec le véritable prévu du mois précédent. Les budgets, les mouvements historiques et les sources des récurrences sont préservés.
+- Fichiers : `js/category-controls.js`, `js/category-distribution.js`, `scripts/category-distribution.test.mjs`, `scripts/v31-category-bulk.test.mjs`, `scripts/validate.mjs` et ce journal.
+- Tests : 44 tests ciblés et audit applicatif réussis. Chrome local sur données fictives : remplissage, Échap, changement de mois, remise à zéro, Vue d’ensemble et annulation. Le plan de synchronisation testé en mémoire ne touche que les écritures d’ajustement. Les protections d’archivage n’ont pas été modifiées.
+- Limite : la validation n’a pas utilisé de session Supabase hébergée. La persistance sur deux clients connectés reste à vérifier dans le lot de recette connectée.
+- En cours : CI de la PR #52 pour ce lot. Prochaine action après validation : lot 3, reproduire une interruption à la création du foyer de test et vérifier le résultat après une nouvelle tentative.
+
 ## Lot 1 V3.1 · Abonnements et bilan du Builder
 
 - Terminé : choix de facturation mensuelle ou annuelle, conversion au centime et détail repliable des revenus, charges, abonnements, épargne et budgets. Le bilan et la sauvegarde utilisent le même calcul de mensualisation. Changer de formule prédéfinie rétablit la périodicité mensuelle du tarif proposé.
 - Fichiers : `js/setup-builder.js`, `css/budget-theme.css`, `scripts/v31-builder.test.mjs` et ce journal. Fins de ligne LF d’origine conservées.
 - Tests locaux : 5 tests Builder réussis et audit applicatif réussi. Le scénario annuel vérifie le HTML du bilan ainsi que le budget et la catégorie enregistrés dans l’état applicatif de test.
-- En cours : vérification de la CI de la PR #52 sur ce lot. Aucune écriture Supabase hébergée.
+- CI de la PR #52 réussie pour ce lot (App integrity et PostgreSQL, exécution 46061576507, commit 5cd048c). Aucune écriture Supabase hébergée.
 - Reste pour la feuille de route : recette des actions groupées Catégories, puis reprise après interruption de la création de foyer. Aucun blocage identifié sur le lot Builder local.
 - Prochaine action après validation du lot 1 : ouvrir Catégories avec des données de test, remplir les budgets vides, annuler puis changer de mois et contrôler l’historique, les abonnements et les récurrences.
 

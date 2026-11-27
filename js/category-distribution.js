@@ -72,17 +72,19 @@
   if(typeof visibleExpenseCategories!=="function"||typeof visibleIncomeCategories!=="function"||
    typeof previousMonthKey!=="function"||typeof monthKey!=="function"||typeof state==="undefined")return null;
   const month=monthKey(state.selectedMonth),previous=previousMonthKey(month);
+  const [year,monthNumber]=previous.split("-").map(Number);
+  const previousLabel=labelFromYM(year,monthNumber);
   const baseline=typeof state.createdMonth==="string"?state.createdMonth:"";
   return {month,model:buildModel({expenses:visibleExpenseCategories(),incomes:visibleIncomeCategories(),
-   previousExpenses:previous>=baseline?visibleExpenseCategories(previous):null,
-   previousIncomes:previous>=baseline?visibleIncomeCategories(previous):null,
+   previousExpenses:previous>=baseline?visibleExpenseCategories(previousLabel):null,
+   previousIncomes:previous>=baseline?visibleIncomeCategories(previousLabel):null,
    scope:ui.scope,level:ui.level,sort:ui.sort})};
  }
  function selection(){return ui.items.find(item=>item.key===ui.selected)||null}
  function usageFor(item){
   const data=typeof metrics==="function"?metrics():null;
   const totals=ui.scope==="income"?data?.incMap:data?.expMap;
-  const used=(item.ids||[]).reduce((sum,id)=>sum+Number(totals?.[id]||0),0);
+  const used=(item.ids||[]).reduce((sum,id)=>sum+Math.round(Number(totals?.[id]||0)*100),0);
   const planned=Number(item.amount)||0;
   const remaining=planned-used;
   return {used,planned,remaining,

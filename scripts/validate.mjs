@@ -218,8 +218,8 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   else ok("Catégories : détail des opérations et payeur individuel présents");
 }
 
-if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
-  const categories=read("js/categories.js");
+if(modular&&exists("js/category-controls.js")&&exists("js/ui.js")){
+  const categories=read("js/category-controls.js");
   const ui=read("js/ui.js");
   const categoryUxMarkers=[
     'data-demo-fill-category',
@@ -230,11 +230,11 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
   if(missingCategoryUx.length)fail("UX Catégories V3.1 incomplète: "+missingCategoryUx.join(", "));
   else ok("UX Catégories V3.1 présente");
-  if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
+  if(!categories.includes('operation!=="fill-empty"')||!categories.includes('Math.abs(actual)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
   else ok("Remplissage des vides préserve les montants déjà saisis");
-  if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
-  else ok("Tout vider est masqué derrière le menu secondaire");
-  if(!categories.includes("showUndoToast")||!categories.includes("restoreCategoryTransactions"))fail("Annulation des actions rapides Catégories absente");
+  if(!categories.includes("confirmCategoryClear")||!categories.includes("pendingCategoryClear.fingerprint===fingerprint"))fail("Confirmation de la remise à zéro des catégories absente");
+  else ok("Tout vider demande une confirmation liée au mois et au foyer");
+  if(!categories.includes("showUndoToast")||!categories.includes("revertPrototypeAdjustments"))fail("Annulation des actions rapides Catégories absente");
   else ok("Actions rapides Catégories annulables");
 }
 
