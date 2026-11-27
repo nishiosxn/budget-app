@@ -19,8 +19,13 @@ export function createAtomicReview({validateReview,validateMixedDraft,validateCa
    const checked=draft.kind==="categoryDraft"?validateCategoryDraft(draft,context):
     draft.kind==="mixedDraft"?validateMixedDraft(draft,context):validateReview(draft,context);
    if(!checked.ok)return bad(422,"confirm_not_supported");
+   if(expectedPlans.length&&!/\b(?:budget|prevu)\b/.test(normalizeCategory(command)))
+    return bad(422,"confirm_not_supported");
    const original=creations.length?recognize(command,context):null;
-   if(creations.length&&(original?.value?.kind!==draft.kind||!original.ok))
+   const offer=original?.missingCategory;
+   const reviewedMissing=draft.kind==="categoryDraft"&&offer&&
+    draft.owner===offer.owner&&draft.date===offer.date&&draft.month===offer.month&&draft.expenseCents===offer.amountCents;
+   if(creations.length&&(!original?.ok||original.value?.kind!==draft.kind&&!reviewedMissing))
     return bad(422,"confirm_creation_not_requested");
 
    const baselines=new Map();

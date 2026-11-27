@@ -27,7 +27,8 @@ const pairs=[
  ["Ma partenaire a payé 45 € de courses et moi 17 € de bus.",
   [["expense","food-store","A",4500,"2026-11-27","once"],["expense","bus","B",1700,"2026-11-27","once"]]],
  ["Ajoute un abonnement de 12 € par mois.",[["expense","sub","B",1200,"2026-11-27","monthly"]]],
- ["Ajoute un revenu de 12 € par mois.",[["income","extra","B",1200,"2026-11-27","monthly"]]]
+ ["Ajoute un revenu de 12 € par mois.",[["income","extra","B",1200,"2026-11-27","monthly"]]],
+ ["J’ai transféré 25 € de mon compte courant vers mon livret A.",[["saving","saving","B",2500,"2026-11-27","once"]]]
 ];
 test("the requested mixed commands produce complete, deterministic proposals with no model call",async()=>{
  const noAI=()=>assert.fail("the provider must not be invoked");

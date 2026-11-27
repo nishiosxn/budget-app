@@ -84,6 +84,44 @@ begin
  update public.categories set updated_at=now()+interval '1 second' where id=rent;
  assert public.smart_assistant_atomic_review(h,a,array[a,b],req,'commit')->>'status'='rejected';
  assert (select count(*)=4 from public.transactions);
+ req:=gen_random_uuid();
+ select updated_at into category_version from public.categories where id=rent;
+ debit:=jsonb_set(debit,'{categoryVersion}',to_jsonb(category_version));
+ assert public.smart_assistant_atomic_review(h,a,array[a,b],req,'prepare',jsonb_build_array(debit))->>'status'='prepared';
+ update public.categories set archived_at=now() where id=rent;
+ assert public.smart_assistant_atomic_review(h,a,array[a,b],req,'commit')->>'status'='rejected';
+ assert (select count(*)=4 from public.transactions);
+
+ -- Solo, two month-only plans on the same category, with the old forward rule preserved.
+ update public.households set household_mode='solo' where id=h2;
+ select updated_at into category_version from public.categories where household_id=h2;
+ update public.categories set type='expense',owner_slot='B',is_saving=false where household_id=h2;
+ insert into public.budgets(household_id,category_id,month,planned_amount,scope,owner_slot)
+ select h2,id,'2025-01-01',50,'forward','B' from public.categories where household_id=h2
+ returning updated_at into budget_version;
+ plan:=jsonb_build_object('kind','plan','categoryId','private-other','categoryVersion',category_version,
+  'date','2025-01-01','frequency','once','planMode','decrease','amountCents',2000,'beforeCents',5000,'budgetVersion',budget_version);
+ actions:=jsonb_build_array(plan,plan||'{"date":"2025-02-01","planMode":"set","amountCents":0}'::jsonb);
+ req:=gen_random_uuid();
+ assert public.smart_assistant_atomic_review(h2,outsider,array[outsider],req,'prepare',actions)->>'status'='prepared';
+ receipt:=public.smart_assistant_atomic_review(h2,outsider,array[outsider],req,'commit');
+ assert receipt->>'status'='complete' and receipt->>'count'='2',receipt::text;
+ assert (select planned_amount=30 and scope='month' from public.budgets where household_id=h2 and month='2025-01-01');
+ assert (select planned_amount=0 and scope='month' from public.budgets where household_id=h2 and month='2025-02-01');
+ assert (select planned_amount=50 and scope='forward' from public.budgets where household_id=h2 and month='2025-03-01');
+
+ insert into public.categories(household_id,legacy_id,type,owner_slot)
+ select h2,'mass-'||i,'expense','B' from generate_series(1,5) i;
+ insert into public.budgets(household_id,category_id,month,planned_amount,scope,owner_slot)
+ select h2,id,'2025-01-01',20,'month','B' from public.categories where household_id=h2 and legacy_id like 'mass-%';
+ select jsonb_agg(jsonb_build_object('kind','plan','categoryId',c.legacy_id,'categoryVersion',c.updated_at,
+  'date','2025-01-01','frequency','once','planMode','set','amountCents',0,'beforeCents',2000,'budgetVersion',p.updated_at))
+ into actions from public.categories c join public.budgets p on p.category_id=c.id where c.household_id=h2 and c.legacy_id like 'mass-%';
+ req:=gen_random_uuid();
+ assert public.smart_assistant_atomic_review(h2,outsider,array[outsider],req,'prepare',actions)->>'status'='prepared';
+ assert public.smart_assistant_atomic_review(h2,outsider,array[outsider],req,'commit')->>'status'='rejected';
+ assert (select count(*)=5 from public.budgets p join public.categories c on c.id=p.category_id
+  where c.household_id=h2 and c.legacy_id like 'mass-%' and p.planned_amount=20);
  assert not has_function_privilege('authenticated','public.smart_assistant_atomic_review(uuid,uuid,uuid[],uuid,text,jsonb)','execute');
  assert not has_table_privilege('authenticated','private.smart_assistant_reviews','select');
 end $$;

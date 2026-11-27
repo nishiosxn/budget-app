@@ -43,6 +43,7 @@ declare
  plan_key text;
  count_ops integer:=0;
  created integer:=0;
+ zero_updates integer:=0;
  order_no integer;
 begin
  if p_household is null or p_actor is null or p_request is null or p_action is null
@@ -91,6 +92,25 @@ begin
  if p_action<>'commit' then return jsonb_build_object('status','prepared');end if;
 
  begin
+  -- Verify every reviewed revision against the pre-write state. A month-only
+  -- override may create a forward continuation used by a later month in this lot.
+  for op in select value from jsonb_array_elements(ticket.actions) where value->>'kind'<>'create_category' loop
+   select * into cat from public.categories c where c.household_id=p_household
+    and c.archived_at is null and coalesce(c.legacy_id,c.id::text)=op->>'categoryId' for update;
+   if not found or cat.updated_at is distinct from (op->>'categoryVersion')::timestamptz then
+    raise exception using errcode='P0001',message='category changed';
+   end if;
+   if op->>'kind'='plan' then
+    target_month:=(op->>'date')::date;
+    select * into effective from public.budgets b where b.household_id=p_household and b.category_id=cat.id
+     and b.archived_at is null and b.month<=target_month and (b.scope='forward' or (b.scope='month' and b.month=target_month))
+     order by b.month desc limit 1 for update;
+    if coalesce(round(effective.planned_amount*100)::bigint,0) is distinct from (op->>'beforeCents')::bigint
+     or effective.updated_at is distinct from (op->>'budgetVersion')::timestamptz then
+     raise exception using errcode='P0001',message='budget changed';
+    end if;
+   end if;
+  end loop;
   for op in select value from jsonb_array_elements(ticket.actions) loop
    count_ops:=count_ops+1;
    kind:=op->>'kind';
@@ -126,7 +146,7 @@ begin
    end if;
    select * into cat from public.categories c where c.household_id=p_household
     and c.archived_at is null and coalesce(c.legacy_id,c.id::text)=op->>'categoryId' for update;
-   if not found or cat.updated_at is distinct from (op->>'categoryVersion')::timestamptz then
+   if not found then
     raise exception using errcode='P0001',message='category changed';
    end if;
    if kind in ('expense','income','saving') then
@@ -151,12 +171,13 @@ begin
     and b.archived_at is null and b.month<=target_month and (b.scope='forward' or (b.scope='month' and b.month=target_month))
     order by b.month desc limit 1 for update;
    planned:=coalesce(round(effective.planned_amount*100)::bigint,0);
-   if planned is distinct from (op->>'beforeCents')::bigint
-    or effective.updated_at is distinct from (op->>'budgetVersion')::timestamptz then
+   if planned is distinct from (op->>'beforeCents')::bigint then
     raise exception using errcode='P0001',message='budget changed';end if;
    owner_slot_code:=case when effective.id is null then cat.owner_slot else effective.owner_slot end;
    planned:=case op->>'planMode' when 'increase' then planned+cents when 'decrease' then planned-cents else cents end;
    if planned not between 0 and 100000000 then raise invalid_parameter_value;end if;
+   if planned=0 and effective.planned_amount>0 then zero_updates:=zero_updates+1;end if;
+   if zero_updates>=5 then raise invalid_parameter_value;end if;
    new_scope:=case op->>'frequency' when 'monthly' then 'forward' else 'month' end;
    select * into budget from public.budgets where household_id=p_household and category_id=cat.id and month=target_month for update;
    if found then

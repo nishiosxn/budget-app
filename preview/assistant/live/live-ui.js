@@ -2,7 +2,7 @@
  const $=id=>document.getElementById(id),input=$("sbAssistantInput"),status=$("sbAssistantStatus"),result=$("sbAssistantResult"),form=$("sbAssistantForm"),send=$("send");
  const appSession=globalThis.SmartBudgetAssistantSession;
  const core=globalThis.SmartBudgetAssistantCore;
- let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0,confirmationStarted=false;
+ let session=null,history=[],epoch=0,busy=false,pendingReview=null,usageRequest=0,confirmationStarted=false,atomicClient=null;
  const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100);
  function focusInput(){requestAnimationFrame(()=>{if(session&&!$("pilotAssistant").hidden){resizeComposer();input.focus()}})}
  const confirmDiscard=message=>globalThis.SmartBudgetAssistantInteraction.confirmDiscard(message);
@@ -239,11 +239,11 @@
   if(session?.token!==token||session.householdId!==householdId||!cats.ok||!Array.isArray(cats.body)||cats.body.length>300)return null;
   const found=cats.body.filter(c=>(c.legacy_id||c.id)===op.categoryId);
   if(found.length!==1||typeof found[0].id!=="string")return null;
-  const path="/rest/v1/budgets?select=month,planned_amount,scope&household_id=eq."+encodeURIComponent(householdId)+"&category_id=eq."+encodeURIComponent(found[0].id)+"&archived_at=is.null&month=lte."+encodeURIComponent(month)+"&order=month.desc&limit=301";
+  const path="/rest/v1/budgets?select=month,planned_amount,scope,updated_at&household_id=eq."+encodeURIComponent(householdId)+"&category_id=eq."+encodeURIComponent(found[0].id)+"&archived_at=is.null&month=lte."+encodeURIComponent(month)+"&order=month.desc&limit=301";
   const rows=await json(path,{method:"GET",headers:headers(token)});
   if(session?.token!==token||session.householdId!==householdId||!rows.ok||!Array.isArray(rows.body)||rows.body.length>300)return null;
-  const before=core.readBudgetCents(rows.body,month.slice(0,7));
-  return Number.isSafeInteger(before)&&before>=0?{key:reviewEditor.key(op),beforeCents:before}:null;
+  const baseline=core.readBudgetBaseline(rows.body,month.slice(0,7));
+  return baseline?{key:reviewEditor.key(op),...baseline}:null;
  }
 
  // Same monthly accounting as the server category report. Only GET requests,
@@ -280,6 +280,66 @@
  }
  function categoryExplicitIntent(command){
   return typeof command==="string"&&/^(?:crée|cree|créer|creer|ajoute)\s+(?:(?:une|la)\s+)?cat[ée]gorie\b/iu.test(command.trim());
+ }
+ const atomicEnabled=ctx=>ctx.atomicReview===true&&!!atomicClient;
+ function setupAtomicClient(identity){
+  try{
+   return globalThis.createSmartBudgetAssistantConfirmation?.({identity,storage:localStorage,send:async body=>{
+    if(session!==identity)throw Error("Session modifiée.");
+    const response=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(identity.token),body:JSON.stringify(body)});
+    if(session!==identity)throw Error("Session modifiée.");
+    return response;
+   }})||null;
+  }catch{return null}
+ }
+ const outdatedReview="Proposition périmée ou refusée. Aucune écriture de ce lot. Lance une nouvelle demande avant de confirmer.";
+ async function saveAtomicDraft(id,command,draft,expectedPlans,ctx){
+  if(atomicClient.pending().some(other=>other!==id))throw Error("Une autre confirmation est déjà en attente.");
+  const ops=draft.operations||[],created=draft.kind==="categoryDraft"?1:draft.categories?.length||0;
+  const categoryVersions=ops.map(op=>ctx.categories.find(c=>c.id===op.categoryId)?.version??null);
+  const response=await atomicClient.submit(id,{command,draft,expectedPlans,categoryVersions},{count:created+ops.length,categoriesCreated:created});
+  if(response.outcome==="complete")return response;
+  if(["expired","missing","rejected"].includes(response.outcome))return {ok:false,status:409,body:{error:"confirm_stale"}};
+  throw Error("Confirmation non vérifiée.");
+ }
+ function renderPendingConfirmation(){
+  const client=atomicClient,id=client?.pending()[0];
+  if(!id)return false;
+  pendingReview={kind:"recovery"};confirmationStarted=true;
+  $("pilotAssistant").dataset.state="review";$("pilotExamples").open=false;
+  const card=document.createElement("div");card.className="pilot-review";
+  const message=document.createElement("p");message.className="pilot-review-message";
+  const actions=document.createElement("div");actions.className="pilot-review-actions";
+  const verify=reviewButton("Vérifier le résultat"),retry=reviewButton("Reprendre la confirmation","sb-assistant-send");
+  retry.hidden=true;actions.append(verify,retry);card.append(message,actions);result.replaceChildren(card);
+  async function check(resume){
+   if(busy||client!==atomicClient)return;
+   setSavingPilot(true);verify.disabled=retry.disabled=true;
+   status.textContent=resume?"Enregistrement en cours.":"Vérification du reçu.";
+   try{
+    const response=await client.recover(id,resume);
+    if(client!==atomicClient)return;
+    if(response.outcome==="prepared"){
+     message.textContent="Lot prêt à être enregistré. Tu peux reprendre la confirmation.";
+     retry.hidden=false;status.textContent="Prêt à reprendre.";return;
+    }
+    pendingReview=null;confirmationStarted=false;
+    message.textContent=response.outcome==="complete"
+     ?"Reçu vérifié · "+response.body.commit.count+" opération(s) enregistrée(s) ensemble."
+     :response.outcome==="rejected"?outdatedReview:"Ce lot n’a pas été enregistré. Tu peux formuler une nouvelle demande.";
+    status.textContent=message.textContent;actions.remove();$("cancel").hidden=false;
+   }catch{
+    if(client===atomicClient){message.textContent="Résultat incertain. Vérifie de nouveau avant de ressaisir le lot.";status.textContent="Confirmation à vérifier."}
+   }finally{
+    if(client===atomicClient){
+     setSavingPilot(false);verify.disabled=retry.disabled=false;
+     if(pendingReview){send.disabled=true;$("cancel").disabled=true}
+    }
+   }
+  }
+  verify.addEventListener("click",()=>void check(false));retry.addEventListener("click",()=>void check(true));
+  void check(false);
+  return true;
  }
  // 31am: missing category is only a suggestion. No write happens until
  // the user intentionally chooses one of the two explicit confirmation paths.
@@ -362,7 +422,7 @@
      card.append(reviewRow("Dépense à enregistrer",offer.amountCents,"pilot-negative"));
     }
    }else{
-    card.append(reviewRow("Dépense enregistrée",offer.amountCents,"pilot-negative"));
+    card.append(reviewRow(saved?"Dépense enregistrée":"Dépense proposée",offer.amountCents,"pilot-negative"));
    }
    const note=document.createElement("p");note.className="pilot-review-message";
    note.setAttribute("role","status");
@@ -387,21 +447,24 @@
       const req=mode==="create"?{action:"confirm_missing_category",householdId:session.householdId,
        requestId,command:sourceCommand,draft:checked.value}:{action:"confirm",householdId:session.householdId,
        requestId,draft:checked.value};
-      const response=await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify(req)});
+      const atom=atomicEnabled(ctx);
+      const response=atom?await saveAtomicDraft(requestId,sourceCommand,checked.value,[],ctx):
+       await json("/functions/v1/smart-assistant",{method:"POST",headers:headers(session.token),body:JSON.stringify(req)});
       const committed=response.body?.commit;
       if(response.ok&&committed?.requestId===requestId&&
-         (mode==="create"?committed.kind==="category"&&committed.expenseCreated===true:committed.count===1)){
+         (atom?committed.kind==="batch"&&committed.count===1:mode==="create"?committed.kind==="category"&&committed.expenseCreated===true:committed.count===1)){
        locked=true;saved=true;pendingReview=null;history=[];error="";status.textContent=mode==="create"?"Catégorie créée avec son budget et sa dépense.":"Dépense enregistrée dans la catégorie choisie.";
        void loadRuleCategories();
       }else if([400,403,409,422].includes(response.status)){
        attempted=false;requestId=null;
-       error=errorMessages[response.body?.error]||"Enregistrement refusé. Vérifie la catégorie et le budget.";
+       if(atom){locked=true;pendingReview=null;confirmationStarted=false}
+       error=atom?outdatedReview:errorMessages[response.body?.error]||"Enregistrement refusé. Vérifie la catégorie et le budget.";
        status.textContent=error;
       }else throw Error("Unverified confirmation");
      }catch{
       error="Réponse réseau non vérifiée. Réessaie cette confirmation sans changer les valeurs : aucun doublon ne sera créé.";
       status.textContent=error;
-     }finally{saving=false;setSavingPilot(false);draw()}
+    }finally{saving=false;setSavingPilot(false);if(atomicEnabled(ctx)&&attempted&&!locked){send.disabled=true;$("cancel").disabled=true}draw()}
     });
     actions.append(cancel,confirm);group.append(actions);
    }
@@ -411,7 +474,8 @@
 
  function renderCategoryDraft(v,ctx,sourceCommand){
   const draft={...v};pendingReview=draft;let editing=false,locked=false,saving=false,created=false,requestId=null,saveError="";
-  const canWrite=ctx.solo&&ctx.actor==="B"&&categoryExplicitIntent(sourceCommand);
+  const atom=atomicEnabled(ctx);
+  const canWrite=(atom||ctx.solo&&ctx.actor==="B")&&categoryExplicitIntent(core.normalizeLanguage(sourceCommand));
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&!saving&&pendingReview===draft&&!locked}
   function draw(){
@@ -423,7 +487,7 @@
    const info=document.createElement("div");info.className="pilot-op-info";
    const heading=document.createElement("strong");heading.textContent=draft.name;
    const meta=document.createElement("div");meta.className="pilot-op-meta";
-   meta.textContent="Nouvelle catégorie · "+monthReviewDate(draft.month+"-01",ctx)+" · Budget mensuel reconduit";
+   meta.textContent="Nouvelle catégorie · "+monthReviewDate(draft.month+"-01",ctx)+(draft.budgetCents===null?"":" · Budget mensuel reconduit");
    info.append(heading,meta);
    const amount=document.createElement("strong");amount.className="pilot-op-money pilot-plan";
    amount.textContent=draft.budgetCents===null?"Sans budget":euro(draft.budgetCents);
@@ -447,10 +511,11 @@
    }
    const safe=document.createElement("p");safe.className="pilot-review-message";
    const monthly="Budget mensuel reconduit à partir de "+monthReviewDate(draft.month+"-01",ctx)+".";
-   safe.textContent=created?"Catégorie créée dans le foyer de test. "+monthly+(draft.expenseCents!==null?" Dépense initiale enregistrée.":""):locked?"Simulation terminée · aucune écriture.":saveError||(canWrite?monthly+" Confirmer enregistre "+(draft.expenseCents!==null?"la catégorie, son budget et la dépense initiale ensemble.":"la catégorie et son budget ensemble."):"Simulation uniquement · aucune écriture sur cette demande.");
+   safe.textContent=created?"Catégorie créée dans le foyer de test. "+(draft.budgetCents===null?"":monthly)+(draft.expenseCents!==null?" Dépense initiale enregistrée.":""):locked?(saveError||"Simulation terminée · aucune écriture."):saveError||(canWrite?(draft.budgetCents===null?"Confirmer enregistre la catégorie"+(draft.expenseCents!==null?" et sa dépense initiale.":"."):monthly+" Confirmer enregistre "+(draft.expenseCents!==null?"la catégorie, son budget et la dépense initiale ensemble.":"la catégorie et son budget ensemble.")):"Simulation uniquement · aucune écriture sur cette demande.");
    group.append(safe);
    const actions=document.createElement("div");actions.className="pilot-review-actions";const cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(canWrite?"Confirmer":"Simuler","sb-assistant-send");
-   cancel.disabled=locked||saving;ok.disabled=locked||saving||editing||canWrite&&draft.budgetCents===null||!core.validateCategoryDraft(draft,ctx).ok;
+   cancel.disabled=locked||saving||atom&&requestId!==null;ok.disabled=locked||saving||editing||canWrite&&!atom&&draft.budgetCents===null||!core.validateCategoryDraft(draft,ctx).ok;
+   if(atom&&requestId!==null)ok.textContent="Réessayer";
    cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async ()=>{
     if(!active()||ok.disabled||!core.validateCategoryDraft(draft,ctx).ok)return;
@@ -458,9 +523,14 @@
     if(!requestId)requestId=crypto.randomUUID();
     saving=true;setSavingPilot(true);status.dataset.source="";status.textContent="Enregistrement dans le foyer de test…";draw();
     try{
-     const r=await savePilotCategory(requestId,sourceCommand,draft);
-     if(r.ok&&r.body?.commit?.kind==="category"&&r.body.commit.requestId===requestId){
-      created=true;locked=true;pendingReview=null;history=[];saveError="";status.textContent="Catégorie « "+r.body.commit.name+" » confirmée dans le foyer de test"+(r.body.commit.expenseCreated?" avec sa dépense initiale.":" et son budget mensuel.") ;void loadRuleCategories();
+     const r=atom?await saveAtomicDraft(requestId,sourceCommand,draft,[],ctx):await savePilotCategory(requestId,sourceCommand,draft);
+     if(r.ok&&r.body?.commit?.kind===(atom?"batch":"category")&&r.body.commit.requestId===requestId){
+      created=true;locked=true;pendingReview=null;history=[];saveError="";
+      status.textContent=atom?"Reçu vérifié · catégorie enregistrée dans le foyer de test.":
+       "Catégorie « "+r.body.commit.name+" » confirmée dans le foyer de test"+(r.body.commit.expenseCreated?" avec sa dépense initiale.":" et son budget mensuel.");
+      void loadRuleCategories();
+     }else if(atom&&r.status===409){
+      locked=true;pendingReview=null;confirmationStarted=false;saveError=outdatedReview;status.textContent=saveError;
      }else if(r.status===409&&r.body?.error==="confirm_category_exists"){
       locked=true;pendingReview=null;history=[];saveError=errorMessages.confirm_category_exists;status.textContent=saveError;
      }else if([400,403,422].includes(r.status)){
@@ -470,15 +540,14 @@
      }
     }catch{
      saveError="Réponse réseau indisponible. Réessaie cette confirmation ; la même demande ne sera pas créée deux fois.";status.textContent=saveError;
-    }finally{saving=false;setSavingPilot(false);draw()}
+    }finally{saving=false;setSavingPilot(false);if(atom&&requestId&&!locked){send.disabled=true;$("cancel").disabled=true}draw()}
    });
    if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
   draw();
  }
 
- // Compound previews are deliberately review-only: category creation never
- // mutates a parent budget or gets sent to the transaction commit endpoint.
+ // Existing category budgets and new category budgets stay distinct in the review.
  // The 31z budget bar is reused for all mixed proposals; no inferred spending.
  function mixedBudgetBar(host,plannedCents,actualCents,{name="",month="",isNew=false}={}){
   const pane=document.createElement("div");pane.className="pilot-expense-budget";
@@ -507,11 +576,11 @@
  }
  function renderMixedDraft(v,ctx,previews,sourceCommand){
   const draft=JSON.parse(JSON.stringify(v));pendingReview=draft;
-  let locked=false,editing=-1,attempted=false,saving=false,saveError="",requestId=null,saved=false;
+  let locked=false,editing=-1,attempted=false,saving=false,saveError="",requestId=null,saved=false,stale=false;
   const budgetReads=new Map();
   const baselines=draft.operations.map((op,i)=>{
    const p=previews.find(p=>p.index===i);
-   return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents}:null;
+   return op.kind==="plan"&&op.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(op),beforeCents:p.beforeCents,budgetVersion:p.budgetVersion??null}:null;
   });
   const group=document.createElement("div");group.className="pilot-review";result.append(group);
   function active(){return !busy&&!saving&&pendingReview===draft&&!locked}
@@ -585,16 +654,18 @@
     const money=document.createElement("strong");money.className="pilot-op-money pilot-plan";
     money.textContent=cat.budgetCents===null?"Sans budget":euro(cat.budgetCents);
     top.append(symbol,info,money);card.append(top);
-    if(cat.budgetCents!==null)mixedBudgetBar(card,cat.budgetCents,0,{name:cat.name,month:cat.month,isNew:true});
+    if(cat.budgetCents!==null)mixedBudgetBar(card,cat.budgetCents,cat.expenseCents??0,{name:cat.name,month:cat.month,isNew:true});
+    else if(cat.expenseCents!==null)card.append(reviewRow("Dépense proposée",cat.expenseCents,"pilot-negative"));
     if(!locked&&!attempted){
      if(editing===pos){
       reviewForm(card,[
        {key:"name",label:"Nom de la catégorie",value:cat.name,wide:true,maxLength:60,required:true},
-       {key:"budget",label:"Budget (€)",value:reviewEditor.money(cat.budgetCents),money:true,required:true},
+       {key:"budget",label:"Budget (€)",value:reviewEditor.money(cat.budgetCents),money:true},
+       {key:"expense",label:"Dépense (€)",value:reviewEditor.money(cat.expenseCents),money:true},
        {key:"month",label:"Mois",type:"month",value:cat.month,min:ctx.firstMonth,max:ctx.lastMonth,required:true}
       ],async(fields,notice,finish)=>{
        if(!active())return "Proposition périmée.";
-       const checked=reviewEditor.categoryFromFields(cat,{...fields,expense:""},ctx);
+       const checked=reviewEditor.categoryFromFields(cat,fields,ctx);
        if(!checked.ok)return checked.error;
        const combined=core.validateMixedDraft({...draft,categories:draft.categories.map((x,j)=>j===i?checked.value:x)},ctx);
        if(!combined.ok)return combined.error;
@@ -607,9 +678,10 @@
     group.append(card);
    }
    const checked=core.validateMixedDraft(draft,ctx),ready=checked.ok&&draft.operations.every((op,i)=>op.kind==="plan"&&!!reviewEditor.planPreview({op,baseline:baselines[i]}));
-   const real=ready&&ctx.solo&&ctx.actor==="B"&&draft.operations.every(op=>op.owner==="B"&&op.categoryId!==null)&&
+   const atom=atomicEnabled(ctx);
+   const real=ready&&(atom||ctx.solo&&ctx.actor==="B"&&draft.operations.every(op=>op.owner==="B"&&op.categoryId!==null)&&
     draft.categories.every(c=>c.owner==="B"&&c.budgetCents!==null)&&
-    new Set(draft.operations.map(op=>op.categoryId)).size===draft.operations.length;
+    new Set(draft.operations.map(op=>op.categoryId)).size===draft.operations.length);
    const note=document.createElement("p");note.className="pilot-review-message";
    note.textContent=locked?(saved?"Opérations enregistrées ensemble dans le foyer de test.":"Simulation terminée · aucune écriture."):
     saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:!ready?"Budget actuel non vérifié : confirmation indisponible.":
@@ -617,7 +689,7 @@
    group.append(note);
    const actions=document.createElement("div");actions.className="pilot-review-actions";
    const cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(attempted&&!locked?"Réessayer":real?"Confirmer les "+(draft.operations.length+draft.categories.length)+" opérations":"Simuler","sb-assistant-send");
-   cancel.disabled=locked||saving||attempted;ok.disabled=locked||saving||editing!==-1||!ready;
+   cancel.disabled=locked||saving||attempted;ok.disabled=locked||saving||stale||editing!==-1||!ready;
    cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async()=>{
     if(!active()||ok.disabled||!core.validateMixedDraft(draft,ctx).ok)return;
@@ -625,10 +697,12 @@
     if(!requestId){if(typeof crypto.randomUUID!=="function"){saveError="Navigateur incompatible avec la confirmation sécurisée.";draw();return;}requestId=crypto.randomUUID()}
     attempted=true;saving=true;saveError="";setSavingPilot(true);draw();status.textContent="Enregistrement atomique…";
     try{
-     const expectation=draft.operations.map((op,i)=>({index:i,beforeCents:baselines[i]?.beforeCents}));
-     const r=await saveBatchDraft(requestId,sourceCommand,draft,expectation);
+     const expectation=draft.operations.map((op,i)=>({index:i,beforeCents:baselines[i]?.beforeCents,
+      ...(atom?{budgetVersion:baselines[i]?.budgetVersion??null}:{})}));
+     const r=atom?await saveAtomicDraft(requestId,sourceCommand,draft,expectation,ctx):await saveBatchDraft(requestId,sourceCommand,draft,expectation);
      if(!r.ok&&[409,422].includes(r.status)){
       attempted=false;requestId=null;saveError=errorMessages[r.body?.error]||"Lot refusé, aucune écriture. Reformule la demande.";
+      if(atom){stale=true;saveError=outdatedReview;confirmationStarted=false}
       status.textContent=saveError;return;
      }
      if(!r.ok||r.body.commit?.kind!=="batch"||r.body.commit?.requestId!==requestId||
@@ -637,7 +711,7 @@
      saved=true;locked=true;pendingReview=null;history=[];status.dataset.source="";
      status.textContent="Lot enregistré dans le foyer de test.";void loadRuleCategories();
     }catch{saveError="Confirmation non vérifiée. Réessaie le même lot sans le ressaisir.";status.dataset.source="";status.textContent="Confirmation à vérifier."}
-    finally{saving=false;setSavingPilot(false);draw()}
+    finally{saving=false;setSavingPilot(false);if(atom&&attempted&&!saved){send.disabled=true;$("cancel").disabled=true}draw()}
    });
    if(!locked){actions.append(cancel,ok);group.append(actions)}
   }
@@ -654,6 +728,8 @@
  }
  function canSaveBatch(entries,ctx){
   const operations=entries.map(e=>e.op);
+  if(atomicEnabled(ctx))return operations.some(o=>o.kind==="plan")&&operations.every(o=>o.categoryId!==null)&&
+   entries.filter(e=>e.op.kind==="plan").every(e=>!!reviewEditor.planPreview(e));
   return ctx.solo&&ctx.actor==="B"&&operations.some(o=>o.kind==="plan")&&
    operations.every(o=>["plan","expense","income"].includes(o.kind)&&o.categoryId!==null&&o.owner==="B"&&
     (o.kind==="plan"||o.frequency==="once"))&&
@@ -677,7 +753,7 @@
  }
  function renderDraft(v,ctx,previews,suggestions,sourceCommand){
   ruleContext=ctx;showRules();
-  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false,saved=false,attempted=false,requestId=null,saveError="";
+  const review=JSON.parse(JSON.stringify(v));pendingReview=review;let editing=-1,budgetEditing=false,locked=false,saved=false,attempted=false,requestId=null,saveError="",stale=false;
   const budgetReads=new Map();
   const entries=review.operations.map((o,i)=>{
    const original=o.categoryId,personal=core.classifyCategory(o,ctx,{overrides:personalRules});
@@ -685,7 +761,7 @@
    if(remembered)o.categoryId=remembered.categoryId;
    else if(o.kind!=="plan"&&personal.source==="personal")o.categoryId=personal.categoryId;
    const suggestion=suggestions.find(s=>s.index===i),rule=core.draftCategorySuggestion(o,ctx,remembered?.ruleKey||suggestion?.ruleKey);
-   const p=previews.find(x=>x.index===i),baseline=o.kind==="plan"&&original===o.categoryId&&o.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(o),beforeCents:p.beforeCents}:null;
+   const p=previews.find(x=>x.index===i),baseline=o.kind==="plan"&&original===o.categoryId&&o.categoryId&&Number.isSafeInteger(p?.beforeCents)&&p.beforeCents>=0?{key:reviewEditor.key(o),beforeCents:p.beforeCents,budgetVersion:p.budgetVersion??null}:null;
    return {op:o,ruleKey:rule?.key||null,baseline};
   });
 
@@ -802,9 +878,9 @@
    }
    const checked=reviewEditor.validate(entries,ctx),creationKeys=[...new Set(entries.filter(e=>e.op.categoryId===null&&e.ruleKey).map(e=>e.ruleKey))];
    if(!locked&&creationKeys.length){const creation=document.createElement("p");creation.className="pilot-review-message";creation.dataset.creation="true";creation.textContent="À créer : "+creationKeys.map(k=>core.categoryRules.find(r=>r.key===k)?.name||k).join(", ");group.append(creation)}
-   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)||canSaveBatch(entries,ctx)?"Ces opérations seront enregistrées ensemble dans le foyer de test.":"Simulation · catégorie non attribuée, épargne ou récurrence non enregistrable.");group.append(note);
+   const note=document.createElement("p");note.className="pilot-review-message";note.dataset.invalid=String(!locked&&editing===-1&&!checked.ok);note.textContent=locked?(saved?"Enregistré dans le foyer test.":"Confirmé en simulation."):saveError|| (editing!==-1?"Applique ou annule la modification.":!checked.ok?checked.error:canSavePilot(entries,ctx)||canSaveBatch(entries,ctx)?"Ces opérations seront enregistrées ensemble dans le foyer de test.":"Simulation · opération non enregistrable avec les catégories et les capacités du pilote.");group.append(note);
    const actions=document.createElement("div");actions.className="pilot-review-actions";const batch=canSaveBatch(entries,ctx),real=canSavePilot(entries,ctx)||batch,cancel=reviewButton("Abandonner la proposition"),ok=reviewButton(attempted&&!locked?"Réessayer":real?(entries.length===1?"Confirmer":"Confirmer les "+entries.length+" opérations"):"Simuler","sb-assistant-send");
-   cancel.disabled=locked||attempted;ok.disabled=locked||busy||editing!==-1||!checked.ok;
+   cancel.disabled=locked||attempted;ok.disabled=locked||busy||stale||editing!==-1||!checked.ok;
    cancel.addEventListener("click",async()=>{if(active()&&await askDiscard()){wipe();status.textContent="Brouillon annulé."}});
    ok.addEventListener("click",async()=>{
     if(!active()||ok.disabled||!reviewEditor.validate(entries,ctx).ok)return;
@@ -813,10 +889,14 @@
     attempted=true;saveError="";setSavingPilot(true);draw();status.textContent="Enregistrement…";
     try{
      const batchDraft={kind:"draft",operations:entries.map(e=>e.op)};
-     const expectation=entries.flatMap((entry,i)=>entry.op.kind==="plan"?[{index:i,beforeCents:entry.baseline?.beforeCents}]:[]);
-     const r=batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft,ctx);
+     const atom=atomicEnabled(ctx);
+     const expectation=entries.flatMap((entry,i)=>entry.op.kind==="plan"?[{index:i,beforeCents:entry.baseline?.beforeCents,
+      ...(atom?{budgetVersion:entry.baseline?.budgetVersion??null}:{})}]:[]);
+     const r=atom?await saveAtomicDraft(requestId,sourceCommand,batchDraft,expectation,ctx):
+      batch?await saveBatchDraft(requestId,sourceCommand,batchDraft,expectation):await savePilotDraft(requestId,batchDraft,ctx);
      if(!r.ok&&[409,422].includes(r.status)){
       attempted=false;requestId=null;saveError=errorMessages[r.body?.error]||"Lot refusé, aucune écriture. Actualise les budgets.";
+      if(atom){stale=true;saveError=outdatedReview;confirmationStarted=false}
       status.textContent=saveError;return;
      }
      if(!r.ok||r.body.commit?.requestId!==requestId||r.body.commit?.count!==entries.length||
@@ -834,7 +914,7 @@
   draw();
  }
  function wipe(){confirmationStarted=false;$("pilotAssistant").dataset.state="initial";$("pilotExamples").open=true;pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true});focusInput()}
- function logout(){sharedRules?.reset();epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
+ function logout(){sharedRules?.reset();epoch++;usageRequest++;session=null;atomicClient=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){if(appSession&&session){const active=await appSession.current();if(active.userId!==session.userId||active.householdId!==session.householdId)throw Error("Session modifiée.");options.headers=headers(active.token)}const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
  const number=n=>new Intl.NumberFormat("fr-FR").format(n);
@@ -876,10 +956,11 @@
     if(at!==generation)return;
     if(check.status===403||check.status===401)throw Error("Ce foyer n’a pas accès au pilote de test.");
     if(!check.ok&&check.body?.error!=="quota_unavailable")throw Error("Assistant indisponible pour le moment.");
-    session=active;resetMeter();readPersonal();showRules();wipe();
+    session=active;atomicClient=setupAtomicClient(active);resetMeter();readPersonal();showRules();wipe();
     $("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;
     if(!displayQuota(check.body.quota))$("pilotQuotaText").textContent="Quota indisponible";
-    await loadRuleCategories();await refreshSharedRules();focusInput();
+    if(!renderPendingConfirmation())focusInput();
+    await loadRuleCategories();await refreshSharedRules();
    }catch(error){if(at===generation)$("pilotLoginStatus").textContent=error.message}
   })();
  }else $("pilotLoginForm").addEventListener("submit",async e=>{
@@ -902,6 +983,7 @@
  
  form.addEventListener("submit",async e=>{
   e.preventDefault();if(!session||busy||send.disabled)return;voice.stop();
+  if(atomicClient?.pending().length){renderPendingConfirmation();return}
   const command=input.value.trim();if(!command)return;if(!await askDiscard()||busy||send.disabled)return;$("pilotAssistant").dataset.state="analysis";$("pilotExamples").open=false;
   pendingReview=null;status.dataset.source="";result.replaceChildren();$("pilotSubmittedText").textContent=command;$("pilotSubmitted").hidden=false;const current=++epoch;busy=true;send.disabled=true;status.textContent="Analyse de ta demande…";
   let receivedResponse=false;

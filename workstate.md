@@ -1,12 +1,20 @@
 # Workstate — Budget foyer
 
+## Lot 4C V3.1 · Confirmation et reprise du Smart Assistant
+
+- Terminé en source : l’interface Unslop prépare puis confirme le lot revu. Elle affiche la réussite seulement après vérification du reçu. Une confirmation interrompue se retrouve après rechargement à partir d’un identifiant opaque lié à l’utilisateur et au foyer. L’analyse et les projections restent séparées de l’écriture.
+- Périmètre testé : catégorie explicite avec ou sans budget et première dépense, budgets fixés, augmentés, diminués ou remis à zéro, dépenses et revenus ponctuels ou mensuels, épargne et payeurs A/B/commun. Les prévisions sur plusieurs mois conservent les règles reconduites. Une proposition périmée demande une nouvelle revue.
+- Fichiers : Assistant intégré, module de confirmation et interface partagée, validation Edge, migration et scénarios PostgreSQL, tests navigateur et moteur ciblés, ce journal.
+- Tests locaux : 313 tests Node, audit applicatif et Chrome à 390 px réussis. Chrome a contrôlé la modification d’un budget et sa projection, le double clic, la réponse perdue et la récupération du reçu après rechargement avec une seule écriture simulée.
+- Limites : le navigateur utilise des données fictives. L’écriture réelle est validée sur PostgreSQL jetable, puis attend une recette hébergée autorisée. Les transferts internes se limitent à la mise en épargne représentée par le modèle existant. Les brouillons sans catégorie utilisable ou hors périmètre restent en simulation. Le benchmark Gemma reste réservé au lot 6.
+- En cours : CI de la PR #52 sur l’intégration finale. Prochaine action après validation : lot 5, recette connectée avec deux sessions et un foyer de test isolé après autorisation.
+
 ## Lot 4B V3.1 · Revalidation et écritures atomiques du pilote
 
 - Implémenté : préparation sans écriture financière, lot PostgreSQL unique, reçu partagé avec le pilote et versions des catégories et budgets relues au moment de confirmer. Les mouvements réutilisent la transaction existante. Les mois seuls préservent la reconduction du budget de départ.
 - Périmètre : service seul, foyer et utilisateurs de test autorisés, 12 actions maximum, aucune mutation à l’inférence. Activation contrôlée par `SMART_ASSISTANT_ATOMIC_REVIEW` avec les mouvements étendus.
 - Fichiers : migration `20261127220000_assistant_atomic_review.sql`, passerelle Edge et validation, moteur partagé, fixtures/tests de recette et ce journal.
-- Tests : validation passerelle et scénarios PostgreSQL ajoutés pour les erreurs entre écritures, le rejeu, les changements concurrents et l’isolation. CI PostgreSQL en attente.
-- En cours : lot 4C. Prochaine action : relier les confirmations Unslop à ce parcours et retrouver le reçu après rechargement avec un identifiant sans données financières.
+- Tests : 213 tests ciblés et CI PostgreSQL réussis (46066526339, commit 5fdffff), dont les erreurs entre écritures, le rejeu, les changements concurrents et l’isolation. Le raccordement navigateur est détaillé au lot 4C.
 
 ## Lot 4A V3.1 · Planification déterministe des demandes mixtes
 

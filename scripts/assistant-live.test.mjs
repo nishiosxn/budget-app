@@ -96,7 +96,7 @@ test("inline review edits are local, with read-only budget lookup and no write e
  assert.match(js,/reviewEditor\.validate\(entries,ctx\)/);
  assert.match(js,/reviewEditor\.categoryFromFields\(draft,fields,ctx\)/);
  assert.match(js,/readEditedBudget\(next\.op\)/);
- assert.match(js,/ok\.disabled=locked\|\|busy\|\|editing!==-1\|\|!checked\.ok/);
+ assert.match(js,/ok\.disabled=locked\|\|busy\|\|stale\|\|editing!==-1\|\|!checked\.ok/);
  assert.doesNotMatch(js,/method:"(?:PUT|PATCH|DELETE)"|\/rest\/v1\/(?:transactions|recurrences)/);
 });
 
@@ -166,7 +166,7 @@ test("analysis releases busy before rendering a valid review, while saving remai
   const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{}});return nodes.get(id)};
   const state={kind},observed=[];
   const ctx={
-   appSession:null,session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
+   appSession:null,atomicClient:null,session:{token:"test",householdId:"test"},busy:false,epoch:0,pendingReview:null,history:[],
    send:{disabled:false},input:{value:"test prompt"},status:{dataset:{}},result:{replaceChildren(){}},
    form:{addEventListener(type,callback){assert.equal(type,"submit");ctx.submit=callback}},
    $:node,voice:{stop(){}},resizeComposer(){},headers(){return {}},
@@ -182,7 +182,7 @@ test("analysis releases busy before rendering a valid review, while saving remai
   assert.deepEqual(observed,[{busy:false,sendDisabled:true}],kind);
   assert.equal(ctx.busy,false);assert.equal(ctx.send.disabled,false);
  }
- assert.match(js,/ok\.disabled=locked\|\|busy\|\|editing!==-1\|\|!checked\.ok/);
+ assert.match(js,/ok\.disabled=locked\|\|busy\|\|stale\|\|editing!==-1\|\|!checked\.ok/);
  assert.match(js,/setSavingPilot\(true\);draw\(\)/);
 });
 
@@ -268,7 +268,7 @@ test("31ab: mixed review renders the 31z card structure, controls and no runtime
 test("31ac: standalone Gundam category uses normal card and a visible 90-euro budget bar",()=>{
  const vm=vmFixture;
  const start=js.indexOf(" const iconPaths="),catStart=js.indexOf(" function renderCategoryDraft(",start);
- const catEnd=js.indexOf(" // Compound previews",catStart);
+ const catEnd=js.indexOf(" // Existing category budgets",catStart);
  const budgetStart=js.indexOf(" function mixedBudgetBar("),budgetEnd=js.indexOf(" function renderMixedDraft(",budgetStart);
  assert.ok(start>=0&&catStart>start&&catEnd>catStart&&budgetStart>catEnd&&budgetEnd>budgetStart);
  class Node{
@@ -282,10 +282,10 @@ test("31ac: standalone Gundam category uses normal card and a visible 90-euro bu
  const nodes=[],root=new Node(),buttons=[];
  const doc={createElement(tag){const n=new Node(tag);nodes.push(n);return n},createElementNS(_ns,tag){return new Node(tag)}};
  const context={
-  document:doc,result:root,busy:false,pendingReview:null,history:[],status:{dataset:{},textContent:""},
+  document:doc,result:root,busy:false,pendingReview:null,history:[],atomicClient:null,status:{dataset:{},textContent:""},
   euro:n=>(n/100).toFixed(2)+" €",
   monthReviewDate:()=> "nov.",
-  core:{validateCategoryDraft:v=>({ok:true,value:v})},
+  core:{normalizeLanguage:v=>v,validateCategoryDraft:v=>({ok:true,value:v})},
   reviewEditor:{money:n=>n===null?"":String(n/100),categoryFromFields:()=>({ok:false,error:"not used"})},
   reviewButton:label=>{const n=new Node("button");n.textContent=label;buttons.push(n);return n},
   compactReviewAction:label=>{const n=new Node("button");n.textContent=label;return n},
@@ -370,8 +370,8 @@ test("31af: explicit category confirmation has unique retry token and never crea
  assert.match(js,/function categoryExplicitIntent\(command\)/);
  assert.match(js,/action:"confirm_category"/);
  assert.match(js,/if\(!requestId\)requestId=crypto\.randomUUID\(\)/);
- assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
- assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
+ assert.match(js,/const canWrite=\(atom\|\|ctx\.solo&&ctx\.actor==="B"\)&&categoryExplicitIntent\(core\.normalizeLanguage\(sourceCommand\)\)/);
+ assert.match(js,/const canWrite=\(atom\|\|ctx\.solo&&ctx\.actor==="B"\)&&categoryExplicitIntent\(core\.normalizeLanguage\(sourceCommand\)\)/);
  assert.match(js,/catégorie, son budget et la dépense initiale ensemble/);
  assert.match(js,/canWrite\?"Confirmer":"Simuler"/);
  assert.match(js,/r\.body\.commit\.requestId===requestId/);
@@ -381,11 +381,11 @@ test("31af: explicit category confirmation has unique retry token and never crea
 
 
 test("31ai: explicit category with initial expense is confirmable and monthly forward semantics are displayed",()=>{
- assert.match(js,/const canWrite=ctx\.solo&&ctx\.actor==="B"&&categoryExplicitIntent\(sourceCommand\)/);
+ assert.match(js,/const canWrite=\(atom\|\|ctx\.solo&&ctx\.actor==="B"\)&&categoryExplicitIntent\(core\.normalizeLanguage\(sourceCommand\)\)/);
  assert.doesNotMatch(js,/const canWrite=[^\n]+expenseCents===null/);
  assert.match(js,/Budget mensuel reconduit/);
  assert.match(js,/savePilotCategory\(requestId,sourceCommand,draft\)/);
- assert.match(js,/status\.textContent="Catégorie/);
+ assert.match(js,/status\.textContent=atom\?"Reçu vérifié/);
  assert.match(js,/r\.body\.commit\.expenseCreated/);
  assert.match(js,/edit\.disabled=requestId!==null/);
  assert.match(html,/review-editor\.js\?v=31ai/);
