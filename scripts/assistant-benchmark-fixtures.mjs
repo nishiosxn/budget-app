@@ -31,12 +31,30 @@ const seeds=[
 ];
 // Preserve semantic meaning. For read-only prompts, suffixes deliberately do not imply a write.
 export const scenarios=seeds.flatMap(([prompt,expected],i)=>variants.map((suffix,j)=>({id:"fr-"+(i+1)+"-"+(j+1),prompt:prompt+suffix,expected})));
+export const benchmarkScenarios=[...scenarios,
+ {id:"reg-lidl",prompt:"J’ai payé 20 € chez Lidl.",expected:draft({...op("expense","food","B",2000),label:"Lidl"})},
+ {id:"reg-mcdo",prompt:"J’ai dépensé 12,40 € chez Mc Do.",expected:draft({...op("expense","rest","B",1240),label:"McDonald's"})},
+ {id:"reg-familiar",prompt:"J’ai claqué 12 € chez Lidl, merci.",expected:draft({...op("expense","food","B",1200),label:"Lidl"})},
+ {id:"reg-unknown",prompt:"J’ai payé 14,90 € chez Boulangerie du Canal.",expected:draft({...op("expense",null,"B",1490),label:"Boulangerie du Canal"})},
+ {id:"reg-monthly",prompt:"Ajoute un abonnement de 12 € par mois.",expected:draft({...op("expense","sub","B",1200,date,"monthly"),label:"Abonnement"})},
+ {id:"reg-previous",prompt:"Augmente de 20 € mon budget courses du mois dernier.",expected:draft({...op("plan","food","common",2000,"2026-10-01"),planMode:"increase",label:"Courses"})},
+ {id:"reg-zero",prompt:"Mets mon budget carburant à zéro.",expected:draft({...op("plan","fuel","common",0,"2026-11-01"),planMode:"set",label:"Carburant"})},
+ {id:"reg-compound",prompt:"Ajoute 20 € de McDo et augmente mon budget Restaurants de 10 €.",expected:draft(
+  {...op("expense","rest","B",2000),label:"McDonald's"},{...op("plan","rest","common",1000,"2026-11-01"),planMode:"increase",label:"Restaurants"})}
+];
 export function matchesExpected(actual,expected){
  if(!actual||actual.kind!==expected.kind)return false;
  if(expected.kind==="draft"){
   if(actual.operations?.length!==expected.operations.length)return false;
-  const key=v=>JSON.stringify([v.kind,v.categoryId,v.owner,v.amountCents,v.date,v.frequency]);
-  return JSON.stringify(actual.operations.map(key).sort())===JSON.stringify(expected.operations.map(key).sort());
+  const fields=["kind","categoryId","owner","amountCents","date","frequency"];
+  const remaining=[...actual.operations];
+  return [...expected.operations].sort((a,b)=>Number(!!b.label)-Number(!!a.label)).every(wanted=>{
+   const index=remaining.findIndex(op=>fields.every(k=>op[k]===wanted[k])&&
+    (op.kind!=="plan"||(op.planMode||"set")===(wanted.planMode||"set"))&&
+    (!wanted.label||op.label===wanted.label));
+   if(index<0)return false;
+   remaining.splice(index,1);return true;
+  });
  }
  if(expected.kind==="query")return ["kind","query","month","compareMonth","categoryId","owner"].every(k=>actual[k]===expected[k]);
  return typeof actual.message==="string"&&actual.message.trim().length>0;

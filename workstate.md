@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 6A V3.1 · Corpus et mesure initiale
+
+- Corpus fictif historique de 200 commandes complété par huit cas annotés de libellés et de modes budgétaires. Le score vérifie les opérations complètes et les champs attendus.
+- Mesure sur le moteur de `376ff27` : 19/208 résultats exacts, 24/208 traités localement, moyenne 0,376 ms sur cet exécuteur. Le corpus historique comporte dix variantes par intention et sert de test de robustesse.
+- Gemma 4 26B est répertorié chez Cloudflare. Workers Free annonce 10 000 neurones par jour UTC. Aucun accès de compte ou jeton de test dans l’environnement, donc zéro appel réel. Le modèle et les plafonds restent identiques.
+- Fichiers : `scripts/assistant-benchmark.mjs`, `scripts/assistant-benchmark-fixtures.mjs` et ce journal. Deux tests historiques du corpus réussis.
+- Prochaine action : optimiser le traitement déterministe fiable et limiter le contexte et le prompt transmis.
+
 ## Lot 5 · Reprise et vérification des pages connectées
 
 - État repris : aucun changement local, `7920af0` publié. La CI connectée 46073305927 et App integrity/PostgreSQL 46073305780 sont vertes. Les résultats des sous-lots 5A à 5C restent acquis.
