@@ -340,6 +340,7 @@ async function initCloudAuth(){
 
  cloudAuthSubscription?.unsubscribe?.();
  const {data:listener}=cloudClient.auth.onAuthStateChange((event,session)=>{
+  if(cloudSession?.user?.id!==session?.user?.id&&typeof closeSetupBuilder==="function")closeSetupBuilder();
   cloudSession=session||null;
   if(typeof loadUserAppearanceFromSession==="function"){
    if(cloudSession)loadUserAppearanceFromSession(cloudSession);

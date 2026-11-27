@@ -83,6 +83,19 @@ begin
 end $$;
 -- The oldest checked-in compatibility migration revokes this historic RPC.
 create function public.rls_auto_enable() returns void language plpgsql as $$ begin return; end $$;
+-- The historical contract exposes row revisions for optimistic sync.
+create function private.fixture_touch_revision() returns trigger language plpgsql as $$
+begin
+ new.updated_at=clock_timestamp();
+ return new;
+end $$;
+do $$
+declare t text;
+begin
+ foreach t in array array['households','categories','budgets','transactions','recurrences'] loop
+  execute format('create trigger fixture_touch_revision before update on public.%I for each row execute function private.fixture_touch_revision()',t);
+ end loop;
+end $$;
 \ir ../../supabase/migrations/20260930001858_v2_4_household_invites_and_slots.sql
 \ir ../../supabase/migrations/20260930002106_v2_4_sync_fields_and_security_hardening.sql
 \ir ../../supabase/migrations/20260930002728_v2_4_archive_sync_rows.sql

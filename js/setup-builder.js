@@ -132,9 +132,11 @@ class SetupBuilderController{
   this.initialSetup=initialSetup;
   this.requestId=initialSetup?.requestId||null;
   this.initialPayload=initialSetup?.draft||null;
+  this.serverDraftConfirmed=!!this.initialPayload;
   this.initialDigest=cloudSyncDigest();
   this.prepared=!!this.initialPayload;
   this.draft=this.createInitialDraft();
+  this.emptyDraft=JSON.stringify(this.draft);
   this.step=this.prepared?6:0;
   this.editingName="";
   this.customPickerOpen=this.draft.appearance.color==="custom";
@@ -162,6 +164,14 @@ class SetupBuilderController{
   this.appearanceFrame=0;
   clearTimeout(this.appearanceCommitTimer);
   this.appearanceCommitTimer=null;
+  this.draft=null;
+  this.emptyDraft=null;
+  this.initialPayload=null;
+ }
+
+ hasUnreceivedDraft(){
+  return !!(this.initialSetup&&this.draft&&!this.serverDraftConfirmed&&
+   this.root?.classList.contains("open")&&JSON.stringify(this.draft)!==this.emptyDraft);
  }
 
  createInitialDraft(){
@@ -1035,6 +1045,7 @@ class SetupBuilderController{
    this.prepared=true;
    let receipt=await cloudBudgetBuilderSetup(household,"stage",this.requestId,this.initialPayload);
    if(!sameSession())return;
+   this.serverDraftConfirmed=receipt?.status==="staged"||receipt?.status==="complete";
    if(receipt?.status==="staged"&&receipt.draft){
     this.requestId=receipt.requestId;
     this.initialPayload=receipt.draft;
@@ -1118,6 +1129,12 @@ class SetupBuilderController{
 }
 
 const setupBuilderController=new SetupBuilderController();
+
+globalThis.addEventListener?.("beforeunload",event=>{
+ if(!setupBuilderController.hasUnreceivedDraft())return;
+ event.preventDefault();
+ event.returnValue="";
+});
 
 function openSetupBuilder(initialSetup=null){setupBuilderController.open(initialSetup)}
 function closeSetupBuilder(){setupBuilderController.close()}

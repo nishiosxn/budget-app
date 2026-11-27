@@ -7,6 +7,7 @@ import {randomUUID} from "node:crypto";
 function transport(){
  let staged=null,complete=false;
  const api={calls:[],fail:null,commits:0,readbacks:0,preferences:[]};
+ api.submitted=()=>structuredClone(staged?.draft);
  const trip=point=>{if(api.fail===point){api.fail=null;throw Error("Connexion interrompue")}};
  api.rpc=async (household,action,request,draft)=>{
   assert.equal(household,"household");
@@ -73,18 +74,20 @@ for(const mode of ["solo","couple"])test("the "+mode+" review matches the atomic
  b.addCustom("envelope");
  b.draft.customExpense[0].amount="5.07";
  const review=b.totals();
+ const customId=b.draft.customExpense[0].id;
  const before=client.run("cloudSyncDigest()");
  await Promise.all([b.finish(),b.finish()]);
- const rows=b.initialPayload.categories;
+ const submission=api.submitted();
+ const rows=submission.categories;
  const sum=type=>rows.filter(x=>x.type===type).reduce((n,x)=>n+x.amountCents,0)/100;
  assert.equal(sum("income"),review.income);
  assert.equal(sum("expense"),review.expense);
  assert.equal(rows.length,review.count);
  assert.equal(rows.find(x=>x.id==="setup-sub-netflix").amountCents,833);
  assert.equal(rows.find(x=>x.id==="saving-b").saving,true);
- assert.equal(rows.some(x=>x.id===b.draft.customExpense[0].id),true);
+ assert.equal(rows.some(x=>x.id===customId),true);
  assert.equal(rows.some(x=>x.owner==="A"),mode==="couple");
- assert.equal(b.initialPayload.personA,"Camille");
+ assert.equal(submission.personA,"Camille");
  assert.equal(client.run("cloudSyncDigest()"),before);
  assert.deepEqual(api.calls,["stage","commit"]);
  assert.equal(api.commits,1);
@@ -127,7 +130,7 @@ for(const failure of ["after-stage","during-commit"])test("a new browser session
  await next.builder.finish();
  assert.equal(api.commits,1);
  assert.equal(api.readbacks,1);
- assert.equal(next.builder.initialPayload.name,"Foyer à reprendre");
+ assert.equal(api.submitted().name,"Foyer à reprendre");
  assert.equal(next.builder.requestId,first.builder.requestId);
 });
 
@@ -185,4 +188,18 @@ test("authoritative cloud readback preserves empty category groups and opening b
  assert.equal(client.run('state.expensePlanChanges["setup-sub-example"].forward["2026-11"].budget'),8.33);
  assert.equal(client.run("state.transactions.length"),0);
  assert.deepEqual(balances,records.account_opening_balances);
+});
+
+test("only a changed, unreceived draft requires a navigation warning; closing clears it",async()=>{
+ const api=transport(),client=tab(api);
+ assert.equal(client.builder.hasUnreceivedDraft(),false);
+ client.builder.draft.household.name="Foyer fictif à garder";
+ assert.equal(client.builder.hasUnreceivedDraft(),true);
+ api.fail="before-stage";
+ await client.builder.finish();
+ assert.equal(client.builder.hasUnreceivedDraft(),true);
+ client.builder.close();
+ assert.equal(client.builder.hasUnreceivedDraft(),false);
+ assert.equal(client.builder.initialPayload,null);
+ assert.equal(client.builder.draft,null);
 });

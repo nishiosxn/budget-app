@@ -1,11 +1,19 @@
 # Workstate — Budget foyer
 
+## Lot 5B V3.1 · Builder et Catégories en sessions indépendantes
+
+- Ajouté : recette via Chromium, comptes Auth réels de test et REST local. Parcours solo/duo, invitation, coupure avant réception, réponses perdues après réception, fermeture et relecture du bilan. Le moteur applicatif de synchronisation échange avec le REST local via les sessions navigateur.
+- Ajouté au Builder : avertissement avant de quitter avec une saisie encore inconnue du serveur. Changer de compte ferme le Builder et libère son brouillon. Aucun brouillon financier en clair ni clé locale persistante. Une fermeture forcée avant réception perd encore la saisie.
+- Fichiers : `js/setup-builder.js`, `js/auth.js`, tests de reprise, workflow et tests `scripts/connected-test/`.
+- Résultats : 23 tests ciblés locaux réussis. Le premier workflow a démarré Supabase et chargé les migrations, puis Chromium a échoué sur Ubuntu 26.04. Le runner est fixé à Ubuntu 24.04 pour la nouvelle exécution.
+- Reste : résultats HTTP de cette recette, vérification réelle des déclencheurs historiques et recette complète de l’interface en environnement représentatif. Prochaine action : ajouter la recette Edge locale et vérifier l’isolation des reçus et règles.
+
 ## Lot 5A V3.1 · Environnement isolé et revue de migration
 
 - Revue réalisée : migrations depuis V3.0.2, ACL/RLS, dépendances Edge, compatibilité du provisionnement et sauvegarde/retour arrière. Les protections serveur historiques du 16 novembre ne sont pas intégralement versionnées.
 - Préparé : workflow isolé Auth, REST et PostgreSQL avec profils Chromium séparés. La base synthétique reconstitue les prérequis non inclus dans le dépôt et applique les migrations versionnées. Aucun accès à un foyer hébergé.
 - Fichiers : `docs/V3_1_CONNECTED_ACCEPTANCE.md`, `.github/workflows/v31-connected-test.yml`, `scripts/connected-test/` et ce journal.
-- Limites : Supabase CLI et Docker indisponibles sur ce poste. Premier démarrage et connexion réelle à vérifier en CI. Le connecteur hébergé requiert une liaison, aucun accès de recette hébergée établi.
+- CI 46071836576 : Supabase isolé démarré et migrations chargées. Le premier lancement Chromium a bloqué sur la version Ubuntu du runner, correction consignée au lot 5B. Le connecteur hébergé requiert une liaison, aucun accès de recette hébergée établi.
 - Prochaine action : vérifier la CI locale isolée, puis tester le Builder, l’invitation et les données visibles dans deux sessions.
 
 ## Lot 4C V3.1 · Confirmation et reprise du Smart Assistant
