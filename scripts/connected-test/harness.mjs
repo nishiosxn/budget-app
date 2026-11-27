@@ -80,7 +80,8 @@ export async function connected(t){
     const sdk=await fs.readFile(process.env.SB_TEST_SDK);
     const root=resolve(".");
     const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",
-     ".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".json":"application/json",".webmanifest":"application/manifest+json"};
+     ".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",
+     ".ico":"image/x-icon",".json":"application/json",".webmanifest":"application/manifest+json"};
     await ctx.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js",
      route=>route.fulfill({contentType:types[".js"],body:sdk}));
     await ctx.route(app+"**",async route=>{

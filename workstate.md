@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 7A V3.1 — Audit graphique et protocole de recette
+
+- Point de départ publié `da28f70`. Design system et références Unslop consultés. Direction retenue : conserver les maquettes, le violet Smart Budget et la répartition financière comme repère graphique. Accorder les surfaces, l'alignement des montants, les libellés et les états interactifs par correctifs ciblés.
+- La recette connectée existante enregistre les rendus avant correction sur Supabase jetable, en onze états, deux thèmes et neuf largeurs. Les captures à 390 et 1 440 px et les mesures de largeur sont conservées dans l'artefact GitHub Actions.
+- Fichiers : workflow de recette, harnais Chromium et enregistreur visuel. Les résultats navigateur sont attendus. L'accès à un iPhone physique et le benchmark réel Gemma sont indépendants de cette recette.
+- Prochaine action : lire les captures et corriger les écarts confirmés du 7B sans modifier les calculs.
+
 ## Lot 6C V3.1 · Benchmark final et gestion des erreurs
 
 - Benchmark local comparatif : 208 demandes fictives, 55 résultats locaux exacts contre 20 au départ, et 55 demandes traitées sans IA contre 24. Le score initial a été recalculé sur le même corpus final, avec une enseigne inconnue sans nom d’activité classant.
