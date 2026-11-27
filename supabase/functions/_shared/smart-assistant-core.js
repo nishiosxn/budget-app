@@ -561,8 +561,18 @@
   let text=command.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/’/g,"'").replace(/\s+/g," ").replace(/[.!?]$/,"");
   const monthly=/(?: chaque mois| par mois| tous les mois)$/.test(text);
   if(monthly)text=text.replace(/(?: chaque mois| par mois| tous les mois)$/,"");
-  const selected=ctx.selectedMonth||ctx.today.slice(0,7);if(!monthOK(selected,ctx))return null;
-  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le|a mon|a notre|dans mon|sur mon) budget (?:de |d'|des |pour )?(.+)$"));
+  let selected=ctx.selectedMonth||ctx.today.slice(0,7);
+  const previous=/ du mois dernier(?=$| de \d)/.test(text);
+  if(previous){
+   const day=new Date(ctx.today.slice(0,7)+"-01T12:00:00Z");
+   day.setUTCMonth(day.getUTCMonth()-1);selected=day.toISOString().slice(0,7);
+   text=text.replace(/ du mois dernier(?=$| de \d)/,"");
+  }
+  const named=creationMonth(text,{...ctx,selectedMonth:selected});
+  if(previous&&named.text!==text)return null;
+  text=named.text;selected=named.month;
+  if(!monthOK(selected,ctx))return null;
+  const delta=text.match(new RegExp("^(ajoute|augmente|retire|diminue|enleve|baisse|reduis) (?:de )?("+amountPattern+")\\s*(?:€|euros?)? (?:au|du|le|mon|notre|a mon|a notre|dans mon|sur mon) budget (?:de |d'|des |pour )?(.+)$"));
   const deltaAfter=text.match(new RegExp("^(augmente|diminue|baisse|reduis|ajoute|retire|enleve) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) de ("+amountPattern+")\\s*(?:€|euros?)?$"));
   const target=text.match(new RegExp("^(?:mets|fixe|passe|regle) (?:(?:le|mon|notre) )?budget (?:de |d'|des |pour )?(.+?) a ("+amountPattern+")\\s*(?:€|euros?)?$"));
   const zero=text.match(/^(?:zero (?:euro|euros|€)?\s*(?:au |de )?budget|remets? (?:(?:le|mon|notre) )?budget) (?:de |d'|des |pour )?(.+?)(?: a zero)?$/);
@@ -948,10 +958,13 @@
  // one-person pilot or quietly reassign another person's expense to the actor.
  function quickAttributedExpenses(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx)||typeof command!=="string")return null;
-  const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"");
+  const t=command.trim().replace(/’/g,"'").replace(/[.!?]$/,"")
+   .replace(/ et moi (?=\d)/iu," et moi j'ai payé ");
   const m=t.match(/^([\p{L}][\p{L}' -]{0,49}?)\s+a (?:payé|paye|dépensé|depense)\s+(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+de\s+(courses?|bus|train|métro|metro|tram|essence|médicaments|medicaments)\s+et\s+(?:moi\s+)?j[' ]ai (?:payé|paye|dépensé|depense)\s+(\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?)\s+de\s+(courses?|bus|train|métro|metro|tram|essence|médicaments|medicaments)$/iu);
   if(!m)return null;
-  const member=ownerSlotForName(m[1],ctx);
+  const explicitPartner=/^(?:ma partenaire|mon partenaire)$/iu.test(m[1]);
+  const other=ctx.actor==="A"?"B":"A";
+  const member=explicitPartner&&!ctx.solo&&ctx.members?.[other]?other:ownerSlotForName(m[1],ctx);
   if(!member){
    return validateAssistantResult({kind:"answer",message:ctx.solo
     ?"Ce foyer de test est individuel. Je ne peux pas attribuer une dépense à "+m[1]+". Aucun mouvement proposé ; il faut tester cette demande dans un foyer à deux."
@@ -1020,6 +1033,7 @@
  function quickSingleMovement(command,ctx){
   if(!contextOK(ctx)||!ownerOK(ctx.actor,ctx))return null;
   let t=command.trim(),date=ctx.today;
+  t=t.replace(/^ajoute (?=\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?) (?:chez|de) )/iu,"J’ai dépensé ");
   // Recognize date adverbs at the beginning OR end, never both.
   const leading=t.match(/^(hier|avant-hier|aujourd'hui)[,;:]?\s+/iu);
   if(leading)t=t.slice(leading[0].length).trim();
@@ -1054,7 +1068,8 @@
   // Full clause matching. Decimal commas in amounts are not separators.
   // Separate only explicitly introduced actions, never decimal commas.
   // Invalid individual clauses invalidate the entire local proposal.
-  const clean=command.replace(/[,;]\s*(?=(?:et\s+)?(?:puis|ensuite|et)\b)/giu," ");
+  const clean=command.replace(/[,;]\s*(?=(?:et\s+)?(?:puis|ensuite|et)\b)/giu," ")
+   .replace(/,\s+(?=mets[- ]en\b)/giu," et ");
   const pieces=clean.split(/(?:[,;]\s+|[.!?]\s+|\s+(?:(?:et\s+)?ensuite|et|puis)\s+)(?=(?:j[' ]ai\s+|(?:achet[ée]|pris|payé|paye|réglé|regle|dépensé|depense|reçu|recu|touché|touche|encaissé|encaisse|perçu|percu|récupéré|recupere|gagné|gagne|envoyé|envoye|viré|vire|versé|verse|mis|placé|place|épargné|epargne|économisé|economise)\s+|mets[- ]en\s+|[\p{Lu}][\p{L}' -]{0,35}\s+m[' ]a\s+(?:viré|vire|envoyé|envoye|donné|donne|remboursé|rembourse|fait)\s+|\d{1,6}(?:[,.]\d{1,2})?\s*(?:€|euros?)\s+(?:chez|de|en|reçus?|recus?|touchés?|touches?)\s+))/iu);
   // A shared temporal prefix must not apply only to the first line.
   if(pieces.length>1&&/^(?:hier|avant-hier|aujourd'hui)[,;:]?\s+/iu.test(command))return null;
@@ -1086,6 +1101,28 @@
   }
   const checked=validateReview({kind:"draft",operations},ctx);
   return checked.ok?{...checked,suggestions}:null;
+ }
+ function quickRecurringMovement(command,ctx){
+  const m=command.match(/^ajoute (?:un|une) (abonnement|dépense|revenu|salaire) de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:par mois|chaque mois|tous les mois)[.!?]?$/iu);
+  if(!m)return null;
+  const intent=normalizeCategory(m[1]),income=intent==="revenu"||intent==="salaire";
+  const labels={abonnement:"Abonnement",depense:"Dépense récurrente",revenu:"Revenu récurrent",salaire:"Salaire"};
+  const hints={abonnement:"subscriptions",revenu:"extra",salaire:"salary"};
+  const checked=normalizeModelDraft({kind:"draft",operations:[{
+   kind:income?"income":"expense",categoryId:null,owner:ctx.actor,amountCents:centsFromText(m[2]),
+   date:ctx.today,label:labels[intent],frequency:"monthly",categoryHint:hints[intent]||null
+  }]},ctx,command);
+  return checked.ok?checked:null;
+ }
+ function quickPlanAndMovement(command,ctx){
+  const parts=command.split(/\s+(?:et|puis)\s+(?=(?:augmente|diminue|baisse|réduis|mets|fixe|ajoute|retire|j[' ]ai)\b)/iu);
+  if(parts.length!==2)return null;
+  const plan=parts.map(part=>quickBudget(part,ctx));
+  if(plan.filter(Boolean).length!==1)return null;
+  const parsed=parts.map((part,i)=>plan[i]||quickSingleMovement(part,ctx)||quickRecurringMovement(part,ctx));
+  if(parsed.some(r=>!r?.ok||r.value.kind!=="draft"||r.value.operations.length!==1))return null;
+  const checked=validateReview({kind:"draft",operations:parsed.map(r=>r.value.operations[0])},ctx);
+  return checked.ok?{...checked,suggestions:parsed.flatMap((r,i)=>(r.suggestions||[]).map(s=>({...s,index:i})))}:null;
  }
  // Compound review-only proposals keep category creation distinct from any
  // modification to an existing category. Neither operation can be committed.
@@ -1144,7 +1181,7 @@
  function quickCommand(command,ctx){
   if(typeof command!=="string"||!contextOK(ctx))return null;
   const normalized=normalizeLanguage(command);
-  const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickExpenseInCategory(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx);
+  const direct=quickBankBalanceAnswer(normalized,ctx)||quickAttributedExpenses(normalized,ctx)||quickMedicalNote(normalized,ctx)||quickMixedCategory(normalized,ctx)||quickCreateCategory(normalized,ctx)||quickCategoryQuery(normalized,ctx)||quickBudget(normalized,ctx)||quickExpenseInCategory(normalized,ctx)||quickSingleMovement(normalized,ctx)||quickMovementBatch(normalized,ctx)||quickRecurringMovement(normalized,ctx)||quickPlanAndMovement(normalized,ctx);
   // Do not let a model silently turn an unsupported creation into a budget edit.
   return direct||(creationRequested(normalized)?creationClarification(normalized,ctx):null);
  }

@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 4A V3.1 · Planification déterministe des demandes mixtes
+
+- Terminé : les huit demandes de recette produisent une proposition locale complète. Le moteur traite notamment la dépense et le budget dans une seule demande, le mois dernier, l’épargne liée à un revenu, les payeurs relatifs et les abonnements mensuels. La proposition reste distincte de l’écriture.
+- Fichiers : `js/assistant-core.js`, son miroir Edge, `scripts/v31-mixed-planning.test.mjs` et ce journal.
+- Validation : 210 tests Assistant locaux, dont les huit demandes sans appel fournisseur.
+- En cours : lot 4B. Prochaine action : préparer les actions confirmées côté serveur, comparer les versions de catégories et les budgets, puis les appliquer dans une transaction PostgreSQL avec reçu.
+
 ## Lot 3 V3.1 · Reprise du Builder en solo et à deux
 
 - Terminé en source : le Builder relit le brouillon du nouveau foyer après reconnexion, garde les identifiants stables et attend le reçu PostgreSQL puis la relecture des données avant d’afficher le succès. Une seconde validation rejoue le même identifiant. Un changement de session bloque la poursuite.
@@ -7,7 +14,7 @@
 - Fichiers : `js/cloud-household.js`, `js/cloud-load.js`, `js/setup-builder.js`, `js/storage.js`, `scripts/v31-builder-recovery.test.mjs`, `scripts/validate.mjs`, durcissement du provisionnement SQL et ce journal.
 - Tests : 14 tests Builder, 303 tests applicatifs et audit réussis localement. Sur Chrome local avec API simulée, sept étapes, création solo, coupure en duo, rechargement et une seule validation en reprise. PostgreSQL a testé un échec entre les tables, le rollback, les centimes, la relecture du reçu, l’isolation et les soldes (CI du premier commit `eccdec5`, exécution 46063991478).
 - Limites : la reprise après fermeture suppose que le serveur a reçu le brouillon. Avant ce point, la saisie reste en mémoire de l’onglet, conformément à l’absence de cache financier persistant. Les préférences restent synchronisées via le profil Auth. La recette avec le service Supabase hébergé attend la revue et l’autorisation de migration.
-- En cours : CI du commit intégrant le client Builder. Prochaine action après sa validation : lot 4, construire et tester un lot Assistant réunissant catégorie, budget et mouvement avec rejet intégral sur erreur.
+- CI du lot 3 réussie (46064643862, commit 07d5975). Suite du travail décrite dans le lot 4A.
 
 ## Lot 3 V3.1 · Transaction de création du budget initial
 
