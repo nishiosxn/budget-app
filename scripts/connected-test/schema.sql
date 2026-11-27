@@ -87,7 +87,7 @@ create function public.rls_auto_enable() returns void language plpgsql as $$ beg
 -- The historical contract exposes row revisions for optimistic sync.
 create function private.fixture_touch_revision() returns trigger language plpgsql as $$
 begin
- new.updated_at=clock_timestamp();
+ new.updated_at=now();
  return new;
 end $$;
 do $$
@@ -105,6 +105,8 @@ end $$;
 \ir ../../supabase/migrations/20261003121500_v2_6_account_opening_balances.sql
 \ir ../../supabase/migrations/20261003123000_v2_6_account_opening_balances_realtime.sql
 \ir ../../supabase/migrations/20261006190000_v2_7_schema_alignment_and_index_cleanup.sql
+
+\ir historical-production-contract.sql
 
 -- A synthetic V3.0.2 ledger stays present during the upgrade.
 insert into auth.users(id,email) values('90ce62fb-4c40-4f08-9d41-2e2847e67809','preexisting@example.test');

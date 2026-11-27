@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Lot 8B.4A V3.1 — Contrat historique et validation Builder (CI à confirmer)
+
+- Audit en lecture seule du projet hébergé : six protections historiques retrouvées, quatre migrations V3.1 du 27 novembre non enregistrées, ACL et contraintes comparées. Aucun export de lignes personnelles ni modification hébergée.
+- Correction préparée : plafond des noms du Builder à 100 caractères (SQL et champ de saisie), tests de frontière 100/101. Contrat CI enrichi avec les six triggers historiques, les droits UPDATE ciblés et les contraintes de longueur/précision. Test REST des en-têtes absents, obsolètes et valides sur les six tables.
+- Avancement global estimé inchangé à 94 %. Les tests de ce commit doivent être confirmés par la CI ; les résultats des lots antérieurs ne valident pas ce changement.
+- Reste : compléter les politiques RLS et autres contraintes/ACL du contrat, protéger le brouillon contre les clients V3.0, restreindre Builder/règles au pilote sans bloquer les inscriptions normales, tester coexistence des vraies pages et de l’Edge v30, définir la rétention des brouillons privés. La recette partagée hébergée reste bloquée ; aucune migration ni publication autorisée.
+- Prochaine action : vérifier les deux workflows de la PR #52 sur cette révision et terminer les protections pilote/ancien Builder sur la branche de travail.
+
 ## Lot 8A V3.1 — Préparation documentaire terminée
 
 - Avancement global maintenu à 94 %. Branche `work/v3.1-integration`, PR #52. Code de référence publié sur la branche `3b46bc2`, arbre identique au commit local `db009f9` (historique local reconstruit).

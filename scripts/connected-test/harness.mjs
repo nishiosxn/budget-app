@@ -53,7 +53,7 @@ export async function connected(t){
    const auth=JSON.parse(sessionStorage.getItem("test-session")||"null");
    const r=await fetch(path,{method:options.method||"GET",headers:{apikey:anon,
     ...(auth?{Authorization:"Bearer "+auth.access_token}:{}),"Content-Type":"application/json",
-    "x-smart-budget-sync-version":"20261116-hf1",...(options.headers||{})},
+    ...(options.omitSyncVersion?{}:{"x-smart-budget-sync-version":"20261116-hf1"}),...(options.headers||{})},
     ...(options.body===undefined?{}:{body:JSON.stringify(options.body)})});
    const txt=await r.text();
    return {ok:r.ok,status:r.status,data:txt?JSON.parse(txt):null};

@@ -290,7 +290,7 @@ class SetupBuilderController{
 
  nameMarkup(key,name){
   if(this.editingName===key){
-   return `<input class="setup-builder-inline-name" type="text" maxlength="60" data-setup-name="${escapeHtml(key)}" value="${escapeHtml(name)}" autofocus>`;
+   return `<input class="setup-builder-inline-name" type="text" maxlength="100" data-setup-name="${escapeHtml(key)}" value="${escapeHtml(name)}" autofocus>`;
   }
   return `<strong>${escapeHtml(name)}</strong>`;
  }

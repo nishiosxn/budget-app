@@ -121,3 +121,36 @@ test("two sessions sync adjustments, opening balances, transactions and recurrin
  await bb.switchHousehold(h,"member");
  assert.equal(amount(bb,"restaurants"),18.59);
 });
+
+test("historical write guards reject absent and obsolete headers on all six tables",async t=>{
+ const env=await connected(t);
+ const owner=await env.session(env.users[0]);
+ const {h}=await completeSetup(owner,"solo");
+ const cat=(await rows(owner,"categories",h)).find(c=>c.legacy_id==="restaurants");
+ const budget=(await rows(owner,"budgets",h)).find(b=>b.category_id===cat.id);
+ const [tx]=await insert(owner,"transactions",{household_id:h,category_id:cat.id,legacy_id:"guard-tx",owner_slot:"B",amount:10,transaction_date:"2025-01-05",label:"Avant"});
+ const [rec]=await insert(owner,"recurrences",{household_id:h,category_id:cat.id,legacy_id:"guard-rec",owner_slot:"B",amount:12,start_month:"2025-01-01",start_day:5,label:"Avant"});
+ await insert(owner,"account_opening_balances",{household_id:h,month:"2025-01-01",owner_slot:"B",amount:20});
+ const targets=[
+  ["households","id=eq."+h,{name:"Après"}],
+  ["categories","id=eq."+cat.id,{name:"Restaurants test"}],
+  ["budgets","id=eq."+budget.id,{planned_amount:101.23}],
+  ["transactions","id=eq."+tx.id,{amount:11.23}],
+  ["recurrences","id=eq."+rec.id,{amount:13.23}],
+  ["account_opening_balances","household_id=eq."+h+"&month=eq.2025-01-01&owner_slot=eq.B",{amount:21.23}]
+ ];
+ for(const [table,filter,body] of targets){
+  const path="/rest/v1/"+table+"?"+filter;
+  const before=await verified(owner.call(path));
+  assert.equal(before.length,1,table);
+  for(const headers of [{}, {"x-smart-budget-sync-version":"obsolete"}]){
+   const rejected=await owner.call(path,{method:"PATCH",omitSyncVersion:true,headers,body});
+   assert.equal(rejected.ok,false,table);
+   assert.equal(rejected.data?.code,"P0001",table);
+   assert.deepEqual(await verified(owner.call(path)),before,table);
+  }
+  const written=await verified(owner.call(path,{method:"PATCH",headers:{Prefer:"return=representation"},body}),table);
+  assert.equal(written.length,1,table);
+  for(const [key,value] of Object.entries(body))assert.equal(written[0][key],value,table+"."+key);
+ }
+});

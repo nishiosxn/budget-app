@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Contrat historique 8B.4A (validation en attente)
+
+- Alignement des noms de catégories du Builder avec la limite SQL historique (100 caractères) et tests des deux côtés de la limite.
+- Contrat Supabase jetable enrichi : six gardes historiques d’écriture, droits UPDATE ciblés, contraintes de longueur et précision ; test REST des trois états de l’en-tête de synchronisation. Aucune opération hébergée.
+
 ## V3.1 — Préparation de livraison 8A
 
 - Consolidation documentée du Builder solo/duo, des actions Catégories, de Smart Assistant atomique et du design system commun. Référence applicative validée `3b46bc2`, PR #52.

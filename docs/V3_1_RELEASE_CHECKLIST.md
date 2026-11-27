@@ -20,6 +20,12 @@ La recette locale finale a mesuré trois chargements de 157,5 / 107,7 / 112 ms, 
 - [Captures finales et mesures](https://github.com/nishiosxn/budget-app/actions/runs/46081173687/artifacts/15236683577)
 - [Migrations, sauvegarde et retour arrière](V3_1_CONNECTED_ACCEPTANCE.md)
 
+## Audit 8B et adaptation 8B.4A
+
+Le quota Supabase gratuit de deux projets actifs a empêché la création d’un staging hébergé. Une recette dans le projet partagé reste une option **non autorisée**, à condition de verrouiller le pilote côté serveur et de prouver la coexistence V3.0/V3.1 avant toute migration. L’audit a retrouvé les six triggers historiques, les ACL réelles et quatre identifiants de migrations historiques divergents. Ne pas rejouer aveuglément les migrations.
+
+Le contrat CI et la limite Builder sont corrigés en source dans le lot 8B.4A ; confirmer les workflows sur la nouvelle révision. Restent la reconstitution complète des politiques/contraintes, la protection du brouillon contre V3.0, le filtrage pilote du Builder et des règles, la recette Edge v30 et la rétention des brouillons. La procédure de préversion isolée ci-dessous n’est pas remplacée par une autorisation de production.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

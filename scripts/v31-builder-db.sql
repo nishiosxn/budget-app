@@ -14,7 +14,7 @@ create table public.households(id uuid primary key,name text,created_by uuid ref
 create table public.household_members(household_id uuid references public.households,user_id uuid references auth.users,
  display_name text,role text,slot text,joined_at timestamptz default clock_timestamp(),primary key(household_id,user_id));
 create table public.categories(id uuid primary key default gen_random_uuid(),household_id uuid references public.households,
- legacy_id text,name text,type text,group_name text,owner_slot text,is_saving boolean,is_custom boolean,
+ legacy_id text,name text check(char_length(name) between 1 and 100),type text,group_name text,owner_slot text,is_saving boolean,is_custom boolean,
  created_from date,sort_order int,unique(household_id,legacy_id));
 create table public.budgets(household_id uuid references public.households,category_id uuid references public.categories,
  month date,planned_amount numeric check(planned_amount<>123.45),scope text,owner_slot text,primary key(category_id,month));
@@ -65,6 +65,14 @@ begin
  h:=public.provision_budget_builder('Provisoire','Alex');
  assert public.provision_budget_builder('Ignoré','Ignoré')=h;
  assert public.budget_builder_setup(h)->>'status'='pending';
+ begin
+  perform public.budget_builder_setup(h,'stage',req,jsonb_set(payload,'{categories,0,name}',to_jsonb(repeat('X',101))));
+  raise exception 'Oversize category was staged';
+ exception when invalid_parameter_value then null;
+ end;
+ assert public.budget_builder_setup(h)->>'status'='pending';
+ -- The boundary must be accepted by both the stage validator and the actual constraint.
+ payload:=jsonb_set(payload,'{categories,0,name}',to_jsonb(repeat('X',100)));
  assert public.budget_builder_setup(h,'stage',req,payload)->>'status'='staged';
  receipt:=public.budget_builder_setup(h,'stage',competing,payload);
  assert receipt->>'requestId'=req::text;

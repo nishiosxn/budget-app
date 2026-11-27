@@ -102,7 +102,7 @@ begin
   for row_data in select value from jsonb_array_elements(p_draft->'categories') loop
    category_id:=row_data->>'id';
    if coalesce(category_id,'') !~ '^[a-z0-9][a-z0-9_-]{0,100}$' or category_id=any(ids)
-    or char_length(coalesce(row_data->>'name','')) not between 1 and 120
+    or char_length(coalesce(row_data->>'name','')) not between 1 and 100
     or coalesce(row_data->>'type','') not in ('income','expense')
     or coalesce(row_data->>'owner','') not in ('A','B','common')
     or (draft_mode='solo' and row_data->>'owner'<>'B')
