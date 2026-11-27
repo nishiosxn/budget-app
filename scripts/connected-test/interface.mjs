@@ -36,6 +36,7 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  await one.locator('[data-setup-mode="couple"]').click();
  await one.locator('[data-setup-household="personA"]').fill("Camille");
  await one.locator(selectors.next).click();
+ await visual.capture(one,"builder-income");
  await one.locator(selectors.amount("income:salary-b")).fill("1456.01");
  await one.locator(selectors.next).click();
  await one.locator(selectors.amount("expense:rent")).fill("100.02");

@@ -1466,8 +1466,7 @@ body.pwa-install-open{overflow:hidden}
   display:none;
   overflow:auto;
   padding:1.75rem 1rem 3rem;
-  background:rgba(236,240,235,.97);
-  backdrop-filter:blur(.75rem);
+  background:var(--bg);
 }
 .setup-builder-backdrop.open{display:block}
 .setup-builder-panel{
@@ -1485,7 +1484,7 @@ body.pwa-install-open{overflow:hidden}
 .setup-builder-head{
   padding:1.375rem 1.5rem 1.125rem;
   border-bottom:.0625rem solid var(--line);
-  background:linear-gradient(180deg,#fff 0%,#fbfcfa 100%);
+  background:var(--panel);
 }
 .setup-builder-brand{
   display:flex;
@@ -1766,7 +1765,7 @@ body.pwa-install-open{overflow:hidden}
   gap:.625rem;
   padding:1.125rem 1.5rem 1.375rem;
   border-top:.0625rem solid var(--line);
-  background:#fbfcfa;
+  background:var(--panel);
 }
 .setup-builder-skip{
   justify-self:start;
@@ -1783,6 +1782,7 @@ body.pwa-install-open{overflow:hidden}
   .setup-builder-backdrop{
     padding:0;
     background:var(--panel);
+    scroll-padding-block-end:calc(6rem + env(safe-area-inset-bottom));
   }
   .setup-builder-panel{
     width:100%;
@@ -1790,6 +1790,7 @@ body.pwa-install-open{overflow:hidden}
     border:0;
     border-radius:0;
     box-shadow:none;
+    overflow:visible;
   }
   .setup-builder-head{padding:1.0625rem 1rem .875rem}
   .setup-builder-brand img{width:2.25rem;height:2.25rem}
@@ -1825,6 +1826,7 @@ body.pwa-install-open{overflow:hidden}
   .setup-builder-actions{
     position:sticky;
     bottom:0;
+    z-index:2;
     grid-template-columns:auto 1fr;
     padding:.8125rem 1rem calc(.8125rem + env(safe-area-inset-bottom));
     box-shadow:0 -.5rem 1.5rem rgba(25,37,30,.05);
@@ -2727,20 +2729,21 @@ html{font-size:clamp(.9375rem,.9rem + .18vw,1rem)}
 .cloud-sync-status[data-state="pending"]::before{background:var(--warning);box-shadow:0 0 0 .1875rem rgba(143,103,37,.12)}
 
 /* Builder V3.1 · repères du parcours et accent du foyer. */
-.setup-builder-progress{grid-template-columns:repeat(7,minmax(0,1fr));gap:.25rem}
+.setup-builder-progress{--step-dot:1.55rem;--step-gap:.25rem;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--step-gap)}
 .setup-builder-progress button{position:relative;display:grid;justify-items:center;gap:.375rem;background:transparent;color:var(--muted);border:0;min-width:0;min-height:2.75rem;padding:.25rem;isolation:isolate}
 .setup-builder-progress button:disabled{opacity:1}
-.setup-builder-progress button::before,.setup-builder-progress button::after{content:"";position:absolute;inset-block-start:1rem;inset-inline-end:50%;width:calc(100% + .25rem);height:.125rem;z-index:-1}
+.setup-builder-progress button::before,.setup-builder-progress button::after{content:"";position:absolute;inset-block-start:1rem;inset-inline-end:calc(50% + var(--step-dot) / 2 + .25rem);width:calc(100% + var(--step-gap) - var(--step-dot) - .5rem);height:.125rem;z-index:-1}
 .setup-builder-progress button::before{background:var(--line)}
 .setup-builder-progress button::after{background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
 .setup-builder-progress button:first-child::before,.setup-builder-progress button:first-child::after{display:none}
 .setup-builder-progress button.done::after,.setup-builder-progress button[aria-current]::after{transform:scaleX(1)}
-.setup-builder-progress button b{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:50%;width:1.55rem;height:1.55rem;display:grid;place-items:center}
+.setup-builder-progress button b{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:50%;width:var(--step-dot);height:var(--step-dot);display:grid;place-items:center}
 .setup-builder-progress button.done b,.setup-builder-progress button[aria-current] b,.setup-primary{background:var(--accent);color:var(--on-accent,#fff)}
 .setup-builder-progress em{font-size:.8125rem;font-style:normal}.setup-goal{min-width:0}.setup-goal>.setup-builder-item-fields{padding:.75rem}
 @media(max-width:46rem){
+ .setup-builder-progress{--step-dot:.875rem}
  .setup-builder-progress button{align-content:center}
- .setup-builder-progress button b{font-size:0;width:.875rem;height:.875rem}
+ .setup-builder-progress button b{font-size:0}
  .setup-builder-progress button::before,.setup-builder-progress button::after{inset-block-start:calc(50% - .0625rem)}
  .setup-builder-progress button[aria-current] b{outline:.125rem solid var(--accent-ink,var(--accent));outline-offset:.125rem}
  .setup-builder-progress em{display:none}

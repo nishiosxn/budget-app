@@ -23,6 +23,7 @@
 .cloud-gate :is(.cloud-text-button,.cloud-identity-reminder){color:var(--accent-ink)}
 .cloud-gate-status.error{color:var(--expense)}
 .cloud-gate-status.success{color:var(--income)}
+.setup-builder-title>span{color:var(--accent-ink)}
 .tracking-head .eyebrow{color:var(--muted)}
 :root:not([data-budget-theme="dark"]) .tracking-kpi.tracking-balance>:is(span,small){color:white}
 .mobile-nav-item.is-active{color:var(--accent-ink)}
@@ -36,7 +37,12 @@
 :root .cloud-gate :is(input,textarea)::placeholder{color:var(--muted);opacity:1}
 :root :is(.settings-trigger,.month-arrow,.modal .close,.sb-settings-modal button[aria-label]){min-inline-size:var(--control-min);min-block-size:var(--control-min)}
 @media(max-width:40rem){
- .modal-backdrop.open{padding-inline:max(.5rem,env(safe-area-inset-left)) max(.5rem,env(safe-area-inset-right))}
+ .cloud-gate{padding-block-start:max(.75rem,env(safe-area-inset-top))}
+ :is(.modal-backdrop.open,.cloud-gate){padding-inline:max(.5rem,env(safe-area-inset-left)) max(.5rem,env(safe-area-inset-right))}
+}
+@media(max-width:56.25rem){
+ .shell{padding-inline:env(safe-area-inset-left) env(safe-area-inset-right)}
+ #setupBuilderBackdrop>.setup-builder-panel{padding-inline:env(safe-area-inset-left) env(safe-area-inset-right)}
 }
 @media(max-width:40rem){
  #categories .category-top #categoryIncomeSlot .category-group-head{display:grid;grid-template-columns:minmax(0,1fr);height:auto;gap:.5rem}

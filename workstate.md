@@ -7,6 +7,7 @@
 - Fichiers : `js/assistant-lab.js`, `js/budget-theme.js`, `js/pwa.js`, workflow, tests navigateur, README et changelog. Le [rapport](docs/V3_1_VISUAL_ACCEPTANCE.md) contient le protocole iPhone. CI connectée du 7C réussie (46080030871). Les styles app Catégories sont isolés dans le thème pour conserver l'identité de la feuille de référence PR49 contrôlée par App integrity.
 - Prochaine action : vérifier les mesures et les deux workflows sur la tête finale de la PR #52. La validation iPhone physique et le benchmark Gemma restent à planifier.
 - Reprise CI (46080535537) : manifeste, purge historique, chargement à la demande et changement du worker ont été atteints. Le test attend désormais l'événement du thème système et coupe le transport du serveur jetable pour vérifier le hors ligne du worker. Les 319 tests Node et App integrity ont réussi. La comparaison a également rendu la référence Assistant de `gh-pages` avec une proposition fictive en clair et sombre.
+- Dernière passe visuelle Builder : la deuxième étape a révélé un en-tête et un pied trop clairs en mode sombre, ainsi qu'une barre d'actions mobile qui ne suivait pas le défilement. Le thème, la zone de défilement du pied et l'espacement entre points et traits sont corrigés. Les insets latéraux couvrent la navigation mobile et les formulaires concernés.
 
 ## Lot 7C V3.1 — Responsive et accessibilité
 

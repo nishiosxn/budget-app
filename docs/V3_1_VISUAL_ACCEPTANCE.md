@@ -9,7 +9,7 @@ Le violet #5C29D6 et le logo restent les repères de la marque. Les visualisatio
 | Icônes | Le logo et les pictogrammes de navigation restent les mêmes. Les icônes décoratives restent hors de l'arbre d'accessibilité et les actions iconographiques ont un nom explicite. |
 | Microcopy | Le numéro V2.5 de l'administration disparaît. Les réglages affichent V3.1 préversion. Le chargement et l'échec du laboratoire ont leur propre message. |
 | Typographie | La hiérarchie des maquettes reste en place. Les chiffres des tableaux d'administration s'alignent et le champ de montant a un nom accessible. |
-| Layout | Les grilles des Catégories et la navigation existante sont conservées. La progression mobile garde les sept points. Les modales réservent les marges latérales de sécurité. |
+| Layout | Les grilles des Catégories et la navigation existante sont conservées. La progression mobile garde les sept points et les actions du Builder restent au bas de la zone de défilement. Les modales et la navigation réservent les marges latérales de sécurité. |
 | Détails | Les dialogues empilés retiennent le focus et le rendent à leur déclencheur. Les accents très clairs sont assombris pour le texte et les contrôles, tandis que la couleur enregistrée reste exacte. |
 | Visuels | Les barres de répartition et le graphique du Suivi restent les principales visualisations. La référence Catégories garde ses fichiers historiques d'origine. |
 | Animations | Le trait de progression du Builder utilise une transformation et l'étape courante se distingue par un contour. La réduction des animations est respectée. |
