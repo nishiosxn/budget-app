@@ -1,5 +1,13 @@
 # Workstate — Budget foyer
 
+## Associations partagées · 27 novembre 2026
+
+- Réalisé en source : lecture RLS par foyer, modification par RPC, contrôle de révision, rejet des catégories étrangères, limite de 200 associations, actualisation au retour sur la page, gestion explicite des conflits entre appareils. Le pilote historique conserve les règles locales.
+- Fichiers : assistant/shared-rules.js, assistant/index.html, preview/assistant/live/live-ui.js, supabase/migrations/20261127190000_assistant_household_rules.sql, scripts/v31-shared-rules.test.mjs, scripts/v31-rules-db.sql, .github/workflows/validate.yml.
+- Tests locaux : 288 tests Node, audit applicatif vert. Le test de deux appareils utilise un transport simulé. Le job PostgreSQL de la PR exécute la migration et les contrôles RLS sur une base éphémère. Migration non appliquée au service hébergé.
+- Prochaine action : vérifier le job PostgreSQL, intégrer les écritures confirmées des mouvements ponctuels ou récurrents du foyer de test et exécuter des scénarios atomiques avec une erreur en deuxième position. Restent le benchmark réel, la recette hébergée et iOS.
+
+
 ## Assistant dans la navigation · 27 novembre 2026
 
 - Réalisé : entrée desktop et action Ajouter sur mobile, session Supabase existante, foyer actif et mois sélectionné, vérification d’accès au pilote avant lecture des catégories. Le laboratoire reste accessible. Les composants et styles du pilote sont partagés.

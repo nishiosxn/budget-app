@@ -2,7 +2,7 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="color-scheme" content="light dark"><title>Smart Assistant · Smart Budget</title>
 <link rel="icon" href="../icons/icon.svg"><link rel="stylesheet" href="../css/assistant.css"><link rel="stylesheet" href="../preview/assistant/preview.css"><link rel="stylesheet" href="../preview/assistant/live/live.css?v=31t"><link rel="stylesheet" href="../preview/assistant/live/design-system.css?v=31y"><link rel="stylesheet" href="../preview/assistant/live/native-dark.css?v=31am"><link rel="stylesheet" href="../preview/assistant/live/unslop.css?v=31ao">
 <script src="../js/assistant-core.js?v=31ap" defer></script><script src="../preview/assistant/live/category-rules.js?v=31o" defer></script><script src="../js/assistant-voice.js?v=31l" defer></script><script src="../preview/assistant/live/config.js" defer></script><script src="../preview/assistant/live/review-editor.js?v=31ai" defer></script><script src="../preview/assistant/live/interaction.js?v=31an" defer></script><script src="../preview/assistant/live/appearance.js?v=31an" defer></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" defer></script>
-<script src="../js/config.js" defer></script><script src="../js/supabase-config.js" defer></script><script src="../js/supabase-client.js" defer></script><script src="session.js" defer></script><script src="../preview/assistant/live/live-ui.js?v=31ao" defer></script></head>
+<script src="../js/config.js" defer></script><script src="../js/supabase-config.js" defer></script><script src="../js/supabase-client.js" defer></script><script defer src="shared-rules.js"></script><script src="session.js" defer></script><script src="../preview/assistant/live/live-ui.js?v=31ao" defer></script></head>
 <body><main><header><a class="brand" href="../"><img src="../icons/icon.svg" alt="" width="42" height="42">Smart Budget</a><label class="pilot-theme"><span>Thème</span><select id="pilotTheme" aria-label="Thème de l’assistant"><option value="system">Système</option><option value="light">Clair</option><option value="dark">Sombre</option></select></label></header>
 <section id="pilotLogin" class="card ledger"><h2>Smart Assistant</h2><p id="pilotLoginStatus" role="status">Vérification de ta session Smart Budget…</p><a href="../">Revenir au budget</a><input type="hidden" id="pilotPassword"></section>
 <section id="pilotSession" class="card ledger" hidden><div class="sb-assistant-header"><h2>Session Smart Budget</h2><button id="pilotLogout" type="button" class="sb-assistant-secondary">Quitter l’assistant</button></div>
@@ -27,7 +27,7 @@
 </form>
 <div id="ruleStatus" class="pilot-rule-status" role="status" aria-live="polite"></div>
 <div id="rulePersonal" class="pilot-custom-rules"></div>
-<div class="pilot-rules-footer"><span>Associations enregistrées dans ce navigateur.</span><button id="clearRules" type="button" class="pilot-link">Tout effacer</button></div>
+<div class="pilot-rules-footer"><span>Associations partagées avec les membres de ce foyer.</span><button id="clearRules" type="button" class="pilot-link">Tout effacer</button></div>
 <details class="pilot-standard-rules"><summary>Voir les règles automatiques</summary><div id="ruleDefault"></div></details>
 </details>
 <button id="cancel" type="button" class="sb-assistant-secondary" hidden>Nouvelle demande</button></section>

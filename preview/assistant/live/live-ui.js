@@ -37,8 +37,31 @@
  const ruleUtils=globalThis.SmartBudgetCategoryRules;
  const ruleStorageKey=()=>session?"smart-budget-v31-test-category-rules:"+session.householdId:null;
  function ruleNotice(message){$("ruleStatus").textContent=message}
+ const sharedRules=appSession?globalThis.createSmartBudgetSharedRules(()=>session,(path,options)=>json(path,{...options,headers:headers(session?.token)})):null;
+ let rulesWriting=false;
+ async function refreshSharedRules(){
+  if(!sharedRules||!session||rulesWriting)return;
+  const identity=session;
+  try{const rules=await sharedRules.load();if(rules&&identity===session){personalRules=rules;showRules()}}
+  catch{if(identity===session)ruleNotice("Synchronisation des associations indisponible.")}
+ }
+ async function editSharedRule(operation,term=null,target=null){
+  if(rulesWriting||!session)return false;
+  const identity=session;
+  rulesWriting=true;
+  try{
+   const update=await sharedRules.edit(operation,term,target);
+   if(!update.rules||session!==identity)return false;
+   personalRules=update.rules;showRules();
+   ruleNotice(update.conflict?"Les règles ont changé sur un autre appareil. Vérifie la liste puis réessaie.":"Règles du foyer enregistrées.");
+   return !update.conflict;
+  }catch(error){if(session===identity)ruleNotice(error.message);return false}
+  finally{rulesWriting=false}
+ }
+ if(sharedRules)document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refreshSharedRules()});
  function readPersonal(){
   personalRules=Object.create(null);
+  if(sharedRules){sharedRules.reset();return}
   try{
    const key=ruleStorageKey();if(!key)return;
    const parsed=JSON.parse(localStorage.getItem(key)||"null");
@@ -89,7 +112,7 @@
    const name=document.createElement("strong");name.textContent=term;
    const target=document.createElement("span");target.className="pilot-rule-target";target.textContent="→ "+(cat?.name||"Catégorie indisponible");
    const del=document.createElement("button");del.type="button";del.className="pilot-link";del.textContent="Supprimer";del.setAttribute("aria-label","Supprimer la règle "+term);
-   del.addEventListener("click",()=>{delete personalRules[term];const saved=savePersonal();showRules();ruleNotice(saved?"Association supprimée.":"Association supprimée de la session ; mémoire locale indisponible.")});
+   del.addEventListener("click",()=>{if(sharedRules){void editSharedRule("remove",term);return}delete personalRules[term];const saved=savePersonal();showRules();ruleNotice(saved?"Association supprimée.":"Association supprimée de la session ; mémoire locale indisponible.")});
    row.append(name,target,del);list.append(row);
   }
   if(!Object.keys(personalRules).length){
@@ -118,13 +141,20 @@
    if(session?.token===token){ruleContext=null;showRules();ruleNotice("Impossible de charger les catégories. Reconnecte-toi pour réessayer.")}
   }
  }
- $("ruleEditor").addEventListener("submit",e=>{
+ $("ruleEditor").addEventListener("submit",async e=>{
   e.preventDefault();
   const term=$("ruleMerchant").value.trim(),id=$("ruleCategory").value;
+  if(sharedRules){
+   const normalized=core.normalizeCategory(term);
+   if(!normalized||normalized.length>80||!ruleUtils.catalogOptions(ruleContext?.categories||[]).some(c=>c.value===id)){ruleNotice("Vérifie le mot-clé et sa catégorie.");return}
+   if(await editSharedRule("set",normalized,id)){$("ruleMerchant").value="";$("ruleCategory").value=""}
+   return;
+  }
   const saved=setPersonal(term,id);ruleNotice(saved.message);
   if(saved.ok){$("ruleMerchant").value="";$("ruleCategory").value="";$("ruleMerchant").focus()}
  });
- $("clearRules").addEventListener("click",()=>{
+ $("clearRules").addEventListener("click",async()=>{
+  if(sharedRules){if(await confirmDiscard("Effacer les associations partagées de ce foyer ?"))await editSharedRule("clear");return}
   personalRules=Object.create(null);const saved=savePersonal();showRules();
   ruleNotice(saved?"Toutes les associations ont été effacées.":"Associations effacées de la session ; mémoire locale indisponible.");
  });
@@ -802,7 +832,7 @@
   draw();
  }
  function wipe(){confirmationStarted=false;$("pilotAssistant").dataset.state="initial";$("pilotExamples").open=true;pendingReview=null;history=[];$("pilotSubmitted").hidden=true;$("pilotSubmittedText").textContent="";result.replaceChildren();input.value="";resizeComposer();$("cancel").hidden=true;voice.stop({discard:true});focusInput()}
- function logout(){epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
+ function logout(){sharedRules?.reset();epoch++;usageRequest++;session=null;ruleContext=null;personalRules=Object.create(null);showRules();ruleNotice("");busy=false;send.disabled=false;$("cancel").disabled=false;$("pilotLogout").disabled=false;wipe();resetMeter();$("pilotAssistant").hidden=true;$("pilotSession").hidden=true;$("pilotLogin").hidden=false;$("pilotPassword").value="";$("pilotLoginStatus").textContent="Session terminée."}
  function headers(token){return {apikey:PILOT_PUBLIC_KEY,"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
  async function json(path,options){if(appSession&&session){const active=await appSession.current();if(active.userId!==session.userId||active.householdId!==session.householdId)throw Error("Session modifiée.");options.headers=headers(active.token)}const r=await fetch(PILOT_URL+path,{...options,cache:"no-store",signal:AbortSignal.timeout(45000)});let b;try{b=await r.json()}catch{b={}}return {ok:r.ok,status:r.status,body:b}}
  const number=n=>new Intl.NumberFormat("fr-FR").format(n);
@@ -847,7 +877,7 @@
     session=active;resetMeter();readPersonal();showRules();wipe();
     $("pilotLogin").hidden=true;$("pilotSession").hidden=false;$("pilotAssistant").hidden=false;
     if(!displayQuota(check.body.quota))$("pilotQuotaText").textContent="Quota indisponible";
-    void loadRuleCategories();focusInput();
+    await loadRuleCategories();await refreshSharedRules();focusInput();
    }catch(error){if(at===generation)$("pilotLoginStatus").textContent=error.message}
   })();
  }else $("pilotLoginForm").addEventListener("submit",async e=>{
@@ -863,7 +893,7 @@
   }catch(e){$("pilotLoginStatus").textContent=e.message||"Connexion impossible."}
   finally{$("pilotSignIn").disabled=false}
  });
- $("pilotLogout").addEventListener("click",async()=>{if(busy)return;if(send.disabled&&pendingReview&&!window.confirm("Vérifie l’historique du foyer avant de ressaisir un lot dont l’enregistrement n’est pas vérifié. Se déconnecter ?"))return;if(!await askDiscard())return;if(input.value.trim()&&!await confirmDiscard("Se déconnecter et abandonner la demande non envoyée ?"))return;logout()});
+ $("pilotLogout").addEventListener("click",async()=>{if(busy)return;if(send.disabled&&pendingReview&&!window.confirm("Vérifie l’historique du foyer avant de ressaisir un lot dont l’enregistrement n’est pas vérifié. Se déconnecter ?"))return;if(!await askDiscard())return;if(input.value.trim()&&!await confirmDiscard("Se déconnecter et abandonner la demande non envoyée ?"))return;logout();if(appSession)location.assign("../")});
  $("cancel").addEventListener("click",async()=>{if(confirmationStarted&&(busy||send.disabled)||!await askDiscard())return;if(busy&&!await confirmDiscard("Interrompre l’analyse et commencer une nouvelle demande ?"))return;if(!busy&&input.value.trim()&&!await confirmDiscard("Abandonner la demande non envoyée ?"))return;epoch++;busy=false;send.disabled=false;wipe();status.textContent="Nouvelle demande."});
  document.querySelectorAll("[data-assistant-suggestion]").forEach(b=>b.addEventListener("click",async()=>{if(busy||send.disabled)return;if(input.value.trim()&&!await confirmDiscard("Remplacer le texte de la demande par cet exemple ?"))return;voice.stop({discard:true});input.value=b.dataset.assistantSuggestion;resizeComposer();input.focus()}));
  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});

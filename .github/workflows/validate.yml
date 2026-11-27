@@ -28,3 +28,23 @@ jobs:
         run: |
           node --test scripts/*.test.mjs
           node scripts/validate.mjs
+
+  household-rules:
+    name: PostgreSQL · isolation des foyers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: smart_budget_ci
+          POSTGRES_PASSWORD: local_ci_only
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 5s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test rules on a disposable database
+        env:
+          PGPASSWORD: local_ci_only
+        run: psql -h 127.0.0.1 -U postgres -d smart_budget_ci -f scripts/v31-rules-db.sql
