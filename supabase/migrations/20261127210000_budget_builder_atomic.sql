@@ -22,7 +22,9 @@ begin
  where m.user_id=actor order by m.joined_at,m.household_id limit 1;
  if found then return household; end if;
  household:=public.ensure_personal_household(p_name,p_display_name);
- insert into private.budget_builder_setup(household_id,owner_id) values(household,actor);
+ insert into private.budget_builder_setup(household_id,owner_id)
+ select h.id,actor from public.households h join public.household_members m on m.household_id=h.id
+ where h.id=household and h.created_by=actor and m.user_id=actor and m.role='owner' and m.slot='B';
  return household;
 end
 $$;

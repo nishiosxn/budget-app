@@ -74,29 +74,29 @@ async function provisionPersonalHousehold(){
  const householdName=String(profile.householdName||"Mon foyer").trim()||"Mon foyer";
  const displayName=String(profile.displayName||cloudSession?.user?.user_metadata?.display_name||"Personne 1").trim()||"Personne 1";
  setCloudGateStatus("Création de ton foyer personnel…");
- const {data,error}=await cloudClient.rpc("ensure_personal_household",{
-  p_household_name:householdName,
+ const userId=cloudSession?.user?.id;
+ const {data,error}=await cloudClient.rpc("provision_budget_builder",{
+  p_name:householdName,
   p_display_name:displayName
  });
  if(error)throw error;
 
+ if(cloudSession?.user?.id!==userId)throw Error("La session a changé.");
  localStorage.setItem(ACTIVE_HOUSEHOLD_KEY,data);
- if(typeof markSetupBuilderPending==="function")markSetupBuilderPending(data);
 
  await loadCloudMemberships();
  selectActiveMembership();
 
- // Nouveau foyer : on prépare l'état local immédiatement.
- // Le premier push cloud est fait une seule fois après le builder (ou en arrière-plan si ignoré).
- state=seedState();
- state.onboardingComplete=true;
- state.household=normalizeHousehold({name:householdName,personB:displayName,personA:"Personne 2",mode:"couple"});
- cloudApplyingRemote=true;
- saveState();
- cloudApplyingRemote=false;
 
  clearPendingPersonalProfile();
  return true;
+}
+async function cloudBudgetBuilderSetup(household,action="status",request=null,draft=null){
+ const {data,error}=await cloudClient.rpc("budget_builder_setup",{
+  p_household:household,p_action:action,p_request:request,p_draft:draft
+ });
+ if(error)throw error;
+ return data;
 }
 async function cloudBootstrap(){
  if(!cloudSession)return;
@@ -119,15 +119,22 @@ async function cloudBootstrap(){
    selectActiveMembership();
   }
 
-  // Un foyer tout juste créé n'a encore aucune donnée distante à relire.
-  // Évite un push complet suivi immédiatement d'un reload complet avant l'ouverture du builder.
-  if(!provisionedNow)await cloudLoadState();
+  const household=activeHouseholdId,userId=cloudSession?.user?.id;
+  let setup=null;
+  if(activeMembership?.role==="owner"&&activeMembership.slot==="B"){
+   try{setup=await cloudBudgetBuilderSetup(household)}
+   catch(error){if(provisionedNow||error?.code!=="PGRST202")throw error}
+  }
+  if(activeHouseholdId!==household||cloudSession?.user?.id!==userId)return;
+  await cloudLoadState();
+  const pending=setup?.status==="pending"||setup?.status==="staged";
   window.SmartBudgetMotion?.stage("data");
   startCloudRealtime();
   cloudSyncReady=true;
-  setCloudStatus(provisionedNow?"Configuration du budget…":"Synchronisé",provisionedNow?"syncing":"ok");
+  setCloudStatus(pending?"Configuration du budget…":"Synchronisé",pending?"syncing":"ok");
   hideCloudGate();
-  if(typeof setupBuilderNeedsRun==="function"&&setupBuilderNeedsRun(activeHouseholdId)&&typeof openSetupBuilder==="function")openSetupBuilder();
+  if(pending)openSetupBuilder(setup);
+  else if(setupBuilderNeedsRun(household))openSetupBuilder();
  }catch(error){
   console.error("Cloud bootstrap",error);
   cloudSyncReady=false;

@@ -394,7 +394,7 @@ if(modular){
 
   const household=read("js/cloud-household.js");
   const storage=read("js/storage.js");
-  if(!household.includes('rpc("ensure_personal_household"'))fail("Provisionnement automatique du foyer absent");
+  if(!household.includes('rpc("provision_budget_builder"'))fail("Provisionnement automatique du foyer absent");
   else ok("Foyer personnel automatique présent");
   if(!storage.includes("function loadState(){\n return seedState();")||!storage.includes("function clearCurrentCloudDataCache()"))fail("Mode cloud-only non appliqué au stockage");
   else ok("État de travail conservé uniquement en mémoire");

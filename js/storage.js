@@ -33,7 +33,7 @@ function normalizeHousehold(value){
  };
 }
 function householdIsSolo(){return normalizeHousehold(state?.household).mode==="solo"}
-function normalizeState(x){
+function normalizeState(x,{authoritativeCategories=false}={}){
  if(!x||typeof x!=="object")return seedState();
  const fallback=seedState();
  x.schemaVersion=5;
@@ -42,8 +42,8 @@ function normalizeState(x){
  x.selectedMonth=typeof x.selectedMonth==="string"?x.selectedMonth:fallback.selectedMonth;
  x.createdMonth=typeof x.createdMonth==="string"?x.createdMonth:monthKey(x.selectedMonth);
  x.transactions=Array.isArray(x.transactions)?x.transactions:[];
- x.baseIncomeCategories=Array.isArray(x.baseIncomeCategories)&&x.baseIncomeCategories.length?x.baseIncomeCategories:fallback.baseIncomeCategories;
- x.baseExpenseCategories=Array.isArray(x.baseExpenseCategories)&&x.baseExpenseCategories.length?x.baseExpenseCategories:fallback.baseExpenseCategories;
+ x.baseIncomeCategories=Array.isArray(x.baseIncomeCategories)&&(authoritativeCategories||x.baseIncomeCategories.length)?x.baseIncomeCategories:fallback.baseIncomeCategories;
+ x.baseExpenseCategories=Array.isArray(x.baseExpenseCategories)&&(authoritativeCategories||x.baseExpenseCategories.length)?x.baseExpenseCategories:fallback.baseExpenseCategories;
  x.categoryBudgets=x.categoryBudgets&&typeof x.categoryBudgets==="object"?x.categoryBudgets:{};
  x.incomeBudgets=x.incomeBudgets&&typeof x.incomeBudgets==="object"?x.incomeBudgets:{};
  x.categoryOwners=x.categoryOwners&&typeof x.categoryOwners==="object"?x.categoryOwners:{};

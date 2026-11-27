@@ -1,12 +1,20 @@
 # Workstate — Budget foyer
 
+## Lot 3 V3.1 · Reprise du Builder en solo et à deux
+
+- Terminé en source : le Builder relit le brouillon du nouveau foyer après reconnexion, garde les identifiants stables et attend le reçu PostgreSQL puis la relecture des données avant d’afficher le succès. Une seconde validation rejoue le même identifiant. Un changement de session bloque la poursuite.
+- Données vérifiées : propriétaire authentifié, libellés et mode du foyer, catégories, budgets en centimes des revenus, charges, abonnements et épargne. Les abonnements annuels gardent leur équivalent mensuel. La relecture conserve les listes volontairement vides et les soldes de départ. Le Builder prépare des prévisions. Une personne invitée rejoint le foyer via le parcours d’invitation et les opérations réelles ou récurrentes restent gérées dans leurs écrans actuels.
+- Fichiers : `js/cloud-household.js`, `js/cloud-load.js`, `js/setup-builder.js`, `js/storage.js`, `scripts/v31-builder-recovery.test.mjs`, `scripts/validate.mjs`, durcissement du provisionnement SQL et ce journal.
+- Tests : 14 tests Builder, 303 tests applicatifs et audit réussis localement. Sur Chrome local avec API simulée, sept étapes, création solo, coupure en duo, rechargement et une seule validation en reprise. PostgreSQL a testé un échec entre les tables, le rollback, les centimes, la relecture du reçu, l’isolation et les soldes (CI du premier commit `eccdec5`, exécution 46063991478).
+- Limites : la reprise après fermeture suppose que le serveur a reçu le brouillon. Avant ce point, la saisie reste en mémoire de l’onglet, conformément à l’absence de cache financier persistant. Les préférences restent synchronisées via le profil Auth. La recette avec le service Supabase hébergé attend la revue et l’autorisation de migration.
+- En cours : CI du commit intégrant le client Builder. Prochaine action après sa validation : lot 4, construire et tester un lot Assistant réunissant catégorie, budget et mouvement avec rejet intégral sur erreur.
+
 ## Lot 3 V3.1 · Transaction de création du budget initial
 
 - Implémenté côté serveur : provision idempotente, brouillon privé, validation transactionnelle des catégories et budgets du nouveau foyer, reçu de validation consultable après une coupure. Le verrou et les restrictions d’accès ciblent le propriétaire du foyer provisionné par le Builder.
 - Fichiers : migration `20261127210000_budget_builder_atomic.sql`, `scripts/v31-builder-db.sql`, workflow de validation et ce journal.
-- Tests : scénario PostgreSQL ajouté pour simuler une erreur à mi-parcours, rejouer la demande, vérifier les montants et protéger le foyer voisin. Exécution PostgreSQL en attente de CI.
-- En cours : intégration du Builder à la reprise serveur. Limite : la migration reste non appliquée sur Supabase hébergé.
-- Prochaine action : relier le provisionnement et les étapes Enregistrer/Valider du Builder au reçu et au brouillon serveur, puis tester la reprise après changement de session.
+- Tests : scénario PostgreSQL réussi en CI (46063991478), incluant erreur à mi-parcours, rejeu, montants et protection du foyer voisin.
+- Le raccordement et les limites de la recette sont détaillés dans le jalon suivant.
 
 ## Lot 2 V3.1 · Actions groupées de Catégories
 
@@ -15,7 +23,7 @@
 - Fichiers : `js/category-controls.js`, `js/category-distribution.js`, `scripts/category-distribution.test.mjs`, `scripts/v31-category-bulk.test.mjs`, `scripts/validate.mjs` et ce journal.
 - Tests : 44 tests ciblés et audit applicatif réussis. Chrome local sur données fictives : remplissage, Échap, changement de mois, remise à zéro, Vue d’ensemble et annulation. Le plan de synchronisation testé en mémoire ne touche que les écritures d’ajustement. Les protections d’archivage n’ont pas été modifiées.
 - Limite : la validation n’a pas utilisé de session Supabase hébergée. La persistance sur deux clients connectés reste à vérifier dans le lot de recette connectée.
-- En cours : CI de la PR #52 pour ce lot. Prochaine action après validation : lot 3, reproduire une interruption à la création du foyer de test et vérifier le résultat après une nouvelle tentative.
+- CI de la PR #52 réussie pour ce lot (App integrity et PostgreSQL, exécution 46062377156, commit `2a6995e`).
 
 ## Lot 1 V3.1 · Abonnements et bilan du Builder
 

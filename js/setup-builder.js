@@ -39,7 +39,7 @@ function setupBuilderKey(householdId=activeHouseholdId){
 }
 function markSetupBuilderPending(householdId){
  if(!householdId)return;
- try{localStorage.setItem(setupBuilderKey(householdId),"pending")}catch{}
+ try{localStorage.setItem(setupBuilderKey(householdId),"reset-pending")}catch{}
 }
 function markSetupBuilderComplete(householdId=activeHouseholdId){
  if(!householdId)return;
@@ -47,7 +47,7 @@ function markSetupBuilderComplete(householdId=activeHouseholdId){
 }
 function setupBuilderNeedsRun(householdId=activeHouseholdId){
  if(!householdId)return false;
- try{return localStorage.getItem(setupBuilderKey(householdId))==="pending"}catch{return false}
+ try{return localStorage.getItem(setupBuilderKey(householdId))==="reset-pending"}catch{return false}
 }
 
 class SetupBuilderController{
@@ -122,14 +122,20 @@ class SetupBuilderController{
   return root;
  }
 
- open(){
+ open(initialSetup=null){
   if(!activeHouseholdId)return;
+  const userId=typeof cloudSession!=="undefined"?cloudSession?.user?.id:null;
+  if(this.householdId===activeHouseholdId&&this.userId===userId&&this.root?.classList.contains("open"))return;
   this.originalAppearance=typeof currentUserAppearance==="function"?currentUserAppearance():null;
   this.householdId=activeHouseholdId;
+  this.userId=userId;
+  this.initialSetup=initialSetup;
+  this.requestId=initialSetup?.requestId||null;
+  this.initialPayload=initialSetup?.draft||null;
   this.initialDigest=cloudSyncDigest();
-  this.prepared=false;
+  this.prepared=!!this.initialPayload;
   this.draft=this.createInitialDraft();
-  this.step=0;
+  this.step=this.prepared?6:0;
   this.editingName="";
   this.customPickerOpen=this.draft.appearance.color==="custom";
   this.customPickerHsv=hexToHsv(this.draft.appearance.customColor);
@@ -142,6 +148,7 @@ class SetupBuilderController{
   root.setAttribute("aria-hidden","false");
   document.documentElement.classList.add("setup-builder-open");
   this.render({preserveScroll:false});
+  if(this.prepared)this.setStatus("Brouillon retrouvé. Vérifie le bilan et reprends la validation.");
  }
 
  close(){
@@ -463,7 +470,7 @@ class SetupBuilderController{
    for(const data of this.draft.customExpense.filter(row=>row.envelope))rows.push(this.itemRow(data,data,"expense","customExpense:"+data.id));
    return '<div class="setup-builder-title"><span>Étape 6 sur 7</span><h3>Budgets du mois</h3><p>Répartis les montants prévus pour la vie courante.</p></div><div class="setup-builder-list">'+rows.join("")+this.addCard("envelope","Ajouter un budget")+'</div>';
   }
-  const groups=this.monthlyLines();
+  const groups=this.initialPayload?this.stagedMonthlyLines():this.monthlyLines();
   const totals=this.totals(groups);
   return `
    <div class="setup-builder-title"><span>Étape 7 sur 7</span><h3>Votre budget de départ</h3><p>Vérifiez le résultat avant la création des catégories.</p></div>
@@ -474,7 +481,7 @@ class SetupBuilderController{
    </div>
    <div class="setup-builder-recap">
     <strong>${totals.count} catégorie${totals.count>1?"s":""} active${totals.count>1?"s":""}</strong>
-    <span>Mode ${this.isSolo()?"seul":"à deux"} · prévisions mensuelles</span>
+    <span>Mode ${(this.initialPayload?.mode||this.draft.household.mode)==="solo"?"seul":"à deux"} · prévisions mensuelles</span>
    </div>
    ${this.breakdown(groups)}`;
  }
@@ -492,7 +499,7 @@ class SetupBuilderController{
   const next=root.querySelector('[data-setup-action="next"]');
   const skip=root.querySelector('[data-setup-action="skip"]');
   back.hidden=this.step===0;
-  next.textContent=this.prepared?"Réessayer la synchronisation":this.step===6?"Créer mon budget":"Continuer";
+  next.textContent=this.prepared?"Reprendre la validation":this.step===6?"Créer mon budget":"Continuer";
   next.disabled=this.busy;
   back.disabled=this.busy||this.prepared;
   skip.disabled=this.busy||this.prepared;
@@ -865,6 +872,7 @@ class SetupBuilderController{
 
  async skip(){
   if(this.busy)return;
+  if(this.initialSetup){await this.finishInitialSetup({skip:true});return}
   if(this.originalAppearance&&typeof applyUserAppearance==="function")applyUserAppearance(this.originalAppearance);
   markSetupBuilderComplete();
   state.onboardingComplete=true;
@@ -876,7 +884,7 @@ class SetupBuilderController{
   }
  }
 
- applyBaseCategories(){
+ applyBaseCategories(target=state){
   const selectedIncome=new Set();
   const selectedExpense=new Set();
 
@@ -884,9 +892,9 @@ class SetupBuilderController{
    const data=this.draft.income[item.id];
    const eligible=!this.isSolo()||item.owner!=="A";
    const selected=eligible&&!!data.selected;
-   state.incomeBudgets[item.id]=selected?this.number(data.amount):0;
-   state.incomeCategoryOwners[item.id]=this.effectiveOwner(data.owner);
-   state.incomeCategoryNames[item.id]=String(data.name||item.name).trim()||item.name;
+   target.incomeBudgets[item.id]=selected?this.number(data.amount):0;
+   target.incomeCategoryOwners[item.id]=this.effectiveOwner(data.owner);
+   target.incomeCategoryNames[item.id]=String(data.name||item.name).trim()||item.name;
    if(selected)selectedIncome.add(item.id);
   }
 
@@ -894,22 +902,22 @@ class SetupBuilderController{
    const data=this.draft.expense[item.id];
    const eligible=!this.isSolo()||item.owner!=="A";
    const selected=eligible&&!!data.selected;
-   state.categoryBudgets[item.id]=selected?this.number(data.amount):0;
-   state.categoryOwners[item.id]=this.effectiveOwner(data.owner);
-   state.categoryNames[item.id]=String(data.name||item.name).trim()||item.name;
+   target.categoryBudgets[item.id]=selected?this.number(data.amount):0;
+   target.categoryOwners[item.id]=this.effectiveOwner(data.owner);
+   target.categoryNames[item.id]=String(data.name||item.name).trim()||item.name;
    if(selected)selectedExpense.add(item.id);
   }
 
-  state.deletedIncomeCategoriesGlobal=(state.baseIncomeCategories||[])
+  target.deletedIncomeCategoriesGlobal=(target.baseIncomeCategories||[])
    .map(item=>item.id)
    .filter(id=>!selectedIncome.has(id));
 
-  state.deletedCategoriesGlobal=(state.baseExpenseCategories||[])
+  target.deletedCategoriesGlobal=(target.baseExpenseCategories||[])
    .map(item=>item.id)
    .filter(id=>!selectedExpense.has(id));
  }
 
- applyCustomCategories(){
+ applyCustomCategories(target=state){
   // Keep unrelated categories, including rows produced by an earlier setup.
   const incomes=new Set(this.draft.customIncome.filter(row=>row.selected).map(row=>row.id));
   const expenses=new Set([
@@ -918,17 +926,17 @@ class SetupBuilderController{
   for(const item of SETUP_SUBSCRIPTIONS){
    if(this.draft.subscriptions[item.id].selected)expenses.add("setup-sub-"+item.id);
   }
-  state.customIncomeCategories=(state.customIncomeCategories||[]).filter(row=>!incomes.has(row.id));
-  state.customExpenseCategories=(state.customExpenseCategories||[]).filter(row=>!expenses.has(row.id));
+  target.customIncomeCategories=(target.customIncomeCategories||[]).filter(row=>!incomes.has(row.id));
+  target.customExpenseCategories=(target.customExpenseCategories||[]).filter(row=>!expenses.has(row.id));
 
   for(const data of this.draft.customIncome){
    if(!data.selected)continue;
    const name=String(data.name||"Revenu").trim()||"Revenu";
    const budget=this.number(data.amount);
    const owner=this.effectiveOwner(data.owner);
-   state.customIncomeCategories.push({id:data.id,name,budget,owner,createdFrom:state.createdMonth,custom:true});
-   state.incomeBudgets[data.id]=budget;
-   state.incomeCategoryOwners[data.id]=owner;
+   target.customIncomeCategories.push({id:data.id,name,budget,owner,createdFrom:target.createdMonth,custom:true});
+   target.incomeBudgets[data.id]=budget;
+   target.incomeCategoryOwners[data.id]=owner;
   }
 
   for(const data of this.draft.customExpense){
@@ -936,13 +944,13 @@ class SetupBuilderController{
    const name=String(data.name||"Dépense").trim()||"Dépense";
    const budget=this.number(data.amount);
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
+   target.customExpenseCategories.push({
     id:data.id,name,budget,owner,saving:!!data.saving,
     section:["Obligatoires","Abonnements","Vie courante"].includes(data.section)?data.section:"Obligatoires",
-    createdFrom:state.createdMonth,custom:true
+    createdFrom:target.createdMonth,custom:true
    });
-   state.categoryBudgets[data.id]=budget;
-   state.categoryOwners[data.id]=owner;
+   target.categoryBudgets[data.id]=budget;
+   target.categoryOwners[data.id]=owner;
   }
 
   for(const item of SETUP_SUBSCRIPTIONS){
@@ -953,12 +961,12 @@ class SetupBuilderController{
    const name=String(data.name||item.name).trim()||item.name;
    const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
+   target.customExpenseCategories.push({
     id,name,budget,owner,section:"Abonnements",
-    createdFrom:state.createdMonth,custom:true,setupPlan:plan?.name||""
+    createdFrom:target.createdMonth,custom:true,setupPlan:plan?.name||""
    });
-   state.categoryBudgets[id]=budget;
-   state.categoryOwners[id]=owner;
+   target.categoryBudgets[id]=budget;
+   target.categoryOwners[id]=owner;
   }
 
   for(const data of this.draft.customSubscriptions){
@@ -966,16 +974,101 @@ class SetupBuilderController{
    const name=String(data.name||"Abonnement").trim()||"Abonnement";
    const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
+   target.customExpenseCategories.push({
     id:data.id,name,budget,owner,section:"Abonnements",
-    createdFrom:state.createdMonth,custom:true
+    createdFrom:target.createdMonth,custom:true
    });
-   state.categoryBudgets[data.id]=budget;
-   state.categoryOwners[data.id]=owner;
+   target.categoryBudgets[data.id]=budget;
+   target.categoryOwners[data.id]=owner;
   }
  }
 
+ buildInitialPayload(skip){
+  const target=seedState();
+  const household=normalizeHousehold(skip?state.household:this.draft.household);
+  target.household=household;
+  if(!skip){
+   this.applyBaseCategories(target);
+   this.applyCustomCategories(target);
+  }
+  const categories=cloudLocalCategories(target)
+   .filter(item=>!item.archived&&(household.mode!=="solo"||item.owner_slot!=="A"))
+   .map(item=>{
+    const budgets=item.type==="income"?target.incomeBudgets:target.categoryBudgets;
+    const envelope=["groceries","fuel"].includes(item.local_id)||item.local_id.startsWith("setup-envelope-");
+    const subscription=/^setup-sub(?:scription)?-/.test(item.local_id);
+    const bucket=item.type==="income"?"income":item.is_saving?"savings":subscription?"subscriptions":envelope?"envelopes":"charges";
+    return {
+     id:item.local_id,name:item.name,type:item.type,section:item.group_name,
+     owner:household.mode==="solo"?"B":item.owner_slot||"common",
+     saving:item.is_saving,custom:item.is_custom,bucket,
+     amountCents:Math.round(this.number(budgets[item.local_id]??item.category.budget)*100)
+    };
+   });
+  return {...household,month:target.createdMonth+"-01",categories,
+   appearance:normalizeUserAppearance(skip?this.originalAppearance:this.draft.appearance)};
+ }
+
+ stagedMonthlyLines(){
+  const groups={income:[],charges:[],subscriptions:[],savings:[],envelopes:[]};
+  for(const row of this.initialPayload.categories){
+   const group=Object.hasOwn(groups,row.bucket)?row.bucket:"charges";
+   groups[group].push({name:row.name,cents:row.amountCents});
+  }
+  return groups;
+ }
+
+ async finishInitialSetup({skip=false}={}){
+  const household=this.householdId,user=this.userId;
+  const sameSession=()=>activeHouseholdId===household&&cloudSession?.user?.id===user&&this.householdId===household&&this.userId===user;
+  if(this.busy||!sameSession())return;
+  if(!navigator.onLine||!cloudSyncReady||cloudPushInProgress){
+   this.setStatus("Connexion requise. Garde cet écran ouvert pour conserver la saisie en cours.","error");return;
+  }
+  this.busy=true;
+  this.step=6;
+  this.render();
+  this.setStatus("Enregistrement du brouillon et création du budget.");
+  try{
+   this.initialPayload??=this.buildInitialPayload(skip);
+   this.requestId??=crypto.randomUUID();
+   this.prepared=true;
+   let receipt=await cloudBudgetBuilderSetup(household,"stage",this.requestId,this.initialPayload);
+   if(!sameSession())return;
+   if(receipt?.status==="staged"&&receipt.draft){
+    this.requestId=receipt.requestId;
+    this.initialPayload=receipt.draft;
+    this.busy=false;
+    this.render();
+    this.setStatus("Un brouillon a déjà été enregistré. Vérifie son bilan avant de reprendre.");
+    return;
+   }
+   if(receipt?.status==="staged"&&receipt.requestId===this.requestId){
+    await saveUserAppearance(this.initialPayload.appearance);
+    if(!sameSession())return;
+    receipt=await cloudBudgetBuilderSetup(household,"commit",this.requestId);
+   }
+   if(!sameSession())return;
+   if(receipt?.status!=="complete")throw Error("Le résultat de la création n’a pas pu être confirmé.");
+   await cloudLoadState();
+   if(!sameSession())return;
+   markSetupBuilderComplete(household);
+   this.originalAppearance=null;
+   this.close();
+   showUndoToast("Budget de départ chargé");
+  }catch(error){
+   if(!sameSession())return;
+   if(error?.code==="22023"&&this.initialSetup.status==="pending"){
+    this.initialPayload=null;this.requestId=null;this.prepared=false;
+   }
+   this.busy=false;
+   this.render();
+   this.setStatus(error?.message||"Création en attente. Reprends la validation.","error");
+  }finally{if(this.householdId===household&&this.userId===user)this.busy=false}
+ }
+
  async finish(){
+  if(this.initialSetup){await this.finishInitialSetup();return}
   if(this.busy||!activeHouseholdId||activeHouseholdId!==this.householdId)return;
   if(!navigator.onLine||!cloudSession||!cloudSyncReady||cloudPushInProgress){
    this.setStatus("Connexion ou synchronisation en attente. Ton brouillon est conservé.","error");return;
@@ -1026,7 +1119,7 @@ class SetupBuilderController{
 
 const setupBuilderController=new SetupBuilderController();
 
-function openSetupBuilder(){setupBuilderController.open()}
+function openSetupBuilder(initialSetup=null){setupBuilderController.open(initialSetup)}
 function closeSetupBuilder(){setupBuilderController.close()}
 function skipSetupBuilder(){setupBuilderController.skip()}
 function setupBuilderGo(delta){delta<0?setupBuilderController.goBack():setupBuilderController.goNext()}

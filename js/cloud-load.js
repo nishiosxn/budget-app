@@ -1,6 +1,7 @@
 // V2.5.1 — chargement Supabase vers l'état de session + baseline en mémoire
 async function cloudLoadState(){
  if(!activeHouseholdId)throw new Error("Aucun foyer actif.");
+ const householdId=activeHouseholdId,userId=cloudSession?.user?.id;
  setCloudStatus("Chargement du cloud…","syncing");
  const householdRequest=cloudClient.from("households").select("*").eq("id",activeHouseholdId).single();
  const categoriesRequest=cloudClient.from("categories").select("*").eq("household_id",activeHouseholdId).order("sort_order");
@@ -11,6 +12,7 @@ async function cloudLoadState(){
  const [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes,openingBalancesRes]=await Promise.all([
   householdRequest,categoriesRequest,budgetsRequest,transactionsRequest,recurrencesRequest,openingBalancesRequest
  ]);
+ if(activeHouseholdId!==householdId||cloudSession?.user?.id!==userId)throw Error("Le foyer ou la session a changé.");
  for(const result of [householdRes,categoriesRes,budgetsRes,transactionsRes,recurrencesRes,openingBalancesRes])if(result.error)throw result.error;
 
  const household=householdRes.data;
@@ -40,7 +42,7 @@ async function cloudLoadState(){
 
  cloudApplyingRemote=true;
  try{
-  state=normalizeState(next);
+  state=normalizeState(next,{authoritativeCategories:true});
   saveState();
   reloadUiFromState();
  }finally{cloudApplyingRemote=false}
