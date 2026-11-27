@@ -2725,3 +2725,15 @@ html{font-size:clamp(.9375rem,.9rem + .18vw,1rem)}
 /* === V2.7 · état de synchronisation différée === */
 .cloud-sync-status[data-state="pending"]{color:var(--warning);border-color:rgba(143,103,37,.24);background:rgba(143,103,37,.07)}
 .cloud-sync-status[data-state="pending"]::before{background:var(--warning);box-shadow:0 0 0 .1875rem rgba(143,103,37,.12)}
+
+/* Builder V3.1 · repères du parcours et accent du foyer. */
+.setup-builder-progress{grid-template-columns:repeat(7,minmax(0,1fr));gap:.25rem}
+.setup-builder-progress button{position:relative;display:grid;justify-items:center;gap:.375rem;background:transparent;color:var(--muted);border:0;min-width:0;min-height:2.75rem;padding:.25rem;isolation:isolate}
+.setup-builder-progress button:disabled{opacity:1}
+.setup-builder-progress button:before{content:"";position:absolute;inset-block-start:1rem;left:-50%;width:100%;height:.125rem;background:var(--line);z-index:-1;transition:background .18s ease}
+.setup-builder-progress button:first-child:before{display:none}
+.setup-builder-progress button b{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:50%;width:1.55rem;height:1.55rem;display:grid;place-items:center}
+.setup-builder-progress button.done:before,.setup-builder-progress button[aria-current]:before,.setup-builder-progress button.done b,.setup-builder-progress button[aria-current] b,.setup-primary{background:var(--accent,#5C29D6);color:var(--on-accent,#fff)}
+.setup-builder-progress em{font-size:.8125rem;font-style:normal}.setup-goal{min-width:0}.setup-goal>.setup-builder-item-fields{padding:.75rem}
+@media(max-width:46rem){.setup-builder-progress button{align-content:center}.setup-builder-progress button b{font-size:0;width:.875rem;height:.875rem}.setup-builder-progress button:before{inset-block-start:calc(50% - .0625rem)}.setup-builder-progress em{display:none}}
+@media(prefers-reduced-motion:reduce){.setup-builder-progress button:before{transition:none}}
