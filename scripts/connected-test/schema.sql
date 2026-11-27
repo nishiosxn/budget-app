@@ -66,6 +66,7 @@ alter table public.household_members enable row level security;
 create policy member_roster on public.household_members for select to authenticated using(private.is_household_member(household_id));
 grant select on public.households,public.household_members to authenticated;
 grant update(name) on public.households to authenticated;
+alter publication supabase_realtime add table public.households,public.household_members;
 
 -- Only the fixture policies below are reconstructed. Versioned policies/RPCs are loaded verbatim.
 do $$

@@ -6,6 +6,7 @@
 - Contrôle indépendant ajouté : les véritables pages de l’application et leur SDK Supabase épinglé s’ouvrent sur le runner avec deux sessions Auth fictives. La recette vérifie le Builder, les actions Catégories, la Vue d’ensemble du second appareil et le reçu Assistant après rechargement.
 - L’environnement de test redirige uniquement vers Supabase et l’Edge locales. La comparaison du schéma hébergé exige toujours un export sans données ou une liaison en lecture autorisée.
 - Prochaine action : vérifier la CI de la recette des pages et consigner le résultat.
+- CI 46075836490 : le scénario a franchi le Builder dans les vraies pages et vérifié les montants enregistrés. Le premier test de propagation a révélé que le schéma de recette ne publiait pas les tables du foyer et des membres auxquelles l’application s’abonne. La publication de test et l’attente d’abonnement ont été corrigées.
 
 ## Lot 5C V3.1 · Smart Assistant, concurrence et isolation
 

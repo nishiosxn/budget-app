@@ -60,11 +60,20 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
 
  const two=await partner.openApp(household);
  await waitText(two,"#cloudSyncStatus",/Synchronisé/);
+ await two.waitForFunction(()=>cloudRealtimeChannel?.state==="joined",null,{timeout:10000});
  await dismissInstall(one);
  await dismissInstall(two);
  await one.locator('[data-tab="categories"]').click();
  await one.locator('[data-demo-fill-all][data-section="Obligatoires"]').click();
- await waitText(two,"#expenseTotal",/340,02/);
+ try{await waitText(two,"#expenseTotal",/340,02/)}
+ catch(error){
+  const active=await rows(partner,"transactions",household,"&archived_at=is.null");
+  const snapshots=await Promise.all([one,two].map(page=>page.evaluate(()=>({
+   status:document.querySelector("#cloudSyncStatus").textContent,channel:cloudRealtimeChannel?.state,
+   month:state.selectedMonth,expense:metrics().expense,count:state.transactions.length
+  }))));
+  throw Error("Fill diagnostics: "+JSON.stringify({persisted:active.map(t=>t.amount),snapshots}),{cause:error});
+ }
  await one.locator("#undoToastBtn").click();
  await waitText(two,"#expenseTotal",/0,00/);
  assert.deepEqual(await rows(partner,"transactions",household,"&archived_at=is.null"),[]);
@@ -79,6 +88,7 @@ test("actual Smart Budget pages create, sync, undo and recover across two Chromi
  owner.dropNextAssistantResponse("commit_atomic");
  await one.getByRole("button",{name:"Confirmer",exact:true}).click();
  await waitText(one,"#sbAssistantStatus",/Confirmation à vérifier/);
+ one.once("dialog",dialog=>dialog.accept());
  await one.reload();
  await waitText(one,"#sbAssistantStatus",/Reçu vérifié/);
  await waitText(two,"#expenseTotal",/28,00/);
