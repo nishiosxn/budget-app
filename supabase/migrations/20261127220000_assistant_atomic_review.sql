@@ -13,6 +13,28 @@ create table private.smart_assistant_reviews (
 alter table private.smart_assistant_reviews enable row level security;
 revoke all on private.smart_assistant_reviews from public,anon,authenticated;
 
+-- Retain opaque request tombstones and receipts; erase only expired payloads.
+-- No scheduled job is installed here. The operator may run bounded batches
+-- from an approved administrative maintenance job after deployment validation.
+create index smart_assistant_reviews_expired_payload_idx
+ on private.smart_assistant_reviews(expires_at,household_id,request_id) where actions is not null;
+create function private.purge_expired_smart_assistant_reviews(p_limit integer default 500)
+returns integer language plpgsql security invoker set search_path='' as $
+declare affected integer;
+begin
+ if p_limit is null or p_limit not between 1 and 1000 then raise invalid_parameter_value;end if;
+ with expired as (
+  select household_id,request_id from private.smart_assistant_reviews
+  where actions is not null and expires_at<=now()
+  order by expires_at,household_id,request_id limit p_limit for update skip locked
+ )
+ update private.smart_assistant_reviews r set actions=null from expired e
+ where r.household_id=e.household_id and r.request_id=e.request_id;
+ get diagnostics affected=row_count;
+ return affected;
+end $;
+revoke all on function private.purge_expired_smart_assistant_reviews(integer) from public,anon,authenticated,service_role;
+
 create function public.smart_assistant_atomic_review(
  p_household uuid,p_actor uuid,p_roster uuid[],p_request uuid,p_action text,p_actions jsonb default null
 ) returns jsonb language plpgsql security definer set search_path='' as $$
@@ -88,7 +110,14 @@ begin
   where household_id=p_household and request_id=p_request and payload_hash='review-'||ticket.signature;
  if found then return saved_result||jsonb_build_object('status','complete');end if;
  if ticket.rejected then return jsonb_build_object('status','rejected');end if;
- if ticket.actions is null or ticket.expires_at<=now() then return jsonb_build_object('status','expired');end if;
+ if ticket.expires_at<=now() then
+  if ticket.actions is not null then
+   update private.smart_assistant_reviews set actions=null
+    where household_id=p_household and request_id=p_request;
+  end if;
+  return jsonb_build_object('status','expired');
+ end if;
+ if ticket.actions is null then return jsonb_build_object('status','expired');end if;
  if p_action<>'commit' then return jsonb_build_object('status','prepared');end if;
 
  begin

@@ -124,3 +124,50 @@ begin
  assert not has_function_privilege('authenticated','public.smart_assistant_atomic_review(uuid,uuid,uuid[],uuid,text,jsonb)','execute');
  assert not has_table_privilege('authenticated','private.smart_assistant_reviews','select');
 end $$;
+
+-- Expiry is a payload-retention policy, not a deletion of request identities.
+do $$
+declare
+ h uuid:='10000000-0000-4000-8000-000000000002';
+ actor_id uuid:='20000000-0000-4000-8000-000000000003';
+ expired_one uuid:=gen_random_uuid();
+ expired_two uuid:=gen_random_uuid();
+ fresh uuid:=gen_random_uuid();
+ completed uuid;
+ payload jsonb:='[{"kind":"expense","label":"Fictif"}]';
+ before_receipts jsonb;
+ saved jsonb;
+begin
+ select r.request_id into strict completed from private.smart_assistant_reviews r
+ join public.smart_assistant_pilot_batch_receipts b on b.household_id=r.household_id
+  and b.request_id=r.request_id and b.payload_hash='review-'||r.signature
+ where r.household_id=h and r.actor=actor_id limit 1;
+ saved:=public.smart_assistant_atomic_review(h,actor_id,array[actor_id],completed,'status');
+ assert saved->>'status'='complete';
+ select jsonb_agg(to_jsonb(b) order by household_id,request_id) into before_receipts from public.smart_assistant_pilot_batch_receipts b;
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],expired_one,'prepare',payload)->>'status'='prepared';
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],expired_two,'prepare',payload)->>'status'='prepared';
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],fresh,'prepare',payload)->>'status'='prepared';
+ update private.smart_assistant_reviews set expires_at=now()-interval '1 hour'
+  where household_id=h and request_id in (expired_one,expired_two,completed);
+ assert private.purge_expired_smart_assistant_reviews(1)=1;
+ assert (select count(*)=1 from private.smart_assistant_reviews where household_id=h and request_id in (expired_one,expired_two) and actions is not null);
+ assert private.purge_expired_smart_assistant_reviews(500)=1;
+ assert private.purge_expired_smart_assistant_reviews(500)=0;
+ assert (select count(*)=2 from private.smart_assistant_reviews where household_id=h and request_id in (expired_one,expired_two) and actions is null);
+ assert (select actions=payload from private.smart_assistant_reviews where household_id=h and request_id=fresh);
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],expired_one,'commit')->>'status'='expired';
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],expired_one,'prepare',payload)->>'status'='expired';
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],completed,'commit')=saved;
+ update private.smart_assistant_reviews set expires_at=now()-interval '1 hour' where household_id=h and request_id=fresh;
+ assert public.smart_assistant_atomic_review(h,actor_id,array[actor_id],fresh,'status')->>'status'='expired';
+ assert (select actions is null from private.smart_assistant_reviews where household_id=h and request_id=fresh);
+ assert (select jsonb_agg(to_jsonb(b) order by household_id,request_id) from public.smart_assistant_pilot_batch_receipts b)=before_receipts;
+ assert not has_function_privilege('authenticated','private.purge_expired_smart_assistant_reviews(integer)','execute');
+ assert not has_function_privilege('anon','private.purge_expired_smart_assistant_reviews(integer)','execute');
+ assert not has_function_privilege('service_role','private.purge_expired_smart_assistant_reviews(integer)','execute');
+ begin
+  perform private.purge_expired_smart_assistant_reviews(1001);
+  raise exception 'Unbounded purge accepted';
+ exception when invalid_parameter_value then null;end;
+end $$;

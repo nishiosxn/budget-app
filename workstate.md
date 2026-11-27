@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 8B.4C V3.1 — Contrat RLS et rétention (CI à confirmer)
+
+- CI 8B.4A : application/PostgreSQL et étapes fonctionnelles connectées/Chromium/PWA réussies (46082768989, 46082768964). CI 8B.4B : application/PostgreSQL réussis (46082995837) ; recette connectée en cours lors de la préparation (46082995849).
+- Contrat CI enrichi avec les politiques d'appartenance des propriétaires, les droits INSERT/UPDATE/DELETE ciblés, les politiques foyers/membres et administration, et les contraintes de dates/rôles. Tests REST d'accès inter-foyers, modification de rôle, champs immuables et propriétaire légitime. Ce contrat reste synthétique : les détails des clés étrangères/cascades et les anciennes migrations divergentes ne sont pas un export exhaustif du serveur.
+- Smart Assistant : effacement des seuls contenus expirés au bout de 24 h lors de leur consultation ou par une fonction de maintenance administrative bornée (1 à 1000 lignes), sans supprimer les identifiants de requête ni les reçus. Aucun cron installé ; aucun nettoyage de brouillon Builder en cours. Tests de limites, répétition, conservation des reçus et refus clients ajoutés.
+- Aucun accès en écriture à Supabase hébergé, aucune fusion ni publication. Avancement estimé 94 % conservé jusqu'à la CI de cette révision. Restent coexistence réelle V3.0/V3.1, Edge v30, procédure de récupération du Builder, comparaison des migrations historiques et validation Gemma. Prochaine action : vérifier CI puis 8B.5.
+
 ## Lot 8B.4B V3.1 — Pilotage fermé et protection Builder (CI à confirmer)
 
 - Préparation sur la branche uniquement : autorisations privées par utilisateur pour le provisionnement Builder, par couple foyer/utilisateur pour les règles. Aucun compte préautorisé à la migration ; inscription V3.0 conservée via le RPC historique. Les autorisations de l'Edge Assistant restent séparées.

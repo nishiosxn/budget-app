@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Contrat RLS et rétention 8B.4C (validation en attente)
+
+- Contrat CI complété avec des politiques et privilèges historiques, contraintes de dates et tests de refus inter-foyers.
+- Effacement des contenus Assistant expirés sans supprimer les reçus ou identifiants de requête ; fonction de maintenance privée bornée et tests de répétition. Aucun job périodique ou nettoyage hébergé déclenché.
+
 ## V3.1 — Pilotage fermé 8B.4B (validation en attente)
 
 - Accès Builder et règles de catégorisation explicitement autorisés côté SQL, sans inscription automatique au pilote.

@@ -32,6 +32,12 @@ Les migrations V3.1 non encore hébergées introduisent des listes privées, vid
 
 Les gardes du Builder bloquent les écritures REST sur un foyer en attente et les invitations prématurées, tout en conservant le provisionneur historique. Vérifier les deux workflows et la recette V3.0/V3.1 avant migration ; le test REST ne remplace pas une recette des deux interfaces réelles.
 
+## Contrat RLS et rétention 8B.4C (à valider)
+
+Le contrat local reproduit désormais les droits et prédicats RLS historiques principaux, y compris le contrôle du propriétaire désigné. Il reste synthétique, notamment les détails des clés étrangères/cascades et les migrations historiques divergentes. Vérifier les tests CI avant de le considérer représentatif pour la coexistence. Les workflows 8B.4A et 8B.4B sont référencés dans le workstate.
+
+La rétention des propositions Assistant efface leur champ `actions` après 24 h, à la consultation ou via `private.purge_expired_smart_assistant_reviews(integer)` par lots bornés. Les tombstones (identifiant, empreinte et statut) et les reçus sont conservés afin de refuser une ancienne requête ou de restituer un reçu existant ; aucun effacement de l'historique financier. La fonction n'est pas callable par les rôles clients ni service_role. Après validation et autorisation distincte, prévoir une tâche administrative quotidienne avec limites, suivi du nombre de lignes et contrôle de la durée ; aucune planification n'est installée par cette migration. Les copies de sauvegarde suivent leur propre rétention ; le Builder non finalisé est exclu de cette purge.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

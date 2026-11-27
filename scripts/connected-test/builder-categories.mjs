@@ -189,3 +189,39 @@ test("non-pilot accounts retain legacy provisioning without gaining V3.1 RPC acc
  assert.equal(blockedRule.ok,false);
  assert.equal(blockedRule.data?.code,"42501");
 });
+
+test("historical RLS and column grants reject cross-household ownership and immutable fields",async t=>{
+ const env=await connected(t);
+ const [owner,partner,outsider]=await Promise.all(env.users.map(u=>env.session(u)));
+ const {h}=await completeSetup(owner,"couple");
+ const {h:other}=await completeSetup(outsider,"solo");
+ await invite(owner,partner,h);
+ const cat=(await rows(owner,"categories",h)).find(c=>c.legacy_id==="restaurants");
+ const foreign={household_id:h,name:"Propriétaire externe",type:"expense",created_from:"2025-01-01",legacy_id:"foreign-owner",owner_user_id:outsider.user.id};
+ for(const [path,method,body] of [
+  ["/rest/v1/categories","POST",foreign],
+  ["/rest/v1/categories?id=eq."+cat.id,"PATCH",{owner_user_id:outsider.user.id}],
+  ["/rest/v1/transactions","POST",{household_id:h,category_id:cat.id,amount:1,transaction_date:"2025-01-01",owner_user_id:outsider.user.id}],
+  ["/rest/v1/recurrences","POST",{household_id:h,category_id:cat.id,amount:1,start_month:"2025-01-01",owner_user_id:outsider.user.id}],
+  ["/rest/v1/categories?id=eq."+cat.id,"PATCH",{household_id:other}]
+ ]){
+  const result=await owner.call(path,{method,body});
+  assert.equal(result.ok,false,path);
+  assert.equal(result.data?.code,"42501",path);
+ }
+ const ownMemberPath="/rest/v1/household_members?household_id=eq."+h+"&user_id=eq."+partner.user.id;
+ const elevate=await partner.call(ownMemberPath,{method:"PATCH",body:{role:"owner"}});
+ assert.equal(elevate.ok,false);
+ assert.equal(elevate.data?.code,"42501");
+ const unchanged=await verified(partner.call(ownMemberPath));
+ assert.equal(unchanged[0].role,"member");
+ const householdPath="/rest/v1/households?id=eq."+h;
+ const rename=await partner.call(householdPath,{method:"PATCH",headers:{Prefer:"return=representation"},body:{name:"Non propriétaire"}});
+ assert.ok(!rename.ok||Array.isArray(rename.data)&&rename.data.length===0);
+ const authorized=await verified(owner.call("/rest/v1/categories?id=eq."+cat.id,{method:"PATCH",headers:{Prefer:"return=representation"},body:{owner_user_id:partner.user.id}}));
+ assert.equal(authorized[0].owner_user_id,partner.user.id);
+ const crossDelete=await verified(outsider.call("/rest/v1/categories?id=eq."+cat.id,{method:"DELETE",headers:{Prefer:"return=representation"}}));
+ assert.deepEqual(crossDelete,[]);
+ assert.equal((await rows(owner,"categories",h)).find(c=>c.id===cat.id).owner_user_id,partner.user.id);
+ assert.deepEqual(await rows(owner,"categories",other),[]);
+});
