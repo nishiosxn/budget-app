@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8D.6 — dossier de livraison et couverture checkpoint (CI à confirmer)
+
+- d3d747f : 343 tests Node, PostgreSQL verts (46090338537), reprise checkpoint et rejet incompatible validés ; paquet 74 fichiers. Recette connectée 46090338533 en cours. Le test solo corrigé passe, protection de révision intacte.
+- Drill sauvegarde : ajout d'un checkpoint initial privé sur troisième foyer fictif, lecture après restauration, zéro ligne financière, refus inter-foyer. Nouvelle CI à confirmer.
+- Dossier de décision docs/V3_1_DELIVERY.md : NO-GO production, preuves par SHA, stratégie gratuite, portes et rollback. README et checklist alignés. Limites : sauvegarde réelle hors site, Auth/Storage, Gemma après correction, iPhone/accessibilité, cible hébergée. Aucune mutation hébergée, aucune inférence, aucune publication ni fusion.
+
 ## Lot 8D.5B — correctifs ciblés de la CI 839c59b
 
 - CI connectée 46089920648 échouée sur ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin ; suppression sélective des seules entrées DEFAULT ACL de ce rôle géré dans le TOC du drill, aucun retrait des permissions existantes ni des defaults applicatifs. Limite plateforme explicitée, empreintes ACL toujours obligatoires.

@@ -8,12 +8,31 @@ declare
  setup_req constant uuid:='8d200000-0000-4000-8000-000000000004';
  done_req constant uuid:='8d200000-0000-4000-8000-000000000005';
  pending_req constant uuid:='8d200000-0000-4000-8000-000000000006';
- h uuid; pending_h uuid; receipt jsonb; before_count bigint; draft jsonb;
+ c constant uuid:='8d200000-0000-4000-8000-000000000007';
+ checkpoint_req constant uuid:='8d200000-0000-4000-8000-000000000008';
+ h uuid; pending_h uuid; checkpoint_h uuid; receipt jsonb; before_count bigint; draft jsonb;
 begin
  if current_database()<>'smart_budget_restore_drill' then raise exception 'Restore database required';end if;
  select household_id into strict h from private.budget_builder_setup where owner_id=a;
  select household_id,s.draft into strict pending_h,draft from private.budget_builder_setup s where owner_id=b;
  assert draft is not null;
+ select household_id into strict checkpoint_h from private.budget_builder_setup where owner_id=c;
+ assert not exists(select from public.categories where household_id=checkpoint_h);
+ assert not exists(select from public.budgets where household_id=checkpoint_h);
+ set local role authenticated;
+ perform set_config('request.jwt.claim.sub',c::text,true);
+ receipt:=public.budget_builder_setup(checkpoint_h);
+ assert receipt->>'status'='pending';
+ assert receipt->>'checkpointId'=checkpoint_req::text;
+ assert receipt#>>'{checkpoint,editor,income,salary-b,amount}'='1456.01';
+ assert receipt#>>'{checkpoint,step}'='2';
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ begin
+  perform public.budget_builder_setup(checkpoint_h);
+  raise exception 'Cross-household checkpoint access accepted';
+ exception when insufficient_privilege then null;
+ end;
+ reset role;
  assert (select count(*) from public.transactions where household_id=h and label='Reçu sauvegarde fictif' and amount=12.34)=1;
  assert not exists(select from public.categories where household_id=pending_h);
  assert (select count(*) from smart_budget_backups.snapshot_tables where snapshot_id=(select max(id) from smart_budget_backups.snapshots))=8;

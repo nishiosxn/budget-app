@@ -25,10 +25,10 @@ Le dépôt est public. Aucun historique de transactions personnelles ne doit êt
 - **Référence stable de la consolidation** : V3.0.2. La version effectivement publiée doit être relevée lors de la préparation de publication.
 - Version du code : `V3.1`
 - **Branche de développement de référence** : `develop`.
-- **Intégration V3.1** : `work/v3.1-integration`, PR #52 vers `develop`, avancement estimé à 94 %. Dernier code validé `3b46bc2`. Préparation documentaire 8A terminée, publication en attente d'autorisation.
+- **Intégration V3.1** : `work/v3.1-integration`, PR #52 vers `develop`, avancement estimé à 97 %. CI application/PostgreSQL verte sur `d3d747f` ; restauration, paquet exact et administration en attente de la recette connectée. Aucune publication autorisée.
 - **Fonctionnalités intégrées** : Builder à sept étapes solo/duo avec mensualisation et création récupérable, répartition interactive et actions groupées Catégories, Smart Assistant avec confirmation atomique et reçus idempotents, règles partagées, thèmes, navigation et PWA harmonisés.
-- **Validations acquises** : 319 tests Node, PostgreSQL jetable et recette connectée multi-sessions fictives. La recette visuelle couvre neuf largeurs et deux thèmes. Gemma réel et le projet Supabase hébergé restent à valider.
-- **Checklist et prochaine session** : [préparation de livraison V3.1](docs/V3_1_RELEASE_CHECKLIST.md), avec preuves, points ouverts et commandes de préparation.
+- **Validations acquises** : 343 tests Node sur `d3d747f`, PostgreSQL jetable et coexistence réelle V3.0/V3.1 sur `b592fcc` et `80239dd`. Gemma réel : cinq réponses capturées, 1/5 avant correction, 5/5 en rejeu hors ligne après correction ; nouvelle inférence non validée. La recette visuelle couvre neuf largeurs et deux thèmes ; iPhone physique et recette hébergée restent ouverts.
+- **Dossier de livraison** : [décision de livraison V3.1](docs/V3_1_DELIVERY.md) et [checklist](docs/V3_1_RELEASE_CHECKLIST.md), preuves, limites et plan de retour arrière. Les opérations techniques sont automatisées ; aucune commande utilisateur.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 

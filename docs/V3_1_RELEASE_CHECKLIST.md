@@ -108,19 +108,23 @@ CI bc759c4 : échec du pg_restore sur DROP POLICY public.app_admins absent dans 
 
 La restauration a dépassé le DROP POLICY mais échoué sur ALTER DEFAULT PRIVILEGES du rôle géré supabase_admin, inaccessible au login postgres CLI. Le drill de schéma applicatif exclut uniquement ces entrées DEFAULT ACL du rôle plateforme, conserve les ACL existantes et les defaults des rôles applicatifs ; la restauration complète du socle Supabase n'est pas testée. Le paquet exact a franchi la dépense et l'isolation, échoué à l'ouverture de la route admin : URL désormais absolue depuis la racine du paquet, contrôle admin serveur séparé. Test de reprise initiale sur deux navigateurs ajouté. Correction du payload solo de la fixture SQL, qui ne doit pas réutiliser la révision du foyer précédent. Nouvelle CI à confirmer.
 
+## 8D.6 — dossier de livraison consolidé
+
+CI d3d747f : [343 tests Node et PostgreSQL verts](https://github.com/nishiosxn/budget-app/actions/runs/46090338537), dont les deux tests checkpoint (315–316), paquet 74 fichiers généré. La recette connectée [46090338533](https://github.com/nishiosxn/budget-app/actions/runs/46090338533) est encore en cours au relevé. La preuve d3d747f corrige le test SQL solo du commit 953e1ef ; aucun affaiblissement de la révision. Le drill chiffré inclut désormais un troisième foyer fictif au stade checkpoint, avec contrôle de reprise privée et refus inter-foyer après restauration. Nouvelle CI à confirmer. Voir [dossier de livraison](V3_1_DELIVERY.md).
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.
 
 - [x] Recette locale 8B sur Supabase jetable (preuve : workflows 46084716412 et 46084716354 du SHA `a6fa3ea`).
 - [x] Forfait Workers Free et absence de moyen de paiement confirmé par captures de l'opérateur ; solde de 10 000 neurones au relevé, à contrôler à nouveau avant chaque exécution.
-- [ ] Gemma réel sur compte Workers Free confirmé, sans facturation, corpus fictif et budget borné. Mesurer justesse financière, tokens, latence et consommation du compte. Les 153 cas non résolus localement restent à évaluer ; premier lot de cinq à lancer manuellement.
+- [ ] Gemma après correction : le lot réel de cinq cas est documenté (1/5 avant correction, 5/5 en rejeu déterministe, 3 288 tokens, 616 neurones réservés). Nouvelle mesure réelle et corpus restant non validés. Aucun nouveau jeton ni commande utilisateur ; fournisseur désactivé par défaut en recette tant qu'un accès serveur et quota gratuits ne sont pas vérifiés.
 - [ ] Projet Supabase de test isolé identifié et autorisé. Comparer son schéma avec la cible à partir d'un export sans données, notamment contraintes, RPC, Edge, permissions et RLS.
 - [x] Définitions des six déclencheurs historiques du 16 novembre retrouvées et reproduites dans la recette locale ; comportement CI validé.
 - [ ] Vérifier leur identité et leur comportement sur le schéma cible de la future recette hébergée autorisée.
 - [x] Anciens clients testés sur la base jetable, dont en-têtes obsolètes, provisionnement historique, gardes et coexistence avant/après migration.
 - [ ] Confirmer ces protections sur l'environnement cible autorisé avant livraison.
-- [ ] Brouillon initial Builder conservé de façon sécurisée avant première réception serveur, ou limite explicitement acceptée avant livraison. Le garde de sortie actuel ne couvre pas une fermeture forcée.
+- [ ] Brouillon initial Builder : checkpoint privé à chaque navigation d'étape, tests unitaires et SQL verts d3d747f ; reprise sur deux sessions Chromium et restauration du checkpoint à confirmer. Dernière saisie non acquittée toujours volatile lors d'une fermeture forcée ; limite à accepter avant livraison.
 - [ ] Administration privilégiée testée avec un compte administrateur fictif autorisé. Les écrans de connexion/refus sont déjà contrôlés.
 - [ ] iPhone physique testé en Safari et PWA, clavier virtuel, safe areas, zoom manuel, VoiceOver et thèmes selon le protocole de recette visuelle.
 - [ ] Contrôles d'accessibilité complets au-delà des contrastes ciblés, et dictée sur navigateur compatible.
@@ -145,7 +149,7 @@ node --test scripts/validate-docs.test.mjs
 
 Le dossier de travail de la session 8A est `v31-integration` sous le projet ChatGPT local. Son historique local reconstruit utilise des SHA différents. Comparer les arbres, puis utiliser un clone standard pour préparer une publication. Le commit documentaire succède au code de référence et ne change pas l'application.
 
-Première tâche à reprendre : vérifier les workflows de coexistence et de préparation du paquet isolé. Les cinq réponses capturées Gemma ont été rejouées avec succès ; aucune nouvelle inférence sans accès serveur autorisé et contrôle de quota. L'opérateur ne doit effectuer aucune manipulation technique. Pour la recette hébergée, identifier le projet de test autorisé, comparer son schéma sans données et appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
+Première tâche à reprendre : récupérer les résultats des recettes connectées de d3d747f et de la tête actuelle, corriger uniquement les échecs vérifiés, puis figer un candidat de livraison. La coexistence est déjà validée sur les révisions précédentes, à reconfirmer sur le candidat. Les cinq réponses capturées Gemma ont été rejouées avec succès ; aucune nouvelle inférence sans accès serveur autorisé et contrôle de quota. L'opérateur ne doit effectuer aucune manipulation technique. Pour la recette hébergée, identifier le projet de test autorisé, comparer son schéma sans données et appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
 
 ## Procédure de préversion à exécuter après autorisation
 

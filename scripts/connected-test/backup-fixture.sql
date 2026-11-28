@@ -9,15 +9,21 @@ declare
  setup_req constant uuid:='8d200000-0000-4000-8000-000000000004';
  done_req constant uuid:='8d200000-0000-4000-8000-000000000005';
  pending_req constant uuid:='8d200000-0000-4000-8000-000000000006';
- pending_h uuid; h uuid; rev timestamptz; actions jsonb; receipt jsonb;
+ c constant uuid:='8d200000-0000-4000-8000-000000000007';
+ checkpoint_req constant uuid:='8d200000-0000-4000-8000-000000000008';
+ checkpoint_h uuid; pending_h uuid; h uuid; rev timestamptz; actions jsonb; receipt jsonb;
  payload jsonb:='{"name":"Recette sauvegarde","personA":"Camille","personB":"Alex","mode":"solo","month":"2025-01-01","appearance":{},"categories":[{"id":"backup-income","name":"Revenu fictif","type":"income","owner":"B","saving":false,"custom":true,"amountCents":145601},{"id":"backup-food","name":"Courses fictives","type":"expense","owner":"B","section":"Vie courante","saving":false,"custom":true,"amountCents":24000}]}';
 begin
  if current_database()<>'postgres' or to_regclass('private.smart_assistant_reviews') is null
  or not exists(select from auth.users where id='90ce62fb-4c40-4f08-9d41-2e2847e67809' and email='preexisting@example.test')
  or exists(select from auth.users where email is null or email not like '%@example.test')
  then raise exception 'Expected upgraded synthetic Supabase database';end if;
- insert into auth.users(id,email) values(a,'backup-owner@example.test'),(b,'backup-other@example.test');
- insert into private.v31_pilot_builder_users values(a),(b);
+ insert into auth.users(id,email) values(a,'backup-owner@example.test'),(b,'backup-other@example.test'),(c,'backup-checkpoint@example.test');
+ insert into private.v31_pilot_builder_users values(a),(b),(c);
+ perform set_config('request.jwt.claim.sub',c::text,true);
+ checkpoint_h:=public.provision_budget_builder('Reprise initiale fictive','Alex');
+ assert public.budget_builder_setup(checkpoint_h,'checkpoint',checkpoint_req,'{"previous":null,"step":2,"editor":{"household":{"name":"Reprise initiale fictive"},"income":{"salary-b":{"amount":"1456.01"}}}}')->>'status'='checkpoint';
+ assert not exists(select from public.categories where household_id=checkpoint_h);
  perform set_config('request.jwt.claim.sub',b::text,true);
  pending_h:=public.provision_budget_builder('Brouillon fictif','Alex');
  assert public.budget_builder_setup(pending_h,'stage',stage_req,payload)->>'status'='staged';

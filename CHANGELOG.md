@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.6 : dossier de livraison (validation en attente)
+
+- CI d3d747f : 343 tests Node et PostgreSQL verts. Dossier de décision et portes de livraison consolidés ; checkpoint initial inclus dans l'exercice chiffré, nouvelle CI à confirmer. Aucun changement hébergé.
+
 ## V3.1 — 8D.5B : corrections de recette (validation en attente)
 
 - Exclusion ciblée des defaults du rôle géré Supabase dans le drill applicatif, ACL existantes préservées ; route admin du paquet corrigée et reprise Builder réelle testée.

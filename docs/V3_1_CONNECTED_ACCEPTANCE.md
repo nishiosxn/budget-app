@@ -52,3 +52,8 @@ Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md) : absence des quatre migrations
 ## 8D.3 — recette du paquet exact
 
 Nouveau test preview-package.mjs : SHA et empreintes, paquet isolé, authentification et ressources frontend sur loopback, confirmation locale d'une dépense de 28 €, contrôle de l'absence d'écriture avant confirmation, refus autre foyer et admin. Le proxy local ne valide pas CORS hébergé. Aucun appel fournisseur ni publication. CI à confirmer.
+
+
+## 8D.6 — contrôles du checkpoint privé
+
+CI d3d747f : 343 tests Node et PostgreSQL verts (46090338537). Les tests de reprise du checkpoint et de rejet de checkpoint incompatible passent. Le drill inclut désormais un troisième foyer fictif avec checkpoint initial non stagé ; contrôle de la révision, du montant fictif, de l'absence de lignes financières et du refus inter-foyer après restauration. Recette navigateur, administration et restauration encore non confirmées au relevé. Le dossier [livraison](V3_1_DELIVERY.md) récapitule les portes ouvertes.
