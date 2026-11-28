@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.6B — correction de quatre divergences observées (CI à confirmer)
+
+- Rapport réel de récupération : 5 HTTP 200, 1/5 correct, 3 288 tokens, 1,52 s moyen, 616 neurones réservés (1 354 cumul). Payeur common incorrect, today littéral, catégorie salaire perdue par normalisation, comparaison incomplète ; clarification correcte. Consommation du compte après appels inconnue.
+- Correctifs bornés provider-only, partagés par Edge et runner, rejeu des cinq structures métier réelles et tests négatifs. Aucun changement du prompt, corpus, routing local, confirmation, quotas ou registre. Aucun nouveau live.
+- CI 54536ce : intégrité/PostgreSQL réussis (46087724154) ; recette connectée échouée (46087724090), ancien client injecte des catégories et budgets par défaut absents du foyer Builder, garde intact. Cause précise des 15 archivages initiaux non reproduite par le plan diagnostique ultérieur. Ne pas publier. Prochaine étape : confirmer les tests et traiter la coexistence avant préversion ; pas de retest fournisseur sans autorisation et protocole borné. 95 % estimés inchangés.
+
 ## Lot 8C.6A — blocage d'authentification et recette historique (CI à confirmer)
 
 - Rapport diagnostic : HTTP 401 sur fr-2-1, 133,6237 ms, zéro échantillon token, 123 réservés (738 cumul), quatre cas non envoyés. Aucune cause financière démontrée. Vérifier jeton et permission Workers AI sur compte exact ; nouveau préflight catalogue sans inférence. Reprise 401 unique sur preuve locale correspondante et registre intact, marqueur distinct, aucune remise de quota. Aucun appel réel supplémentaire.

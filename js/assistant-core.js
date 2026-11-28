@@ -502,7 +502,7 @@
   }
   return supplied?{categoryId:supplied.id,ruleKey:null,source:"model"}:{categoryId:null,ruleKey:null,source:"unknown"};
  }
- function normalizeModelDraft(v,c,command=""){
+ function normalizeModelDraft(v,c,command="",{provider=false}={}){
   if(!exact(v,["kind","operations"])||v.kind!=="draft"||!Array.isArray(v.operations)||v.operations.length>12)return fail("Brouillon invalide.");
   const explicit=/\b(?:catégorie|categorie|classer|classe|range)\b/i.test(command);
   const operations=[],suggestions=[];
@@ -515,13 +515,61 @@
    if(planMode!==undefined&&planMode!==null&&!["set","increase","decrease"].includes(planMode))return fail("Mode de budget invalide.");
    if(base.kind!=="plan"&&planMode&&planMode!=="set")return fail("Mode de budget inattendu.");
    const effectiveHint=categoryHint||(v.operations.length===1&&base.categoryId===null?contextualCategoryHint(command,base):null);
-   const match=classifyCategory(base,c,{hint:effectiveHint,explicit});
+   let match=classifyCategory(base,c,{hint:effectiveHint,explicit});
+   // A personal salary category may be named "Salaire <member>". Preserve an
+   // existing, available ID only with exact label/owner evidence; never invent
+   // IDs or select another member's salary, and keep explicit category rules.
+   if(provider&&base.kind==="income"&&effectiveHint==="salary"&&match.source==="new"&&!explicit){
+    const supplied=availableCategories(base,c).find(x=>x.id===base.categoryId);
+    const member=normalizeCategory(c.members?.[base.owner]),label=normalizeCategory(base.label);
+    const rule=categoryRules.find(x=>x.key==="salary");
+    if(supplied&&["A","B"].includes(base.owner)&&supplied.owner===base.owner&&member&&
+       [rule.name,...rule.aliases].map(normalizeCategory).includes(label)&&
+       normalizeCategory(supplied.name)===label+" "+member)
+     match={categoryId:supplied.id,ruleKey:"salary",source:"existing"};
+   }
    const selected=availableCategories(base,c).find(x=>x.id===match.categoryId);
    operations.push({...base,categoryId:match.categoryId,...(base.kind==="plan"?{owner:selected?.owner||base.owner,planMode:planMode||"set"}:{})});
    if(match.source==="new")suggestions.push({index,ruleKey:match.ruleKey});
   }
   const checked=validateReview({kind:"draft",operations},c);
   return checked.ok?{...checked,suggestions}:checked;
+ }
+ // Provider-only repair, based on complete bounded utterances and authenticated
+ // context, not guessed values. Confirmation and local routing stay unchanged.
+ function normalizeProviderResult(v,c,command=""){
+  if(!contextOK(c)||!obj(v)||typeof command!=="string"||command.length>1600)return fail("Contexte ou réponse invalide.");
+  const t=normalizeLanguage(command).trim().replace(/[.!?]$/,"");
+  const named=t.match(/^([\p{L}][\p{L}\p{M}' -]{0,49}?) a (?:payé|paye|dépensé|depense) (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) (?:de |en )(carburant|essence|courses|restaurants?) (hier|avant-hier|aujourd'hui)$/iu);
+  const gift=t.match(/^je viens de recevoir un cadeau de (\d{1,6}(?:[,.]\d{1,2})?)\s*(?:€|euros?) aujourd'hui$/iu);
+  const comparison=normalizeCategory(t).match(/^compare le reste disponible de (janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre) (\d{4}) a (janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre) (\d{4})$/);
+  if(comparison&&v.kind==="query"&&v.query==="comparison"){
+   if(Object.keys(v).some(k=>!["kind","query","month","compareMonth","categoryId","owner","message"].includes(k))||
+      (v.categoryId!=null)||(v.owner!=null))return fail("Filtre incompatible.");
+   const names=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
+   const month=(name,year)=>year+"-"+String(names.indexOf(name)+1).padStart(2,"0");
+   return validateAssistantResult({kind:"query",query:"comparison",month:month(comparison[1],comparison[2]),compareMonth:month(comparison[3],comparison[4]),categoryId:null,owner:null},c);
+  }
+  if(v.kind!=="draft")return validateAssistantResult(v,c);
+  let draft=v;
+  if(named||gift){
+   if(!exact(v,["kind","operations"])||!Array.isArray(v.operations)||v.operations.length!==1||!obj(v.operations[0]))return fail("La demande ne décrit qu'une opération.");
+   const op=v.operations[0],amount=centsFromText(named?named[2]:gift[1]);
+   if(op.kind!==(named?"expense":"income")||op.frequency!=="once"||amount===null||op.amountCents!==amount||!ownerOK(op.owner,c))return fail("La proposition contredit la demande.");
+   const owner=named?ownerSlotForName(named[1],c):c.actor;
+   if(!["A","B"].includes(owner)||!ownerOK(owner,c))return fail("Personne à préciser.");
+   const moment=named?named[4].toLowerCase():"aujourd'hui";
+   const delta=moment==="hier"?1:moment==="avant-hier"?2:0;
+   const day=new Date(c.today+"T12:00:00Z");day.setUTCDate(day.getUTCDate()-delta);
+   const date=day.toISOString().slice(0,10);
+   // Only resolve a literal date alias if the explicit wording agrees. A
+   // conflicting concrete ISO date is rejected, not silently rewritten.
+   const aliases=delta===0?["today","aujourd'hui"]:delta===1?["yesterday","hier"]:["avant-hier"];
+   if(op.date!==date&&!aliases.includes(op.date))return fail("Date contradictoire : précise la demande.");
+   if(!named&&op.owner!==owner)return fail("Personne à préciser.");
+   draft={kind:"draft",operations:[{...op,owner,date}]};
+  }
+  return normalizeModelDraft(draft,c,command,{provider:true});
  }
  function draftCategorySuggestion(op,ctx,ruleKey){
   const rule=categoryRules.find(r=>r.key===ruleKey&&(op.kind==="plan"||r.kind===op.kind));
@@ -1212,5 +1260,5 @@
   // Do not let a model silently turn an unsupported creation into a budget edit.
   return direct||(creationRequested(normalized)?creationClarification(normalized,ctx):null);
  }
- root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,readBudgetBaseline,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickExpenseInCategory,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
+ root.SmartBudgetAssistantCore=Object.freeze({validateResult:validateAssistantResult,validateReview,resolvePlanAmount,validDate,validMonth,findDuplicates,categoryRules,normalizeCategory,availableCategories,classifyCategory,normalizeModelDraft,normalizeProviderResult,draftCategorySuggestion,quickExpense,quickBudget,quickFamilyMovement,quickCommand,validateCategoryDraft,quickCreateCategory,quickMixedCategory,validateMixedDraft,quickCategoryQuery,readBudgetCents,readBudgetBaseline,categoryReport,normalizeLanguage,frenchNumber,quickSingleMovement,quickMovementBatch,quickNamedIncome,quickSaving,quickContextualExpense,quickInternalTransfer,quickBankBalanceAnswer,contextualCategoryHint,expenseLabelParts,createExpenseLabel,productCategoryHint,quickDetailedExpense,quickExpenseInCategory,quickAttributedExpenses,quickMedicalNote,ownerSlotForName});
 })(globalThis);

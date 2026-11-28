@@ -120,6 +120,7 @@ async function queryPreview(token:string,householdId:string,result:any,context:a
 }
 const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.quickCommand(command,context);
 const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
+const normalizeProvider=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeProviderResult(value,context,command);
 const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
 const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
 const validateCategoryDraft=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateCategoryDraft(value,context);
@@ -216,7 +217,7 @@ const atomicReview=createAtomicReview({
   return await r.json();
  }
 });
-const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements,atomicReview});
+const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,normalizeProvider,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements,atomicReview});
 function headers(req:Request){
  return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
 }

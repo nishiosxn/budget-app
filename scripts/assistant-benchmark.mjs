@@ -147,7 +147,7 @@ for(const item of (diagnostic?selectedDiagnostic:fallback.slice(offset,offset+li
   if(!attempt.tokens||attempt.tokens.output>1024){attempt.outcome="metering_unverified";break}
   try{
    const parsed=decodeModelResponse(raw);
-   const checked=parsed?.kind==="draft"?core.normalizeModelDraft(parsed,sampleContext,item.prompt):core.validateResult(parsed,sampleContext);
+   const checked=core.normalizeProviderResult(parsed,sampleContext,item.prompt);
    attempt.diagnostics=diagnoseResponse(item,parsed,checked);
    attempt.outcome=checked.ok?(attempt.diagnostics.correct?"correct":"interpretation_error"):"validation_error";
   }catch{attempt.outcome="invalid_response"}

@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Correctifs de normalisation Gemma 8C.6B (validation en attente)
+
+- Rejeu hors ligne des cinq structures métier du lot réel, attribution explicite du payeur, alias today contextualisé, préservation d'une catégorie salaire personnelle disponible, comparaison explicite de deux mois. Validation/confirmation strictes conservées. Aucun appel fournisseur supplémentaire.
+- Coexistence V3.0/V3.1 toujours bloquante sur la CI précédente ; aucune modification du garde ou de la production.
+
 ## V3.1 — Reprise du diagnostic 8C.6A (validation en attente)
 
 - Refus HTTP 401 documenté, contrôle catalogue du compte avant réservation et reprise unique conditionnée au rapport et registre existants. Aucun appel IA supplémentaire.

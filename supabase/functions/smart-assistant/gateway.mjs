@@ -68,7 +68,7 @@ export function decodeModelResponse(raw){
  throw Error("Unexpected provider schema");
 }
 const response=(status,body)=>({status,body});
-export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null,commitMovements=null,atomicReview=null}){
+export function createAssistantGateway({enabled,providerEnabled=true,model,authorize,reserve,infer,validate,validateReview=validate,normalizeDraft=null,normalizeProvider=null,quickExpense=null,planPreview=async()=>[],queryPreview=async()=>null,getQuota=async()=>null,commitTransactions=null,commitCategory=null,commitBatch=null,commitMovements=null,atomicReview=null}){
  const inFlight=new Map();
  return async function handleAssistant({token,body}){
   if(!enabled)return response(503,{error:"assistant_not_enabled"});
@@ -161,7 +161,7 @@ export function createAssistantGateway({enabled,providerEnabled=true,model,autho
   let checked;
   try{
    const decoded=decodeModelResponse(raw);
-   checked=decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
+   checked=normalizeProvider?normalizeProvider(decoded,auth.context,body.command):decoded?.kind==="draft"?(normalizeDraft?normalizeDraft(decoded,auth.context,body.command):validateReview(decoded,auth.context)):validate(decoded,auth.context);
    if(!checked.ok)return response(422,{error:"invalid_model_result",metering});
   }catch{return response(422,{error:"invalid_model_result",metering})}
   try{

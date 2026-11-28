@@ -68,6 +68,10 @@ Premier lot : 5 HTTP 200, 0/5 exacts sur une intention répétée, 3 354 tokens,
 
 Rapport de diagnostic : 1 requête refusée (401), zéro token rapporté, 738 neurones réservés au cumul UTC, quatre cas non envoyés. Préflight catalogue et récupération unique conditionnée au rapport original + registre préparés ; aucun appel supplémentaire. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). CI connectée 501644f en échec sur la protection anti-archivage historique (15 lignes) ; diagnostic de test renforcé, garde intact. La preuve de recette locale a6fa3ea demeure historique, mais la dernière révision ne peut pas être considérée verte. Vérifier la nouvelle CI avant reprise.
 
+## 8C.6B — correction des réponses réelles Gemma
+
+Récupération 401 : 5 HTTP 200, 1/5 exact ; 3 288 tokens, 616 neurones réservés (1 354 cumul UTC). Quatre causes isolées, rejeu des structures métier réelles et protections ciblées côté normalisation fournisseur, CI à confirmer. Aucun nouvel appel. CI connectée 54536ce échouée : ancien client réintroduit des catégories par défaut et garde anti-archivage déclenché, coexistence non validée pour la dernière révision. Aucun déploiement. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md).
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

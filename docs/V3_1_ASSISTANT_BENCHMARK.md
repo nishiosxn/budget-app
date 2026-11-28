@@ -85,3 +85,20 @@ Avant toute inférence, vérifier le jeton utilisateur via GET /user/tokens/veri
 Une récupération explicite unique est possible uniquement pour le cas fr-2-1 précédemment réservé avec le marqueur 8C.4-diagnostic-v1 et un rapport local correspondant au refus HTTP 401, une seule tentative, zéro token, même jour de réserve et même corpus. Conserver le rapport d'origine dans le répertoire du registre (JSON UTF-8 ou UTF-16LE Windows). Paramètres `SMART_ASSISTANT_BENCHMARK_AUTH_FAILURE_REPORT` (chemin du fichier), `SMART_ASSISTANT_BENCHMARK_AUTH_RECOVERY_CONFIRMED=yes`, `--live --diagnostic-lot --recover-401`. Autorisation de diagnostic et Free restent nécessaires. La reprise conserve le marqueur original et ajoute 8C.6-auth-401-v1 avant le réseau ; aucun remboursement ni reprise automatique, même si le second essai échoue. Tous les plafonds restent inchangés. Ce mécanisme s'appuie sur le rapport local attesté par l'opérateur, non sur une preuve signée du fournisseur. Les quatre autres cas neufs restent soumis au registre normal. Aucun nouvel appel réalisé dans ce lot.
 
 La CI 501644f a validé l'application/PostgreSQL mais échoué sur le client historique : le garde de synchronisation a refusé 15 archivages lors de la première écriture V3.0 (workflow 46087163785). Aucun contournement du garde, aucune modification de la synchronisation ; le test collecte maintenant des diagnostics de clés de lignes fictives si ce refus se reproduit. Ne pas considérer ce risque résolu avant une nouvelle CI et analyse si récurrent.
+
+
+## 8C.6B — réponses réelles et réparation ciblée (28 novembre 2026)
+
+Récupération 401 réussie : 5 HTTP 200, 1/5 exact, 3 288 tokens (2 990 entrée, 298 sortie), moyenne 657,6 tokens et 1 517,844 ms. Réservation réelle du lot 616, cumul UTC 1 354 (non consommation mesurée). L'opérateur a déclaré 6 000 neurones gratuits disponibles avant lancement ; relever le compteur après appel. Aucun nouvel appel dans ce sous-lot.
+
+| Cas | Erreur observée | Correctif ciblé |
+| --- | --- | --- |
+| fr-2-1 | owner common au lieu de A, date/montant/catégorie corrects | Rapprochement exact du nom du payeur sur une phrase bornée, membre unique du contexte, contrôle du montant et de la date |
+| fr-5-1 | date today, validation refusée | Alias today seulement si demande bornée de cadeau aujourd'hui, date dérivée du contexte, montant et acteur cohérents |
+| fr-7-4 | modèle exact, catégorie salary transformée en null | Préserver ID disponible et libellé salaire + nom exact du membre propriétaire, pas de catégorie inventée |
+| fr-16-1 | month absent, compareMonth inversé, champs null absents | Reconstituer consultation comparaison depuis deux mois/années explicites, sans filtre ni écriture, validation existante |
+| fr-17-1 | clarification correcte | Inchangé |
+
+Rejeu hors ligne des cinq structures métier capturées (texte d'affichage réencodé pour les messages, sans impact sur leur score). Nouvelle fonction normalizeProviderResult utilisée par le runner et l'Edge V3.1 ; garde de confirmation, routing local, corpus, quotas, prompt et moteur historique inchangés. Tests négatifs : payeur inconnu/ambigu/solo, montant/date contradictoires, catégorie indisponible ou autre propriétaire, consultation ambiguë/filtrée/hors plage, lot partiel. CI à confirmer. Ne pas extrapoler un rejeu déterministe à une nouvelle réponse Gemma. Aucun nouveau retest live autorisé ; registre intact.
+
+La CI 54536ce confirme également un risque de coexistence : l'ancien client réintroduit des catégories/budgets par défaut absents du foyer Builder (neuf catégories côté serveur), et le garde bloque la première écriture. Le plan observé après refus ne reconstruit pas exactement les 15 archivages initiaux. Ce risque distinct reste bloquant pour la publication ; ne pas affaiblir le garde ni masquer le test.
