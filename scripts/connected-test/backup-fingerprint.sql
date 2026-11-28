@@ -52,3 +52,10 @@ select 'schema_acl',nspname,r.role,has_schema_privilege(r.role,oid,'USAGE'),has_
 from pg_namespace cross join (values ('anon'),('authenticated'),('service_role')) r(role)
 where nspname in ('public','private','smart_assistant_private','smart_budget_backups','incident_backup_20261116')
 order by nspname,r.role;
+
+-- Existing effective permissions remain mandatory. Future-object defaults
+-- of the managed Supabase platform role are outside this application drill.
+select 'application_default_acl',r.rolname,coalesce(n.nspname,''),d.defaclobjtype,d.defaclacl::text
+from pg_default_acl d join pg_roles r on r.oid=d.defaclrole left join pg_namespace n on n.oid=d.defaclnamespace
+where r.rolname<>'supabase_admin' and n.nspname in ('public','private','smart_assistant_private','smart_budget_backups','incident_backup_20261116')
+order by r.rolname,n.nspname,d.defaclobjtype;

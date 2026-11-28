@@ -13,7 +13,9 @@ source_db=postgres
 restore_db=smart_budget_restore_drill
 tmp="$(mktemp -d "$RUNNER_TEMP/sb-backup-drill.XXXXXX")"
 created=false
+restore_list="/tmp/$(basename "$tmp")-restore-list.txt"
 cleanup(){
+ docker exec "$container" rm -f "$restore_list" >/dev/null 2>&1 || true
  if "$created"; then pg dropdb -h 127.0.0.1 -U postgres --if-exists "$restore_db" >/dev/null || true; fi
  rm -rf -- "$tmp"
 }
@@ -55,9 +57,16 @@ age -d -i "$tmp/identity.agekey" "$tmp/fixture.dump.age" | pg pg_restore --list 
 if grep -Eq '^[0-9]+; [0-9]+ [0-9]+ SCHEMA - public ' "$tmp/archive-list.txt"; then
  psql_restore -c 'drop schema public' >/dev/null
 fi
+# The CLI postgres login cannot alter future-object defaults owned by the
+# managed supabase_admin role. In this application-schema drill only, omit
+# exactly those managed-role DEFAULT ACL TOC entries, not table/function ACLs,
+# owners, application default privileges or policies. Full platform recovery
+# requires those managed settings from an independently initialized stack.
+awk '/^[0-9]+; [0-9]+ [0-9]+ DEFAULT ACL .* supabase_admin[[:space:]]*$/{print ";" $0; skipped++;next}{print} END{print "Managed default ACL entries excluded: " (skipped+0) > "/dev/stderr"}' "$tmp/archive-list.txt" > "$tmp/restore-list.txt"
+docker cp "$tmp/restore-list.txt" "$container:$restore_list" >/dev/null
 # Decrypt directly into pg_restore; no plaintext dump is saved.
 age -d -i "$tmp/identity.agekey" "$tmp/fixture.dump.age" |
- pg pg_restore -h 127.0.0.1 -U postgres -d "$restore_db" --exit-on-error --single-transaction
+ pg pg_restore -h 127.0.0.1 -U postgres -d "$restore_db" --use-list="$restore_list" --exit-on-error --single-transaction
 psql_restore -At -f - < scripts/connected-test/backup-fingerprint.sql > "$tmp/restored.txt"
 if ! cmp -s "$tmp/source.txt" "$tmp/restored.txt"; then
  echo "Restored application data or schema fingerprint differs (synthetic fixture only)"

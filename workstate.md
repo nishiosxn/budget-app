@@ -1,5 +1,10 @@
 # Workstate — Budget foyer
 
+## Lot 8D.5B — correctifs ciblés de la CI 839c59b
+
+- CI connectée 46089920648 échouée sur ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin ; suppression sélective des seules entrées DEFAULT ACL de ce rôle géré dans le TOC du drill, aucun retrait des permissions existantes ni des defaults applicatifs. Limite plateforme explicitée, empreintes ACL toujours obligatoires.
+- Paquet exact : dépense et isolation franchies, délai sur admin ouvert relativement à la route Assistant. Navigation depuis la racine, test serveur admin séparé. Ajout du test navigateur de reprise checkpoint sans écriture et correction de la fixture SQL solo (pas de révision d'un autre foyer). CI à confirmer. Pas de mutation hébergée.
+
 ## Lot 8D.5 — checkpoints privés et admin (CI à confirmer)
 
 - 839c59b application/PostgreSQL verts, recette connectée 46089920648 en cours ; 10aa635 a échoué sur l'ancien DROP POLICY déjà corrigé.

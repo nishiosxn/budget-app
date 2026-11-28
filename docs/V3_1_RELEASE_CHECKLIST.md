@@ -104,6 +104,10 @@ CI bc759c4 : échec du pg_restore sur DROP POLICY public.app_admins absent dans 
 
 839c59b application/PostgreSQL verts, recette connectée en cours au relevé ; 10aa635 a échoué sur le même DROP POLICY déjà corrigé. Ajout de checkpoints privés du Builder à chaque navigation d'étape, révision comparée et reprise de l'éditeur sans stockage financier navigateur. La dernière saisie non acquittée peut encore être perdue lors d'une fermeture forcée ; une étape non enregistrée ne peut pas avancer. Le checkpoint est effacé au stage atomique et ne valide aucune dépense. Tests locaux et PostgreSQL ajoutés. Recette réelle admin Edge avec comptes fictifs, refus non-admin, auto-promotion, auto-suppression, modification d'un autre admin et retrait de rôle. CI à confirmer, aucun changement hébergé. Voir [plan](V3_1_PREVIEW_DEPLOYMENT.md).
 
+## 8D.5B — corrections issues de la CI 839c59b
+
+La restauration a dépassé le DROP POLICY mais échoué sur ALTER DEFAULT PRIVILEGES du rôle géré supabase_admin, inaccessible au login postgres CLI. Le drill de schéma applicatif exclut uniquement ces entrées DEFAULT ACL du rôle plateforme, conserve les ACL existantes et les defaults des rôles applicatifs ; la restauration complète du socle Supabase n'est pas testée. Le paquet exact a franchi la dépense et l'isolation, échoué à l'ouverture de la route admin : URL désormais absolue depuis la racine du paquet, contrôle admin serveur séparé. Test de reprise initiale sur deux navigateurs ajouté. Correction du payload solo de la fixture SQL, qui ne doit pas réutiliser la révision du foyer précédent. Nouvelle CI à confirmer.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

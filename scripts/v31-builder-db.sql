@@ -144,7 +144,7 @@ begin
 
  perform set_config('request.jwt.claim.sub',other::text,true);
  solo:=public.provision_budget_builder('Solo','Sam');
- payload:=jsonb_set(jsonb_set(payload,'{mode}','"solo"'),'{categories}',jsonb_build_array(payload->'categories'->0));
+ payload:=jsonb_set(jsonb_set(payload-'checkpointId','{mode}','"solo"'),'{categories}',jsonb_build_array(payload->'categories'->0));
  assert public.budget_builder_setup(solo,'stage',req,payload)->>'status'='staged';
  assert public.budget_builder_setup(solo,'commit',req)->>'status'='complete';
  assert (select count(*)=1 and sum(planned_amount)=1456.01 from public.budgets where household_id=solo);

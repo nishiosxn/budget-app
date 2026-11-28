@@ -5,7 +5,7 @@ import {resolve,sep} from "node:path";
 import {createHash} from "node:crypto";
 import {execFileSync} from "node:child_process";
 import {connected} from "./harness.mjs";
-import {completeSetup,rows} from "./financial-fixture.mjs";
+import {completeSetup,provision,rows} from "./financial-fixture.mjs";
 import {allowedPath} from "../prepare-v31-preview.mjs";
 
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
@@ -76,7 +76,39 @@ test("the exact isolated preview package loads and confirms a local-only expense
  assert.equal(saved.length,1);
  assert.equal(Number(saved[0].amount),28);
  assert.deepEqual(await rows(outsider,"transactions",h),[]);
- await page.goto(new URL("admin/",page.url()).href);
+ // The Assistant is a separate route; resolve admin from the package root.
+ await page.goto(env.origin+"/__app/admin/");
+ assert.equal(new URL(page.url()).pathname,"/__app/admin/");
  await page.locator("#adminDeniedView:not([hidden]),#adminLoginView:not([hidden])").first().waitFor({timeout:10000});
- console.log("Exact preview SHA, local-only confirmation, no pre-confirmation write, outsider isolation and admin denial verified.");
+ console.log("Exact preview SHA, local-only confirmation, no pre-confirmation write, outsider isolation and admin route verified.");
+});
+
+test("initial Builder checkpoint resumes in a new real browser session without financial writes",async t=>{
+ const env=await connected(t);
+ const first=await env.session(env.users[0]);
+ const h=await provision(first);
+ const root=await fs.realpath(process.env.SB_TEST_PREVIEW_ROOT);
+ const page=await first.openApp(h,"",root);
+ await page.locator(".setup-builder-title h3").filter({hasText:"Votre foyer"}).waitFor({timeout:10000});
+ const later=page.locator("[data-pwa-later]");if(await later.isVisible())await later.click();
+ await page.locator('[data-setup-household="name"]').fill("Brouillon de reprise");
+ await page.locator('[data-setup-action="next"]').click();
+ await page.locator('[data-setup-amount="income:salary-b"]').waitFor();
+ await page.locator('[data-setup-amount="income:salary-b"]').fill("1456.01");
+ await page.locator('[data-setup-action="next"]').click();
+ await page.locator('[data-setup-amount="expense:rent"]').waitFor();
+ assert.deepEqual(await rows(first,"categories",h),[]);
+ assert.deepEqual(await rows(first,"budgets",h),[]);
+ await first.context.close();
+ const next=await env.session(env.users[0]);
+ const resumed=await next.openApp(h,"",root);
+ await resumed.locator('[data-setup-amount="expense:rent"]').waitFor({timeout:10000});
+ assert.deepEqual(await resumed.evaluate(()=>({
+  step:setupBuilderController.step,name:setupBuilderController.draft.household.name,
+  salary:setupBuilderController.draft.income["salary-b"].amount
+ })),{step:2,name:"Brouillon de reprise",salary:"1456.01"});
+ assert.deepEqual(await rows(next,"categories",h),[]);
+ assert.deepEqual(await rows(next,"budgets",h),[]);
+ const outsider=await env.session(env.users[2]);
+ assert.equal((await outsider.rpc("budget_builder_setup",{p_household:h,p_action:"status"})).ok,false);
 });
