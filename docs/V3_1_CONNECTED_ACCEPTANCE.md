@@ -42,3 +42,8 @@ Références Supabase · [CLI local](https://supabase.com/docs/guides/local-deve
 ## 8C.9 — paquet isolé de recette
 
 Le workflow d'intégrité produit `smart-budget-v31-preview` à partir des blobs Git du commit testé. Les trois configurations Supabase sont remplacées par une adresse loopback et une clé de démonstration non fonctionnelle ; aucun accès hébergé, aucun déploiement. Le fichier `preview-source.json` contient les empreintes des fichiers et du paquet. Ce paquet est une étape de préparation : il ne permet pas une connexion Auth réelle tant qu'un environnement isolé et ses paramètres publics n'ont pas été validés. La validation connectée existante reste séparée, sur la vraie pile Supabase jetable.
+
+
+## 8D.1 — contrôle du schéma hébergé
+
+Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md) : absence des quatre migrations V3.1, garde historique actif, contraintes/indices clés conformes sur le périmètre inspecté, zéro collision réservée. Le projet historique reste inchangé. La couverture des sauvegardes des objets privés et la recette de restauration restent ouvertes.

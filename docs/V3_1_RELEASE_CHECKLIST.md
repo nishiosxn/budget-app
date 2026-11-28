@@ -84,6 +84,10 @@ Le workflow d'intégrité prépare désormais un paquet à partir des blobs du S
 
 CI 40b35e6 : 339 tests réussis, PostgreSQL vert ; artefact `smart-budget-v31-preview` (74 fichiers, empreinte du paquet `07aea062b1b6b3fdb174b9a8ba17858939bd4f1151dfb1b2fe2ad3cc0f9b89ff`), workflow 46088804362. La CI connectée 68a61fd a échoué sur un état local constitué de catégories neutres avant écriture. La relance Auth redondante est une cause plausible ; correctif de disponibilité V3.1 et test de bootstrap stabilisé ajoutés sans changer le client historique. Nouvelle CI à confirmer. Aucune publication ni modification hébergée.
 
+## 8D.1 — audit hébergé et sauvegardes
+
+Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md). Catalogue et métadonnées vérifiés le 28 novembre : 24 migrations historiques, quatre nouvelles absentes, six gardes actifs, RLS sur les neuf tables contrôlées, aucune collision de marqueurs réservés. Dernière sauvegarde automatique terminée à 00:17 UTC, huit tables historiques ; couverture des futurs objets privés et export chiffré/restauration à compléter. Conseiller sécurité : quatre INFO et cinq WARN à qualifier. Aucun changement hébergé. CI b592fcc application/PostgreSQL réussie, coexistence en cours.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

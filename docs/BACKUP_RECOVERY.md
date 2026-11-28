@@ -78,3 +78,8 @@ Ces données contiennent des informations financières et des métadonnées sens
 **Ces instantanés sont enregistrés dans la même base Supabase**. Ils protègent principalement contre une modification ou un archivage accidentel au sein de l'application. Ils ne protègent pas contre la suppression du projet, une panne totale du stockage ou un accès administrateur malveillant. Pour une véritable reprise après sinistre, ajouter des exports chiffrés hors projet ou une solution native de sauvegarde/PITR adaptée au forfait.
 
 L'interface Smart Budget ne comporte volontairement **aucun bouton de restauration**. Un mécanisme de récupération automatique côté client serait dangereux tant que les changements multi-appareils et les droits d'administration n'ont pas été audités.
+
+
+## Relevé 8D.1 — 28 novembre 2026
+
+Dernière sauvegarde automatique réussie à 00:17 UTC, job actif toutes les six heures, huit tables. Les futurs objets V3.1, reçus et réservations Assistant ne font pas partie de cette capture. Aucun nouvel instantané créé par l'audit. Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md) pour la recette de sauvegarde/restauration isolée et les conditions de livraison.

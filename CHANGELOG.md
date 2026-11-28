@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.1 : audit hébergé en lecture seule
+
+- Schéma et gardes historiques vérifiés, quatre migrations V3.1 non appliquées, zéro collision réservée ; sauvegarde automatique huit tables réussie, extension et restauration isolée à valider. Aucun changement de production.
+
 ## V3.1 — 8C.9B : paquet CI et disponibilité du bootstrap (validation en attente)
 
 - Paquet isolé généré sur 40b35e6 (74 fichiers, 339 tests verts). Protection contre le double bootstrap Auth et les pushes pendant le chargement ; attente de disponibilité réelle et diagnostics renforcés dans la recette historique. CI à confirmer.

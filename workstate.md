@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8D.1 — audit hébergé en lecture seule
+
+- CI b592fcc : application/PostgreSQL verts 46089009818, recette connectée 46089009807 en cours (historique avant/après migration et scénarios connectés verts au relevé, coexistence finale en attente).
+- Audit Supabase budget-foyer : sain, PostgreSQL 17.6, 24 migrations, quatre V3.1 absentes, six gardes historiques actifs, RLS et contraintes vérifiées sur périmètre, zéro collision réservée, Edge v30 inchangée. Conseiller sécurité 4 INFO/5 WARN à qualifier. Rapport docs/V3_1_HOSTED_PREFLIGHT.md ; aucune donnée financière ou secret exporté.
+- Sauvegarde automatique réussie à 00:17 UTC, huit tables historiques ; objets Assistant/Builder privés non couverts. Export externe actif et restaurabilité non prouvés. Préparer exercice chiffré fictif sur pile jetable, vérifier cible isolée et recette coexistence. Aucun changement hébergé, aucune inférence, fusion ni publication. Aucune commande demandée à l'utilisateur.
+
 ## Lot 8C.9B — paquet validé, protection du bootstrap (CI à confirmer)
 
 - CI 40b35e6 46088804362 : 339 tests réussis, PostgreSQL vert, paquet isolé 74 fichiers et artefact 15240436520 créé (pas de publication). Cible loopback fictive, non connectée à un projet hébergé.
