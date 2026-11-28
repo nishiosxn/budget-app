@@ -37,3 +37,8 @@ Un cinquième scénario a exécuté le Builder duo, Catégories et l’Assistant
 La comparaison des déclencheurs historiques et la compatibilité serveur des anciennes versions restent à vérifier sur le schéma hébergé. Avant la réception serveur du brouillon Builder, l’avertissement de navigation peut éviter une fermeture involontaire. Une fermeture forcée perd encore la saisie. Le dépôt ne conserve aucun brouillon financier en clair dans le navigateur.
 
 Références Supabase · [CLI local](https://supabase.com/docs/guides/local-development/cli/getting-started), [environnements](https://supabase.com/docs/guides/deployment/managing-environments), [sauvegardes](https://supabase.com/docs/guides/platform/backups).
+
+
+## 8C.9 — paquet isolé de recette
+
+Le workflow d'intégrité produit `smart-budget-v31-preview` à partir des blobs Git du commit testé. Les trois configurations Supabase sont remplacées par une adresse loopback et une clé de démonstration non fonctionnelle ; aucun accès hébergé, aucun déploiement. Le fichier `preview-source.json` contient les empreintes des fichiers et du paquet. Ce paquet est une étape de préparation : il ne permet pas une connexion Auth réelle tant qu'un environnement isolé et ses paramètres publics n'ont pas été validés. La validation connectée existante reste séparée, sur la vraie pile Supabase jetable.

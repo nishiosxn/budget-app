@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8C.9 : préparation automatisée du paquet (validation en attente)
+
+- Génération CI d'un paquet de préversion isolé depuis le SHA exact, avec empreintes, vérification des dépendances et configurations loopback fictives ; aucun déploiement.
+
 ## V3.1 — 8C.7 : rejeu Gemma et compatibilité Builder (validation en attente)
 
 - Rejeu hors ligne des cinq réponses capturées réussi sur f595303 ; 336 tests verts.

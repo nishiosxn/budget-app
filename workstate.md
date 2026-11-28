@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.9 — préparation automatisée de la préversion (CI à confirmer)
+
+- CI 68a61fd : application et PostgreSQL verts 46088496675, recette connectée 46088496681 en cours. Rejeu Gemma déjà validé hors ligne ; pas de nouveau jeton ni de commande demandés à l'opérateur.
+- Générateur de paquet CI depuis les blobs du SHA testé : ressources frontend autorisées, dépendances et portée PWA vérifiées, trois configurations remplacées par loopback et clé fictive, empreintes et artefact non publié. Aucune cible hébergée acceptée. Tests et nouvelle CI à confirmer.
+- Suite : vérifier coexistence et paquet, puis audit cible hébergée, sauvegarde/restauration isolée et configuration de test. Pas de modification Supabase hébergée, fusion ou publication. Pas d'inférence réelle supplémentaire sans accès serveur autorisé. 95 % estimés inchangés.
+
 ## Lot 8C.7 — rejeu Gemma validé, correctif coexistence (CI à confirmer)
 
 - CI f595303 46088280355 : 336 tests réussis, dont les cinq réponses capturées Gemma (5/5 hors ligne), PostgreSQL vert. Pas de nouvelle inférence. Le résultat ne garantit pas les réponses futures.

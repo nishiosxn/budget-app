@@ -76,6 +76,10 @@ Récupération 401 : 5 HTTP 200, 1/5 exact ; 3 288 tokens, 616 neurones réserv�
 
 CI f595303 : 336 tests verts, rejeu des cinq réponses capturées 5/5, PostgreSQL réussi (46088280355). Le client historique réinjecte les catégories neutres lorsque la liste de base est vide. Correctif de compatibilité dans la migration Builder non publiée, marqueurs archivés sans budget, protections et vérifications croisées supplémentaires ; nouvelle CI à confirmer. Aucun appel IA ni modification hébergée. Voir [coexistence](V3_1_COEXISTENCE.md).
 
+## 8C.9 — paquet de préversion isolé
+
+Le workflow d'intégrité prépare désormais un paquet à partir des blobs du SHA exact, avec liste de ressources autorisées, contrôles de dépendances et de portée PWA, empreinte SHA-256 et exclusion des migrations, tests et secrets. Les trois configurations navigateur sont remplacées par une URL loopback et une clé fictive non utilisable ; aucune cible hébergée ne peut être fournie à cet outil. Artefact CI uniquement, aucune publication Pages. Le paquet n'est pas encore connecté à une recette hébergée ; CORS/Auth et schéma cible restent à valider. CI de coexistence du commit 68a61fd encore en cours au moment de cette préparation. Aucun nouvel appel Gemma, aucun jeton demandé à l'opérateur.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.
@@ -113,7 +117,7 @@ node --test scripts/validate-docs.test.mjs
 
 Le dossier de travail de la session 8A est `v31-integration` sous le projet ChatGPT local. Son historique local reconstruit utilise des SHA différents. Comparer les arbres, puis utiliser un clone standard pour préparer une publication. Le commit documentaire succède au code de référence et ne change pas l'application.
 
-Première tâche à reprendre : exécuter le premier lot Gemma de cinq cas fictifs depuis le PC de l'opérateur et analyser le rapport, puis poursuivre les validations ouvertes. Pour la recette hébergée, identifier le projet de test autorisé, comparer son schéma sans données et appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
+Première tâche à reprendre : vérifier les workflows de coexistence et de préparation du paquet isolé. Les cinq réponses capturées Gemma ont été rejouées avec succès ; aucune nouvelle inférence sans accès serveur autorisé et contrôle de quota. L'opérateur ne doit effectuer aucune manipulation technique. Pour la recette hébergée, identifier le projet de test autorisé, comparer son schéma sans données et appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
 
 ## Procédure de préversion à exécuter après autorisation
 
