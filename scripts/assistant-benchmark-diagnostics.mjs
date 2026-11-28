@@ -59,6 +59,7 @@ export function diagnoseResponse(item,decoded,checked){
 export const diagnosticIds=Object.freeze(["fr-2-1","fr-5-1","fr-7-4","fr-16-1","fr-17-1"]);
 export const diagnosticRetestId="fr-2-1";
 export const diagnosticRetestTag="8C.4-diagnostic-v1";
+export const authRecoveryTag="8C.6-auth-401-v1";
 export function diagnosticSelection(fallback){
  return diagnosticIds.map(id=>{
   const item=fallback.find(x=>x.id===id);
@@ -66,8 +67,24 @@ export function diagnosticSelection(fallback){
   return item;
  });
 }
-export function attemptEligible(journal,corpusHash,id,diagnostic=false){
+// Only an operator-supplied report matching a reserved 401 attempt can authorize one recovery.
+// This is local evidence, not cryptographic proof from the provider; never refund reservations.
+export function authRecoveryAllowed(journal,corpusHash,report,model){
+ const a=report?.attempts?.[0];
+ if(report?.model!==model||report.corpusHash!==corpusHash||report.mode!=="diagnostic-lot"||
+    report.attempted!==1||report.passed!==0||report.attempts?.length!==1||report.reportedTokens?.samples!==0||
+    a?.id!==diagnosticRetestId||a.retest!==diagnosticRetestTag||a.httpStatus!==401||
+    a.outcome!=="provider_http_error"||a.tokens!=null||a.diagnostics!=null)return false;
+ const previous=journal.filter(x=>x.corpusHash===corpusHash&&x.id===diagnosticRetestId);
+ const reservations=previous.filter(x=>x.retest===diagnosticRetestTag);
+ return previous.length===2&&previous.some(x=>!x.retest)&&reservations.length===1&&
+    reservations[0].day===report.utcDay&&reservations[0].reservedNeurons===a.reservedNeurons;
+}
+export function attemptEligible(journal,corpusHash,id,diagnostic=false,recovery=false){
  const previous=journal.filter(x=>x.corpusHash===corpusHash&&x.id===id);
- if(diagnostic&&id===diagnosticRetestId)return previous.some(x=>!x.retest)&&!previous.some(x=>x.retest===diagnosticRetestTag);
+ if(diagnostic&&id===diagnosticRetestId){
+  if(recovery)return previous.length===2&&previous.some(x=>!x.retest)&&previous.some(x=>x.retest===diagnosticRetestTag)&&!previous.some(x=>x.retest===authRecoveryTag);
+  return previous.some(x=>!x.retest)&&!previous.some(x=>x.retest===diagnosticRetestTag||x.retest===authRecoveryTag);
+ }
  return previous.length===0;
 }

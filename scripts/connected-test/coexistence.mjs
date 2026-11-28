@@ -40,7 +40,18 @@ test("pinned V3.0 and V3.1 pages share one ledger after interrupted Builder reco
  async function write(page,id,amount){
   await page.evaluate(async ({id,amount})=>{
    state.transactions.push({id,category:"restaurants",type:"expense",owner:"B",amount,date:"2025-01-07",label:"Coexistence fictive"});
-   await cloudPushLocalState({force:true});
+   try{await cloudPushLocalState({force:true})}catch(error){
+    // Preserve the real guard and failure. Log only keys/counts from this synthetic ledger.
+    const local=cloudBuildLocalSnapshot(),remote=await cloudFetchRemoteSyncSnapshot(),baseline=cloudReadSyncBaseline();
+    const plan=cloudBuildSyncPlan(local,remote,baseline);
+    const summary=Object.fromEntries(Object.keys(local.tables).map(table=>[table,{
+     local:[...local.tables[table]].filter(([,entry])=>entry.payload!==null).map(([key])=>key),
+     remote:[...remote.tables[table]].filter(([,entry])=>entry.payload!==null).map(([key])=>key),
+     baseline:Object.keys(baseline?.tables?.[table]||{}),
+     mutations:plan.mutations.filter(x=>x.table===table).map(x=>({key:x.key,action:x.action}))
+    }]));
+    throw Error(String(error?.message||error)+" ; synthetic sync diagnostics: "+JSON.stringify(summary),{cause:error});
+   }
   },{id,amount});
  }
  await write(old,id1,12.34);

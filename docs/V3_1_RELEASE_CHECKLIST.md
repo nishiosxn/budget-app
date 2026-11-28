@@ -64,6 +64,10 @@ Plan hors ligne des 153 cas fournisseur, verrou de gratuité et plafonds dans le
 
 Premier lot : 5 HTTP 200, 0/5 exacts sur une intention répétée, 3 354 tokens, 615 neurones réservés, consommation effective non relevée. Instrumentation détaillée et lot diversifié de cinq cas (un retest borné) préparés ; aucun nouvel appel. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). Attendre CI verte et rapport diagnostic avant modification du moteur. Le contrôle fournisseur reste ouvert.
 
+## 8C.6 — reprise après refus HTTP 401
+
+Rapport de diagnostic : 1 requête refusée (401), zéro token rapporté, 738 neurones réservés au cumul UTC, quatre cas non envoyés. Préflight catalogue et récupération unique conditionnée au rapport original + registre préparés ; aucun appel supplémentaire. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). CI connectée 501644f en échec sur la protection anti-archivage historique (15 lignes) ; diagnostic de test renforcé, garde intact. La preuve de recette locale a6fa3ea demeure historique, mais la dernière révision ne peut pas être considérée verte. Vérifier la nouvelle CI avant reprise.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

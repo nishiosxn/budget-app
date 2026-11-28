@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Reprise du diagnostic 8C.6A (validation en attente)
+
+- Refus HTTP 401 documenté, contrôle catalogue du compte avant réservation et reprise unique conditionnée au rapport et registre existants. Aucun appel IA supplémentaire.
+- CI connectée : diagnostic enrichi sur le garde anti-archivage historique, sans modification de la synchronisation ni désactivation du garde.
+
 ## V3.1 — Diagnostic Gemma 8C.4 (validation en attente)
 
 - Premier benchmark réel documenté (0/5 exacts sur une intention, 5 HTTP 200, 3 354 tokens). Diagnostic des valeurs attendues, modèle et normalisées, tests hors ligne, lot diversifié et retest unique avec registre conservé. Aucun changement du moteur ou appel fournisseur supplémentaire.

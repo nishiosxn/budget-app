@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.6A — blocage d'authentification et recette historique (CI à confirmer)
+
+- Rapport diagnostic : HTTP 401 sur fr-2-1, 133,6237 ms, zéro échantillon token, 123 réservés (738 cumul), quatre cas non envoyés. Aucune cause financière démontrée. Vérifier jeton et permission Workers AI sur compte exact ; nouveau préflight catalogue sans inférence. Reprise 401 unique sur preuve locale correspondante et registre intact, marqueur distinct, aucune remise de quota. Aucun appel réel supplémentaire.
+- CI 501644f : application/PostgreSQL verts 46087163748 ; recette connectée échouée 46087163785 sur première écriture V3.0 (garde contre 15 archivages). Diagnostic de test enrichi sans désactiver le garde ni modifier les fichiers applicatifs. Nouvelle CI à confirmer ; cause précise du plan destructif non établie. Ne pas publier.
+- Prochaine action : contrôler la CI, vérifier le jeton sans inférence et quota Free, puis lancer manuellement la récupération diagnostique unique après validation. 95 % estimés inchangés ; aucun SQL hébergé, fusion ou publication.
+
 ## Lot 8C.4 — diagnostic du premier benchmark (CI à confirmer)
 
 - CI 3d797bd : deux workflows verts (46086549774, 46086549823). Premier rapport réel du 28 novembre : 5 HTTP 200, 0/5 correct sur une intention répétée, 3 354 tokens, 2,60 s moyen, 615 neurones réservés. Consommation compte non mesurée. Rapport et limites documentés sans identifiant ni secret.

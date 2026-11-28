@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import {benchmarkScenarios,sampleContext} from "./assistant-benchmark-fixtures.mjs";
-import {diagnoseResponse,fieldDifferences,diagnosticSelection,attemptEligible,diagnosticRetestTag} from "./assistant-benchmark-diagnostics.mjs";
+import {diagnoseResponse,fieldDifferences,diagnosticSelection,attemptEligible,diagnosticRetestTag,authRecoveryTag,authRecoveryAllowed} from "./assistant-benchmark-diagnostics.mjs";
 const box=vm.createContext({});
 vm.runInContext(fs.readFileSync(new URL("../js/assistant-core.js",import.meta.url),"utf8"),box);
 const core=box.SmartBudgetAssistantCore;
@@ -61,4 +61,25 @@ test("audit: euro symbol contextual hint and explicit named payer lookup",()=>{
  assert.equal(core.ownerSlotForName("Noa",{...sampleContext,solo:true}),null);
  assert.equal(core.contextualCategoryHint("Noa a dépensé 45,90 € de carburant hier.",{kind:"expense"}),null);
  assert.equal(core.contextualCategoryHint("Noa a dépensé 45,90 euros de carburant hier.",{kind:"expense"}),"fuel");
+});
+
+test("401 recovery needs matching one-attempt report and reserves at most once",()=>{
+ const model="@cf/google/gemma-4-26b-a4b-it",corpusHash="same",id="fr-2-1",day="2026-11-28";
+ const first={corpusHash,id,day,reservedNeurons:123};
+ const retest={...first,retest:diagnosticRetestTag};
+ const journal=[first,retest];
+ const report={model,corpusHash,mode:"diagnostic-lot",utcDay:day,attempted:1,passed:0,reportedTokens:{samples:0},attempts:[{id,retest:diagnosticRetestTag,httpStatus:401,outcome:"provider_http_error",reservedNeurons:123}]};
+ assert.equal(authRecoveryAllowed(journal,corpusHash,report,model),true);
+ assert.equal(authRecoveryAllowed([first],corpusHash,report,model),false);
+ assert.equal(authRecoveryAllowed(journal,corpusHash,{...report,utcDay:"2026-11-27"},model),false);
+ assert.equal(authRecoveryAllowed(journal,corpusHash,{...report,attempts:[{...report.attempts[0],httpStatus:200}]},model),false);
+ assert.equal(authRecoveryAllowed(journal,corpusHash,{...report,attempts:[{...report.attempts[0],httpStatus:429}]},model),false);
+ assert.equal(authRecoveryAllowed(journal,corpusHash,{...report,reportedTokens:{samples:1}},model),false);
+ assert.equal(attemptEligible(journal,corpusHash,id,true,false),false);
+ assert.equal(attemptEligible(journal,corpusHash,id,true,true),true);
+ const recovered=[...journal,{...first,retest:authRecoveryTag}];
+ assert.equal(authRecoveryAllowed(recovered,corpusHash,report,model),false);
+ assert.equal(attemptEligible(recovered,corpusHash,id,true,true),false);
+ assert.equal(attemptEligible(recovered,corpusHash,id,false),false);
+ assert.equal(attemptEligible(recovered,corpusHash,"fr-5-1",true,true),true);
 });

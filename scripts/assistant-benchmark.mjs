@@ -2,9 +2,9 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import {createHash} from "node:crypto";
-import {resolve,sep} from "node:path";
+import {resolve,sep,dirname} from "node:path";
 import {benchmarkScenarios as scenarios,sampleContext,matchesExpected} from "./assistant-benchmark-fixtures.mjs";
-import {diagnoseResponse,diagnosticSelection,diagnosticRetestId,diagnosticRetestTag,attemptEligible} from "./assistant-benchmark-diagnostics.mjs";
+import {diagnoseResponse,diagnosticSelection,diagnosticRetestId,diagnosticRetestTag,authRecoveryTag,authRecoveryAllowed,attemptEligible} from "./assistant-benchmark-diagnostics.mjs";
 import {performance} from "node:perf_hooks";
 import {execFileSync} from "node:child_process";
 import * as gateway from "../supabase/functions/smart-assistant/gateway.mjs";
@@ -63,6 +63,8 @@ if(fallback.length!==153||manifest.some(x=>!Number.isInteger(x.reservedNeurons))
 const corpusHash=createHash("sha256").update(JSON.stringify(fallback)).digest("hex");
 const MAX_BATCH=2000,MAX_DAY=6000,MAX_CASES=10;
 const diagnostic=flags.has("--diagnostic-lot"),selectedDiagnostic=diagnostic?diagnosticSelection(fallback):null;
+const recovery=flags.has("--recover-401");
+if(recovery&&(!diagnostic||!flags.has("--live")||flags.has("--plan")))throw Error("401 recovery requires explicit live diagnostic mode");
 if(flags.has("--plan")){
  const groups=Object.fromEntries(["draft","query","clarify"].map(kind=>[kind,manifest.filter(x=>x.kind===kind).length]));
  const total=manifest.reduce((sum,x)=>sum+x.reservedNeurons,0);
@@ -93,14 +95,35 @@ const ledgerPath=resolve(dir,"gemma-"+accountHash+".jsonl"),lockPath=ledgerPath+
 const lock=fs.openSync(lockPath,"wx",0o600);
 process.on("exit",()=>{fs.closeSync(lock);fs.unlinkSync(lockPath)});
 const journal=fs.existsSync(ledgerPath)?fs.readFileSync(ledgerPath,"utf8").trim().split("\n").filter(Boolean).map(line=>JSON.parse(line)):[];
-if(journal.some(x=>x.accountHash!==accountHash||typeof x.day!=="string"||!Number.isSafeInteger(x.reservedNeurons)||x.reservedNeurons<1||x.reservedNeurons>320||typeof x.id!=="string"||typeof x.corpusHash!=="string"||(x.retest!==undefined&&x.retest!==diagnosticRetestTag)))throw Error("Invalid ledger; reconcile manually");
+if(journal.some(x=>x.accountHash!==accountHash||typeof x.day!=="string"||!Number.isSafeInteger(x.reservedNeurons)||x.reservedNeurons<1||x.reservedNeurons>320||typeof x.id!=="string"||typeof x.corpusHash!=="string"||(x.retest!==undefined&&![diagnosticRetestTag,authRecoveryTag].includes(x.retest))))throw Error("Invalid ledger; reconcile manually");
 let dailyReserved=journal.filter(x=>x.day===utcDay).reduce((sum,x)=>sum+x.reservedNeurons,0);
 const attempted=new Set();
 if(diagnostic&&!journal.some(x=>x.corpusHash===corpusHash&&x.id===diagnosticRetestId&&!x.retest))throw Error("Original reservation missing; do not recreate or erase the ledger");
 if(dailyReserved>=MAX_DAY)throw Error("Daily benchmark reservation limit reached");
+if(recovery){
+ if(process.env.SMART_ASSISTANT_BENCHMARK_AUTH_RECOVERY_CONFIRMED!=="yes")throw Error("Explicit 401 recovery approval required");
+ const reportInput=process.env.SMART_ASSISTANT_BENCHMARK_AUTH_FAILURE_REPORT;
+ if(!reportInput)throw Error("Original 401 report path required");
+ const reportPath=fs.realpathSync(reportInput);
+ if(dirname(reportPath)!==dir||!reportPath.endsWith(".json")||fs.statSync(reportPath).size>1000000)throw Error("Expected the saved diagnostic JSON in the persistent state directory");
+ const bytes=fs.readFileSync(reportPath);
+ // Windows PowerShell 5.1 Tee-Object writes UTF-16LE; PowerShell 7 writes UTF-8.
+ const report=JSON.parse((bytes[0]===255&&bytes[1]===254?bytes.toString("utf16le"):bytes.toString("utf8")).replace(/^\uFEFF/,""));
+ if(!authRecoveryAllowed(journal,corpusHash,report,model))throw Error("No matching unused 401 recovery; retain the ledger and report");
+}
+// Metadata-only check, no inference and no ledger reservation. Never print API headers or body.
+let access;
+try{
+ access=await fetch("https://api.cloudflare.com/client/v4/accounts/"+account+"/ai/models/search?search="+encodeURIComponent(model.split("/").at(-1)),{
+  method:"GET",headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(15000),redirect:"error"});
+ if(!access.ok)throw Error("HTTP "+access.status);
+ const catalog=await access.json();
+ if(catalog.success!==true||!Array.isArray(catalog.result)||!catalog.result.some(x=>x?.name===model))throw Error("Model not found in authorized account catalog");
+}catch(error){throw Error("Cloudflare metadata preflight failed; no inference or new reservation ("+(access?.status??"network")+")")}
+const retestTag=recovery?authRecoveryTag:diagnosticRetestTag;
 const reserveCase=(item,reservedNeurons)=>{
  const fd=fs.openSync(ledgerPath,"a",0o600);
- try{fs.writeSync(fd,JSON.stringify({accountHash,corpusHash,day:utcDay,id:item.id,reservedNeurons,...(diagnostic&&item.id===diagnosticRetestId?{retest:diagnosticRetestTag}:{})})+"\n");fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
+ try{fs.writeSync(fd,JSON.stringify({accountHash,corpusHash,day:utcDay,id:item.id,reservedNeurons,...(diagnostic&&item.id===diagnosticRetestId?{retest:retestTag}:{})})+"\n");fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
  dailyReserved+=reservedNeurons;
  attempted.add(item.id);
 };
@@ -108,12 +131,12 @@ const attempts=[];
 let totalReserved=0;
 for(const item of (diagnostic?selectedDiagnostic:fallback.slice(offset,offset+limit))){
  if(new Date().toISOString().slice(0,10)!==utcDay)break;
- if(attempted.has(item.id)||!attemptEligible(journal,corpusHash,item.id,diagnostic))continue;
+ if(attempted.has(item.id)||!attemptEligible(journal,corpusHash,item.id,diagnostic,recovery))continue;
  const payload=makeModelRequest(item.prompt,sampleContext),reservedNeurons=estimateReservation(payload);
  if(reservedNeurons===null||totalReserved+reservedNeurons>batchBudget||dailyReserved+reservedNeurons>MAX_DAY)break;
  reserveCase(item,reservedNeurons); // persist before network; failures still consume reservation
  totalReserved+=reservedNeurons;
- const started=performance.now(),attempt={id:item.id,reservedNeurons,...(diagnostic&&item.id===diagnosticRetestId?{retest:diagnosticRetestTag}:{})};
+ const started=performance.now(),attempt={id:item.id,reservedNeurons,...(diagnostic&&item.id===diagnosticRetestId?{retest:retestTag}:{})};
  attempts.push(attempt);
  try{
   const r=await fetch("https://api.cloudflare.com/client/v4/accounts/"+account+"/ai/run/"+model,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(35000),redirect:"error"});
@@ -132,7 +155,7 @@ for(const item of (diagnostic?selectedDiagnostic:fallback.slice(offset,offset+li
  finally{attempt.ms=performance.now()-started}
 }
 const tokenRows=attempts.map(a=>a.tokens).filter(Boolean);
-console.log(JSON.stringify({model,corpusHash,utcDay,offset,mode:diagnostic?"diagnostic-lot":"sequential",fallbackTotal:fallback.length,dailyReserved,attempted:attempts.length,passed:attempts.filter(a=>a.outcome==="correct").length,
+console.log(JSON.stringify({model,corpusHash,utcDay,offset,mode:diagnostic?"diagnostic-lot":"sequential",...(recovery?{authRecovery:true}:{}),fallbackTotal:fallback.length,dailyReserved,attempted:attempts.length,passed:attempts.filter(a=>a.outcome==="correct").length,
  meanMs:average(attempts,"ms"),estimatedNeurons:{totalReserved,mean:average(attempts,"reservedNeurons"),max:max(attempts,"reservedNeurons")},
  reportedTokens:{samples:tokenRows.length,...Object.fromEntries(["input","output","total"].map(k=>[k,{mean:average(tokenRows,k),max:max(tokenRows,k)}]))},
  measuredProviderNeurons:null,attempts},null,2));
