@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## État actuel — clôture locale 8B et préparation du premier lot Gemma (28 novembre 2026)
+
+- 8B clôturé pour la recette locale sur comptes fictifs. Référence validée : `a6fa3ead1020f515a2d9fdd54a66fba8dc6ccde7`, [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46084716412), [recette connectée](https://github.com/nishiosxn/budget-app/actions/runs/46084716354). Les deux workflows et toutes les étapes de recette connectée sont réussis. Correction de l'export historique confirmée : Edge v30 et client 31ap avant/après les quatre migrations, coexistence des interfaces V3.0/V3.1, tests d'accès et de reprise du Builder, PWA. Les entrées historiques ci-dessous conservent les états successifs et ne sont pas des blocages CI actuels.
+- Estimation globale : 95 %. Les captures de l'opérateur confirment Workers Free actif, absence de moyen de paiement enregistré et 0/10 000 neurones consommés lors du relevé. Revérifier le quota et le forfait avant chaque lot. L'opérateur indique avoir renouvelé son jeton, conservé localement ; aucun identifiant ni secret n'est enregistré ici.
+- 8C.3 : premier lot de cinq commandes fictives (offset 0, limit 5) à exécuter manuellement sur le PC de l'opérateur. Aucun appel réel ni mesure fournisseur effectué à ce stade. Conserver le registre persistant et le rapport JSON hors dépôt ; attendre le résultat avant tout nouveau lot. Voir [benchmark](docs/V3_1_ASSISTANT_BENCHMARK.md).
+- Réserves non levées : comparaison exacte du schéma cible et cascades, recette hébergée autorisée, sauvegarde/restauration, fermeture avant premier acquittement Builder, récupération d'un compte définitivement inaccessible, administration, iPhone/dictée/accessibilité et publication. Aucune migration hébergée, fusion ou publication autorisée ou exécutée.
+
 ## Lot 8C.1 — préparation Gemma et correctif recette historique (CI à confirmer)
 
 - CI 6bfdd56 : application/PostgreSQL réussis (46084383381), recette historique échouée au login navigateur (46084383401). Quatre ressources partagées manquaient dans la disposition de l'export historique ; export/copie depuis le même SHA et diagnostic de connexion ajoutés. Cause plausible à confirmer par CI ; lot 8B non clôturé.

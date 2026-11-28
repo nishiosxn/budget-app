@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Clôture locale 8B (28 novembre 2026)
+
+- Recette locale de sécurité, rétention et coexistence des interfaces V3.0/V3.1 et du client 31ap/Edge v30 avant/après migration validée sur `a6fa3ea` (workflows 46084716412 et 46084716354). Les validations hébergées restent distinctes.
+- Forfait Workers Free confirmé par les captures de l'opérateur ; premier benchmark réel de cinq commandes fictives en attente d'exécution manuelle. Aucun appel fournisseur, déploiement ou changement de production.
+
 ## V3.1 — Préparation Gemma 8C.1 (validation en attente)
 
 - Correction de l'export des ressources du client historique et diagnostic de connexion ; recette 8B non clôturée avant CI verte.

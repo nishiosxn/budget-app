@@ -1,6 +1,6 @@
 # Livraison Smart Budget V3.1
 
-État du sous-lot 8A au 28 novembre 2026. Intégration estimée à 94 %, PR #52, branche `work/v3.1-integration`. Référence applicative `3b46bc246c358155394ded30d897c7793231f7bf`. L'interface et les documents utilisent V3.1 préversion. Les suffixes de ressources comme 31au désignent leurs révisions.
+État au 28 novembre 2026 : recette locale 8B clôturée, intégration estimée à 95 %, PR #52, branche `work/v3.1-integration`. Référence de recette `a6fa3ead1020f515a2d9fdd54a66fba8dc6ccde7`. La référence applicative initiale du sous-lot 8A était `3b46bc246c358155394ded30d897c7793231f7bf`. L'interface et les documents utilisent V3.1 préversion. Les suffixes de ressources comme 31au désignent leurs révisions.
 
 ## Fonctionnalités et preuves acquises
 
@@ -20,33 +20,39 @@ La recette locale finale a mesuré trois chargements de 157,5 / 107,7 / 112 ms, 
 - [Captures finales et mesures](https://github.com/nishiosxn/budget-app/actions/runs/46081173687/artifacts/15236683577)
 - [Migrations, sauvegarde et retour arrière](V3_1_CONNECTED_ACCEPTANCE.md)
 
+## Clôture de la recette locale 8B
+
+Référence validée : `a6fa3ead1020f515a2d9fdd54a66fba8dc6ccde7`, [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46084716412), [recette connectée](https://github.com/nishiosxn/budget-app/actions/runs/46084716354). Les deux workflows et toutes les étapes de recette connectée sont réussis.
+
+La recette couvre le contrat historique synthétique, les six gardes d'écriture, les restrictions RLS/ACL, la reprise du Builder, la rétention des propositions, les véritables interfaces V3.0/V3.1 et le client 31ap/Edge v30 avant et après migration. Les sections historiques suivantes décrivent la progression des travaux ; leurs attentes de CI sont levées pour cette référence locale. Les validations sur le schéma hébergé cible, les sauvegardes/restaurations et les autres points de livraison restent ouvertes. Aucun changement sur Supabase hébergé ni publication.
+
 ## Audit 8B et adaptation 8B.4A
 
 Le quota Supabase gratuit de deux projets actifs a empêché la création d’un staging hébergé. Une recette dans le projet partagé reste une option **non autorisée**, à condition de verrouiller le pilote côté serveur et de prouver la coexistence V3.0/V3.1 avant toute migration. L’audit a retrouvé les six triggers historiques, les ACL réelles et quatre identifiants de migrations historiques divergents. Ne pas rejouer aveuglément les migrations.
 
 Le contrat CI et la limite Builder sont corrigés en source dans le lot 8B.4A ; confirmer les workflows sur la nouvelle révision. Restent la reconstitution complète des politiques/contraintes, la protection du brouillon contre V3.0, le filtrage pilote du Builder et des règles, la recette Edge v30 et la rétention des brouillons. La procédure de préversion isolée ci-dessous n’est pas remplacée par une autorisation de production.
 
-## Pilotage 8B.4B (à valider)
+## Pilotage 8B.4B (historique, validé en CI locale)
 
 Les migrations V3.1 non encore hébergées introduisent des listes privées, vides par défaut : `private.v31_pilot_builder_users` (comptes de test autorisés à créer/reprendre un Builder) et `private.v31_pilot_rule_members` (paires foyer/utilisateur autorisées pour les règles). L'opérateur doit faire approuver le périmètre exact avant toute inscription ; aucun UUID réel ni commande de déploiement n'est inclus. Les autorisations Edge restent distinctes. Pour un retrait de pilote avec brouillon non terminé, conserver l'accès de reprise jusqu'à finalisation ou élaborer une récupération administrative revue ; ne pas supprimer un brouillon sans autorisation. Les tests CI utilisent des identités jetables.
 
 Les gardes du Builder bloquent les écritures REST sur un foyer en attente et les invitations prématurées, tout en conservant le provisionneur historique. Vérifier les deux workflows et la recette V3.0/V3.1 avant migration ; le test REST ne remplace pas une recette des deux interfaces réelles.
 
-## Contrat RLS et rétention 8B.4C (à valider)
+## Contrat RLS et rétention 8B.4C (historique, validé en CI locale)
 
 Le contrat local reproduit désormais les droits et prédicats RLS historiques principaux, y compris le contrôle du propriétaire désigné. Il reste synthétique, notamment les détails des clés étrangères/cascades et les migrations historiques divergentes. Vérifier les tests CI avant de le considérer représentatif pour la coexistence. Les workflows 8B.4A et 8B.4B sont référencés dans le workstate.
 
 La rétention des propositions Assistant efface leur champ `actions` après 24 h, à la consultation ou via `private.purge_expired_smart_assistant_reviews(integer)` par lots bornés. Les tombstones (identifiant, empreinte et statut) et les reçus sont conservés afin de refuser une ancienne requête ou de restituer un reçu existant ; aucun effacement de l'historique financier. La fonction n'est pas callable par les rôles clients ni service_role. Après validation et autorisation distincte, prévoir une tâche administrative quotidienne avec limites, suivi du nombre de lignes et contrôle de la durée ; aucune planification n'est installée par cette migration. Les copies de sauvegarde suivent leur propre rétention ; le Builder non finalisé est exclu de cette purge.
 
-## Recette coexistence 8B.5A (à valider)
+## Recette coexistence 8B.5A (historique, validée en CI locale)
 
 Voir [le protocole de coexistence](V3_1_COEXISTENCE.md). La CI de 8B.4C a révélé une erreur de syntaxe SQL, corrigée en source. Le nouveau test utilise les véritables pages V3.0 épinglées et V3.1, avec comptes fictifs et reprise du Builder. La CI et l'identité exacte de l'Edge v30 restent à valider ; aucune autorisation hébergée n'est implicite.
 
-## Edge historique 8B.5B (à valider)
+## Edge historique 8B.5B (historique, validé en CI locale)
 
 Les six fichiers v30 récupérés en lecture seule sont identiques à 3b6a340352432428b8145aab086741a995cb6f8a. La recette CI exporte ce commit, teste les confirmations historiques et le quota sur le schéma jetable migré, sans fournisseur externe. Voir [protocole](V3_1_COEXISTENCE.md). CI à confirmer ; comparaison avant/après sur deux états et client historique 31ap encore ouverts.
 
-## Clôture 8B.5C (conditionnelle)
+## Recette 8B.5C (historique, validée après correctif 8C.1)
 
 Les quatre workflows de 889d0e8 et 98f124d sont verts. Le nouveau scénario avant/après et client 31ap est ajouté ; attendre ses résultats avant de clôturer la recette locale. La perte définitive d'accès au compte nécessite une décision administrative de récupération distincte ; aucun contournement d'Auth, transfert ou suppression de brouillon automatique. Le contrat historique demeure synthétique, notamment les cascades et divergences de journal. La recette sur projet partagé reste soumise à une autorisation séparée, à une sauvegarde et à la vérification du schéma cible. Gemma réel reste non exécuté.
 
@@ -58,10 +64,14 @@ Plan hors ligne des 153 cas fournisseur, verrou de gratuité et plafonds dans le
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.
 
-- [ ] Gemma réel sur compte Workers Free confirmé, sans facturation, corpus fictif et budget borné. Mesurer justesse financière, tokens, latence et consommation du compte. Les 153 cas non résolus localement restent à évaluer.
+- [x] Recette locale 8B sur Supabase jetable (preuve : workflows 46084716412 et 46084716354 du SHA `a6fa3ea`).
+- [x] Forfait Workers Free et absence de moyen de paiement confirmé par captures de l'opérateur ; solde de 10 000 neurones au relevé, à contrôler à nouveau avant chaque exécution.
+- [ ] Gemma réel sur compte Workers Free confirmé, sans facturation, corpus fictif et budget borné. Mesurer justesse financière, tokens, latence et consommation du compte. Les 153 cas non résolus localement restent à évaluer ; premier lot de cinq à lancer manuellement.
 - [ ] Projet Supabase de test isolé identifié et autorisé. Comparer son schéma avec la cible à partir d'un export sans données, notamment contraintes, RPC, Edge, permissions et RLS.
-- [ ] Retrouver et comparer les définitions des six déclencheurs historiques du 16 novembre. Vérifier leur comportement sur l'environnement représentatif.
-- [ ] Anciens clients testés contre cet environnement, dont en-têtes obsolètes, provisionnement historique, archivages massifs et absence d'écrasement.
+- [x] Définitions des six déclencheurs historiques du 16 novembre retrouvées et reproduites dans la recette locale ; comportement CI validé.
+- [ ] Vérifier leur identité et leur comportement sur le schéma cible de la future recette hébergée autorisée.
+- [x] Anciens clients testés sur la base jetable, dont en-têtes obsolètes, provisionnement historique, gardes et coexistence avant/après migration.
+- [ ] Confirmer ces protections sur l'environnement cible autorisé avant livraison.
 - [ ] Brouillon initial Builder conservé de façon sécurisée avant première réception serveur, ou limite explicitement acceptée avant livraison. Le garde de sortie actuel ne couvre pas une fermeture forcée.
 - [ ] Administration privilégiée testée avec un compte administrateur fictif autorisé. Les écrans de connexion/refus sont déjà contrôlés.
 - [ ] iPhone physique testé en Safari et PWA, clavier virtuel, safe areas, zoom manuel, VoiceOver et thèmes selon le protocole de recette visuelle.
@@ -87,7 +97,7 @@ node --test scripts/validate-docs.test.mjs
 
 Le dossier de travail de la session 8A est `v31-integration` sous le projet ChatGPT local. Son historique local reconstruit utilise des SHA différents. Comparer les arbres, puis utiliser un clone standard pour préparer une publication. Le commit documentaire succède au code de référence et ne change pas l'application.
 
-Première tâche à reprendre : identifier le projet Supabase de test et obtenir son export de schéma sans données, puis appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
+Première tâche à reprendre : exécuter le premier lot Gemma de cinq cas fictifs depuis le PC de l'opérateur et analyser le rapport, puis poursuivre les validations ouvertes. Pour la recette hébergée, identifier le projet de test autorisé, comparer son schéma sans données et appliquer la revue du [rapport connecté](V3_1_CONNECTED_ACCEPTANCE.md). Toute migration ou mise à jour Edge hébergée demande une revue et une autorisation distinctes.
 
 ## Procédure de préversion à exécuter après autorisation
 
