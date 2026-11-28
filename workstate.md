@@ -1,5 +1,508 @@
 # Workstate — Budget foyer
 
+## Lot 8D.6 — dossier de livraison et couverture checkpoint (CI à confirmer)
+
+- d3d747f : 343 tests Node, PostgreSQL verts (46090338537), reprise checkpoint et rejet incompatible validés ; paquet 74 fichiers. Recette connectée 46090338533 en cours. Le test solo corrigé passe, protection de révision intacte.
+- Drill sauvegarde : ajout d'un checkpoint initial privé sur troisième foyer fictif, lecture après restauration, zéro ligne financière, refus inter-foyer. Nouvelle CI à confirmer.
+- Dossier de décision docs/V3_1_DELIVERY.md : NO-GO production, preuves par SHA, stratégie gratuite, portes et rollback. README et checklist alignés. Limites : sauvegarde réelle hors site, Auth/Storage, Gemma après correction, iPhone/accessibilité, cible hébergée. Aucune mutation hébergée, aucune inférence, aucune publication ni fusion.
+
+## Lot 8D.5B — correctifs ciblés de la CI 839c59b
+
+- CI connectée 46089920648 échouée sur ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin ; suppression sélective des seules entrées DEFAULT ACL de ce rôle géré dans le TOC du drill, aucun retrait des permissions existantes ni des defaults applicatifs. Limite plateforme explicitée, empreintes ACL toujours obligatoires.
+- Paquet exact : dépense et isolation franchies, délai sur admin ouvert relativement à la route Assistant. Navigation depuis la racine, test serveur admin séparé. Ajout du test navigateur de reprise checkpoint sans écriture et correction de la fixture SQL solo (pas de révision d'un autre foyer). CI à confirmer. Pas de mutation hébergée.
+
+## Lot 8D.5 — checkpoints privés et admin (CI à confirmer)
+
+- 839c59b application/PostgreSQL verts, recette connectée 46089920648 en cours ; 10aa635 a échoué sur l'ancien DROP POLICY déjà corrigé.
+- Checkpoint privé de l'éditeur Builder à chaque navigation d'étape, contrôle de révision/foyer/acteur, reprise de la dernière étape reçue, effacement lors du stage atomique. Pas de données financières dans localStorage. Limite : les modifications non acquittées depuis la dernière navigation restent volatiles en cas de fermeture forcée. Tests Node et SQL ajoutés, CI à confirmer.
+- Test réel Edge admin sur pile jetable : JWT, rôles, refus auto-promotion, auto-modification/autre admin, révocation et isolation. Pas de test de suppression effective de foyer ; pas de changement de la fonction en production.
+- Livraison gratuite : recette CI, pilote fermé de production uniquement après sauvegarde et autorisation distincte ; pas de troisième projet confirmé. Aucun secret/commande utilisateur, aucune inférence, fusion, publication ou écriture hébergée.
+
+## Lot 8D.4 — correction de restauration et CORS (CI à confirmer)
+
+- bc759c4 : application/PostgreSQL verts ; restauration échouée sur DROP POLICY service_app_admins ON public.app_admins dans base vide (46089496890). Cause précise : --clean inutile ; --if-exists ne protège pas la relation absente. Retrait de --clean, garde vide et traitement éventuel de public sans CASCADE. Empreintes ACL colonnes, fonctions et schémas renforcées, reprise réelle revue/Builder avec rejeu et rollback.
+- 10aa635 : application/PostgreSQL verts, recette connectée en cours au relevé. Paquet exact testé indépendamment de restauration si UI verte, CORS direct origine officielle, origines tierces/null refusées, absence JWT refusée. Aucun changement Edge.
+- Inventaire des deux connexions Supabase : deux projets actifs, aucune cible gratuite supplémentaire confirmée. Cloudflare Pages Free peut héberger un frontend à origine dédiée, pas la base isolée ; aucun accès de déploiement ni création. La pile CI reste la recette gratuite non publique. Voir docs/V3_1_PREVIEW_DEPLOYMENT.md. Aucun appel IA, aucune mutation hébergée, fusion ou publication ; aucune manipulation utilisateur. CI à confirmer.
+
+## Lot 8D.3 — préversion exacte et contrat de déploiement (CI à confirmer)
+
+- CI b592fcc et 80239dd entièrement vertes, dont coexistence (46089009807, 46089273241). CI bc759c4 application/PostgreSQL verts ; restauration chiffrée en attente au relevé (46089496890).
+- Lecture seule : la connexion Supabase Budget contient uniquement budget-foyer, aucune cible de recette hébergée confirmée. Nouveau plan docs/V3_1_PREVIEW_DEPLOYMENT.md, séparation d'origine et de projet, public config, Auth/CORS et pilotes fermés, procédure conditionnée à autorisation. Aucun changement hébergé ni forfait.
+- Recette du paquet exact ajoutée : vérification SHA/empreintes, vrai frontend, confirmation locale, isolation et refus admin. Nouveau workflow à confirmer ; pas de preuve de restauration réelle, ni de CORS hébergé. Suite : vérifier restauration et paquet, corriger si nécessaire, puis traiter les dernières portes de recette. Aucun jeton, commande utilisateur, nouvel appel IA, fusion ou publication.
+
+## Lot 8D.2 — coexistence validée, recette de sauvegarde (CI à confirmer)
+
+- CI b592fcc 46089009807 entièrement verte, coexistence V3.0/V3.1 validée sur la pile jetable. CI 80239dd application/PostgreSQL verts, connectée en cours au relevé.
+- Exercice automatisé chiffré sur Supabase jetable : cinq schémas applicatifs, brouillon staged, revue préparée, reçu complet, règle, quota et instantané historique ; restauration dans autre base du même cluster, comparaison empreintes, droits et rejeu idempotent. Aucun dump clair ni clé publié ; Auth synthétique reconstitué, pas de restauration complète Auth/Storage. CI à confirmer.
+- Suite : valider recette et qualifier accès hébergé/backup externe réel avant publication. Aucune commande utilisateur, aucun jeton, aucun nouvel appel IA, aucune écriture hébergée, fusion ou publication.
+
+## Lot 8D.1 — audit hébergé en lecture seule
+
+- CI b592fcc : application/PostgreSQL verts 46089009818, recette connectée 46089009807 en cours (historique avant/après migration et scénarios connectés verts au relevé, coexistence finale en attente).
+- Audit Supabase budget-foyer : sain, PostgreSQL 17.6, 24 migrations, quatre V3.1 absentes, six gardes historiques actifs, RLS et contraintes vérifiées sur périmètre, zéro collision réservée, Edge v30 inchangée. Conseiller sécurité 4 INFO/5 WARN à qualifier. Rapport docs/V3_1_HOSTED_PREFLIGHT.md ; aucune donnée financière ou secret exporté.
+- Sauvegarde automatique réussie à 00:17 UTC, huit tables historiques ; objets Assistant/Builder privés non couverts. Export externe actif et restaurabilité non prouvés. Préparer exercice chiffré fictif sur pile jetable, vérifier cible isolée et recette coexistence. Aucun changement hébergé, aucune inférence, fusion ni publication. Aucune commande demandée à l'utilisateur.
+
+## Lot 8C.9B — paquet validé, protection du bootstrap (CI à confirmer)
+
+- CI 40b35e6 46088804362 : 339 tests réussis, PostgreSQL vert, paquet isolé 74 fichiers et artefact 15240436520 créé (pas de publication). Cible loopback fictive, non connectée à un projet hébergé.
+- CI 68a61fd 46088496681 : catalogue local neutre au lieu du catalogue réel avant écriture. Code historique : événement Auth redondant peut remettre à zéro l'état pendant que cloudSyncReady reste vrai. V3.1 ignore les doublons Auth et désactive la disponibilité au début d'un bootstrap, bloque les pushes durant ce chargement. Le test attend la stabilisation réelle du client épinglé et conserve tous les contrôles. Hypothèse de course à confirmer ; pas de contournement du garde ni modification du client historique. Deux tests unitaires ajoutés.
+- Suite : confirmer les nouvelles CI, paquet et coexistence ; préparer audit et recette isolée. Aucun jeton demandé, aucune inférence supplémentaire, aucun changement hébergé, fusion ou publication.
+
+## Lot 8C.9 — préparation automatisée de la préversion (CI à confirmer)
+
+- CI 68a61fd : application et PostgreSQL verts 46088496675, recette connectée 46088496681 en cours. Rejeu Gemma déjà validé hors ligne ; pas de nouveau jeton ni de commande demandés à l'opérateur.
+- Générateur de paquet CI depuis les blobs du SHA testé : ressources frontend autorisées, dépendances et portée PWA vérifiées, trois configurations remplacées par loopback et clé fictive, empreintes et artefact non publié. Aucune cible hébergée acceptée. Tests et nouvelle CI à confirmer.
+- Suite : vérifier coexistence et paquet, puis audit cible hébergée, sauvegarde/restauration isolée et configuration de test. Pas de modification Supabase hébergée, fusion ou publication. Pas d'inférence réelle supplémentaire sans accès serveur autorisé. 95 % estimés inchangés.
+
+## Lot 8C.7 — rejeu Gemma validé, correctif coexistence (CI à confirmer)
+
+- CI f595303 46088280355 : 336 tests réussis, dont les cinq réponses capturées Gemma (5/5 hors ligne), PostgreSQL vert. Pas de nouvelle inférence. Le résultat ne garantit pas les réponses futures.
+- V3.0 épinglée réinjecte ses catégories de base lorsque le catalogue d'un type est entièrement custom ou vide. Correction dans la migration Builder non publiée : maximum deux marqueurs archivés sans budget, réservés et protégés, invisibles dans V3.1 ; limite V3.0 : visibles dans les archives mais non réactivables. Aucun effet sur les anciens foyers. Tests renforcés sans toucher au garde de synchronisation ni au client épinglé.
+- Nouvelle CI à confirmer ; ne pas publier. Comparer schéma cible et collisions réservées avant migration autorisée ; ne pas rejouer si déjà appliquée. 95 % estimés inchangés, aucun appel fournisseur, aucune écriture hébergée, fusion ou publication.
+
+## Lot 8C.6B — correction de quatre divergences observées (CI à confirmer)
+
+- Rapport réel de récupération : 5 HTTP 200, 1/5 correct, 3 288 tokens, 1,52 s moyen, 616 neurones réservés (1 354 cumul). Payeur common incorrect, today littéral, catégorie salaire perdue par normalisation, comparaison incomplète ; clarification correcte. Consommation du compte après appels inconnue.
+- Correctifs bornés provider-only, partagés par Edge et runner, rejeu des cinq structures métier réelles et tests négatifs. Aucun changement du prompt, corpus, routing local, confirmation, quotas ou registre. Aucun nouveau live.
+- CI 54536ce : intégrité/PostgreSQL réussis (46087724154) ; recette connectée échouée (46087724090), ancien client injecte des catégories et budgets par défaut absents du foyer Builder, garde intact. Cause précise des 15 archivages initiaux non reproduite par le plan diagnostique ultérieur. Ne pas publier. Prochaine étape : confirmer les tests et traiter la coexistence avant préversion ; pas de retest fournisseur sans autorisation et protocole borné. 95 % estimés inchangés.
+
+## Lot 8C.6A — blocage d'authentification et recette historique (CI à confirmer)
+
+- Rapport diagnostic : HTTP 401 sur fr-2-1, 133,6237 ms, zéro échantillon token, 123 réservés (738 cumul), quatre cas non envoyés. Aucune cause financière démontrée. Vérifier jeton et permission Workers AI sur compte exact ; nouveau préflight catalogue sans inférence. Reprise 401 unique sur preuve locale correspondante et registre intact, marqueur distinct, aucune remise de quota. Aucun appel réel supplémentaire.
+- CI 501644f : application/PostgreSQL verts 46087163748 ; recette connectée échouée 46087163785 sur première écriture V3.0 (garde contre 15 archivages). Diagnostic de test enrichi sans désactiver le garde ni modifier les fichiers applicatifs. Nouvelle CI à confirmer ; cause précise du plan destructif non établie. Ne pas publier.
+- Prochaine action : contrôler la CI, vérifier le jeton sans inférence et quota Free, puis lancer manuellement la récupération diagnostique unique après validation. 95 % estimés inchangés ; aucun SQL hébergé, fusion ou publication.
+
+## Lot 8C.4 — diagnostic du premier benchmark (CI à confirmer)
+
+- CI 3d797bd : deux workflows verts (46086549774, 46086549823). Premier rapport réel du 28 novembre : 5 HTTP 200, 0/5 correct sur une intention répétée, 3 354 tokens, 2,60 s moyen, 615 neurones réservés. Consommation compte non mesurée. Rapport et limites documentés sans identifiant ni secret.
+- Audit : payeur nommé non rapproché systématiquement dans normalisation, date today dans le prompt, frontière de mot après € dans contextualCategoryHint. Cause réelle des échecs inconnue ; aucune modification moteur/prompt. Diagnostics détaillés et tests hors ligne ajoutés.
+- Lot diagnostic fixe de cinq intentions avec un seul retest fr-2-1 explicitement activé et enregistré dans le registre existant. CI à confirmer. Prochaine action : vérifier CI, relever compteur Workers AI, puis autoriser exécution locale et analyser écarts avant correction ciblée. Aucun nouvel appel, aucune écriture hébergée, fusion ou publication. 95 % estimés inchangés.
+
+## État actuel — clôture locale 8B et préparation du premier lot Gemma (28 novembre 2026)
+
+- 8B clôturé pour la recette locale sur comptes fictifs. Référence validée : `a6fa3ead1020f515a2d9fdd54a66fba8dc6ccde7`, [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46084716412), [recette connectée](https://github.com/nishiosxn/budget-app/actions/runs/46084716354). Les deux workflows et toutes les étapes de recette connectée sont réussis. Correction de l'export historique confirmée : Edge v30 et client 31ap avant/après les quatre migrations, coexistence des interfaces V3.0/V3.1, tests d'accès et de reprise du Builder, PWA. Les entrées historiques ci-dessous conservent les états successifs et ne sont pas des blocages CI actuels.
+- Estimation globale : 95 %. Les captures de l'opérateur confirment Workers Free actif, absence de moyen de paiement enregistré et 0/10 000 neurones consommés lors du relevé. Revérifier le quota et le forfait avant chaque lot. L'opérateur indique avoir renouvelé son jeton, conservé localement ; aucun identifiant ni secret n'est enregistré ici.
+- 8C.3 : premier lot de cinq commandes fictives (offset 0, limit 5) à exécuter manuellement sur le PC de l'opérateur. Aucun appel réel ni mesure fournisseur effectué à ce stade. Conserver le registre persistant et le rapport JSON hors dépôt ; attendre le résultat avant tout nouveau lot. Voir [benchmark](docs/V3_1_ASSISTANT_BENCHMARK.md).
+- Réserves non levées : comparaison exacte du schéma cible et cascades, recette hébergée autorisée, sauvegarde/restauration, fermeture avant premier acquittement Builder, récupération d'un compte définitivement inaccessible, administration, iPhone/dictée/accessibilité et publication. Aucune migration hébergée, fusion ou publication autorisée ou exécutée.
+
+## Lot 8C.1 — préparation Gemma et correctif recette historique (CI à confirmer)
+
+- CI 6bfdd56 : application/PostgreSQL réussis (46084383381), recette historique échouée au login navigateur (46084383401). Quatre ressources partagées manquaient dans la disposition de l'export historique ; export/copie depuis le même SHA et diagnostic de connexion ajoutés. Cause plausible à confirmer par CI ; lot 8B non clôturé.
+- Cloudflare : Workers Free 10 000 neurones/jour UTC, Gemma accessible ; forfait réel du compte non vérifié. Runner plan hors ligne des 153 cas fournisseur, plafonds 10 appels/2 000 neurones par lot, 6 000 par jour et marge 2 000, registre persistant et verrou, arrêt sur erreur/métriques absentes. Aucun appel live en CI ni aujourd'hui. Documentation actualisée. Avancement estimé 94 % inchangé.
+- Prochaines actions : CI de cette révision, clôturer 8B local si verte ; confirmer compte et solde Free avant un premier lot Gemma de 5 cas synthétiques. Aucune écriture Supabase, fusion, publication ou facturation.
+
+## Lot 8B.5C — Recette avant/après et client 31ap (CI à confirmer)
+
+- Quatre workflows de 889d0e8 et 98f124d terminés avec succès : 46083350925, 46083350897, 46083514827, 46083514823. Aucune correction CI nécessaire.
+- Nouveau test sur le même foyer fictif avant/après migration atomique locale : client historique 31ap et Edge v30 exacts, confirmation budget/dépense, conservation des lignes, rejeu d'un reçu, refus inter-foyers et quota inchangé. Le workflow exécute ensuite les suites V3.1 existantes. Aucune connexion externe de l'Edge.
+- Clôture conditionnelle au résultat de la nouvelle CI ; 94 % maintenus. Limites : contrat synthétique, perte définitive de compte Builder, sauvegarde/restauration et recette hébergée séparément autorisées. Voir [protocole](docs/V3_1_COEXISTENCE.md). Prochaine étape : contrôler CI puis préparer Gemma Free avec plafond strict, sans données réelles ni coût autorisé.
+- Aucune écriture Supabase hébergé, fusion ou publication.
+
+## Lot 8B.5B — Source Edge v30 identifiée, recette préparée (CI à confirmer)
+
+- CI 889d0e8 : intégrité et PostgreSQL verts (46083350925), recette connectée en cours lors du relevé (46083350897).
+- Lecture seule Supabase : six fichiers de l’Edge v30 strictement identiques au commit 3b6a340352432428b8145aab086741a995cb6f8a, JWT actif. Définition historique de smart_assistant_quota_status_v1 reproduite uniquement dans le schéma CI ; aucune consommation réelle consultée.
+- Workflow et test de compatibilité Edge v30 sur schéma local après migration, sans réseau fournisseur (permissions Deno loopback, valeurs fictives), quota/confirmation/rejeu/dépense/plan/isolation. Tests nouveaux non confirmés ; comparaison avant/après sur deux états du schéma et client 31ap restent à compléter. Voir [protocole](docs/V3_1_COEXISTENCE.md).
+- Aucun déploiement, aucune écriture Supabase hébergé, aucune fusion ni publication. 94 % maintenus jusqu’à la validation de la CI et des points ouverts.
+
+## Lot 8B.5A — Correction CI et recette coexistence (à confirmer)
+
+- CI 8B.4C : application réussie, PostgreSQL en échec (46083142843), délimiteurs dollar SQL altérés dans la migration de purge et le contrat local ; réparés. CI 8B.4B : application/PostgreSQL réussis, recette connectée en cours lors du relevé.
+- Recette des vrais fichiers V3.0 figée sur e2072063b30712ffcd1a27dc1f6adffce0d27965, export temporaire CI, sessions séparées sur Supabase jetable ; reprise du Builder avec retrait/rétablissement de l'autorisation et échanges financiers entre les deux interfaces. Nouvelle CI à confirmer.
+- [Protocole coexistence/Edge/récupération](docs/V3_1_COEXISTENCE.md). Source historique 31ap retrouvée, mais correspondance exacte avec l'Edge v30 non prouvée ; test Edge ancien à terminer. Aucun accès à Supabase hébergé, aucune fusion/publication. Avancement 94 % maintenu.
+
+## Lot 8B.4C V3.1 — Contrat RLS et rétention (CI à confirmer)
+
+- CI 8B.4A : application/PostgreSQL et étapes fonctionnelles connectées/Chromium/PWA réussies (46082768989, 46082768964). CI 8B.4B : application/PostgreSQL réussis (46082995837) ; recette connectée en cours lors de la préparation (46082995849).
+- Contrat CI enrichi avec les politiques d'appartenance des propriétaires, les droits INSERT/UPDATE/DELETE ciblés, les politiques foyers/membres et administration, et les contraintes de dates/rôles. Tests REST d'accès inter-foyers, modification de rôle, champs immuables et propriétaire légitime. Ce contrat reste synthétique : les détails des clés étrangères/cascades et les anciennes migrations divergentes ne sont pas un export exhaustif du serveur.
+- Smart Assistant : effacement des seuls contenus expirés au bout de 24 h lors de leur consultation ou par une fonction de maintenance administrative bornée (1 à 1000 lignes), sans supprimer les identifiants de requête ni les reçus. Aucun cron installé ; aucun nettoyage de brouillon Builder en cours. Tests de limites, répétition, conservation des reçus et refus clients ajoutés.
+- Aucun accès en écriture à Supabase hébergé, aucune fusion ni publication. Avancement estimé 94 % conservé jusqu'à la CI de cette révision. Restent coexistence réelle V3.0/V3.1, Edge v30, procédure de récupération du Builder, comparaison des migrations historiques et validation Gemma. Prochaine action : vérifier CI puis 8B.5.
+
+## Lot 8B.4B V3.1 — Pilotage fermé et protection Builder (CI à confirmer)
+
+- Préparation sur la branche uniquement : autorisations privées par utilisateur pour le provisionnement Builder, par couple foyer/utilisateur pour les règles. Aucun compte préautorisé à la migration ; inscription V3.0 conservée via le RPC historique. Les autorisations de l'Edge Assistant restent séparées.
+- Les écritures REST directes sur les six tables sont refusées pendant un Builder non finalisé ; le commit atomique privilégié reste possible. Les invitations/membres supplémentaires sont bloqués pendant cette phase, y compris via les RPC historiques. Le foyer finalisé retrouve le contrat V3.0 normal.
+- Tests SQL adaptés, autorisations de comptes fictifs injectées uniquement par psql sur l'instance locale vérifiée, tests REST de l'ancien provisionneur, du brouillon protégé et du compte hors pilote. Les résultats de la CI restent à confirmer ; 94 % maintenus.
+- Avant toute recette hébergée : prévoir une procédure de retrait/récupération d'un pilote avec brouillon en cours (ne jamais supprimer ses données), revoir le périmètre d'activation et la conservation des reçus. Reste aussi la comparaison complète des ACL/RLS et la coexistence des vraies pages/Edge v30. Aucun SQL hébergé exécuté, ni fusion ni publication.
+- Prochaine étape : vérifier les workflows de cette révision, résoudre les échecs puis préparer la recette de coexistence 8B.5.
+
+## Lot 8B.4A V3.1 — Contrat historique et validation Builder (CI à confirmer)
+
+- Audit en lecture seule du projet hébergé : six protections historiques retrouvées, quatre migrations V3.1 du 27 novembre non enregistrées, ACL et contraintes comparées. Aucun export de lignes personnelles ni modification hébergée.
+- Correction préparée : plafond des noms du Builder à 100 caractères (SQL et champ de saisie), tests de frontière 100/101. Contrat CI enrichi avec les six triggers historiques, les droits UPDATE ciblés et les contraintes de longueur/précision. Test REST des en-têtes absents, obsolètes et valides sur les six tables.
+- Avancement global estimé inchangé à 94 %. Les tests de ce commit doivent être confirmés par la CI ; les résultats des lots antérieurs ne valident pas ce changement.
+- Reste : compléter les politiques RLS et autres contraintes/ACL du contrat, protéger le brouillon contre les clients V3.0, restreindre Builder/règles au pilote sans bloquer les inscriptions normales, tester coexistence des vraies pages et de l’Edge v30, définir la rétention des brouillons privés. La recette partagée hébergée reste bloquée ; aucune migration ni publication autorisée.
+- Prochaine action : vérifier les deux workflows de la PR #52 sur cette révision et terminer les protections pilote/ancien Builder sur la branche de travail.
+
+## Lot 8A V3.1 — Préparation documentaire terminée
+
+- Avancement global maintenu à 94 %. Branche `work/v3.1-integration`, PR #52. Code de référence publié sur la branche `3b46bc2`, arbre identique au commit local `db009f9` (historique local reconstruit).
+- Les workflows finaux du lot 7 sont verts : App integrity/PostgreSQL 46081173693 et recette connectée/PWA 46081173687. Résultats existants réutilisés, aucun benchmark ni audit complet relancé.
+- Fichiers du 8A : README, CHANGELOG, ce journal et `docs/V3_1_RELEASE_CHECKLIST.md`. Neuf tests documentaires réussis, contrôle direct des liens/versions et `git diff --check` réussis. Version du code conservée à V3.1.
+- Points ouverts centralisés : Gemma réel, schéma hébergé, six déclencheurs historiques, anciens clients, brouillon initial Builder, administration privilégiée, iPhone physique, sauvegarde/restauration représentative et autorisation de préversion.
+- Procédure préparée pour `/v3.1/integration/<SHA>/` avec backend de test isolé. Aucun paquet de publication créé et aucune configuration applicative changée pendant 8A.
+- Prochaine action exacte : obtenir ou identifier un projet Supabase de test isolé autorisé et son export de schéma sans données, puis confronter les migrations, les ACL/RLS et les six déclencheurs aux prérequis du rapport de recette. Préparer ensuite le paquet à revoir avant autorisation de publication.
+
+## Lot 7D V3.1 — Performances et recette PWA
+
+- Le laboratoire charge son moteur seulement à l'ouverture. Les ressources modifiées ont des clés d'URL actualisées. Le service worker vérifie ses mises à jour sans cache HTTP et conserve le contrat réseau direct. La couleur du chrome Safari suit le thème.
+- Le test PWA de CI mesure trois démarrages Chromium, vérifie le manifeste et les icônes, simule une révision du service worker et contrôle le hors ligne sans cache financier. La recette ajoute le passage Système → Clair → Système et le zoom visuel à 200 %.
+- Fichiers : `js/assistant-lab.js`, `js/budget-theme.js`, `js/pwa.js`, workflow, tests navigateur, README et changelog. Le [rapport](docs/V3_1_VISUAL_ACCEPTANCE.md) contient le protocole iPhone. CI connectée du 7C réussie (46080030871). Les styles app Catégories sont isolés dans le thème pour conserver l'identité de la feuille de référence PR49 contrôlée par App integrity.
+- Prochaine action : vérifier les mesures et les deux workflows sur la tête finale de la PR #52. La validation iPhone physique et le benchmark Gemma restent à planifier.
+- Reprise CI (46080535537) : manifeste, purge historique, chargement à la demande et changement du worker ont été atteints. Le test attend désormais l'événement du thème système et coupe le transport du serveur jetable pour vérifier le hors ligne du worker. Les 319 tests Node et App integrity ont réussi. La comparaison a également rendu la référence Assistant de `gh-pages` avec une proposition fictive en clair et sombre.
+- Dernière passe visuelle Builder : la deuxième étape a révélé un en-tête et un pied trop clairs en mode sombre, ainsi qu'une barre d'actions mobile qui ne suivait pas le défilement. Le thème, la zone de défilement du pied et l'espacement entre points et traits sont corrigés. Les insets latéraux couvrent la navigation mobile et les formulaires concernés.
+
+## Lot 7C V3.1 — Responsive et accessibilité
+
+- Les dialogues conservent le focus dans la couche active, neutralisent les contrôles derrière elle et rendent le focus au déclencheur à la fermeture. La saisie rapide mobile le rend au bouton Ajouter, et son cycle clavier inclut Smart Assistant. Le champ de montant possède un nom accessible.
+- Le contraste des accents de texte et de bouton est adapté aux couleurs claires personnalisées. Le logo et la préférence gardent la couleur choisie. Les fermetures et réglages de mois gardent une cible de 44 px. Le zoom manuel et le correctif de taille des champs tactiles sont conservés.
+- Fichiers : `js/modal-focus.js`, `js/appearance.js`, `js/mobile-ui.js`, `js/app.js`, styles de thème et scénario Chromium. La recette de focus, couleurs et infobulle tactile est ajoutée à la CI.
+- Prochaine action : valider sur le runner et contrôler le manifeste, le service worker et les mesures de chargement avant la recette finale.
+
+## Lot 7B V3.1 — Harmonisation des écrans
+
+- Les captures avant correction montrent le fond clair résiduel de la connexion sombre, le contraste insuffisant de l'onglet mobile actif, une palette d'administration héritée et des repères de progression du Builder moins clairs que dans la maquette.
+- Connexion, navigation et Suivi utilisent les rôles de couleur existants. L'administration reprend l'identité violette et le thème partagé. Catégories utilise l'accent du foyer. Le Builder signale l'étape courante par un contour et anime les traits de progression par transformation.
+- Fichiers : `index.html`, `admin/`, `css/style.css`, `css/budget-theme.css`, `css/category-distribution.css`. Les rendus Chromium avant/après ont confirmé les corrections de fond et de navigation. Recette connectée 7A réussie (46079443956).
+- Prochaine action : vérifier la restitution du focus, les couleurs personnalisées et les interactions tactiles sur le même parcours.
+
+## Lot 7A V3.1 — Audit graphique et protocole de recette
+
+- Point de départ publié `da28f70`. Design system et références Unslop consultés. Direction retenue : conserver les maquettes, le violet Smart Budget et la répartition financière comme repère graphique. Accorder les surfaces, l'alignement des montants, les libellés et les états interactifs par correctifs ciblés.
+- La recette connectée existante enregistre les rendus avant correction sur Supabase jetable, en onze états, deux thèmes et neuf largeurs. Les captures à 390 et 1 440 px et les mesures de largeur sont conservées dans l'artefact GitHub Actions.
+- Fichiers : workflow de recette, harnais Chromium et enregistreur visuel. Les résultats navigateur sont attendus. L'accès à un iPhone physique et le benchmark réel Gemma sont indépendants de cette recette.
+- Prochaine action : lire les captures et corriger les écarts confirmés du 7B sans modifier les calculs.
+
+## Lot 6C V3.1 · Benchmark final et gestion des erreurs
+
+- Benchmark local comparatif : 208 demandes fictives, 55 résultats locaux exacts contre 20 au départ, et 55 demandes traitées sans IA contre 24. Le score initial a été recalculé sur le même corpus final, avec une enseigne inconnue sans nom d’activité classant.
+- Neurones réservés estimés par appel de repli : 123,71 en moyenne, 124 au maximum, contre 167,86 et 168. Le rapport distingue ces estimations des tokens Cloudflare et des neurones réellement imputés.
+- Passerelle : dédoublonnage en cours par utilisateur et foyer, distinction délai/réseau/réponse invalide, conservation des tokens communiqués sur une réponse invalide, aucune relance automatique. Un identifiant de modèle erroné bloque uniquement le repli IA et laisse le moteur local utilisable. Contrôles de quota, de confirmation et d’isolation conservés.
+- Tests : 319 tests Node et audit applicatif réussis localement. Fichiers : benchmark, tests passerelle, message d’état de l’Assistant et `docs/V3_1_ASSISTANT_BENCHMARK.md`.
+- Blocage : aucun accès Workers Free vérifiable ni jeton de test disponible. Zéro appel réel à Gemma. L’efficacité du prompt raccourci chez le fournisseur reste à mesurer avant activation.
+- Prochaine action avant clôture : vérifier la CI de la PR #52. Le lot 7 reste en attente.
+
+## Lot 6B V3.1 · Optimisation mesurée
+
+- Règles locales étendues aux formulations de courtoisie bornées, à une variante d’enseigne, aux débuts de récurrence explicites, aux catégories d’épargne personnelles et à une consultation mensuelle par catégorie. Contrôles de calendrier et d’appartenance conservés.
+- Prompt système réduit de 4 702 à 1 474 octets. Contexte fournisseur limité aux champs métier utiles, historique conservé uniquement pour une correction ou une réponse courte à une clarification. Plafonds inchangés.
+- Mesure intermédiaire : 55/208 cas exacts et traités localement. 211 tests Assistant réussis. Les chiffres fournisseur restent indisponibles faute d’accès au compte gratuit.
+- Fichiers : moteur client et miroir Edge, passerelle et tests de consommation/corpus. Prochaine action : fiabiliser le résultat en cas de délai, réponse incomplète ou appel doublé, puis publier le rapport.
+
+## Lot 6A V3.1 · Corpus et mesure initiale
+
+- Corpus fictif historique de 200 commandes complété par huit cas annotés de libellés et de modes budgétaires. Le score vérifie les opérations complètes et les champs attendus.
+- Mesure sur le moteur de `376ff27` : 19/208 résultats exacts, 24/208 traités localement, moyenne 0,376 ms sur cet exécuteur. Le corpus historique comporte dix variantes par intention et sert de test de robustesse.
+- Gemma 4 26B est répertorié chez Cloudflare. Workers Free annonce 10 000 neurones par jour UTC. Aucun accès de compte ou jeton de test dans l’environnement, donc zéro appel réel. Le modèle et les plafonds restent identiques.
+- Fichiers : `scripts/assistant-benchmark.mjs`, `scripts/assistant-benchmark-fixtures.mjs` et ce journal. Deux tests historiques du corpus réussis.
+- Prochaine action : optimiser le traitement déterministe fiable et limiter le contexte et le prompt transmis.
+
+## Lot 5 · Reprise et vérification des pages connectées
+
+- État repris : aucun changement local, `7920af0` publié. La CI connectée 46073305927 et App integrity/PostgreSQL 46073305780 sont vertes. Les résultats des sous-lots 5A à 5C restent acquis.
+- Contrôle indépendant ajouté : les véritables pages de l’application et leur SDK Supabase épinglé s’ouvrent sur le runner avec deux sessions Auth fictives. La recette vérifie le Builder, les actions Catégories, la Vue d’ensemble du second appareil et le reçu Assistant après rechargement.
+- L’environnement de test redirige uniquement vers Supabase et l’Edge locales. La comparaison du schéma hébergé exige toujours un export sans données ou une liaison en lecture autorisée.
+- CI 46075836490 : le scénario a franchi le Builder dans les vraies pages et vérifié les montants enregistrés. Le premier test de propagation a révélé que le schéma de recette ne publiait pas les tables du foyer et des membres auxquelles l’application s’abonne. La publication de test et l’attente d’abonnement ont été corrigées.
+- Terminé : CI connectée 46076171432 et App integrity/PostgreSQL 46076171436 réussies sur `f02bd90`. Le Builder duo, le remplissage et son annulation entre deux écrans, puis la reprise du reçu Assistant après une coupure ont réussi sur les pages du dépôt et le SDK épinglé. Le second navigateur a affiché une seule dépense de 28 €.
+- Reste hors de la recette isolée : comparer le schéma et les six déclencheurs historiques du projet hébergé. Toute migration ou tout déploiement hébergé nécessite une autorisation distincte. Le lot 6 attend une nouvelle consigne.
+
+## Lot 5C V3.1 · Smart Assistant, concurrence et isolation
+
+- Ajouté : exécution de l’Edge du dépôt sous Deno sur le runner, avec Auth, REST et PostgreSQL locaux. Les huit demandes passent par le moteur existant avec Gemma désactivé. Vérification des reçus et du rejeu, concurrence sur le même budget, événement Realtime, règles et accès directs inter-foyers.
+- CI 5B 46072225442 : trois comptes Auth et quatre sessions Chromium indépendantes vérifiés. Builder solo/duo, invitation et reprise après deux réponses perdues réussis. Le test Catégories s’est arrêté sur un élément de DOM de test incomplet, corrigé pour le prochain passage.
+- CI 46072568921 : Auth, Builder et synchronisation de Catégories réussis. Double confirmation Gundam exécutée sur l’Edge locale avec des reçus identiques. L’écoute Realtime n’a pas reçu l’événement attendu. Le test attend maintenant l’abonnement PostgreSQL effectif avant l’écriture et lance ses contrôles REST indépendamment.
+- Résultat final : CI connectée 46072989316 et App integrity/PostgreSQL 46072989322 réussies sur `d05c655`. Quatre scénarios connectés réussis : Auth, Builder, Catégories et Assistant. Historique V3.0.2 fictif préservé à l’identique, changement de foyer et apparence Auth vérifiés. Les huit demandes ont écrit une seule fois selon les reçus, avec événement Realtime, conflit de budget, règles partagées et refus des accès externes contrôlés.
+- Limites : les protections serveur historiques sont à confronter à une version de schéma autorisée. Le transport navigateur appelle des services Supabase réels locaux, avec un adaptateur de test pour le moteur applicatif. La recette de toutes les interactions d’interface et du projet hébergé reste distincte.
+- Prochaine action autorisée : attendre la consigne du lot 6. Pour préparer une future recette hébergée, obtenir l’accès en lecture au schéma cible ou son export sans données, confronter les six déclencheurs historiques et faire approuver séparément toute migration ou déploiement.
+
+## Lot 5B V3.1 · Builder et Catégories en sessions indépendantes
+
+- Ajouté : recette via Chromium, comptes Auth réels de test et REST local. Parcours solo/duo, invitation, coupure avant réception, réponses perdues après réception, fermeture et relecture du bilan. Le moteur applicatif de synchronisation échange avec le REST local via les sessions navigateur.
+- Ajouté au Builder : avertissement avant de quitter avec une saisie encore inconnue du serveur. Changer de compte ferme le Builder et libère son brouillon. Aucun brouillon financier en clair ni clé locale persistante. Une fermeture forcée avant réception perd encore la saisie.
+- Fichiers : `js/setup-builder.js`, `js/auth.js`, tests de reprise, workflow et tests `scripts/connected-test/`.
+- Résultats : 23 tests ciblés locaux réussis. Le premier workflow a démarré Supabase et chargé les migrations, puis Chromium a échoué sur Ubuntu 26.04. Le runner est fixé à Ubuntu 24.04 pour la nouvelle exécution.
+- Reste : résultats HTTP de cette recette, vérification réelle des déclencheurs historiques et recette complète de l’interface en environnement représentatif. Prochaine action : ajouter la recette Edge locale et vérifier l’isolation des reçus et règles.
+
+## Lot 5A V3.1 · Environnement isolé et revue de migration
+
+- Revue réalisée : migrations depuis V3.0.2, ACL/RLS, dépendances Edge, compatibilité du provisionnement et sauvegarde/retour arrière. Les protections serveur historiques du 16 novembre ne sont pas intégralement versionnées.
+- Préparé : workflow isolé Auth, REST et PostgreSQL avec profils Chromium séparés. La base synthétique reconstitue les prérequis non inclus dans le dépôt et applique les migrations versionnées. Aucun accès à un foyer hébergé.
+- Fichiers : `docs/V3_1_CONNECTED_ACCEPTANCE.md`, `.github/workflows/v31-connected-test.yml`, `scripts/connected-test/` et ce journal.
+- CI 46071836576 : Supabase isolé démarré et migrations chargées. Le premier lancement Chromium a bloqué sur la version Ubuntu du runner, correction consignée au lot 5B. Le connecteur hébergé requiert une liaison, aucun accès de recette hébergée établi.
+- Prochaine action : vérifier la CI locale isolée, puis tester le Builder, l’invitation et les données visibles dans deux sessions.
+
+## Lot 4C V3.1 · Confirmation et reprise du Smart Assistant
+
+- Terminé en source : l’interface Unslop prépare puis confirme le lot revu. Elle affiche la réussite seulement après vérification du reçu. Une confirmation interrompue se retrouve après rechargement à partir d’un identifiant opaque lié à l’utilisateur et au foyer. L’analyse et les projections restent séparées de l’écriture.
+- Périmètre testé : catégorie explicite avec ou sans budget et première dépense, budgets fixés, augmentés, diminués ou remis à zéro, dépenses et revenus ponctuels ou mensuels, épargne et payeurs A/B/commun. Les prévisions sur plusieurs mois conservent les règles reconduites. Une proposition périmée demande une nouvelle revue.
+- Fichiers : Assistant intégré, module de confirmation et interface partagée, validation Edge, migration et scénarios PostgreSQL, tests navigateur et moteur ciblés, ce journal.
+- Tests locaux : 313 tests Node, audit applicatif et Chrome à 390 px réussis. Chrome a contrôlé la modification d’un budget et sa projection, le double clic, la réponse perdue et la récupération du reçu après rechargement avec une seule écriture simulée.
+- Limites : le navigateur utilise des données fictives. L’écriture réelle est validée sur PostgreSQL jetable, puis attend une recette hébergée autorisée. Les transferts internes se limitent à la mise en épargne représentée par le modèle existant. Les brouillons sans catégorie utilisable ou hors périmètre restent en simulation. Le benchmark Gemma reste réservé au lot 6.
+- CI de la PR #52 réussie (46067361630, commit 17909ed). Suite au lot 5A.
+
+## Lot 4B V3.1 · Revalidation et écritures atomiques du pilote
+
+- Implémenté : préparation sans écriture financière, lot PostgreSQL unique, reçu partagé avec le pilote et versions des catégories et budgets relues au moment de confirmer. Les mouvements réutilisent la transaction existante. Les mois seuls préservent la reconduction du budget de départ.
+- Périmètre : service seul, foyer et utilisateurs de test autorisés, 12 actions maximum, aucune mutation à l’inférence. Activation contrôlée par `SMART_ASSISTANT_ATOMIC_REVIEW` avec les mouvements étendus.
+- Fichiers : migration `20261127220000_assistant_atomic_review.sql`, passerelle Edge et validation, moteur partagé, fixtures/tests de recette et ce journal.
+- Tests : 213 tests ciblés et CI PostgreSQL réussis (46066526339, commit 5fdffff), dont les erreurs entre écritures, le rejeu, les changements concurrents et l’isolation. Le raccordement navigateur est détaillé au lot 4C.
+
+## Lot 4A V3.1 · Planification déterministe des demandes mixtes
+
+- Terminé : les huit demandes de recette produisent une proposition locale complète. Le moteur traite notamment la dépense et le budget dans une seule demande, le mois dernier, l’épargne liée à un revenu, les payeurs relatifs et les abonnements mensuels. La proposition reste distincte de l’écriture.
+- Fichiers : `js/assistant-core.js`, son miroir Edge, `scripts/v31-mixed-planning.test.mjs` et ce journal.
+- Validation : 210 tests Assistant locaux, dont les huit demandes sans appel fournisseur.
+- En cours : lot 4B. Prochaine action : préparer les actions confirmées côté serveur, comparer les versions de catégories et les budgets, puis les appliquer dans une transaction PostgreSQL avec reçu.
+
+## Lot 3 V3.1 · Reprise du Builder en solo et à deux
+
+- Terminé en source : le Builder relit le brouillon du nouveau foyer après reconnexion, garde les identifiants stables et attend le reçu PostgreSQL puis la relecture des données avant d’afficher le succès. Une seconde validation rejoue le même identifiant. Un changement de session bloque la poursuite.
+- Données vérifiées : propriétaire authentifié, libellés et mode du foyer, catégories, budgets en centimes des revenus, charges, abonnements et épargne. Les abonnements annuels gardent leur équivalent mensuel. La relecture conserve les listes volontairement vides et les soldes de départ. Le Builder prépare des prévisions. Une personne invitée rejoint le foyer via le parcours d’invitation et les opérations réelles ou récurrentes restent gérées dans leurs écrans actuels.
+- Fichiers : `js/cloud-household.js`, `js/cloud-load.js`, `js/setup-builder.js`, `js/storage.js`, `scripts/v31-builder-recovery.test.mjs`, `scripts/validate.mjs`, durcissement du provisionnement SQL et ce journal.
+- Tests : 14 tests Builder, 303 tests applicatifs et audit réussis localement. Sur Chrome local avec API simulée, sept étapes, création solo, coupure en duo, rechargement et une seule validation en reprise. PostgreSQL a testé un échec entre les tables, le rollback, les centimes, la relecture du reçu, l’isolation et les soldes (CI du premier commit `eccdec5`, exécution 46063991478).
+- Limites : la reprise après fermeture suppose que le serveur a reçu le brouillon. Avant ce point, la saisie reste en mémoire de l’onglet, conformément à l’absence de cache financier persistant. Les préférences restent synchronisées via le profil Auth. La recette avec le service Supabase hébergé attend la revue et l’autorisation de migration.
+- CI du lot 3 réussie (46064643862, commit 07d5975). Suite du travail décrite dans le lot 4A.
+
+## Lot 3 V3.1 · Transaction de création du budget initial
+
+- Implémenté côté serveur : provision idempotente, brouillon privé, validation transactionnelle des catégories et budgets du nouveau foyer, reçu de validation consultable après une coupure. Le verrou et les restrictions d’accès ciblent le propriétaire du foyer provisionné par le Builder.
+- Fichiers : migration `20261127210000_budget_builder_atomic.sql`, `scripts/v31-builder-db.sql`, workflow de validation et ce journal.
+- Tests : scénario PostgreSQL réussi en CI (46063991478), incluant erreur à mi-parcours, rejeu, montants et protection du foyer voisin.
+- Le raccordement et les limites de la recette sont détaillés dans le jalon suivant.
+
+## Lot 2 V3.1 · Actions groupées de Catégories
+
+- Terminé : le remplissage complète les réels à zéro selon le prévu du mois. « Tout vider » demande une confirmation valable pour les mêmes foyer, mois et opérations. Échap, clic extérieur ou expiration annulent la demande. La remise à zéro ajoute des ajustements par payeur pour le mois et Annuler retire les seuls ajustements créés.
+- Répartition : réels et budgets comparés en centimes, comparaison avec le véritable prévu du mois précédent. Les budgets, les mouvements historiques et les sources des récurrences sont préservés.
+- Fichiers : `js/category-controls.js`, `js/category-distribution.js`, `scripts/category-distribution.test.mjs`, `scripts/v31-category-bulk.test.mjs`, `scripts/validate.mjs` et ce journal.
+- Tests : 44 tests ciblés et audit applicatif réussis. Chrome local sur données fictives : remplissage, Échap, changement de mois, remise à zéro, Vue d’ensemble et annulation. Le plan de synchronisation testé en mémoire ne touche que les écritures d’ajustement. Les protections d’archivage n’ont pas été modifiées.
+- Limite : la validation n’a pas utilisé de session Supabase hébergée. La persistance sur deux clients connectés reste à vérifier dans le lot de recette connectée.
+- CI de la PR #52 réussie pour ce lot (App integrity et PostgreSQL, exécution 46062377156, commit `2a6995e`).
+
+## Lot 1 V3.1 · Abonnements et bilan du Builder
+
+- Terminé : choix de facturation mensuelle ou annuelle, conversion au centime et détail repliable des revenus, charges, abonnements, épargne et budgets. Le bilan et la sauvegarde utilisent le même calcul de mensualisation. Changer de formule prédéfinie rétablit la périodicité mensuelle du tarif proposé.
+- Fichiers : `js/setup-builder.js`, `css/budget-theme.css`, `scripts/v31-builder.test.mjs` et ce journal. Fins de ligne LF d’origine conservées.
+- Tests locaux : 5 tests Builder réussis et audit applicatif réussi. Le scénario annuel vérifie le HTML du bilan ainsi que le budget et la catégorie enregistrés dans l’état applicatif de test.
+- CI de la PR #52 réussie pour ce lot (App integrity et PostgreSQL, exécution 46061576507, commit 5cd048c). Aucune écriture Supabase hébergée.
+- Reste pour la feuille de route : recette des actions groupées Catégories, puis reprise après interruption de la création de foyer. Aucun blocage identifié sur le lot Builder local.
+- Prochaine action après validation du lot 1 : ouvrir Catégories avec des données de test, remplir les budgets vides, annuler puis changer de mois et contrôler l’historique, les abonnements et les récurrences.
+
+## Exercice de restauration ciblée · 27 novembre 2026
+
+- Terminé et testé sur PostgreSQL 17 jetable : confirmation solo/duo étendue, rejeu, lots mixtes, refus inter-foyers et rollback sur erreur (CI 46059836466, commit a262567).
+- Terminé : exercice PostgreSQL des deux migrations historiques de sauvegarde avec variation de 0,01 €, comparaison des huit tables, capture pré-restauration et restitution d’une seule ligne synthétique. Les jobs App integrity et PostgreSQL ont réussi (CI 46059968944, commit ba96715).
+- Fichiers : scripts/v31-backup-db.sql, scripts/v31-rules-db.sql, workstate.md. Le dump hors site inclut le schéma public, les instantanés financiers internes couvrent huit tables.
+- Limite : exercice effectué sur PostgreSQL jetable. La restauration hébergée reste hors périmètre.
+
+
+## Mouvements confirmés · 27 novembre 2026
+
+- Contrôle précédent : CI 46059261919 réussie au commit f2b75cf, migration des règles et isolation des foyers testées sur PostgreSQL 17 éphémère.
+- Implémenté en source : capacité serveur optionnelle pour les foyers de test seul ou à deux. Revalidation des membres et catégories, attribution A/B/commun, opérations ponctuelles, épargne et récurrences mensuelles, un seul reçu pour toute la transaction. Un virement vers un tiers reste une entrée ou sortie du budget suivant son sens.
+- Fichiers : index.ts et gateway.mjs de smart-assistant, preview/assistant/live/live-ui.js, migration 20261127193000_assistant_confirm_movements.sql, tests assistant-live/gateway et scripts/v31-movements-db.sql.
+- Tests : 288 tests Node et audit local verts. Nouveau scénario SQL du lot mixte, reprise du même reçu, changement de payeur, foyer différent, annulation de la première écriture si la deuxième échoue. Résultat PostgreSQL de cette révision à vérifier en CI.
+- Limites : budgets et création de catégorie des lots historiques restent limités au pilote solo. Aucune migration hébergée. Restent validation d’intégration navigateur, sauvegarde/restauration, benchmark, iPhone, recette connectée et revue des mutations.
+- Prochaine action : vérifier le nouveau job SQL, tester les interactions de la page intégrée depuis la navigation, puis vérifier la restauration sur données synthétiques.
+
+
+## Associations partagées · 27 novembre 2026
+
+- Réalisé en source : lecture RLS par foyer, modification par RPC, contrôle de révision, rejet des catégories étrangères, limite de 200 associations, actualisation au retour sur la page, gestion explicite des conflits entre appareils. Le pilote historique conserve les règles locales.
+- Fichiers : assistant/shared-rules.js, assistant/index.html, preview/assistant/live/live-ui.js, supabase/migrations/20261127190000_assistant_household_rules.sql, scripts/v31-shared-rules.test.mjs, scripts/v31-rules-db.sql, .github/workflows/validate.yml.
+- Tests locaux : 288 tests Node, audit applicatif vert. Le test de deux appareils utilise un transport simulé. Le job PostgreSQL de la PR exécute la migration et les contrôles RLS sur une base éphémère. Migration non appliquée au service hébergé.
+- Prochaine action : vérifier le job PostgreSQL, intégrer les écritures confirmées des mouvements ponctuels ou récurrents du foyer de test et exécuter des scénarios atomiques avec une erreur en deuxième position. Restent le benchmark réel, la recette hébergée et iOS.
+
+
+## Assistant dans la navigation · 27 novembre 2026
+
+- Réalisé : entrée desktop et action Ajouter sur mobile, session Supabase existante, foyer actif et mois sélectionné, vérification d’accès au pilote avant lecture des catégories. Le laboratoire reste accessible. Les composants et styles du pilote sont partagés.
+- Gemma sur accord explicite dans l’entrée intégrée. Le serveur exécute d’abord le moteur déterministe et renvoie la consommation nulle lorsqu’une demande reste locale. Code Edge en revue.
+- Fichiers : index.html, assistant/index.html, assistant/session.js, js/app.js, css/budget-theme.css, preview/assistant/live/live-ui.js, gateway.mjs, index.ts, scripts/assistant-live.test.mjs et scripts/v31-assistant-session.test.mjs.
+- Tests : 287 tests Node réussis et audit applicatif vert. Vérifications de changement de foyer, changement de compte, ressources de la page intégrée et absence de réservation/appel IA en mode local.
+- Restent : règles synchronisées, mouvements étendus, benchmark réel et validation avec deux sessions de test. Prochaine action : implémenter une sauvegarde concurrente des associations par foyer et vérifier la politique RLS sur PostgreSQL isolé.
+
+
+## Thèmes et largeur mobile · 27 novembre 2026
+
+- Terminé : correction de l’en-tête des revenus qui agrandissait la page de 43 px sur téléphone. Préférence système, claire ou sombre dans Paramètres, surfaces et focus communs, feuille de style de la fenêtre d’installation PWA.
+- Fichiers : index.html, css/budget-theme.css, js/budget-theme.js, workstate.md.
+- Tests : Chrome local, données synthétiques, 320/390/1280/1440 px, clair et sombre, réduction des animations. Parcours des sept étapes du Builder à chaque format. Largeur document égale à la largeur cible après correction. Audit applicatif et 9 tests documentaires réussis.
+- En cours : entrée Smart Assistant avec la session active. Restent les confirmations étendues, la synchro des règles, les validations sur foyer de test et iPhone.
+- Prochaine action : raccorder les entrées de navigation au pilote, vérifier le foyer actif à chaque requête et tester les transitions de session.
+
+
+## Reprise V3.1 · 27 novembre 2026
+
+- Branche work/v3.1-integration, PR brouillon #52 vers develop. Arbre local et GitHub identiques sur 3b949c6. Aucun conflit ni changement en attente.
+- Socle repris de #47 (68d0890), avec le CORS de #48 et le dossier crédité de #50 identiques. Lot Catégories 057c1db, Builder 3b949c6.
+- Fichiers des lots précédents : index.html, js/ui.js, js/categories.js, js/category-*.js, css/category-*.css, js/setup-builder.js, css/style.css, références preview/, tests et workflow validate.yml.
+- CI verte au dernier commit. 280 tests sur le premier lot et 4 contrôles supplémentaires du Builder. Chrome local a parcouru les sept étapes. Les essais utilisent des données synthétiques.
+- Partiel : finitions de la maquette Builder, sauvegarde et reprise après déconnexion, alertes et répartition. Deux défauts visuels observés : débordement du groupe de montants sur téléphone, fond clair en préférence sombre.
+- Restent la navigation et la session Assistant, les règles entre appareils, les confirmations étendues et la recette de bout en bout. Le pilote historique conserve ses restrictions. Les identifiants fournisseur pour le benchmark ne sont pas disponibles ici. initdb local a échoué avant démarrage.
+- Prochaine action : corriger la grille des en-têtes Catégories aux petites largeurs, harmoniser les surfaces clair/sombre et refaire les captures de 320 à 1440 px.
+
+
+
+## Lot 31ap — vocabulaire français étendu et Smart Engine local (pilote publié)
+
+- Source sur `work/v3.1-smart-assistant` / PR brouillon #47. Miroirs `js/assistant-core.js` et `supabase/functions/_shared/smart-assistant-core.js` strictement identiques.
+- Commandes composées avec sujet omis : « J'ai dépensé 20 euros chez McDo et recu 10 euros de Lena » et variantes « touché », « encaissé », « reçu de », « X euros reçus de », « Léna m'a viré » ; phrases d'achat et budgets possessifs ; épargne explicitement sur livret A.
+- Délimitation des clauses, conservation des centimes/date/payeurs, rejet des opérations partielles et du vocabulaire de suppression mêlé à des mouvements, protection contre un commerçant qui absorberait une deuxième instruction.
+- Tests : `App integrity` GitHub Actions `44962165968` réussie, 242 tests applicatifs et 2 contrôles complémentaires, zéro échec ; corpus déterministe de 2 000 commandes toujours conservé.
+- Fonction Edge `smart-assistant` **v30 ACTIVE**, JWT requis et six fichiers inspectés : seul le fichier partagé du parseur est modifié par rapport à v29. Aucun changement de schéma, RLS, RPC, secret ou opération financière réelle.
+- Publication isolée GitHub Pages `17ca4dd`, seulement `v3.1/js/assistant-core.js` et `v3.1/live/index.html`, avec cache bust `31ap`. Workflow Pages `44962214118` : build, deploy et report réussis. Démo Unslop et racine de production inchangées.
+- Reste à vérifier : exercice authentifié sur PC/iPhone avec le cas exact affichant `Smart Engine · 0 token IA`, vérification de la proposition avant confirmation et tests des limitations iOS/zoom/VoiceOver. Intégration dans l'application principale non engagée.
+- Architecture, limites de couverture et plan d'intégration : `docs/SMART_ENGINE_ARCHITECTURE.md`. Aucun merge vers `develop` ou `main`.
+
+
+## Lot 31ao — transfert des finitions Unslop au pilote connecté (préversion publiée)
+
+- Comparaison ciblée de `gh-pages:/v3.1/unslop/` avec `preview/assistant/live/` : le pilote possédait déjà le design Unslop 31an. Seules les finitions 31ao ont été reprises : actions masquées une fois la proposition verrouillée (3 parcours), demande soumise plus compacte, métadonnées lisibles à 13px et contrôles cohérents en clair/sombre.
+- Le pilote **conserve** ses appels Supabase/Cloudflare, ses contrôles d'autorisation, ses confirmations idempotentes, son moteur hybride et sa dictée. Aucun fichier du simulateur fictif (`fixture.js`, CSP bloquant les API ou chemins de simulation) n'est injecté dans le pilote connecté.
+- Tests de non-régression et références de ressources `?v=31ao` mis à jour. CI `App integrity` réussie sur le commit `3bfec9f` (run `44960147266`, après adaptation du scénario qui attendait à tort les actions après simulation).
+- Source uniquement sur `work/v3.1-smart-assistant` / PR #47 ; publication isolée `v3.1/live/` sur `gh-pages` au commit `02cd38c` (source `ce97c98`), cinq fichiers seulement. Le workflow GitHub Pages `44960809191` a terminé ses trois jobs avec succès. **Aucune modification de `main`, `develop`, des fonctions Supabase ni des données financières.** Étape suivante : vérifier les parcours connectés dans un vrai navigateur PC/iPhone, y compris la confirmation dans le foyer de test.
+
+## Lot 31an — Unslop Smart Assistant (audit validé)
+
+- Branche conservée : `work/v3.1-smart-assistant`, base distante `a6f7f34eb78b545bf0065954a1d86c9392a0f859`. Le skill original est repris depuis `work/v3.1-unslop` dans `.agents/skills/unslop` sans modification des fichiers source ni de leur attribution.
+- Pilote seulement : composer mobile mesuré à nouveau après affichage/redimensionnement, quota et exemples dépliables, hiérarchie après analyse, focus d’édition/restitution, abandon explicite avec dialog clavier, protection avant fermeture, dates et récurrences lisibles, thèmes système/clair/sombre. Marque et moteur conservés.
+- Vérification locale : 237 tests Node réussis, validateur de l’application réussi. Huit rendus 1280/1440/390/320 × clair/sombre, absence de débordement dans la proposition testée, cibles >=44px et saisie 16px. Parcours d’édition, recalcul et abandon/refus testés dans un navigateur avec serveur de données fictives utilisant le vrai moteur local.
+- Limites : le pilote hébergé refuse les appels Edge depuis localhost ; aucun test d’écriture réelle ni déploiement backend. Zoom navigateur 200% non vérifié (raccourcis in-app sans effet, Firefox Windows bloqué par la politique URL). Réduction de mouvement vérifiée par tests de branche JS et règles CSS, pas par émulation visuelle. iOS/Safari et lecteur d’écran indisponibles. Voir le rapport QA pour le périmètre exact.
+- Aucun merge, aucune publication, aucune modification des données financières ou de la synchronisation. Prochaine étape : revue de la PR et tests manuels restants, puis décision explicite de publication de préversion.
+
+
+## V3.1 — Smart Assistant, chantier isolé
+
+### 31am — résolution interactive d'une catégorie manquante (21 novembre 2026)
+- Pour une commande **simple et non ambiguë** telle que « J'ai payé 50 € en Gundam », si le nom n'existe dans aucune catégorie du foyer, Smart Engine répond localement avec `clarify` et une métadonnée serveur `missingCategory` validée (nom, montant en centimes, date, mois, propriétaire). **0 token Gemma, 0 écriture** à ce stade. Le message indique explicitement qu'aucune catégorie ne sera créée automatiquement.
+- Carte inline Deep Dark harmonisée avec les cartes existantes, sans modale : question de confirmation, nom prérempli modifiable, budget mensuel **vide et obligatoire**, dépense initiale en lecture seule, date/mois, jauge projetée lorsque le budget est valide, choix alternatif parmi les catégories de dépenses disponibles et possédées par B.
+- Deux actions explicites : **« Créer et enregistrer »** (catégorie, budget forward et dépense ponctuelle en un commit atomique via `smart_assistant_create_category_pilot_v2`) ou **« Enregistrer la dépense »** dans une catégorie déjà existante via la confirmation transactionnelle habituelle. « Annuler » ne produit aucune écriture. Budget absent ou invalide = bouton désactivé.
+- Nouveau chemin JWT `confirm_missing_category` distinct de `confirm_category`. Le serveur revalide la phrase d'origine dans un catalogue minimal indépendant des créations ultérieures, impose montant/date/mois/personne identiques à la dépense explicitement demandée, et ne permet la création qu'après action distincte ; le RPC garde le contrôle ultime anti-doublon et le reçu idempotent. Le chemin explicite antérieur continue à refuser une simple dépense.
+- Reprise réseau : identifiant `requestId` conservé lorsque le résultat est incertain, entrées et choix bloqués pour empêcher des changements de contenu durant la reprise ; conflit définitif affiché sans enregistrer partiellement.
+- Tests : **229 applicatifs + 2 contrôles complémentaires, 0 échec** sur le commit `c942ea7262f14cd035716efe6321c4d7b4c29135` (run `44949017058`). Couvre les propositions locales, fausses commandes enchaînées, doublons, autorisation JWT, montant/date non altérables, idempotence et éléments visuels/réactifs par inspection statique.
+- Edge Function Supabase **v29** ACTIVE, `verify_jwt=true` et 6 fichiers vérifiés identiques. Pas de modification SQL/migration, pas de dépense fictive écrite par le développeur, pas de modification du foyer personnel ni de `main`. Validation manuelle de l'interface et d'une confirmation authentifiée encore nécessaire.
+
+
+
+### 31al — recette finale, correction du coût IA pour les commandes citées (21 novembre 2026)
+- Retour utilisateur : la requête affichée `« J’ai payé 50 € en Gundam. »` déclenchait **Gemma 4, 2 208 tokens** alors que la variante sans guillemets était locale depuis 31ak. Origine : une paire de guillemets entourant la commande empêchait les parseurs d'actions exactes de correspondre.
+- Correction symétrique du moteur `js/assistant-core.js` et du miroir serveur `supabase/functions/_shared/smart-assistant-core.js` : retirer seulement **une paire de guillemets extérieurs équilibrée** (français, typographiques ou ASCII), avant la normalisation des montants et des contractions. Pas de suppression des guillemets internes ; parseurs des montants toujours ancrés et catégories exactes obligatoires.
+- Couverture automatisée : commande de capture exacte, guillemets alternatifs, mot-clé/phrase dictés, ponctuation finale et espaces ; catégories inconnues → clarification sans création, commandes combinées ambiguës → aucune proposition de dépense ; création explicite, budget simple et lot mixte avec guillemets continuent à être reconnus localement. Passerelle testée avec quota et fournisseur qui lèvent une erreur s'ils sont appelés pour cette requête.
+- **Preuves :** App integrity CI `44944184269` : **222 tests applicatifs + 2 contrôles complémentaires réussis, 0 échec** ; aucun changement de CSS, confirmation ou logique SQL. Contrôle lecture seule Supabase : RPC de création et lot `SECURITY DEFINER` exécutables uniquement par `service_role`, reçus de lots RLS activée et pas d'INSERT aux clients ; 1 reçu de lot confirmé existait au moment du contrôle.
+- Edge Function pilote `smart-assistant` **v28** ACTIVE, JWT obligatoire, six sources exactes comparées au déploiement. Pas de migration, pas d'écriture de test et pas d'opération du foyer personnel. Frontend `assistant-core.js?v=31al` dans l'aperçu isolé. `main` et DA Deep Dark préservés.
+- **À valider manuellement avant intégration :** la phrase exacte de la capture doit afficher `Smart Engine · 0 token IA` (non Gemma) ; tests de catégorie inexistante, budget `month` vs `forward`, lot mixte et confirmation réseau après perte de réponse, responsive mobile et dictée sur iOS/Android. Ces vérifications en navigateur ne sont PAS prétendues réussies.
+
+
+
+### 31ak — durcissement des confirmations et commandes vocales (21 novembre 2026)
+- **Reprise idempotente des lots mixtes après coupure réseau :** si une création de catégorie a été effectivement enregistrée, la réponse perdue ne doit plus transformer le même `requestId` en refus à cause de l'apparition de la catégorie dans le catalogue actualisé. La validation du brouillon exclut temporairement les catégories créées par la demande ; les opérations sur les catégories existantes restent contrôlées et **le reçu SQL atomique reste l'autorité finale**. Un nouvel `requestId` pour le même nom reste soumis au contrôle anti-doublons.
+- **Interprétation locale étendue aux expressions vocales non ambiguës**, notamment « J'ai dépensé 50 euros dans la catégorie Gundam », « J'ai payé 50 € en Gundam », « J'ai fait une dépense de 50 euros en Gundam », « 50 euros de dépense en Gundam » : résolution stricte d'une catégorie du foyer déjà disponible, aucun appel IA, aucune création implicite.
+- **Sécurité des confirmations côté navigateur :** cas de double clic, édition pendant confirmation, réutilisation du même identifiant de reprise et erreurs définitives vs réseau couverts par tests de non-régression. Pas de nouvelle écriture SQL ni de migration ; aucune création de données fictives pendant cette phase.
+- **Preuves :** CI App integrity `44942562477` sur branche `work/v3.1-smart-assistant` : **219 tests applicatifs + 2 contrôles complémentaires, 0 échec**. Les validations de simulation couvrent le rejeu d'un lot lorsque la catégorie apparaît ensuite et une réponse perdue après commit.
+- Backend pilote Supabase `smart-assistant` **v27** déployé et actif : JWT obligatoire, allowlist inchangée, six fichiers serveur vérifiés identiques aux sources. Aucune migration de schéma supplémentaire. Les clics manuels en navigateur (notamment coupure réseau et deux confirmations rapides) restent à réaliser ; `main`, le foyer personnel et la DA Deep Dark sont inchangés.
+
+
+
+### 31aj — confirmations atomiques de budgets et lots mixtes (21 novembre 2026)
+- Confirmations réelles limitées au foyer test individuel autorisé : **fixer**, **augmenter**, **diminuer** un budget en conservant la portée `month` (uniquement ce mois) ou `forward` (à partir de ce mois), ainsi que des lots contenant plusieurs changements financiers.
+- Prise en charge d'un lot mixte déjà reconnu par Smart Engine, par exemple « Ajoute 10 € au budget Maison et crée une catégorie Lego avec 60 € » : une seule confirmation enregistre les budgets, créations explicites et éventuelles dépenses/revenus uniques, ou rien.
+- Contrat sécurisé du serveur : `confirm_batch`, six champs stricts, authentification JWT Supabase, foyer allowlist, solo slot B, catégorie déjà active et détenue par le foyer, base de calcul en centimes `expectedBeforeCents` lue depuis l'aperçu. Aucun modèle IA n'exécute les montants; seules les cartes validées sont confirmables.
+- Migration `20261121195500_smart_assistant_pilot_atomic_batch.sql` appliquée au projet Supabase Budget. RPC service-only `smart_assistant_commit_batch_pilot_v1` avec verrou par foyer, baselines de budget bloquées `FOR UPDATE`, transaction SQL atomique, refus de montants négatifs, conflit sur budget ancien et refus de budgets concurrentiels. Reçus idempotents par `householdId + requestId + hash du lot`, table RLS activée, aucun droit d'insertion pour `anon` / `authenticated`.
+- Edge Function pilote `smart-assistant` **v26** active, JWT requis, six fichiers vérifiés identiques. Les scripts de l'interface préparent la même demande à chaque tentative de reprise et n'effacent pas les opérations historiques.
+- App integrity 31aj : **213 tests applicatifs + 2 contrôles complémentaires, 0 échec** (run 44941187775). Validation des écritures de budget dans un navigateur authentifié encore nécessaire ; aucune écriture financière artificielle effectuée par l'agent.
+- Garantie supplémentaire : une modification « ce mois uniquement » qui tombe exactement sur le début d'un budget `forward` recrée la règle reconduite au premier mois futur disponible. Migration corrective `20261121201000_smart_assistant_pilot_forward_override_guard.sql` installée et vérifiée ; les mois futurs ne perdent donc pas leur budget initial.
+- DA Deep Dark inchangée. Foyer personnel et branche `main` inchangés. Les opérations d'épargne et les récurrences de transactions restent en simulation.
+
+
+
+### 31ai — budget mensuel reconduit + dépense initiale atomique (21 novembre 2026)
+- Contrat métier : une catégorie est active à partir du mois demandé (ou du mois sélectionné), avec un budget `forward` qui s'applique à tous les mois suivants jusqu'à modification explicite. Aucune nouvelle catégorie créée tous les mois. Commandes « à partir de décembre 2026 » et « pour octobre 2026 » reconnues localement.
+- Création explicite + dépense initiale unique (ex. « Créer Gundam, budget 100 €, ajoute 50 € de dépense ») : deux objets financiers associés à la catégorie, **une transaction SQL atomique** via `smart_assistant_create_category_pilot_v2`. La dépense n'est pas récurrente.
+- Protection de la persistance : authentification et allowlist uniques du foyer test, RPC `SECURITY DEFINER` interdite aux rôles `anon`/`authenticated`, verrou par foyer, contrôle doublon, idempotence `requestId`, budget initial `forward` et transaction initiale facultative créée seulement si l'utilisateur la demande. Toute erreur SQL annule l'ensemble.
+- UI : « Confirmer » disponible aussi pour une catégorie + dépense, aperçu de jauge et texte explicite « budget mensuel reconduit », modification désactivée après première tentative de confirmation pour préserver l'identifiant de reprise. DA Deep Dark inchangée.
+- Gestion des catégories existante vérifiée : les suppressions par mois ou globales de `js/categories.js` masquent les catégories dans l'état sans enlever leurs transactions ; en base, la FK `transactions_category_id_household_id_fkey` est `ON DELETE RESTRICT`. Aucun code de suppression modifié ; opérations historiques conservées.
+- Limite voulue : aucune dépense **future** n'est créée comme déjà réalisée ; si le mois futur est demandé avec une dépense, l'assistant refuse et demande une opération datée réalisable. Les budgets futurs sans dépense sont acceptés.
+- Tests Core, serveur, UI et SQL statique ajoutés ; **205 tests automatisés réussis (203 applicatifs + 2 complémentaires, run 44938411873)**. Migration pilote `smart_assistant_category_budget_expense_atomic_v2` appliquée et vérifiée : `anon=false`, `authenticated=false`, `service_role=true`. Edge Function pilote `smart-assistant` **v25** active, JWT obligatoire et 5 fichiers comparés aux sources. Aucune opération de test créée en base par l'agent. Validation navigateur authentifié d'une vraie confirmation encore nécessaire.
+
+
+
+### 31ag — fiabilité des écritures et interprétation locale (21 novembre 2026)
+- Interprétation locale stricte des dépenses dans une **catégorie nommée et existante** : « ajoute 50 euro de dépense en Gundam » → dépense de 50 €, catégorie exacte Gundam si elle existe et est active ; 0 token Gemma / 0 neurone. Aucune création implicite, aucune catégorisation approximative ; si le nom n'existe pas, réponse de clarification.
+- Correction du rappel idempotent des créations après réponse réseau perdue : le texte explicite de création et le brouillon sont vérifiés indépendamment du catalogue actualisé, puis le RPC atomique fait foi pour `same`, `duplicate` ou `conflict` selon l'identifiant de demande. Une création d'un nom déjà présent reste refusée avec un **nouvel** identifiant.
+- Les confirmations de transactions existantes conservent l'identifiant déterministe de lot et le contrôle de lecture après écriture. Aucun comportement d'écriture élargi aux budgets, opérations mixtes ou catégories implicites.
+- Audit lecture seule de la base Budget : **3 transactions actives** portant une signature Smart Assistant et **0 catégorie / 0 budget** portant `smart-assistant-cat-%` à l'instant de la vérification. Les captures d'aperçu ne démontrent donc pas une création réelle confirmée. Aucune donnée ajoutée ou modifiée pour l'audit.
+- Tests ajoutés : expressions exactes, catégories absentes/masquées, rejet des actions enchaînées, zéro appel IA côté passerelle, même `requestId` après actualisation du catalogue et refus des doublons par le RPC. Contrôle navigateur authentifié des confirmations réelles restant à réaliser.
+- Ressources du pilote : `assistant-core.js?v=31ag`. Pas de changement de DA, de `main` ni de données personnelles.
+
+
+
+### 31af — noir graphite, boutons carrés et création explicite dans le foyer de test (21 novembre 2026)
+- Correction du micro et de l'envoi : boîtes `2.75rem × 2.75rem`, `box-sizing:border-box`, `display:grid;place-items:center`, padding nul, SVG centré, réduction cohérente sur très petit mobile.
+- Design « gris graphite » (pas de fond violet) dans `native-dark.css` : fond `#0d0e10`, surface `#181a1d`, secondaire `#222428`, surélévation `#2b2e33`, bordures `#373a3f`, violet de marque `#5c29d6` réservé aux accents. Suppression du halo violet dans le fond.
+- Cache revu : `assistant-core.js?v=31af`, `live-ui.js?v=31af` et `native-dark.css?v=31af` pour charger les règles réelles et éviter la copie 31aa qui appelait Gemma pour « quatre-vingt-dix euros ». Le moteur courant reconnaît la formulation orale avec 0 token IA.
+- Activation **conditionnelle** d'une création réelle de catégorie (budget initial compris), uniquement après demande explicite de création et clic `Confirmer` dans le foyer pilote solo autorisé. Une dépense simple ne crée jamais de catégorie ; les demandes mixtes, catégories + dépense et modifications de budgets restent en simulation.
+- La fonction `smart_assistant_create_category_pilot_v1` est `SECURITY DEFINER` **révoquée à `anon` et `authenticated`**, exécutable seulement par `service_role`, et vérifie qu'il s'agit d'un foyer individuel à un seul membre B. Verrou transactionnel par foyer, refus des catégories actives homonymes, idempotence par `requestId` et insertion atomique catégorie + budget `forward`.
+- Migration `20261121183000_smart_assistant_pilot_category_creation.sql` appliquée au projet Supabase Budget, rôles vérifiés (anon=false, authenticated=false, service_role=true). Edge Function `smart-assistant` v23 active, JWT requis, cinq sources comparées aux fichiers déployés.
+- Tests : App integrity sur la branche : **194 tests applicatifs + 2 complémentaires réussis**, dont 31af catégorisation explicite/verbale, refus d'une création implicite, RPC et rappel idempotent, géométrie icônes et thème sombre. Pas de test navigateur authentifié de confirmation réelle effectué par l'agent.
+- Production `main` et foyer personnel inchangés. La publication `/v3.1/live/` est isolée ; validation manuelle de l'apparence et de la création réelle par l'utilisateur avant toute extension.
+
+
+
+### 31ae — refonte deep-dark de tout le pilote Smart Assistant (21 novembre 2026)
+- Couche `preview/assistant/live/native-dark.css` chargée **après** les styles historiques uniquement dans `preview/assistant/live/index.html` ; aucun changement des pages principales Smart Budget ni de la logique financière.
+- Système de design unifié, inspiré du rendu des cartes de la conversation et reconstruit en CSS standard (composants ChatGPT non directement exportables) : fond nuit bleuté `#0a0c13`, surfaces `#161a24` / `#1f2430` / `#252b39`, bordures `#343a49`, texte `#f4f5fb`, accent de marque conservé `#5c29d6`, indicateurs positifs `#79d6a8` et négatifs `#ff929e`.
+- Application cohérente au bandeau de marque, formulaire de connexion, carte du foyer/quota, hero, suggestions, compositeur/micro/envoi, texte soumis et réponses, toutes les opérations (dépenses, revenus, budgets, catégories et mélanges), jauges, contrôles de confirmation/édition et panneau des règles.
+- Alignements centraux, grilles icône / libellés / montant, barre et labels symétriques, rythme d'espacement relatif en rem, breakpoints mobiles, contraste, focus clavier et respect de `prefers-reduced-motion`. Pas de font externe, pas de nouvelle dépendance JavaScript.
+- Validation : suite `App integrity` de la branche réussie (run 44933775815) après test de couverture du thème/contrastes. Revue visuelle manuelle en navigateur encore nécessaire ; fichier CSS de démonstration publié uniquement sous `/v3.1/live/`.
+- `main`, le foyer personnel et Supabase inchangés. Actions catégories/budgets toujours en simulation ; transactions ponctuelles existantes inchangées. Prochaine étape : comparer captures utilisateur sur desktop et mobile puis affiner avant d'étudier une migration à tout Smart Budget.
+
+
+
+### 31ad — clarification sans exemple fictif et rafraîchissement du pilote (21 novembre 2026)
+- Retrait de la phrase de repli « Crée une catégorie Lego avec un budget de 60 euros ». Quand la demande de création est ambiguë, réponse générique demandant le **nom de la catégorie** et le **budget en euros**, sans proposition d'écriture.
+- Pour « Créer la catégorie Restauration, Fast Food avec une valeur de cent euros », recherche stricte sur le catalogue du foyer authentifié ; si la catégorie « Restaurants / fast-food » y existe, retour « Cette catégorie existe déjà dans le foyer ». Synonymie limitée à cette dénomination composée, sans fusion de catégories arbitraires.
+- Capture utilisateur Gundam affichait un composant antérieur sans jauge : le rendu 31ac contient déjà `mixedBudgetBar` et `pilot-exp-budget-track` pour les créations isolées, mais le navigateur montrait l'ancienne version ; mise à jour de l'empreinte du script `live-ui.js?v=31ad` et fournir une URL de page versionnée pour purger l'HTML en cache.
+- CI avec 184 tests applicatifs + 2 complémentaires passés (run 44932687150) ; nouveau test de refus explicite et reformulation générique.
+- Edge Function pilote Supabase `smart-assistant` v22 active `verify_jwt=true`; quatre fichiers vérifiés identiques aux sources. Maintien du mode simulation pour budgets et catégories, sans toucher `main` ni au profil personnel.
+
+### 31ac — cartes de nouvelles catégories et refus strict des doublons (21 novembre 2026)
+- Le pilote rend une création de catégorie seule (ex. Gundam 90 €) dans une carte `pilot-op` identique aux dépenses habituelles, avec icône à gauche, montant à droite, barre de budget initial et 0 € utilisés si aucune dépense n'est demandée. Une dépense explicitement prévue est reflétée dans l'aperçu.
+- Correctif de sécurité sémantique : une demande « Crée une catégorie Lego » ne peut plus être transformée en modification du budget d'une catégorie existante. Le moteur répond qu'elle existe déjà et refuse toute action, en comparant les noms normalisés du catalogue du foyer récupéré sous JWT/RLS.
+- CI complète sur branche de travail : 183 tests applicatifs + 2 tests complémentaires réussis (run 44932121208). Tests DOM de l'affichage et tests de non-régression des doublons ajoutés.
+- Edge Function pilote `smart-assistant` v21 active, `verify_jwt=true`, fichiers serveur comparés et identiques aux sources. Toujours aucune création de catégorie ou écriture de budget réelle ; simulation exclusivement sur ces actions.
+- La préversion GitHub Pages `/v3.1/live/` reste isolée, `main` et production inchangées. Essais manuels de cette dernière carte encore à réaliser.
+
+### 31ab — restauration de la revue et tests de préconnexion (21 novembre 2026)
+- Cause de « Communication interrompue » après affichage des cartes : affectation de variables non déclarées `cancel` et `ok` en strict mode dans le pied de la revue mixte ; correction et différenciation erreur de rendu / erreur réseau.
+- Suppression du rendu spécial `pilot-category-card` des commandes mixtes : réutilisation des cartes `pilot-op` 31z, pictogrammes, montants et variations alignés à droite, contrôles Modifier compacts, barre du budget et progression réelle de la catégorie existante lue sous RLS ; catégorie nouvelle à 0 dépense simulée.
+- Simulation complète avec Annuler et Simuler, sans nouvelle écriture réelle. Statut du Smart Engine rétabli.
+- Test de rendu DOM simulé des deux cartes, présence du bouton Simuler, jauge et clic sans exception, plus suite App integrity CI réussie (run 44931268107).
+- Lecture seule de la structure Supabase et des politiques RLS pour évaluer une future confirmation atomique catégorie+budget. Risque identifié : `budgets` contient des règles `month` et `forward`, et synchronisation côté application requiert un contrat transactionnel idempotent ; **aucune activation d'écriture mixte avant cette protection**.
+- Publication dédiée `/v3.1/live/` à synchroniser après CI, sans changement `main` ni foyer réel.
+
+### Correctif 31aa — interprétation des budgets et créations (21 novembre 2026)
+- Signalement test 31z : « Ajoute 10 euros au budget maison et crée une catégorie Lego avec un budget de 60 euros » renvoyait à tort deux remplacements de budgets existants.
+- Le moteur déterministe produit désormais un lot mixte de revue `mixedDraft` : augmentation du budget Maison existant de 10 € (calcul sur base lue) et création indépendante d'une catégorie Lego avec 60 € ; jamais de modification du budget parent Loisirs.
+- Les demandes explicites de création de catégorie avec budget unique passent localement ; demandes mixtes ambiguës bloquées par une clarification, pas déléguées à Gemma pour créer une modification incorrecte.
+- Boulangerie → Courses ; Décathlon → Vêtements par défaut ; achat explicitement lié à l'escalade → Loisirs ; commerçant inconnu = catégorie non déterminée.
+- Revue dédiée : deux cartes séparées avec indication de création/variation et simulation exclusivement, modification autorisée, validation stricte. Aucune nouvelle écriture de budgets ou catégories.
+- CI App integrity réussi à partir de `cc028a4754b6f0beb31d84969298731e4d4c7710` (run 44930266223), 180 tests automatisés ; non-régression des commandes critiques. Tests navigateur réels encore à faire.
+- Edge Function `smart-assistant` v20 active sur le projet pilote `budget-foyer` ; `verify_jwt=true` et quatre fichiers comparés intégralement aux sources. Branche `main` inchangée.
+- Publication isolée GitHub Pages `/v3.1/live/` à synchroniser après validation du code ; aucune modification des finances personnelles ni de l'application de production.
+
+
+- Base develop : 463ae1b4beafbf96fc47d4fc16972dd434a181ea ; branche work/v3.1-smart-assistant.
+- Premier lot : interface de laboratoire, palette violette, contrat de validation et consultations bornées, dictée selon navigateur. Aucune écriture financière par l'assistant.
+- Passerelle IA préparée côté Supabase : auth + adhésion RLS, catalogue reconstruit côté serveur, listes positives de comptes/foyers de test, modèle configurable et garde quota fail-closed. Non déployée ; RPC de quota et identifiants manquants.
+- Planificateur pur de lots confirmés et banc de 200 scénarios FR fictifs préparés ; pas raccordé aux écritures réelles. Tests de contrat et runner live limité, non exécuté avec fournisseur.
+- Conversation courte : deux échanges transitoires maximum, réinitialisation, historique revalidé serveur avant quota, aucun enregistrement. Tests simulés ajoutés ; comportement réel à évaluer.
+- À terminer : quota durable, benchmark français réel, intégration de la synchronisation et confirmation sur foyer isolé, mémoire RLS, revue visuelle de la palette et tests navigateur.
+- Identité : logo SVG d'origine recoloré et déclinaisons PNG/ICO PWA régénérées ; tests statiques, décodage des images et contraste. Revue visuelle réelle à faire.
+- UI trois suggestions, dictée continue best-effort et changement de modèle préparés ; secrets renseignés selon le propriétaire, non vérifiés. Aucune activation serveur.
+- Aperçu demandé : laboratoire autonome sur foyer fictif, sans Supabase, validateurs et planificateur réels, simulateur local explicitement indiqué. Publication sous /v3.1/ après check ; production inchangée.
+
+
 ## Correctif V3.0.2 — zoom des champs iOS et tablette
 
 - Branche : `work/v3.0.2-touch-input-focus` issue de `develop` (V3.0 + correctif Historique V3.0.1).
@@ -29,7 +532,7 @@
 ## État
 
 - Dépôt : `nishiosxn/budget-app`
-- Version du code : `V3.0`
+- Version du code : `V3.1`
 - Branche de développement de référence : `develop`
 - Production du code : `main` → V2.8.1.
 - Publication : `gh-pages`.
@@ -139,3 +642,81 @@ La branche historique `v2.5.1` sert de source à ce lot de migration. Après int
 ## Prochaine action
 
 Faire passer les tests de la PR des sauvegardes, vérifier les avis de sécurité, et laisser la tâche Cron effectuer son premier lancement automatique. Réévaluer ensuite les exports chiffrés hors projet avant d'ajouter une restauration utilisateur.
+
+### Reprise V3.1 — quota pilote
+Code de réservation conservative avant inférence et SQL de revue isolé, non appliqué. Aucun appel Cloudflare. Foyer de test et forfait Workers Free à confirmer avant activation ; tests SQL et modèle réel manquants.
+
+### Pilote connecté — migration et interface
+Quota installé (`20261117235347`) ; garde permissions/plafonds et zéro résidu vérifiés. La page `preview/assistant/live/` se connecte au compte isolé sans sauvegarde de session, appelle la passerelle, reçoit un résultat revalidé, sans écriture financière. Activation explicite par deux secrets et test réel navigateur encore nécessaires.
+
+### Pilote IA — premières demandes réelles
+Plusieurs POST 200 vérifiés, 6 réservations et 917 unités le 18/11 UTC. Fonction v5 identique à la source f2326dd4. Préparation du contrôle des doublons futurs dans le planificateur, écriture toujours désactivée jusqu'à intégration et tests sur foyer isolé.
+
+### V3.1 — proposition immédiate
+Prompt et contrat de revue assouplis, catégories absentes explicitement non affectées, variation de budget calculée côté serveur, confirmation locale simulée. Validation stricte d'écriture conservée. Pas de mutation financière.
+
+### V3.1 e — référentiel et cartes
+Catégorisation déterministe et indices contrôlés Gemma, propositions de catégories manquantes, revue design et mémoire locale opt-in. Tests de la taxonomie et normalisation ajoutés ; aucune écriture financière.
+
+### 31f — Zara / raccourci sans IA
+Chemin déterministe après autorisation, avant quota : dépenses simples et commerces connus, prévisualisation uniquement. Tests ajoutés pour Zara, montant décimal, catégories manquantes et phrases complexes.
+
+### 31g — moteur hybride
+Budget relatif/absolu/zéro et alias essence/carburant, opérations familiales simples, sans appel IA, prévisualisation du budget réel quand disponible. Tests ajoutés ; aucune écriture financière.
+
+### 31h — budget et lots
+Variantes de budget relatif (course), delta UI, création explicite groupée et consultation historique catégorie en lecture seule. Tests de régression ; aucune mutation financière.
+
+### 31i — demande et Gundam
+Correction de la grammaire de création groupée et affichage du texte envoyé en mémoire. Tests de régression et publication pilote à vérifier. Aucune mutation financière.
+
+### 31j — Smart Engine
+Normalisation et lot de mouvements déterministes, corpus synthétique 2 000 cas + refus, validation stricte conservée. Publication après CI. Aucun changement des données.
+
+### 31k — DA + consommation
+Pilote connecté : composition horizontale, labels superflus retirés, pas de checkbox récurrente, barre quota neutrons estimés via RPC service_role et détail tokens retournés si disponibles. Sans écriture financière.
+
+### 31l — composer compact
+Textarea auto-ajustable, aucune hauteur fixe desktop/mobile, aucune poignée native ; redimensionnement lié à la dictée et à la saisie. Tests frontend et voix ajoutés.
+
+### 31m — provenance et épargne
+Revenus nommés, épargne et lots mixtes locaux ; badges d'origine, résumé hors transferts, tests. Aucune opération enregistrée.
+
+### 31n — catégorisation personnalisée
+Lecture des catégories réelles du foyer à la connexion ; formulaire de règle persisté directement sur ajout, tri par type, correspondance de mots, suppression. Tests spécifiques ; aucune écriture Supabase ni changement moteur.
+
+### 31o — catalogue complet dans l'éditeur de mots-clés
+Les cibles affichent le catalogue automatique intégral + catégories spécifiques du foyer sans doublon ; correspondance locale vers catégorie active ou proposition de création lors de la revue. Confirmations simulées.
+
+### 31p — retours terrain
+Six captures analysées : catégories explicites produits, date préfixée, phrase dépenses composées, revenu + épargne anaphorique, transfert interne et solde bancaire non connecté. Parsing local, suggestion de catégorie canonique, tests de sécurité ; aucune écriture.
+
+### 31q — libellés contextualisés
+Extraction des descriptions explicites pour achats, courses et magasins, affichage séparé du magasin sans ajouter de champ de stockage. Libellé par défaut = magasin ; catégorie guidée par le produit, tests. Aucune écriture réelle.
+
+### 31r — retours tests avec payeurs et pharmacie
+Deux payeurs distincts uniquement lorsque tous les propriétaires sont membres du foyer à deux ; le pilote solo retourne une explication au lieu d'une conversion invalide. Pharmacie : libellé contextuel, Santé, date exacte, sans IA. Pas de modification des accès, ni de la production.
+
+### 31s — éditeur de propositions
+Éditeur local de cartes et lots groupés, recalcul de budget/solde, retrait d'une ligne, lecture GET du budget si cible/mois modifié, validation et tests. Aucun enregistrement financier ni modification serveur.
+
+### 31t — aperçu budget
+Barre par dépense, calcul mensuel existant + lot en cours, nouvelle catégorie sans budget par défaut, définition explicite dans le lot, sélecteur groupé. Tests ; lecture seule et aucune écriture.
+
+### 31u — design system 1.0 et polish des réponses
+Charte `docs/SMART_BUDGET_DESIGN_SYSTEM.md`, tokens `preview/assistant/live/design-system.css`, structure minimale et responsive, suppression de bruit, informations critiques conservées, animations éditeur. Smart Engine, Gemma, données et production inchangés.
+
+### 31v — enregistrement réel V1 pilote solo
+Lot ponctuel dépenses/revenus catégories existantes seulement ; confirmation insert-only avec JWT/RLS, clé de lot stable et vérification. Les autres transactions et types restent en simulation. Production inchangée.
+
+### 31w — correctif état de confirmation
+Libération de busy avant rendu du brouillon valide ; protection d'enregistrement conservée. Test d'exécution du callback, aucune modification Supabase.
+
+### 31x — harmonisation géométrique et charte V1.1
+Quota et règles catégorisation alignés sur des insets cohérents, chevron accessible ; design system entièrement documenté pour future refonte globale. Front pilote seulement.
+
+### 31y — Correction du dernier écart inférieur
+Retrait du wrapper grid vide et alignement du bouton Nouvelle demande en enfant direct. Nettoyage des pistes vides de résultat et statut, standard réutilisable pour la refonte globale.
+
+### 31z — Protection de consommation IA
+Local : achats simples chez toute enseigne non ambiguë sans catégorie inventée, Décathlon reconnu. Edge : sortie plafonnée à 1024 tokens ; réservation conservatrice limitée à 320 neurones internes par prompt, pas d'inférence sur payload trop gros. Tests de limites et non-régressions. Les coûts réels peuvent différer des estimations.

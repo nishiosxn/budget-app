@@ -23,7 +23,7 @@ const missingIcons=iconFiles.filter(file=>!exists(path.join("icons",file)));
 if(missingIcons.length)fail("Icônes Smart Budget manquantes: "+missingIcons.join(", "));
 else{
   const svg=read("icons/icon.svg");
-  if(!svg.includes("#285F49")||!svg.includes("#F4F5F1")||/<text\b|>B</i.test(svg))fail("Logo SVG validé absent ou ancien B conservé");
+  if(!svg.includes("#5C29D6")||!svg.includes("#F4F5F1")||/<text\b|>B</i.test(svg))fail("Logo SVG validé absent ou ancien B conservé");
   const pngSizes={"icon-192.png":192,"icon-512.png":512,"apple-touch-icon.png":180};
   for(const [file,size] of Object.entries(pngSizes)){
     const png=fs.readFileSync(path.join(root,"icons",file));
@@ -86,13 +86,17 @@ const duplicateIds=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
 if(duplicateIds.length) fail("IDs HTML dupliqués: "+duplicateIds.join(", "));
 else ok("IDs HTML uniques");
 
-const domRefs=[...allJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+const activeJs=scripts.filter(name=>exists(path.join("js",name))).map(name=>read(path.join("js",name))).join("\n");
+// Optional legacy modules may stay in the repository for historical tests.
+// Check DOM references only in files actually loaded by this page.
+const domRefs=[...activeJs.matchAll(/getElementById\("([^"]+)"\)/g)].map(m=>m[1]);
 const dynamicIds=[...allJs.matchAll(/\.id\s*=\s*"([^"]+)"/g)].map(m=>m[1]);
 const missingDom=[...new Set(domRefs.filter(id=>!ids.includes(id)&&!dynamicIds.includes(id)))];
 if(missingDom.length) fail("Références DOM manquantes: "+missingDom.join(", "));
 else ok("Références DOM valides");
 
-const scripts=[...html.matchAll(/<script src="js\/([^"?]+\.js)(?:\?[^"]*)?" defer><\/script>/g)].map(m=>m[1]);
+
 const missingScripts=scripts.filter(f=>!exists(path.join("js",f)));
 if(missingScripts.length) fail("Scripts HTML absents: "+missingScripts.join(", "));
 else if(scripts.length) ok("Scripts référencés présents");
@@ -214,23 +218,23 @@ if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
   else ok("Catégories : détail des opérations et payeur individuel présents");
 }
 
-if(modular&&exists("js/categories.js")&&exists("js/ui.js")){
-  const categories=read("js/categories.js");
+if(modular&&exists("js/category-controls.js")&&exists("js/ui.js")){
+  const categories=read("js/category-controls.js");
   const ui=read("js/ui.js");
   const categoryUxMarkers=[
-    'data-fill-category',
-    'data-category-menu-trigger',
-    'data-bulk-action="fill-empty"',
-    'data-bulk-clear'
+    'data-demo-fill-category',
+    'data-demo-settings',
+    'data-demo-fill-all',
+    'data-demo-clear-all'
   ];
   const missingCategoryUx=categoryUxMarkers.filter(marker=>!ui.includes(marker));
-  if(missingCategoryUx.length)fail("UX Catégories V2.7 incomplète: "+missingCategoryUx.join(", "));
-  else ok("UX Catégories V2.7 présente");
-  if(!categories.includes('mode==="fill-empty"')||!categories.includes('Math.abs(current)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
+  if(missingCategoryUx.length)fail("UX Catégories V3.1 incomplète: "+missingCategoryUx.join(", "));
+  else ok("UX Catégories V3.1 présente");
+  if(!categories.includes('operation!=="fill-empty"')||!categories.includes('Math.abs(actual)>=.005||planned<=.005'))fail("Remplissage sûr des catégories absent");
   else ok("Remplissage des vides préserve les montants déjà saisis");
-  if(ui.includes('data-bulk-action="clear"'))fail("Tout vider est encore exposé au premier niveau");
-  else ok("Tout vider est masqué derrière le menu secondaire");
-  if(!categories.includes("showUndoToast")||!categories.includes("restoreCategoryTransactions"))fail("Annulation des actions rapides Catégories absente");
+  if(!categories.includes("confirmCategoryClear")||!categories.includes("pendingCategoryClear.fingerprint===fingerprint"))fail("Confirmation de la remise à zéro des catégories absente");
+  else ok("Tout vider demande une confirmation liée au mois et au foyer");
+  if(!categories.includes("showUndoToast")||!categories.includes("revertPrototypeAdjustments"))fail("Annulation des actions rapides Catégories absente");
   else ok("Actions rapides Catégories annulables");
 }
 
@@ -390,7 +394,7 @@ if(modular){
 
   const household=read("js/cloud-household.js");
   const storage=read("js/storage.js");
-  if(!household.includes('rpc("ensure_personal_household"'))fail("Provisionnement automatique du foyer absent");
+  if(!household.includes('rpc("provision_budget_builder"'))fail("Provisionnement automatique du foyer absent");
   else ok("Foyer personnel automatique présent");
   if(!storage.includes("function loadState(){\n return seedState();")||!storage.includes("function clearCurrentCloudDataCache()"))fail("Mode cloud-only non appliqué au stockage");
   else ok("État de travail conservé uniquement en mémoire");

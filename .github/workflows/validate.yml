@@ -26,5 +26,42 @@ jobs:
 
       - name: Run application audit
         run: |
-          node --test scripts/validate-docs.test.mjs scripts/cloud-sync-roundtrip.test.mjs scripts/subscriptions-overview.test.mjs scripts/backup-sql.test.mjs scripts/offsite-backup.test.mjs scripts/motion-v3.test.mjs
+          node --test scripts/*.test.mjs
           node scripts/validate.mjs
+          node scripts/assistant-benchmark.mjs --plan --diagnostic-lot > "$RUNNER_TEMP/gemma-plan.json"
+          node -e 'const p=require(process.env.RUNNER_TEMP+"/gemma-plan.json"); if(p.fallback!==153||p.groups.draft!==86||p.groups.query!==35||p.groups.clarify!==32||p.maximumPerCase>320||p.diagnosticLot?.length!==5)process.exit(1)'
+
+      - name: Build an isolated V3.1 preview package (no deploy)
+        run: node scripts/prepare-v31-preview.mjs "$RUNNER_TEMP/smart-budget-v31-preview"
+
+      - name: Keep isolated preview package
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-budget-v31-preview
+          path: ${{ runner.temp }}/smart-budget-v31-preview/
+          if-no-files-found: error
+          retention-days: 7
+
+  household-rules:
+    name: PostgreSQL · isolation des foyers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: smart_budget_ci
+          POSTGRES_PASSWORD: local_ci_only
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 5s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test rules on a disposable database
+        env:
+          PGPASSWORD: local_ci_only
+        run: psql -h 127.0.0.1 -U postgres -d smart_budget_ci -f scripts/v31-rules-db.sql
+      - name: Test atomic Builder setup on a disposable database
+        env:
+          PGPASSWORD: local_ci_only
+        run: psql -h 127.0.0.1 -U postgres -d smart_budget_ci -f scripts/v31-builder-db.sql

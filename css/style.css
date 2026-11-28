@@ -1,6 +1,6 @@
 :root{
       --bg:#f4f5f1;--panel:#fff;--panel-2:#f8f9f6;--text:#17201b;--muted:#707973;
-      --line:#e6e9e3;--accent:#285f49;--accent-soft:#e6f0eb;--income:#216b4d;--expense:#a9483d;
+      --line:#e6e9e3;--accent:#5C29D6;--accent-soft:#F0EAFE;--income:#216b4d;--expense:#a9483d;
       --warning:#a66b1f;--shadow:0 .75rem 2.125rem rgba(24,36,29,.07);--radius:1.375rem;
     }
     *{box-sizing:border-box} html{background:var(--bg)} body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
@@ -249,8 +249,8 @@
   --text:#26342d;
   --muted:#56635b;
   --line:#e1e6e0;
-  --accent:#2f6b51;
-  --accent-soft:#e9f2ed;
+  --accent:#5C29D6;
+  --accent-soft:#F0EAFE;
   --income:#23704d;
   --expense:#ad5046;
   --warning:#8f6725;
@@ -1466,8 +1466,7 @@ body.pwa-install-open{overflow:hidden}
   display:none;
   overflow:auto;
   padding:1.75rem 1rem 3rem;
-  background:rgba(236,240,235,.97);
-  backdrop-filter:blur(.75rem);
+  background:var(--bg);
 }
 .setup-builder-backdrop.open{display:block}
 .setup-builder-panel{
@@ -1485,7 +1484,7 @@ body.pwa-install-open{overflow:hidden}
 .setup-builder-head{
   padding:1.375rem 1.5rem 1.125rem;
   border-bottom:.0625rem solid var(--line);
-  background:linear-gradient(180deg,#fff 0%,#fbfcfa 100%);
+  background:var(--panel);
 }
 .setup-builder-brand{
   display:flex;
@@ -1766,7 +1765,7 @@ body.pwa-install-open{overflow:hidden}
   gap:.625rem;
   padding:1.125rem 1.5rem 1.375rem;
   border-top:.0625rem solid var(--line);
-  background:#fbfcfa;
+  background:var(--panel);
 }
 .setup-builder-skip{
   justify-self:start;
@@ -1783,6 +1782,7 @@ body.pwa-install-open{overflow:hidden}
   .setup-builder-backdrop{
     padding:0;
     background:var(--panel);
+    scroll-padding-block-end:calc(6rem + env(safe-area-inset-bottom));
   }
   .setup-builder-panel{
     width:100%;
@@ -1790,6 +1790,7 @@ body.pwa-install-open{overflow:hidden}
     border:0;
     border-radius:0;
     box-shadow:none;
+    overflow:visible;
   }
   .setup-builder-head{padding:1.0625rem 1rem .875rem}
   .setup-builder-brand img{width:2.25rem;height:2.25rem}
@@ -1825,6 +1826,7 @@ body.pwa-install-open{overflow:hidden}
   .setup-builder-actions{
     position:sticky;
     bottom:0;
+    z-index:2;
     grid-template-columns:auto 1fr;
     padding:.8125rem 1rem calc(.8125rem + env(safe-area-inset-bottom));
     box-shadow:0 -.5rem 1.5rem rgba(25,37,30,.05);
@@ -2150,9 +2152,9 @@ body.pwa-install-open{overflow:hidden}
 /* === V2.6 · Apparence personnelle par utilisateur === */
 :root{
   --app-font:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --accent-deep:#173c2d;
-  --accent-border:#bfd2c6;
-  --accent-rgb:47,107,81;
+  --accent-deep:#39138F;
+  --accent-border:#D6C7FA;
+  --accent-rgb:92,41,214;
 }
 body{font-family:var(--app-font)}
 .theme-logo{
@@ -2408,8 +2410,8 @@ input:focus-visible{
 
 /* === V2.6 · Couleur personnalisée === */
 :root{
-  --theme-color:#2f6b51;
-  --accent-surface:#2f6b51;
+  --theme-color:var(--sb-brand,#5C29D6);
+  --accent-surface:var(--accent);
 }
 .theme-logo{color:var(--theme-color,var(--accent))}
 .balance-card{background:linear-gradient(145deg,var(--accent-deep) 0%,var(--accent-surface,var(--accent)) 100%)}
@@ -2725,3 +2727,25 @@ html{font-size:clamp(.9375rem,.9rem + .18vw,1rem)}
 /* === V2.7 · état de synchronisation différée === */
 .cloud-sync-status[data-state="pending"]{color:var(--warning);border-color:rgba(143,103,37,.24);background:rgba(143,103,37,.07)}
 .cloud-sync-status[data-state="pending"]::before{background:var(--warning);box-shadow:0 0 0 .1875rem rgba(143,103,37,.12)}
+
+/* Builder V3.1 · repères du parcours et accent du foyer. */
+.setup-builder-progress{--step-dot:1.55rem;--step-gap:.25rem;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--step-gap)}
+.setup-builder-progress button{position:relative;display:grid;justify-items:center;gap:.375rem;background:transparent;color:var(--muted);border:0;min-width:0;min-height:2.75rem;padding:.25rem;isolation:isolate}
+.setup-builder-progress button:disabled{opacity:1}
+.setup-builder-progress button::before,.setup-builder-progress button::after{content:"";position:absolute;inset-block-start:1rem;inset-inline-end:calc(50% + var(--step-dot) / 2 + .25rem);width:calc(100% + var(--step-gap) - var(--step-dot) - .5rem);height:.125rem;z-index:-1}
+.setup-builder-progress button::before{background:var(--line)}
+.setup-builder-progress button::after{background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.setup-builder-progress button:first-child::before,.setup-builder-progress button:first-child::after{display:none}
+.setup-builder-progress button.done::after,.setup-builder-progress button[aria-current]::after{transform:scaleX(1)}
+.setup-builder-progress button b{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:50%;width:var(--step-dot);height:var(--step-dot);display:grid;place-items:center}
+.setup-builder-progress button.done b,.setup-builder-progress button[aria-current] b,.setup-primary{background:var(--accent);color:var(--on-accent,#fff)}
+.setup-builder-progress em{font-size:.8125rem;font-style:normal}.setup-goal{min-width:0}.setup-goal>.setup-builder-item-fields{padding:.75rem}
+@media(max-width:46rem){
+ .setup-builder-progress{--step-dot:.875rem}
+ .setup-builder-progress button{align-content:center}
+ .setup-builder-progress button b{font-size:0}
+ .setup-builder-progress button::before,.setup-builder-progress button::after{inset-block-start:calc(50% - .0625rem)}
+ .setup-builder-progress button[aria-current] b{outline:.125rem solid var(--accent-ink,var(--accent));outline-offset:.125rem}
+ .setup-builder-progress em{display:none}
+}
+@media(prefers-reduced-motion:reduce){.setup-builder-progress button::after{transition:none}}

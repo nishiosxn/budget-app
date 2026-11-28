@@ -1,0 +1,242 @@
+import "../_shared/smart-assistant-core.js";
+import {createAssistantGateway} from "./gateway.mjs";
+import {createTransactionCommit} from "./commit.mjs";
+import {createCategoryCommit} from "./category-commit.mjs";
+import {createBatchCommit} from "./batch-commit.mjs";
+import {createAtomicReview} from "./atomic-review.mjs";
+
+const originAllowed="https://nishiosxn.github.io";
+const env=(name:string)=>Deno.env.get(name)||"";
+const supabaseUrl=env("SUPABASE_URL").replace(/\/$/,"");
+const publishable=env("SMART_ASSISTANT_SUPABASE_PUBLISHABLE")||env("SUPABASE_ANON_KEY");
+const cfg={enabled:env("SMART_ASSISTANT_ENABLED")==="true",model:env("SMART_ASSISTANT_MODEL")||"@cf/google/gemma-4-26b-a4b-it",account:env("SMART_ASSISTANT_CF_ACCOUNT_ID"),token:env("SMART_ASSISTANT_CF_TOKEN")};
+const uuidPattern=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const allowlist=new Set(env("SMART_ASSISTANT_TEST_HOUSEHOLDS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
+const allowedUsers=new Set(env("SMART_ASSISTANT_TEST_USERS").split(",").map(s=>s.trim()).filter(x=>uuidPattern.test(x)));
+const extendedMovements=env("SMART_ASSISTANT_EXTENDED_MOVEMENTS")==="true";
+const atomicReviewEnabled=extendedMovements&&env("SMART_ASSISTANT_ATOMIC_REVIEW")==="true";
+const monthPattern=/^\d{4}-(0[1-9]|1[0-2])$/;
+const headersFor=(token:string)=>({apikey:publishable,Authorization:"Bearer "+token,"Content-Type":"application/json"});
+const timeout=()=>AbortSignal.timeout(10000);
+async function rest(token:string,path:string,params:Record<string,string>={}){
+ const url=new URL(supabaseUrl+path);
+ for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
+ const r=await fetch(url,{headers:headersFor(token),signal:timeout()});
+ if(!r.ok)throw Error("REST rejected");
+ return await r.json();
+}
+function nowInParis(){
+ const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Paris",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const get=(k:string)=>parts.find(p=>p.type===k)?.value;
+ return [get("year"),get("month"),get("day")].join("-");
+}
+async function authorize(token:string,householdId:string,input:Record<string,unknown>){
+ if(!allowlist.has(householdId)||!supabaseUrl||!publishable)return null;
+ // Verify the bearer token with Supabase Auth; never trust user_metadata or body ownership.
+ const a=await fetch(supabaseUrl+"/auth/v1/user",{headers:headersFor(token),signal:timeout()});
+ if(!a.ok)return null;
+ const user=await a.json();
+ if(!uuidPattern.test(user?.id||"")||!allowedUsers.has(user.id))return null;
+ const member=await rest(token,"/rest/v1/household_members",{select:"slot",household_id:"eq."+householdId,user_id:"eq."+user.id,limit:"2"});
+ if(!Array.isArray(member)||member.length!==1||!["A","B"].includes(member[0].slot))return null;
+ const [households,rows]=await Promise.all([
+  rest(token,"/rest/v1/households",{select:"person_b_label,person_a_label,household_mode",id:"eq."+householdId,limit:"1"}),
+  rest(token,"/rest/v1/categories",{select:"id,legacy_id,name,type,is_saving,owner_slot,created_from,excluded_months,updated_at",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"})
+ ]);
+ if(!Array.isArray(households)||households.length!==1||!Array.isArray(rows)||rows.length>300)return null;
+ const h=households[0],solo=h.household_mode==="solo",actor=member[0].slot;
+ if(solo?actor!=="B":!extendedMovements||h.household_mode!=="couple")return null;
+ const pilotMembers=await rest(token,"/rest/v1/household_members",{select:"user_id",household_id:"eq."+householdId,limit:"3"});
+ if(!Array.isArray(pilotMembers)||pilotMembers.length!==(solo?1:2)||pilotMembers.length!==allowedUsers.size||pilotMembers.some((m:{user_id:string})=>!allowedUsers.has(m.user_id)))return null;
+ const current=nowInParis(),currentMonth=current.slice(0,7);
+ const selectedMonth=typeof input.selectedMonth==="string"&&monthPattern.test(input.selectedMonth)?input.selectedMonth:currentMonth;
+ const categories=rows.map(row=>({id:row.legacy_id||row.id,name:String(row.name).slice(0,120),kind:row.type==="income"?"income":row.is_saving?"saving":"expense",owner:solo?"B":row.owner_slot==="A"||row.owner_slot==="B"?row.owner_slot:"common",createdFrom:String(row.created_from).slice(0,7),hiddenMonths:(Array.isArray(row.excluded_months)?row.excluded_months:[]).filter(x=>typeof x==="string"&&monthPattern.test(x)).slice(0,240)})).filter(c=>c.id&&monthPattern.test(c.createdFrom));
+ const firstMonth=categories.map(c=>c.createdFrom).sort()[0]||currentMonth;
+ const lastMonth=String(Number(currentMonth.slice(0,4))+2)+"-12";
+ if(selectedMonth<firstMonth||selectedMonth>lastMonth)return null;
+ if(atomicReviewEnabled){
+  const versions=new Map(rows.map(r=>[r.legacy_id||r.id,r.updated_at]));
+  for(const category of categories)Object.assign(category,{version:versions.get(category.id)});
+ }
+ return {userId:user.id,context:{movementCommit:extendedMovements,atomicReview:atomicReviewEnabled,today:current,firstMonth,lastMonth,selectedMonth,solo,actor,members:{B:String(h.person_b_label||"Personne 1").slice(0,60),A:solo?null:String(h.person_a_label||"Personne 2").slice(0,60)},categories}};
+}
+async function reserve(_token:string,_householdId:string,units:number){
+ // This RPC is server-only. The gateway has already authenticated and authorized
+ // the user and household; no user JWT can reserve quota directly.
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");
+ if(!key||!Number.isInteger(units)||units<1||units>1000)throw Error("Quota configuration unavailable");
+ const r=await fetch(supabaseUrl+"/rest/v1/rpc/reserve_smart_assistant_quota_v1",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({p_units:units}),signal:timeout()});
+ if(!r.ok)throw Error("Quota RPC unavailable");
+ return (await r.json())===true;
+}
+async function getQuota(){
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");if(!key)throw Error("Missing quota credential");
+ const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_quota_status_v1",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:"{}",signal:timeout()});
+ if(!r.ok)throw Error("Quota status RPC unavailable");
+ const q=await r.json();
+ if(!q||typeof q.utcDay!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(q.utcDay)||!Number.isSafeInteger(q.units)||q.units<0||q.units>8000||!Number.isSafeInteger(q.requests)||q.requests<0||q.requests>100)return null;
+ return {utcDay:q.utcDay,units:q.units,requests:q.requests,limit:8000,requestLimit:100};
+}
+async function infer(model:string,payload:unknown){
+ if(!/^[a-f0-9]{32}$/i.test(cfg.account)||!cfg.token)throw Error("Provider not configured");
+ const r=await fetch("https://api.cloudflare.com/client/v4/accounts/"+cfg.account+"/ai/run/"+model,{method:"POST",headers:{Authorization:"Bearer "+cfg.token,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(35000)});
+ if(!r.ok){console.warn("smart-assistant provider HTTP",r.status);throw Error("Provider rejected");}
+ return await r.json();
+}
+async function planPreview(token:string,householdId:string,result:any,context:any){
+ const plans=result.operations.map((o:any,i:number)=>({o,i})).filter(({o}:any)=>o.kind==="plan"&&o.categoryId!==null);
+ if(!plans.length)return [];
+ const cats=await rest(token,"/rest/v1/categories",{select:"id,legacy_id",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"});
+ if(!Array.isArray(cats)||cats.length>300)return [];
+ const previews=[];
+ for(const {o,i} of plans){
+  const matches=cats.filter((c:any)=>(c.legacy_id||c.id)===o.categoryId);if(matches.length!==1)continue;
+  const month=o.date.slice(0,7)+"-01";
+  const rows=await rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope,updated_at",household_id:"eq."+householdId,category_id:"eq."+matches[0].id,archived_at:"is.null",month:"lte."+month,order:"month.desc",limit:"301"});
+  if(!Array.isArray(rows)||rows.length>300)continue;
+  const baseline=(globalThis as any).SmartBudgetAssistantCore.readBudgetBaseline(rows,month.slice(0,7));if(!baseline)continue;
+  const computed=(globalThis as any).SmartBudgetAssistantCore.resolvePlanAmount(o,baseline.beforeCents);
+  if(computed)previews.push({index:i,...computed,budgetVersion:baseline.budgetVersion});
+ }
+ return previews;
+}
+async function queryPreview(token:string,householdId:string,result:any,context:any){
+ if(result.query!=="categories"||!result.categoryId||result.owner!==null||result.month>context.today.slice(0,7))return null;
+ const cat=context.categories.find((c:any)=>c.id===result.categoryId&&c.kind==="expense");
+ if(!cat||result.month<cat.createdFrom||cat.hiddenMonths.includes(result.month))return null;
+ const cats=await rest(token,"/rest/v1/categories",{select:"id,legacy_id",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"});
+ if(!Array.isArray(cats)||cats.length>300)return null;
+ const matches=cats.filter((c:any)=>(c.legacy_id||c.id)===cat.id);if(matches.length!==1)return null;
+ const categoryUuid=matches[0].id,month=result.month+"-01";
+ const [y,m]=result.month.split("-").map(Number),next=new Date(Date.UTC(y,m,1)).toISOString().slice(0,10);
+ const [budgets,transactions,recurrences]=await Promise.all([
+  rest(token,"/rest/v1/budgets",{select:"month,planned_amount,scope",household_id:"eq."+householdId,category_id:"eq."+categoryUuid,archived_at:"is.null",month:"lte."+month,limit:"1000"}),
+  rest(token,"/rest/v1/transactions",{select:"category_id,transaction_date,amount,metadata",household_id:"eq."+householdId,category_id:"eq."+categoryUuid,archived_at:"is.null",and:"(transaction_date.gte."+month+",transaction_date.lt."+next+")",limit:"1000"}),
+  rest(token,"/rest/v1/recurrences",{select:"category_id,amount,start_month,end_month,excluded_months,overrides,metadata",household_id:"eq."+householdId,archived_at:"is.null",start_month:"lte."+month,limit:"1000"})
+ ]);
+ if([budgets,transactions,recurrences].some(r=>!Array.isArray(r)||r.length>=1000))return null;
+ const totals=(globalThis as any).SmartBudgetAssistantCore.categoryReport({month:result.month,categoryId:cat.id,categoryUuid,budgets,transactions,recurrences});
+ return totals?{name:cat.name,month:result.month,...totals}:null;
+}
+const quickExpense=(command:string,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.quickCommand(command,context);
+const normalizeDraft=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeModelDraft(value,context,command);
+const normalizeProvider=(value:unknown,context:unknown,command:string)=>(globalThis as any).SmartBudgetAssistantCore.normalizeProviderResult(value,context,command);
+const validateReview=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateReview(value,context);
+const validate=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateResult(value,context);
+const validateCategoryDraft=(value:unknown,context:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateCategoryDraft(value,context);
+// Same official sync contract as the application; authenticated JWT and RLS.
+const commitTransactions=createTransactionCommit({
+ validateReview,
+ readCategories:(token:string,householdId:string)=>rest(token,"/rest/v1/categories",{select:"id,legacy_id,type,is_saving",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"}),
+ readRows:(token:string,householdId:string,ids:string[])=>rest(token,"/rest/v1/transactions",{select:"id,household_id,category_id,legacy_id,owner_slot,amount,transaction_date,label,metadata,archived_at",household_id:"eq."+householdId,id:"in.("+ids.join(",")+")",limit:"13"}),
+ insertRows:async(token:string,rows:unknown[])=>{
+  const r=await fetch(supabaseUrl+"/rest/v1/transactions",{method:"POST",headers:{...headersFor(token),Prefer:"return=minimal","x-smart-budget-sync-version":"20261116-hf1"},body:JSON.stringify(rows),signal:timeout()});
+  if(!r.ok)throw Error("Insert rejected");
+ }
+});
+// A new category and its initial forward budget are written in ONE PostgreSQL
+// transaction via the service-only RPC. This path is unavailable for implicit
+// category guesses, transactions and multi-action mixed drafts.
+const commitCategory=createCategoryCommit({
+ validateCategoryDraft,recognizeCreation:quickExpense,recognizeMissingExpense:quickExpense,
+ writeCategory:async ({householdId,userId,requestId,name,month,budgetCents,expenseCents,expenseDate}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!key||!uuidPattern.test(householdId)||!allowedUsers.has(userId)||!allowlist.has(householdId))
+   throw Error("Pilot category confirmation is not authorized");
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_create_category_pilot_v2",{
+   method:"POST",
+   headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},
+   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,p_request_id:requestId,p_name:name,p_month:month,p_budget_cents:budgetCents,p_expense_cents:expenseCents,p_expense_date:expenseDate}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic category creation unavailable");
+  return await r.json();
+ }
+});
+// All monetary changes in one SQL transaction. The Edge server never grants
+// its service credential to a user, and both allowlists are checked again.
+const commitBatch=createBatchCommit({
+ validateReview,
+ validateMixedDraft:(v:unknown,c:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateMixedDraft(v,c),
+ recognize:quickExpense,
+ normalizeCategory:(globalThis as any).SmartBudgetAssistantCore.normalizeCategory,
+ readCategories:(token:string,householdId:string)=>rest(token,"/rest/v1/categories",{
+  select:"id,legacy_id,type,is_saving,owner_slot",household_id:"eq."+householdId,archived_at:"is.null",limit:"301"
+ }),
+ writeBatch:async ({householdId,userId,requestId,actions}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!key||!uuidPattern.test(householdId)||!uuidPattern.test(userId)
+    ||!allowlist.has(householdId)||!allowedUsers.has(userId))
+   throw Error("Batch authorization unavailable");
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_commit_batch_pilot_v1",{
+   method:"POST",
+   headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},
+   body:JSON.stringify({p_household_id:householdId,p_actor_user_id:userId,
+    p_request_id:requestId,p_actions:actions}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic batch rejected");
+  return await r.json();
+ }
+});
+async function commitMovements({householdId,userId,requestId,draft,context}:any){
+ const key=env("SUPABASE_SERVICE_ROLE_KEY");
+ if(!extendedMovements||!context.movementCommit||!key||!allowlist.has(householdId)||!allowedUsers.has(userId))
+  return {status:403,body:{error:"household_not_authorized"}};
+ const checked=validateReview(draft,context);
+ if(!checked.ok||checked.value.operations.some((op:any)=>!op.categoryId||!["income","expense","saving"].includes(op.kind)))
+  return {status:422,body:{error:"confirm_not_supported"}};
+ try{
+  const response=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_confirm_movements",{
+   method:"POST",headers:{...headersFor(key),apikey:key,"x-smart-budget-sync-version":"20261116-hf1"},signal:timeout(),
+   body:JSON.stringify({p_household_id:householdId,p_actor:userId,p_test_users:[...allowedUsers],p_request_id:requestId,p_operations:checked.value.operations})
+  });
+  if(!response.ok)throw Error("Movement RPC unavailable");
+  const result=await response.json();
+  if(result?.status==="forbidden")return {status:403,body:{error:"household_not_authorized"}};
+  if(result?.status==="conflict")return {status:409,body:{error:"confirm_conflict"}};
+  if(result?.status==="invalid")return {status:422,body:{error:"confirm_not_supported"}};
+  if(!["created","same"].includes(result?.status)||result.count!==checked.value.operations.length)throw Error("Invalid receipt");
+  return {status:200,body:{commit:{requestId,count:result.count}}};
+ }catch{return {status:503,body:{error:"confirm_unavailable"}}}
+}
+const atomicReview=createAtomicReview({
+ validateReview,validateCategoryDraft,recognize:quickExpense,
+ validateMixedDraft:(v:unknown,c:unknown)=>(globalThis as any).SmartBudgetAssistantCore.validateMixedDraft(v,c),
+ normalizeCategory:(globalThis as any).SmartBudgetAssistantCore.normalizeCategory,
+ write:async ({action,householdId,userId,requestId,actions}:any)=>{
+  const key=env("SUPABASE_SERVICE_ROLE_KEY");
+  if(!atomicReviewEnabled||!key||!allowlist.has(householdId)||!allowedUsers.has(userId))
+   return {status:"forbidden"};
+  const r=await fetch(supabaseUrl+"/rest/v1/rpc/smart_assistant_atomic_review",{
+   method:"POST",headers:{...headersFor(key),apikey:key,"x-smart-budget-sync-version":"20261116-hf1"},
+   body:JSON.stringify({p_household:householdId,p_actor:userId,p_roster:[...allowedUsers],p_request:requestId,p_action:action,p_actions:actions}),
+   signal:timeout()
+  });
+  if(!r.ok)throw Error("Atomic review RPC unavailable");
+  return await r.json();
+ }
+});
+const handle=createAssistantGateway({enabled:cfg.enabled&&allowlist.size===1&&(allowedUsers.size===1||extendedMovements&&allowedUsers.size===2),providerEnabled:env("SMART_ASSISTANT_FREE_PLAN_CONFIRMED")==="true"&&!!cfg.account&&!!cfg.token,model:cfg.model,authorize,reserve,infer,validate,validateReview,normalizeDraft,normalizeProvider,quickExpense,planPreview,queryPreview,getQuota,commitTransactions,commitCategory,commitBatch,commitMovements,atomicReview});
+function headers(req:Request){
+ return {"Access-Control-Allow-Origin":req.headers.get("origin")===originAllowed?originAllowed:"null","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info, x-smart-budget-sync-version, x-retry-count, traceparent, tracestate, baggage","Vary":"Origin","Cache-Control":"no-store","Content-Type":"application/json"};
+}
+Deno.serve(async req=>{
+ const h=headers(req);
+ if(req.headers.get("origin")&&req.headers.get("origin")!==originAllowed)return new Response(null,{status:403,headers:h});
+ if(req.method==="OPTIONS")return new Response(null,{status:204,headers:h});
+ if(req.method!=="POST")return new Response(null,{status:405,headers:h});
+ const authorization=req.headers.get("authorization")||"";
+ if(!authorization.startsWith("Bearer "))return new Response(JSON.stringify({error:"authentication_required"}),{status:401,headers:h});
+ let body;
+ try{
+  const contentLength=Number(req.headers.get("content-length")||0);
+  if(contentLength>90000)throw Error("Too large");
+  const stream=req.body?.getReader();if(!stream)throw Error("Missing body");
+  const decoder=new TextDecoder("utf-8",{fatal:true});let total=0,input="";
+  for(;;){const {done,value}=await stream.read();if(done)break;total+=value.byteLength;if(total>90000){await stream.cancel();throw Error("Too large")}input+=decoder.decode(value,{stream:true})}
+  input+=decoder.decode();body=JSON.parse(input);
+ }catch{return new Response(JSON.stringify({error:"invalid_request"}),{status:400,headers:h})}
+ const result=await handle({token:authorization.slice(7),body});
+ return new Response(JSON.stringify(result.body),{status:result.status,headers:h});
+});

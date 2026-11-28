@@ -12,7 +12,7 @@ function enterPrimaryActionFor(input){
 }
 document.querySelectorAll('input:not([type="file"])').forEach(input=>input.setAttribute("enterkeyhint","done"));
 document.addEventListener("keydown",e=>{
- if(e.key==="Escape"){closeModal();closeCategoryEditor();closeCategoryDelete();closeRecurrenceDelete();closeRecurrenceEdit();closeSettings();if(state.onboardingComplete)closeOnboarding();return}
+ if(e.key==="Escape"||e.defaultPrevented)return;
  if(e.key!=="Enter"||e.isComposing||e.repeat||e.defaultPrevented)return;
  const input=e.target;
  if(!(input instanceof HTMLInputElement)||["file","button","submit","checkbox","radio"].includes(input.type))return;
@@ -25,3 +25,9 @@ document.addEventListener("keydown",e=>{
 syncHouseholdUi();
 render();
 initCloudAuth();
+
+document.querySelectorAll("[data-open-assistant]").forEach(link=>{
+ link.addEventListener("click",()=>{
+  if(activeHouseholdId)link.search=new URLSearchParams({month:monthKey(state.selectedMonth)}).toString();
+ });
+});

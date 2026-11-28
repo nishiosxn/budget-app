@@ -39,7 +39,7 @@ function setupBuilderKey(householdId=activeHouseholdId){
 }
 function markSetupBuilderPending(householdId){
  if(!householdId)return;
- try{localStorage.setItem(setupBuilderKey(householdId),"pending")}catch{}
+ try{localStorage.setItem(setupBuilderKey(householdId),"reset-pending")}catch{}
 }
 function markSetupBuilderComplete(householdId=activeHouseholdId){
  if(!householdId)return;
@@ -47,7 +47,7 @@ function markSetupBuilderComplete(householdId=activeHouseholdId){
 }
 function setupBuilderNeedsRun(householdId=activeHouseholdId){
  if(!householdId)return false;
- try{return localStorage.getItem(setupBuilderKey(householdId))==="pending"}catch{return false}
+ try{return localStorage.getItem(setupBuilderKey(householdId))==="reset-pending"}catch{return false}
 }
 
 class SetupBuilderController{
@@ -95,7 +95,7 @@ class SetupBuilderController{
     <header class="setup-builder-head">
      <div class="setup-builder-brand">
       ${typeof themeLogoMarkup==="function"?themeLogoMarkup("theme-logo setup-builder-logo"):""}
-      <div><span>Budget foyer · V2.9</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div>
+      <div><span>Smart Budget · V3.1</span><h2 id="setupBuilderTitle">Construire mon budget</h2></div>
      </div>
      <div id="setupBuilderProgress" class="setup-builder-progress" aria-label="Progression"></div>
     </header>
@@ -104,7 +104,7 @@ class SetupBuilderController{
     <footer class="setup-builder-actions">
      <button class="btn btn-ghost" type="button" data-setup-action="back">Retour</button>
      <button class="setup-builder-skip" type="button" data-setup-action="skip">Configurer plus tard</button>
-     <button class="btn btn-income" type="button" data-setup-action="next">Continuer</button>
+     <button class="btn setup-primary" type="button" data-setup-action="next">Continuer</button>
     </footer>
    </section>`;
 
@@ -122,11 +122,30 @@ class SetupBuilderController{
   return root;
  }
 
- open(){
+ open(initialSetup=null){
   if(!activeHouseholdId)return;
+  const userId=typeof cloudSession!=="undefined"?cloudSession?.user?.id:null;
+  if(this.householdId===activeHouseholdId&&this.userId===userId&&this.root?.classList.contains("open"))return;
   this.originalAppearance=typeof currentUserAppearance==="function"?currentUserAppearance():null;
+  this.householdId=activeHouseholdId;
+  this.userId=userId;
+  this.initialSetup=initialSetup;
+  this.requestId=initialSetup?.requestId||null;
+  this.initialPayload=initialSetup?.draft||null;
+  this.serverDraftConfirmed=!!this.initialPayload;
+  this.initialDigest=cloudSyncDigest();
+  this.prepared=!!this.initialPayload;
   this.draft=this.createInitialDraft();
-  this.step=0;
+  this.step=this.prepared?6:0;
+  this.checkpointId=initialSetup?.checkpointId||null;
+  this.checkpointAttempt=null;
+  this.checkpointInvalid=false;
+  if(!this.prepared&&this.checkpointId){
+   const restored=this.restoreCheckpoint(initialSetup.checkpoint);
+   if(restored){this.draft=restored.editor;this.step=restored.step}
+   else this.checkpointInvalid=true;
+  }
+  this.emptyDraft=JSON.stringify(this.draft);
   this.editingName="";
   this.customPickerOpen=this.draft.appearance.color==="custom";
   this.customPickerHsv=hexToHsv(this.draft.appearance.customColor);
@@ -139,6 +158,9 @@ class SetupBuilderController{
   root.setAttribute("aria-hidden","false");
   document.documentElement.classList.add("setup-builder-open");
   this.render({preserveScroll:false});
+  if(this.prepared)this.setStatus("Brouillon retrouvé. Vérifie le bilan et reprends la validation.");
+  else if(this.checkpointInvalid)this.setStatus("Brouillon incompatible. Aucune donnée ne sera remplacée.","error");
+  else if(this.checkpointId)this.setStatus("Brouillon retrouvé. Reprends à la dernière étape enregistrée.");
  }
 
  close(){
@@ -152,6 +174,110 @@ class SetupBuilderController{
   this.appearanceFrame=0;
   clearTimeout(this.appearanceCommitTimer);
   this.appearanceCommitTimer=null;
+  this.draft=null;
+  this.emptyDraft=null;
+  this.initialPayload=null;
+  this.checkpointAttempt=null;
+  this.checkpointId=null;
+  this.checkpointInvalid=false;
+ }
+
+ // Restore only known fields; the editor never interprets stored text as HTML.
+ restoreCheckpoint(value){
+  const obj=v=>v&&typeof v==="object"&&!Array.isArray(v);
+  if(!obj(value)||!Number.isInteger(value.step)||value.step<0||value.step>6||!obj(value.editor))return null;
+  const d=value.editor, fresh=this.createInitialDraft();
+  if(!obj(d.household)||!obj(d.appearance)||!["solo","couple"].includes(d.household.mode))return null;
+  for(const [k,max] of [["name",80],["personA",40],["personB",40]]){
+   if(typeof d.household[k]!=="string"||d.household[k].length>max)return null;
+   fresh.household[k]=d.household[k];
+  }
+  fresh.household.mode=d.household.mode;
+  fresh.appearance=normalizeUserAppearance(d.appearance);
+  const row=(v,base={},custom=false)=>{
+   if(!obj(v)||typeof v.name!=="string"||v.name.length>100||
+    typeof v.selected!=="boolean"||!["A","B","common"].includes(v.owner))return null;
+   const result={...base,name:v.name,selected:v.selected,owner:v.owner};
+   for(const k of ["amount","duration","target"]){
+    if(v[k]===undefined)continue;
+    if(!["string","number"].includes(typeof v[k])||String(v[k]).length>32||
+     (String(v[k])!==""&&(!Number.isFinite(Number(v[k]))||Number(v[k])<0)))return null;
+    result[k]=v[k];
+   }
+   for(const k of ["renamed","saving","envelope"]){
+    if(v[k]===undefined)continue;
+    if(typeof v[k]!=="boolean")return null;
+    result[k]=v[k];
+   }
+   if(v.section!==undefined){if(!["Obligatoires","Abonnements","Vie courante"].includes(v.section))return null;result.section=v.section}
+   if(v.period!==undefined){if(!["monthly","annual"].includes(v.period))return null;result.period=v.period}
+   if(v.plan!==undefined){if(!Number.isInteger(v.plan)||v.plan<0||v.plan>10)return null;result.plan=v.plan}
+   if(custom){
+    if(typeof v.id!=="string"||!/^setup-[a-z0-9_-]{1,95}$/i.test(v.id))return null;
+    result.id=v.id;result.custom=true;
+   }
+   return result;
+  };
+  for(const group of ["income","expense","subscriptions"]){
+   if(!obj(d[group])||Object.keys(d[group]).length!==Object.keys(fresh[group]).length)return null;
+   for(const key of Object.keys(fresh[group])){
+    const restored=row(d[group][key],fresh[group][key]);
+    if(!restored)return null;
+    fresh[group][key]=restored;
+   }
+  }
+  const ids=new Set();
+  for(const group of ["customIncome","customExpense","customSubscriptions"]){
+   if(!Array.isArray(d[group])||d[group].length>250)return null;
+   for(const entry of d[group]){
+    const restored=row(entry,{},true);
+    if(!restored||ids.has(restored.id)||ids.size>=250)return null;
+    ids.add(restored.id);fresh[group].push(restored);
+   }
+  }
+  return {step:value.step,editor:fresh};
+ }
+
+ // Commit a private editor checkpoint before advancing. The final stage and
+ // financial commit remain separate and require explicit confirmation.
+ async moveToStep(next){
+  if(this.busy||this.prepared||!Number.isInteger(next)||next<0||next>6)return;
+  if(!this.initialSetup){this.step=next;this.editingName="";this.render({preserveScroll:false});return}
+  if(this.checkpointInvalid||!navigator.onLine||!cloudSyncReady){
+   this.setStatus("Connexion requise ou brouillon incompatible. La saisie reste sur cet écran.","error");return;
+  }
+  const household=this.householdId,user=this.userId;
+  const same=()=>activeHouseholdId===household&&cloudSession?.user?.id===user&&this.householdId===household&&this.userId===user&&!!this.draft;
+  if(!same())return;
+  const editor=JSON.parse(JSON.stringify(this.draft));
+  const data={previous:this.checkpointId,step:next,editor};
+  const signature=JSON.stringify(data);
+  const request=this.checkpointAttempt?.signature===signature?this.checkpointAttempt.request:crypto.randomUUID();
+  this.checkpointAttempt={signature,request};
+  this.busy=true;this.render();
+  const content=this.root?.querySelector?.("#setupBuilderContent");
+  if(content)content.inert=true;
+  this.setStatus("Enregistrement du brouillon…");
+  try{
+   const receipt=await cloudBudgetBuilderSetup(household,"checkpoint",request,data);
+   if(!same())return;
+   if(receipt?.status!=="checkpoint"||receipt.checkpointId!==request)throw Error("Brouillon non confirmé.");
+   this.checkpointId=request;this.checkpointAttempt=null;
+   this.emptyDraft=JSON.stringify(editor);this.step=next;this.editingName="";
+   this.busy=false;this.render({preserveScroll:false});
+   this.setStatus("Brouillon enregistré.");
+  }catch(error){
+   if(!same())return;
+   this.busy=false;this.render();
+   this.setStatus(error?.code==="40001"?"Brouillon modifié sur un autre appareil. Rouvre le Builder pour reprendre la version enregistrée.":"Enregistrement non confirmé. Réessaie sans fermer cet écran.","error");
+  }finally{
+   if(same()){this.busy=false;if(content)content.inert=false}
+  }
+ }
+
+ hasUnreceivedDraft(){
+  return !!(this.initialSetup&&this.draft&&!this.serverDraftConfirmed&&
+   this.root?.classList.contains("open")&&JSON.stringify(this.draft)!==this.emptyDraft);
  }
 
  createInitialDraft(){
@@ -248,7 +374,8 @@ class SetupBuilderController{
  }
 
  number(value){
-  return Math.max(0,Math.round((Number(String(value??"").replace(",","."))||0)*100)/100);
+  const amount=Number(String(value??"").replace(",","."));
+  return Number.isFinite(amount)?Math.max(0,Math.round(amount*100)/100):0;
  }
 
  setStatus(message="",type=""){
@@ -259,9 +386,9 @@ class SetupBuilderController{
  }
 
  progressMarkup(){
-  const labels=["Foyer","Revenus","Dépenses","Abonnements","Résumé"];
+  const labels=["Foyer","Revenus","Charges","Abonnements","Épargne","Budgets","Bilan"];
   return labels.map((label,index)=>
-   `<span class="${index===this.step?"active":index<this.step?"done":""}"><b>${index+1}</b><em>${label}</em></span>`
+   `<button type="button" data-step="${index}" aria-label="Étape ${index+1} · ${label}" ${index===this.step?'aria-current="step"':""} ${index>=this.step||this.prepared||this.busy?"disabled":""} class="${index<this.step?"done":""}"><b>${index+1}</b><em>${label}</em></button>`
   ).join("");
  }
 
@@ -269,7 +396,7 @@ class SetupBuilderController{
 
  nameMarkup(key,name){
   if(this.editingName===key){
-   return `<input class="setup-builder-inline-name" type="text" maxlength="60" data-setup-name="${escapeHtml(key)}" value="${escapeHtml(name)}" autofocus>`;
+   return `<input class="setup-builder-inline-name" type="text" maxlength="100" data-setup-name="${escapeHtml(key)}" value="${escapeHtml(name)}" autofocus>`;
   }
   return `<strong>${escapeHtml(name)}</strong>`;
  }
@@ -303,7 +430,7 @@ class SetupBuilderController{
     <label>
      <span>Montant</span>
      <div class="setup-builder-money">
-      <input type="number" min="0" step="0.01" inputmode="decimal" data-setup-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" ${disabled}>
+      <input type="number" min="0" max="99999999" step="0.01" inputmode="decimal" data-setup-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" ${disabled}>
       <b>€</b>
      </div>
     </label>
@@ -317,6 +444,11 @@ class SetupBuilderController{
      :""}
    </div>
   </div>`;
+ }
+
+ subscriptionMonthlyCents(data){
+  const billedCents=Math.round(this.number(data.amount)*100);
+  return data.period==="annual"?Math.round(billedCents/12):billedCents;
  }
 
  subscriptionRow(item,data,keyOverride=""){
@@ -345,10 +477,13 @@ class SetupBuilderController{
     <label>
      <span>Montant</span>
      <div class="setup-builder-money">
-      <input type="number" min="0" step="0.01" inputmode="decimal" data-setup-sub-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" placeholder="${plan?.price==null&&!custom?"À saisir":""}" ${disabled}>
+      <input type="number" min="0" max="99999999" step="0.01" inputmode="decimal" data-setup-sub-amount="${escapeHtml(key)}" value="${escapeHtml(data.amount)}" placeholder="${plan?.price==null&&!custom?"À saisir":""}" ${disabled}>
       <b>€</b>
      </div>
     </label>
+    <label><span>Facturation</span><select data-setup-period="${escapeHtml(key)}" ${disabled}>
+     <option value="monthly">Mensuelle</option><option value="annual" ${data.period==="annual"?"selected":""}>Annuelle</option>
+    </select></label>
     ${this.isSolo()?"":`<label><span>Payé par</span><select data-setup-sub-owner="${escapeHtml(key)}" ${disabled}>${this.ownerOptions(data.owner)}</select></label>`}
    </div>
    ${!custom&&item.sourceUrl?`<a class="setup-builder-source" href="${item.sourceUrl}" target="_blank" rel="noopener">Source : ${escapeHtml(item.source)}</a>`:""}
@@ -394,7 +529,7 @@ class SetupBuilderController{
   if(this.step===0){
    const solo=this.isSolo();
    return `
-    <div class="setup-builder-title"><span>Étape 1 sur 5</span><h3>Votre foyer</h3><p>Choisissez si vous gérez votre budget seul ou à deux. Ce choix reste modifiable plus tard dans Paramètres.</p></div>
+    <div class="setup-builder-title"><span>Étape 1 sur 7</span><h3>Votre foyer</h3><p>Choisissez si vous gérez votre budget seul ou à deux. Ce choix reste modifiable plus tard dans Paramètres.</p></div>
     <div class="setup-builder-mode" role="group" aria-label="Type de foyer">
      <button type="button" data-setup-mode="solo" class="${solo?"active":""}"><b>Seul</b><span>Un seul budget personnel</span></button>
      <button type="button" data-setup-mode="couple" class="${!solo?"active":""}"><b>À deux</b><span>Répartition entre deux personnes</span></button>
@@ -412,7 +547,7 @@ class SetupBuilderController{
 
   if(this.step===1){
    return `
-    <div class="setup-builder-title"><span>Étape 2 sur 5</span><h3>Revenus prévus</h3><p>Cochez uniquement les revenus qui vous concernent. Une catégorie décochée ne sera pas créée dans votre budget.</p></div>
+    <div class="setup-builder-title"><span>Étape 2 sur 7</span><h3>Revenus prévus</h3><p>Cochez uniquement les revenus qui vous concernent. Une catégorie décochée ne sera pas créée dans votre budget.</p></div>
     <div class="setup-builder-list">
      ${this.visibleBaseIncomes().map(item=>this.itemRow(item,this.draft.income[item.id],"income")).join("")}
      ${this.draft.customIncome.map(data=>this.itemRow({id:data.id,name:data.name},data,"income",`customIncome:${data.id}`)).join("")}
@@ -422,28 +557,39 @@ class SetupBuilderController{
 
   if(this.step===2){
    return `
-    <div class="setup-builder-title"><span>Étape 3 sur 5</span><h3>Dépenses de base</h3><p>Activez seulement les charges utiles. Les montants restent des prévisions et ne créent aucune dépense réelle.</p></div>
+    <div class="setup-builder-title"><span>Étape 3 sur 7</span><h3>Dépenses de base</h3><p>Activez seulement les charges utiles. Les montants restent des prévisions et ne créent aucune dépense réelle.</p></div>
     <div class="setup-builder-list">
-     ${this.visibleBaseExpenses().map(item=>this.itemRow(item,this.draft.expense[item.id],"expense")).join("")}
-     ${this.draft.customExpense.map(data=>this.itemRow({id:data.id,name:data.name,saving:false},data,"expense",`customExpense:${data.id}`)).join("")}
+     ${this.visibleBaseExpenses().filter(item=>!item.saving&&!["fuel","groceries"].includes(item.id)).map(item=>this.itemRow(item,this.draft.expense[item.id],"expense")).join("")}
+     ${this.draft.customExpense.filter(data=>!data.saving&&!data.envelope).map(data=>this.itemRow({id:data.id,name:data.name,saving:false},data,"expense",`customExpense:${data.id}`)).join("")}
      ${this.addCard("expense","Ajouter une dépense personnalisée")}
     </div>`;
   }
 
   if(this.step===3){
    return `
-    <div class="setup-builder-title"><span>Étape 4 sur 5</span><h3>Abonnements</h3><p>Activez uniquement vos abonnements. Les tarifs proposés sont modifiables.</p></div>
+    <div class="setup-builder-title"><span>Étape 4 sur 7</span><h3>Abonnements</h3><p>Activez uniquement vos abonnements. Les tarifs proposés sont modifiables.</p></div>
     <div class="setup-builder-list setup-builder-subscriptions">
      ${SETUP_SUBSCRIPTIONS.map(item=>this.subscriptionRow(item,this.draft.subscriptions[item.id])).join("")}
      ${this.draft.customSubscriptions.map(data=>this.subscriptionRow({id:data.id,name:data.name,plans:[]},data,`customSubscription:${data.id}`)).join("")}
      ${this.addCard("subscription","Ajouter un abonnement")}
     </div>
-    <p class="setup-builder-note">Les tarifs servent uniquement d’aide à la saisie. Le montant réellement facturé reste modifiable.</p>`;
+    <p class="setup-builder-note">Les tarifs servent uniquement d’aide à la saisie. Le budget mensuel d’un abonnement annuel correspond au montant saisi divisé par douze, arrondi au centime.</p>`;
   }
 
-  const totals=this.totals();
+  if(this.step===4){
+   const rows=this.visibleBaseExpenses().filter(item=>item.saving).map(item=>this.goalRow(item,this.draft.expense[item.id],"expense:"+item.id));
+   for(const data of this.draft.customExpense.filter(row=>row.saving))rows.push(this.goalRow(data,data,"customExpense:"+data.id));
+   return '<div class="setup-builder-title"><span>Étape 5 sur 7</span><h3>Objectifs d’épargne</h3><p>Le montant mensuel devient le budget de la catégorie d’épargne. La cible et la durée servent au calcul.</p></div><div class="setup-builder-list">'+rows.join("")+this.addCard("saving","Ajouter un objectif")+'</div>';
+  }
+  if(this.step===5){
+   const rows=this.visibleBaseExpenses().filter(item=>["fuel","groceries"].includes(item.id)).map(item=>this.itemRow(item,this.draft.expense[item.id],"expense"));
+   for(const data of this.draft.customExpense.filter(row=>row.envelope))rows.push(this.itemRow(data,data,"expense","customExpense:"+data.id));
+   return '<div class="setup-builder-title"><span>Étape 6 sur 7</span><h3>Budgets du mois</h3><p>Répartis les montants prévus pour la vie courante.</p></div><div class="setup-builder-list">'+rows.join("")+this.addCard("envelope","Ajouter un budget")+'</div>';
+  }
+  const groups=this.initialPayload?this.stagedMonthlyLines():this.monthlyLines();
+  const totals=this.totals(groups);
   return `
-   <div class="setup-builder-title"><span>Étape 5 sur 5</span><h3>Votre budget de départ</h3><p>Vérifiez le résultat avant la création des catégories.</p></div>
+   <div class="setup-builder-title"><span>Étape 7 sur 7</span><h3>Votre budget de départ</h3><p>Vérifiez le résultat avant la création des catégories.</p></div>
    <div class="setup-builder-summary">
     <div><span>Revenus prévus</span><strong>${euro(totals.income)}</strong></div>
     <div><span>Dépenses prévues</span><strong>${euro(totals.expense)}</strong></div>
@@ -451,8 +597,9 @@ class SetupBuilderController{
    </div>
    <div class="setup-builder-recap">
     <strong>${totals.count} catégorie${totals.count>1?"s":""} active${totals.count>1?"s":""}</strong>
-    <span>Mode ${this.isSolo()?"seul":"à deux"} · historique réel vide · tout reste modifiable ensuite.</span>
-   </div>`;
+    <span>Mode ${(this.initialPayload?.mode||this.draft.household.mode)==="solo"?"seul":"à deux"} · prévisions mensuelles</span>
+   </div>
+   ${this.breakdown(groups)}`;
  }
 
  render({preserveScroll=true}={}){
@@ -468,10 +615,10 @@ class SetupBuilderController{
   const next=root.querySelector('[data-setup-action="next"]');
   const skip=root.querySelector('[data-setup-action="skip"]');
   back.hidden=this.step===0;
-  next.textContent=this.step===4?"Créer mon budget":"Continuer";
+  next.textContent=this.prepared?"Reprendre la validation":this.step===6?"Créer mon budget":"Continuer";
   next.disabled=this.busy;
-  back.disabled=this.busy;
-  skip.disabled=this.busy;
+  back.disabled=this.busy||this.prepared;
+  skip.disabled=this.busy||this.prepared;
 
   this.setStatus("");
 
@@ -500,6 +647,8 @@ class SetupBuilderController{
   const target=event.target instanceof Element?event.target:event.target?.parentElement;
   if(!target||!this.root?.classList.contains("open"))return;
 
+  const stepButton=target.closest("[data-step]");
+  if(stepButton&&!stepButton.disabled&&!this.busy&&!this.prepared){this.moveToStep(Number(stepButton.dataset.step));return}
   const action=target.closest("[data-setup-action]");
   if(action){
    const name=action.dataset.setupAction;
@@ -558,6 +707,7 @@ class SetupBuilderController{
   const target=event.target;
   if(!(target instanceof HTMLInputElement))return;
 
+  if(target.dataset.goal){this.updateGoal(target.dataset.key,target.dataset.goal,target.value);return}
   if(target.dataset.setupHousehold){
    const field=target.dataset.setupHousehold;
    this.draft.household[field]=target.value;
@@ -573,7 +723,7 @@ class SetupBuilderController{
 
   if(target.dataset.setupAmount){
    const data=this.getData(target.dataset.setupAmount);
-   if(data)data.amount=target.value;
+   if(data){data.amount=target.value;if(target.closest(".setup-goal"))this.updateGoal(target.dataset.setupAmount,"amount",target.value)}
    return;
   }
 
@@ -624,6 +774,9 @@ class SetupBuilderController{
    const item=SETUP_SUBSCRIPTIONS.find(entry=>entry.id===id);
    const data=this.draft.subscriptions[id];
    if(!item||!data)return;
+   data.period="monthly";
+   const period=target.closest("[data-builder-row]")?.querySelector("[data-setup-period]");
+   if(period)period.value="monthly";
    const index=Math.max(0,Number(target.value)||0);
    data.plan=index;
    const price=item.plans[index]?.price;
@@ -634,6 +787,11 @@ class SetupBuilderController{
    return;
   }
 
+  if(target.dataset.setupPeriod){
+   const data=this.getData(target.dataset.setupPeriod);
+   if(data)data.period=target.value==="annual"?"annual":"monthly";
+   return;
+  }
   if(target.dataset.setupSubOwner){
    const data=this.getData(target.dataset.setupSubOwner);
    if(data)data.owner=target.value;
@@ -743,8 +901,8 @@ class SetupBuilderController{
   if(type==="income"){
    this.draft.customIncome.push({id,name:"Nouveau revenu",selected:true,amount:"",owner,custom:true,renamed:false});
    this.editingName=`customIncome:${id}`;
-  }else if(type==="expense"){
-   this.draft.customExpense.push({id,name:"Nouvelle dépense",selected:true,amount:"",owner,section:"Obligatoires",custom:true,renamed:false});
+  }else if(["expense","saving","envelope"].includes(type)){
+   this.draft.customExpense.push({id,name:type==="saving"?"Nouvel objectif":type==="envelope"?"Nouveau budget":"Nouvelle dépense",selected:true,amount:"",owner,saving:type==="saving",envelope:type==="envelope",section:type==="envelope"?"Vie courante":"Obligatoires",custom:true,renamed:false});
    this.editingName=`customExpense:${id}`;
   }else if(type==="subscription"){
    this.draft.customSubscriptions.push({id,name:"Nouvel abonnement",selected:true,amount:"",owner,custom:true,renamed:false});
@@ -753,53 +911,80 @@ class SetupBuilderController{
   this.render();
  }
 
+ goalRow(item,data,key){
+  const disabled=data.selected?"":"disabled";
+  return `<div class="setup-goal">${this.itemRow(item,data,"expense",key)}
+   <div class="setup-builder-item-fields"><label>Montant à épargner (€)<input type="number" step=".01" min="0" max="99999999" data-goal="target" data-key="${escapeHtml(key)}" value="${escapeHtml(data.target||"")}" ${disabled}></label>
+   <label>Durée (mois)<input type="number" min="1" max="1200" step="1" data-goal="duration" data-key="${escapeHtml(key)}" value="${escapeHtml(data.duration||"")}" ${disabled}></label></div></div>`;
+ }
+
+ updateGoal(key,field,value){
+  const data=this.getData(key);
+  if(!data)return;
+  data[field]=value;
+  const cents=Math.round(this.number(data.target)*100);
+  if(field==="amount"){
+   const monthly=Math.round(this.number(value)*100);
+   data.duration=monthly&&cents?Math.ceil(cents/monthly):"";
+  }else if(cents&&Number.isInteger(Number(data.duration))&&Number(data.duration)>0){
+   data.amount=(Math.ceil(cents/Number(data.duration))/100).toFixed(2);
+  }
+  const row=this.root.querySelector(`[data-builder-row="${CSS.escape(key)}"]`)?.closest(".setup-goal");
+  if(row&&field!=="amount")row.querySelector("[data-setup-amount]").value=data.amount;
+  if(row&&field==="amount")row.querySelector('[data-goal="duration"]').value=data.duration;
+ }
+
  goBack(){
-  if(this.busy||this.step<=0)return;
-  this.editingName="";
-  this.step--;
-  this.render({preserveScroll:false});
+  if(this.busy||this.prepared||this.step<=0)return;
+  this.moveToStep(this.step-1);
  }
 
  goNext(){
   if(this.busy)return;
-  if(this.step<4){
-   this.editingName="";
-   this.step++;
-   this.render({preserveScroll:false});
+  const invalid=this.root?.querySelector("input:invalid");
+  if(invalid){invalid.reportValidity();return}
+  if(this.step<6){
+   this.moveToStep(this.step+1);
    return;
   }
   this.finish();
  }
 
- totals(){
-  let income=0,expense=0,count=0;
-
-  for(const item of this.visibleBaseIncomes()){
-   const data=this.draft.income[item.id];
-   if(data.selected){income+=this.number(data.amount);count++}
-  }
-  for(const data of this.draft.customIncome){
-   if(data.selected){income+=this.number(data.amount);count++}
-  }
+ monthlyLines(){
+  const groups={income:[],charges:[],subscriptions:[],savings:[],envelopes:[]};
+  const add=(group,data,cents=Math.round(this.number(data.amount)*100))=>{
+   if(data.selected)groups[group].push({name:data.name,cents});
+  };
+  for(const item of this.visibleBaseIncomes())add("income",this.draft.income[item.id]);
+  for(const data of this.draft.customIncome)add("income",data);
   for(const item of this.visibleBaseExpenses()){
-   const data=this.draft.expense[item.id];
-   if(data.selected){expense+=this.number(data.amount);count++}
+   const group=item.saving?"savings":["groceries","fuel"].includes(item.id)?"envelopes":"charges";
+   add(group,this.draft.expense[item.id]);
   }
-  for(const data of this.draft.customExpense){
-   if(data.selected){expense+=this.number(data.amount);count++}
-  }
-  for(const item of SETUP_SUBSCRIPTIONS){
-   const data=this.draft.subscriptions[item.id];
-   if(data.selected){expense+=this.number(data.amount);count++}
-  }
-  for(const data of this.draft.customSubscriptions){
-   if(data.selected){expense+=this.number(data.amount);count++}
-  }
-  return {income,expense,count};
+  for(const data of this.draft.customExpense)add(data.saving?"savings":data.envelope?"envelopes":"charges",data);
+  const subscriptions=[...Object.values(this.draft.subscriptions),...this.draft.customSubscriptions];
+  for(const data of subscriptions)add("subscriptions",data,this.subscriptionMonthlyCents(data));
+  return groups;
+ }
+
+ totals(groups=this.monthlyLines()){
+  const sum=rows=>rows.reduce((total,row)=>total+row.cents,0);
+  const expenses=[...groups.charges,...groups.subscriptions,...groups.savings,...groups.envelopes];
+  return {income:sum(groups.income)/100,expense:sum(expenses)/100,count:groups.income.length+expenses.length};
+ }
+
+ breakdown(groups){
+  const labels={income:"Revenus",charges:"Charges fixes",subscriptions:"Abonnements",savings:"Épargne",envelopes:"Budgets du mois"};
+  return Object.entries(groups).filter(([,rows])=>rows.length).map(([group,rows])=>{
+   const total=rows.reduce((sum,row)=>sum+row.cents,0);
+   return `<details class="setup-breakdown"><summary>${labels[group]} <strong>${euro(total/100)}</strong></summary><dl>${rows.map(row=>
+    `<div><dt>${escapeHtml(row.name)}</dt><dd>${euro(row.cents/100)}</dd></div>`).join("")}</dl></details>`;
+  }).join("");
  }
 
  async skip(){
   if(this.busy)return;
+  if(this.initialSetup){await this.finishInitialSetup({skip:true});return}
   if(this.originalAppearance&&typeof applyUserAppearance==="function")applyUserAppearance(this.originalAppearance);
   markSetupBuilderComplete();
   state.onboardingComplete=true;
@@ -811,7 +996,7 @@ class SetupBuilderController{
   }
  }
 
- applyBaseCategories(){
+ applyBaseCategories(target=state){
   const selectedIncome=new Set();
   const selectedExpense=new Set();
 
@@ -819,9 +1004,9 @@ class SetupBuilderController{
    const data=this.draft.income[item.id];
    const eligible=!this.isSolo()||item.owner!=="A";
    const selected=eligible&&!!data.selected;
-   state.incomeBudgets[item.id]=selected?this.number(data.amount):0;
-   state.incomeCategoryOwners[item.id]=this.effectiveOwner(data.owner);
-   state.incomeCategoryNames[item.id]=String(data.name||item.name).trim()||item.name;
+   target.incomeBudgets[item.id]=selected?this.number(data.amount):0;
+   target.incomeCategoryOwners[item.id]=this.effectiveOwner(data.owner);
+   target.incomeCategoryNames[item.id]=String(data.name||item.name).trim()||item.name;
    if(selected)selectedIncome.add(item.id);
   }
 
@@ -829,39 +1014,41 @@ class SetupBuilderController{
    const data=this.draft.expense[item.id];
    const eligible=!this.isSolo()||item.owner!=="A";
    const selected=eligible&&!!data.selected;
-   state.categoryBudgets[item.id]=selected?this.number(data.amount):0;
-   state.categoryOwners[item.id]=this.effectiveOwner(data.owner);
-   state.categoryNames[item.id]=String(data.name||item.name).trim()||item.name;
+   target.categoryBudgets[item.id]=selected?this.number(data.amount):0;
+   target.categoryOwners[item.id]=this.effectiveOwner(data.owner);
+   target.categoryNames[item.id]=String(data.name||item.name).trim()||item.name;
    if(selected)selectedExpense.add(item.id);
   }
 
-  state.deletedIncomeCategoriesGlobal=(state.baseIncomeCategories||[])
+  target.deletedIncomeCategoriesGlobal=(target.baseIncomeCategories||[])
    .map(item=>item.id)
    .filter(id=>!selectedIncome.has(id));
 
-  state.deletedCategoriesGlobal=(state.baseExpenseCategories||[])
+  target.deletedCategoriesGlobal=(target.baseExpenseCategories||[])
    .map(item=>item.id)
    .filter(id=>!selectedExpense.has(id));
  }
 
- applyCustomCategories(){
-  const setupIncomePrefix="setup-income-";
-  const setupExpensePrefixes=["setup-expense-","setup-subscription-","setup-sub-"];
-
-  state.customIncomeCategories=(state.customIncomeCategories||[])
-   .filter(item=>!String(item.id).startsWith(setupIncomePrefix));
-
-  state.customExpenseCategories=(state.customExpenseCategories||[])
-   .filter(item=>!setupExpensePrefixes.some(prefix=>String(item.id).startsWith(prefix)));
+ applyCustomCategories(target=state){
+  // Keep unrelated categories, including rows produced by an earlier setup.
+  const incomes=new Set(this.draft.customIncome.filter(row=>row.selected).map(row=>row.id));
+  const expenses=new Set([
+   ...this.draft.customExpense,...this.draft.customSubscriptions
+  ].filter(row=>row.selected).map(row=>row.id));
+  for(const item of SETUP_SUBSCRIPTIONS){
+   if(this.draft.subscriptions[item.id].selected)expenses.add("setup-sub-"+item.id);
+  }
+  target.customIncomeCategories=(target.customIncomeCategories||[]).filter(row=>!incomes.has(row.id));
+  target.customExpenseCategories=(target.customExpenseCategories||[]).filter(row=>!expenses.has(row.id));
 
   for(const data of this.draft.customIncome){
    if(!data.selected)continue;
    const name=String(data.name||"Revenu").trim()||"Revenu";
    const budget=this.number(data.amount);
    const owner=this.effectiveOwner(data.owner);
-   state.customIncomeCategories.push({id:data.id,name,budget,owner,createdFrom:state.createdMonth,custom:true});
-   state.incomeBudgets[data.id]=budget;
-   state.incomeCategoryOwners[data.id]=owner;
+   target.customIncomeCategories.push({id:data.id,name,budget,owner,createdFrom:target.createdMonth,custom:true});
+   target.incomeBudgets[data.id]=budget;
+   target.incomeCategoryOwners[data.id]=owner;
   }
 
   for(const data of this.draft.customExpense){
@@ -869,13 +1056,13 @@ class SetupBuilderController{
    const name=String(data.name||"Dépense").trim()||"Dépense";
    const budget=this.number(data.amount);
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
-    id:data.id,name,budget,owner,
+   target.customExpenseCategories.push({
+    id:data.id,name,budget,owner,saving:!!data.saving,
     section:["Obligatoires","Abonnements","Vie courante"].includes(data.section)?data.section:"Obligatoires",
-    createdFrom:state.createdMonth,custom:true
+    createdFrom:target.createdMonth,custom:true
    });
-   state.categoryBudgets[data.id]=budget;
-   state.categoryOwners[data.id]=owner;
+   target.categoryBudgets[data.id]=budget;
+   target.categoryOwners[data.id]=owner;
   }
 
   for(const item of SETUP_SUBSCRIPTIONS){
@@ -884,76 +1071,175 @@ class SetupBuilderController{
    const id=`setup-sub-${item.id}`;
    const plan=item.plans[data.plan]||item.plans[0];
    const name=String(data.name||item.name).trim()||item.name;
-   const budget=this.number(data.amount);
+   const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
+   target.customExpenseCategories.push({
     id,name,budget,owner,section:"Abonnements",
-    createdFrom:state.createdMonth,custom:true,setupPlan:plan?.name||""
+    createdFrom:target.createdMonth,custom:true,setupPlan:plan?.name||""
    });
-   state.categoryBudgets[id]=budget;
-   state.categoryOwners[id]=owner;
+   target.categoryBudgets[id]=budget;
+   target.categoryOwners[id]=owner;
   }
 
   for(const data of this.draft.customSubscriptions){
    if(!data.selected)continue;
    const name=String(data.name||"Abonnement").trim()||"Abonnement";
-   const budget=this.number(data.amount);
+   const budget=this.subscriptionMonthlyCents(data)/100;
    const owner=this.effectiveOwner(data.owner);
-   state.customExpenseCategories.push({
+   target.customExpenseCategories.push({
     id:data.id,name,budget,owner,section:"Abonnements",
-    createdFrom:state.createdMonth,custom:true
+    createdFrom:target.createdMonth,custom:true
    });
-   state.categoryBudgets[data.id]=budget;
-   state.categoryOwners[data.id]=owner;
+   target.categoryBudgets[data.id]=budget;
+   target.categoryOwners[data.id]=owner;
   }
  }
 
+ buildInitialPayload(skip){
+  const target=seedState();
+  const household=normalizeHousehold(skip?state.household:this.draft.household);
+  target.household=household;
+  if(!skip){
+   this.applyBaseCategories(target);
+   this.applyCustomCategories(target);
+  }
+  const categories=cloudLocalCategories(target)
+   .filter(item=>!item.archived&&(household.mode!=="solo"||item.owner_slot!=="A"))
+   .map(item=>{
+    const budgets=item.type==="income"?target.incomeBudgets:target.categoryBudgets;
+    const envelope=["groceries","fuel"].includes(item.local_id)||item.local_id.startsWith("setup-envelope-");
+    const subscription=/^setup-sub(?:scription)?-/.test(item.local_id);
+    const bucket=item.type==="income"?"income":item.is_saving?"savings":subscription?"subscriptions":envelope?"envelopes":"charges";
+    return {
+     id:item.local_id,name:item.name,type:item.type,section:item.group_name,
+     owner:household.mode==="solo"?"B":item.owner_slot||"common",
+     saving:item.is_saving,custom:item.is_custom,bucket,
+     amountCents:Math.round(this.number(budgets[item.local_id]??item.category.budget)*100)
+    };
+   });
+  return {...household,month:target.createdMonth+"-01",categories,
+   appearance:normalizeUserAppearance(skip?this.originalAppearance:this.draft.appearance)};
+ }
+
+ stagedMonthlyLines(){
+  const groups={income:[],charges:[],subscriptions:[],savings:[],envelopes:[]};
+  for(const row of this.initialPayload.categories){
+   const group=Object.hasOwn(groups,row.bucket)?row.bucket:"charges";
+   groups[group].push({name:row.name,cents:row.amountCents});
+  }
+  return groups;
+ }
+
+ async finishInitialSetup({skip=false}={}){
+  const household=this.householdId,user=this.userId;
+  const sameSession=()=>activeHouseholdId===household&&cloudSession?.user?.id===user&&this.householdId===household&&this.userId===user;
+  if(this.busy||!sameSession())return;
+  if(this.checkpointInvalid){this.setStatus("Brouillon incompatible : création bloquée.","error");return;}
+  if(!navigator.onLine||!cloudSyncReady||cloudPushInProgress){
+   this.setStatus("Connexion requise. Garde cet écran ouvert pour conserver la saisie en cours.","error");return;
+  }
+  this.busy=true;
+  this.step=6;
+  this.render();
+  this.setStatus("Enregistrement du brouillon et création du budget.");
+  try{
+   if(!this.initialPayload){this.initialPayload=this.buildInitialPayload(skip);if(this.checkpointId)this.initialPayload.checkpointId=this.checkpointId;}
+   this.requestId??=crypto.randomUUID();
+   this.prepared=true;
+   let receipt=await cloudBudgetBuilderSetup(household,"stage",this.requestId,this.initialPayload);
+   if(!sameSession())return;
+   this.serverDraftConfirmed=receipt?.status==="staged"||receipt?.status==="complete";
+   if(receipt?.status==="staged"&&receipt.draft){
+    this.requestId=receipt.requestId;
+    this.initialPayload=receipt.draft;
+    this.busy=false;
+    this.render();
+    this.setStatus("Un brouillon a déjà été enregistré. Vérifie son bilan avant de reprendre.");
+    return;
+   }
+   if(receipt?.status==="staged"&&receipt.requestId===this.requestId){
+    await saveUserAppearance(this.initialPayload.appearance);
+    if(!sameSession())return;
+    receipt=await cloudBudgetBuilderSetup(household,"commit",this.requestId);
+   }
+   if(!sameSession())return;
+   if(receipt?.status!=="complete")throw Error("Le résultat de la création n’a pas pu être confirmé.");
+   await cloudLoadState();
+   if(!sameSession())return;
+   markSetupBuilderComplete(household);
+   this.originalAppearance=null;
+   this.close();
+   showUndoToast("Budget de départ chargé");
+  }catch(error){
+   if(!sameSession())return;
+   if(error?.code==="22023"&&this.initialSetup.status==="pending"){
+    this.initialPayload=null;this.requestId=null;this.prepared=false;
+   }
+   this.busy=false;
+   this.render();
+   this.setStatus(error?.message||"Création en attente. Reprends la validation.","error");
+  }finally{if(this.householdId===household&&this.userId===user)this.busy=false}
+ }
+
  async finish(){
-  if(this.busy||!activeHouseholdId)return;
+  if(this.initialSetup){await this.finishInitialSetup();return}
+  if(this.busy||!activeHouseholdId||activeHouseholdId!==this.householdId)return;
+  if(!navigator.onLine||!cloudSession||!cloudSyncReady||cloudPushInProgress){
+   this.setStatus("Connexion ou synchronisation en attente. Ton brouillon est conservé.","error");return;
+  }
+  if(!this.prepared&&this.initialDigest!==cloudSyncDigest()){
+   this.setStatus("Le foyer a changé pendant la configuration. Vérifie son état avant de recommencer.","error");return;
+  }
   this.busy=true;
   this.render();
   this.setStatus("Création du budget et synchronisation…");
 
   try{
-   state.household=normalizeHousehold({
-    name:String(this.draft.household.name||"Mon foyer").trim()||"Mon foyer",
-    personB:String(this.draft.household.personB||"Personne 1").trim()||"Personne 1",
-    personA:String(this.draft.household.personA||"Personne 2").trim()||"Personne 2",
-    mode:this.draft.household.mode
-   });
+   if(!this.prepared){
+    state.household=normalizeHousehold({
+     name:String(this.draft.household.name||"Mon foyer").trim()||"Mon foyer",
+     personB:String(this.draft.household.personB||"Personne 1").trim()||"Personne 1",
+     personA:String(this.draft.household.personA||"Personne 2").trim()||"Personne 2",
+     mode:this.draft.household.mode
+    });
 
-   this.applyBaseCategories();
-   this.applyCustomCategories();
-   state.onboardingComplete=true;
+    this.applyBaseCategories();
+    this.applyCustomCategories();
+    state.onboardingComplete=true;
 
-   applyCategoryState();
-   syncHouseholdUi();
-   render();
-   saveState();
+    applyCategoryState();
+    syncHouseholdUi();
+    render();
+    this.prepared=true;
+    saveState();
+   }
 
    if(typeof saveUserAppearance==="function")await saveUserAppearance(this.draft.appearance);
-   if(typeof cloudPushLocalState==="function")await cloudPushLocalState({force:true});
+   if(activeHouseholdId!==this.householdId)throw Error("Le foyer actif a changé.");
+   await cloudPushLocalState({force:true});
+   if(activeHouseholdId!==this.householdId||!cloudSession||cloudUnsyncedSession||cloudPushInProgress||!navigator.onLine)throw Error("Configuration en attente de synchronisation.");
 
-   markSetupBuilderComplete();
+   markSetupBuilderComplete(this.householdId);
    this.originalAppearance=null;
-   this.setStatus("Budget créé.","success");
-   setTimeout(()=>{
-    this.close();
-    showUndoToast?.("Budget de départ créé");
-   },220);
+   this.close();
+   showUndoToast?.("Budget de départ créé");
   }catch(error){
-   console.error("Setup builder finish",error);
-   this.setStatus(error?.message||"Impossible de créer le budget. Réessaie.","error");
-  }finally{
    this.busy=false;
-   if(this.root?.classList.contains("open"))this.render();
-  }
+   this.render();
+   this.setStatus(error?.message||"Impossible de créer le budget. Réessaie.","error");
+  }finally{this.busy=false}
  }
 }
 
 const setupBuilderController=new SetupBuilderController();
 
-function openSetupBuilder(){setupBuilderController.open()}
+globalThis.addEventListener?.("beforeunload",event=>{
+ if(!setupBuilderController.hasUnreceivedDraft())return;
+ event.preventDefault();
+ event.returnValue="";
+});
+
+function openSetupBuilder(initialSetup=null){setupBuilderController.open(initialSetup)}
 function closeSetupBuilder(){setupBuilderController.close()}
 function skipSetupBuilder(){setupBuilderController.skip()}
 function setupBuilderGo(delta){delta<0?setupBuilderController.goBack():setupBuilderController.goNext()}

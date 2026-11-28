@@ -22,7 +22,7 @@
     menu.classList.remove("open");
     menu.setAttribute("aria-hidden","true");
     fab.setAttribute("aria-expanded","false");
-    if(restoreFocus)fab.focus();
+    if(restoreFocus)fab.focus({preventScroll:true});
   };
   const openQuickAdd=()=>{
     menu.classList.add("open");
@@ -49,7 +49,7 @@
     if(!isOpen())return;
     if(event.key==="Escape"){event.preventDefault();closeQuickAdd();return}
     if(event.key!=="Tab")return;
-    const actions=[...panel.querySelectorAll("[data-add]")];
+    const actions=[...panel.querySelectorAll("button:not(:disabled),a[href]")];
     if(!actions.length)return;
     if(event.shiftKey&&document.activeElement===actions[0]){event.preventDefault();actions[actions.length-1].focus()}
     else if(!event.shiftKey&&document.activeElement===actions[actions.length-1]){event.preventDefault();actions[0].focus()}

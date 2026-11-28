@@ -99,6 +99,8 @@ function armBulkClear(button){
 }
 
 categoryGrid.addEventListener("click",e=>{
+ const clearDistribution=e.target.closest("[data-clear-category-filter]");
+ if(clearDistribution){globalThis.SmartBudgetCategoryDistribution?.clear();return}
  const detailsToggle=e.target.closest("[data-category-details-toggle]");
  if(detailsToggle){closeCategoryMenus();toggleCategoryDetails(detailsToggle.dataset.categoryDetailsToggle,detailsToggle.dataset.categoryType||"expense");return}
  const rowMenuTrigger=e.target.closest("[data-category-menu-trigger]");

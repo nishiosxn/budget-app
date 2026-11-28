@@ -1,10 +1,10 @@
 # Budget foyer
 
-Application web personnelle de suivi de budget mensuel pour un foyer à deux.
+Application web personnelle de suivi de budget mensuel, seul ou à deux.
 
 ## Accès
 
-- **Production actuelle avant promotion V3.0 : V2.8.1** : https://nishiosxn.github.io/budget-app/
+- **Application publiée** : https://nishiosxn.github.io/budget-app/
 - **Préversion V3.0 validée par l'utilisateur** : https://nishiosxn.github.io/budget-app/v3.0/
 - **Préversion V2.9 conservée** : https://nishiosxn.github.io/budget-app/v2.9/
 - **Snapshot V2.6** : https://nishiosxn.github.io/budget-app/v2.6/
@@ -18,15 +18,17 @@ Application web personnelle de suivi de budget mensuel pour un foyer à deux.
 - **Preview V2.5 Sync** : https://nishiosxn.github.io/budget-app/v2.5/
 - **Labo visuel V2.4-test** : https://nishiosxn.github.io/budget-app/v2.4-test/
 
-Le dépôt est public. Aucun historique de transactions personnelles ne doit être inscrit dans le code. En V2.4, les opérations sont conservées dans un cache local puis synchronisées avec le foyer Supabase de l'utilisateur authentifié ; elles ne sont jamais envoyées sur GitHub.
+Le dépôt est public. Aucun historique de transactions personnelles ne doit être inscrit dans le code. La V3.1 utilise un état financier en mémoire et une synchronisation cloud directe. Les anciennes sauvegardes locales restent des sources de migration.
 
 ## État actuel
 
-- **Production du code** : V2.8.1 sur `main`.
-- Version du code : `V3.0`
+- **Référence stable de la consolidation** : V3.0.2. La version effectivement publiée doit être relevée lors de la préparation de publication.
+- Version du code : `V3.1`
 - **Branche de développement de référence** : `develop`.
-- **Version stable publiée** : V2.8.1 à la racine ; previews historiques conservées.
-- **État de release** : V3.0 approuvée sur la préversion, PR #40 prête pour intégration vers `develop` puis PR de release séparée vers `main`. La production demeure V2.8.1 tant que la release n'est pas publiée.
+- **Intégration V3.1** : `work/v3.1-integration`, PR #52 vers `develop`, avancement estimé à 97 %. CI application/PostgreSQL verte sur `d3d747f` ; restauration, paquet exact et administration en attente de la recette connectée. Aucune publication autorisée.
+- **Fonctionnalités intégrées** : Builder à sept étapes solo/duo avec mensualisation et création récupérable, répartition interactive et actions groupées Catégories, Smart Assistant avec confirmation atomique et reçus idempotents, règles partagées, thèmes, navigation et PWA harmonisés.
+- **Validations acquises** : 343 tests Node sur `d3d747f`, PostgreSQL jetable et coexistence réelle V3.0/V3.1 sur `b592fcc` et `80239dd`. Gemma réel : cinq réponses capturées, 1/5 avant correction, 5/5 en rejeu hors ligne après correction ; nouvelle inférence non validée. La recette visuelle couvre neuf largeurs et deux thèmes ; iPhone physique et recette hébergée restent ouverts.
+- **Dossier de livraison** : [décision de livraison V3.1](docs/V3_1_DELIVERY.md) et [checklist](docs/V3_1_RELEASE_CHECKLIST.md), preuves, limites et plan de retour arrière. Les opérations techniques sont automatisées ; aucune commande utilisateur.
 - **Lot courant et prochaine action** : [workstate.md](workstate.md).
 - **Historique** : [CHANGELOG.md](CHANGELOG.md).
 
@@ -131,7 +133,7 @@ La promotion `develop` → `main` utilise une PR de release distincte. La public
 
 La V2.5 conserve l'architecture cloud de V2.4/V2.4.1 mais remplace la stratégie « dernier écrivain gagnant » par une fusion optimiste basée sur une baseline locale et les `updated_at` Supabase.
 
-L'identité Smart Budget validée est conservée dans `icons/icon.svg`. Les fichiers `favicon.ico`, `icon-192.png`, `icon-512.png` et `apple-touch-icon.png` du même dossier en sont les déclinaisons. Toute nouvelle version créée depuis `v2.5` doit reprendre le dossier `icons/`, les liens du document HTML, les entrées du manifest et le précache du service worker, puis incrémenter le nom de son cache PWA.
+L'identité Smart Budget validée est conservée dans `icons/icon.svg` et les déclinaisons ICO, PNG et Apple du même dossier. La PWA est installable et les données restent gérées en ligne. Le service worker efface les anciens caches applicatifs puis utilise le réseau. Les ressources frontend modifiées portent un suffixe de version dans le document HTML. Voir la [recette visuelle et PWA V3.1](docs/V3_1_VISUAL_ACCEPTANCE.md).
 
 Principes :
 - les changements locaux et distants sur des éléments différents sont conservés ;

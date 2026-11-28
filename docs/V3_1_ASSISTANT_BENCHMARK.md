@@ -1,0 +1,109 @@
+# Smart Assistant V3.1 · Benchmark du lot 6
+
+Mesure du 27 novembre 2026 sur 208 commandes fictives. Le corpus comporte dix variantes de chacune des vingt intentions historiques et huit cas annotés supplémentaires. Il inclut des formulations familières, des variantes d’enseigne, des catégories absentes, des dates, des récurrences, des demandes composées et des refus. Les variantes d’une même intention sont corrélées. Les pourcentages décrivent ce corpus, sans estimation du trafic réel.
+
+```sh
+node scripts/assistant-benchmark.mjs --local --compare=6530f28
+```
+
+`6530f28` est le commit local correspondant à la référence GitHub `376ff27`. Dans un clone GitHub, utiliser `--compare=376ff27`. Les propositions sont comparées action par action selon leur type, leur catégorie, leur payeur, le montant en centimes, la date, la fréquence, le mode budgétaire et les libellés annotés. Le contrôle des libellés exacts porte sur les huit cas ajoutés. Les consultations sont comparées selon le type, le mois et les filtres. Une clarification réussit si elle est proposée à la place d’une opération.
+
+| Indicateur | Avant | Après |
+|---|---:|---:|
+| Propositions locales exactes, ensemble du corpus | 20/208 · 9,6 % | 55/208 · 26,4 % |
+| Demandes traitées sans IA | 24/208 · 11,5 % | 55/208 · 26,4 % |
+| Justesse parmi les résultats locaux | 20/24 · 83,3 % | 55/55 · 100 % |
+| Latence moyenne de l’analyse locale, exécution Windows Node | 0,365 ms | 0,194 ms |
+| Taille UTF-8 du prompt système | 4 702 octets | 1 474 octets |
+| Taille moyenne de la requête si envoyée au fournisseur | 7 142 octets | 3 907 octets |
+| Neurones estimés à réserver, moyenne / maximum sur les cas orientés vers le fournisseur | 167,86 / 168 | 123,71 / 124 |
+
+La latence exclut l’authentification, le réseau et les lectures de budgets. Elle dépend du démarrage et de l’optimisation de Node. Aucune requête fournisseur n’est émise par la mesure locale. Les estimations utilisent la taille UTF-8, une marge de 50 %, une réserve de 2 048 unités d’entrée estimée et le plafond de 1 024 tokens de sortie. Le plafond applicatif reste de 320 neurones estimés par appel et de 8 000 unités réservées ou 100 demandes par jour UTC.
+
+**Limites locales observées.** 153 commandes restent orientées vers la voie fournisseur ou la reformulation en mode local. Il reste 86 brouillons, 35 consultations et 32 clarifications attendues hors couverture déterministe. Les comparaisons générales, les filtres de transactions sur plusieurs périodes, certaines formulations de payeur et les demandes mêlant plusieurs dates ou conditions restent les points de couverture les plus faibles. Les huit commandes de référence du lot 4 gardent leur traitement local.
+
+## Gemma et quota gratuit
+
+Cloudflare liste `@cf/google/gemma-4-26b-a4b-it` sans l’inclure parmi les modèles imposant un moyen de paiement. Workers Free offre 10 000 neurones quotidiens pour le compte, renouvelés à minuit UTC. Au-delà, les requêtes sont refusées sur Workers Free. Sur Workers Paid, l’excédent peut être facturé au tarif publié. Gemma utilise 9 091 neurones par million de tokens d’entrée et 27 273 par million de tokens de sortie. [Modèle](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/) · [Tarifs et quotas](https://developers.cloudflare.com/workers-ai/platform/pricing/) · [Inscription Workers sans carte](https://www.cloudflare.com/products/workers/)
+
+| Mesure fournisseur réelle | Résultat |
+|---|---|
+| Appels effectivement exécutés | 0 |
+| Réussite de l’interprétation financière | Non mesurée |
+| Tokens d’entrée/sortie, moyenne et maximum | Non mesurés |
+| Neurones réellement imputés au compte | Non mesurés |
+| Latence moyenne | Non mesurée |
+
+L’environnement ne dispose ni d’accès au tableau de bord du compte de test ni du jeton Workers AI. La disponibilité sur ce compte, le forfait exact et son quota restant demeurent à confirmer. Le modèle est conservé. L’essai réel se fait avec un compte de test Workers Free vérifié sans moyen de paiement requis, hors crédits prépayés, et avec un jeton autorisé pour Workers AI. Le runner `--live` reste inactif sans vérification explicite du forfait. Il accepte au plus 10 commandes fictives par lot et 2 000 neurones de réserve estimée, sans relance automatique. Il rapporte les tokens communiqués et l’interprétation par cas. La mesure de neurones réels se relève séparément dans le tableau de bord sur le créneau du test. Les identifiants restent dans l’environnement d’exécution hors dépôt.
+
+## Comportement vérifié par tests
+
+Le moteur local précède la réservation et reste utilisable lors d’une panne fournisseur. Un quota épuisé, un délai dépassé, une réponse tronquée ou invalide et une erreur réseau sont distingués. Deux demandes identiques simultanées partagent l’appel en cours uniquement dans la même instance et pour le même utilisateur et foyer. L’édition, l’annulation et la confirmation restent sur leurs voies existantes. Les tests d’erreur utilisent des réponses contrôlées et ne mesurent pas le fournisseur.
+
+## 8C.1 — plan du benchmark réel (aucun appel)
+
+Références Cloudflare vérifiées le 28 novembre 2026 : [tarifs](https://developers.cloudflare.com/workers-ai/platform/pricing/), [modèle](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/), [modèles gratuits](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/). Workers Free reste à 10 000 neurones par compte et jour UTC, et bloque les appels au-delà ; Workers Paid peut facturer l'excédent. Le forfait réel du compte de test n'est pas vérifié. Aucun appel, secret, changement de forfait ni crédit prépayé autorisé.
+
+- Plan hors ligne : `node scripts/assistant-benchmark.mjs --plan` ; filtre les 153 cas non résolus localement, fournit les identifiants stables et l'empreinte du corpus. Le runner refuse si le corpus change ; les 55 succès locaux ne sont pas envoyés.
+- Limites retenues : 10 appels maximum par lot, 2 000 neurones estimés par lot, 6 000 par jour UTC, 320 maximum par demande, 1 024 tokens de sortie, 2 000 neurones libres de marge selon le relevé du tableau de bord. Réservation locale persistée avant chaque requête, verrou exclusif ; aucune relance automatique même en cas de réponse perdue. Arrêt si erreur HTTP/réseau, métriques manquantes ou sortie trop longue. Le registre local doit être conservé et partagé par l'unique opérateur ; il ne contrôle pas les autres clients Cloudflare.
+- Avant lancement manuel uniquement : confirmer que le compte est réellement Workers Free, sans crédits AI Gateway ni activation payante, vérifier le solde et la date UTC sur le tableau de bord. Préparer un répertoire persistant hors dépôt. Variables attendues : `SMART_ASSISTANT_BENCHMARK_FREE_CONFIRMED=yes`, `SMART_ASSISTANT_BENCHMARK_FREE_DAY=YYYY-MM-DD`, `SMART_ASSISTANT_BENCHMARK_FREE_REMAINING` (entier relevé), `SMART_ASSISTANT_BENCHMARK_STATE_DIR`, `SMART_ASSISTANT_CF_ACCOUNT_ID`, `SMART_ASSISTANT_CF_TOKEN` (local, jamais dans Git), offset et limit. Exécuter `node scripts/assistant-benchmark.mjs --live` uniquement après contrôle. Pas d'appel live en CI. Le registre marque les tentatives réservées, pas les succès ; conserver les sorties JSON séparément et réconcilier les cas incomplets manuellement, sans double envoi automatique.
+- Relever pour chaque lot : exactitude par intention, erreurs de montant/date/payeur/catégorie, refus/clarifications, tokens, latence, neurones réellement consommés au compte. Aucun accès aux données financières réelles. Critère de sécurité : zéro opération inventée ou non autorisée dans les résultats acceptés ; les réponses non conformes restent bloquées. Objectif provisoire de qualité : 95 % de cas exacts, à confirmer sur ce corpus corrélé (pas une estimation du trafic). Les estimations ne garantissent pas le coût ; seul un compte effectivement Free sans voie de facturation assure l'absence de dépassement facturé. Si doute, ne pas lancer.
+
+## 8C.2 — vérification du forfait et premier lot (28 novembre 2026)
+
+Les captures de l'opérateur montrent Workers Free actif, aucun moyen de paiement enregistré et 0/10 000 neurones utilisés au moment du relevé. Le solde est à revérifier avant chaque lot ; les valeurs ne constituent pas une mesure des appels du benchmark. Le renouvellement du jeton est déclaré par l'opérateur ; il doit rester hors dépôt et être saisi localement de manière masquée. Premier lot : offset 0, limit 5, compte Free vérifié et au moins 3 600 neurones libres recommandés. Rapport JSON et registre persistant hors dépôt ; ne pas relancer automatiquement après un échec ou une réponse perdue. Aucun appel réel ni résultat fournisseur encore enregistré. La recette locale 8B est validée sur `a6fa3ea` (CI 46084716412 et 46084716354).
+
+## 8C.4 — premier essai réel et diagnostic (28 novembre 2026)
+
+Rapport transmis par l'opérateur : corpus SHA-256 `15b688fa528fb64bd365940aaca48f19de44583729cdbb6008a1fd72de5f7c02`, cinq variantes fr-2-1 à fr-2-5 de la même intention (« Noa a dépensé 45,90 € de carburant hier »). Attendu : dépense fuel, A, 4590 centimes, 2026-11-16, once. Aucun champ obtenu n'a été conservé dans le premier rapport ; cause exacte inconnue.
+
+| Cas | HTTP | Entrée | Sortie | Total | Latence ms | Résultat |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| fr-2-1 | 200 | 595 | 62 | 657 | 1222,709 | interpretation_error |
+| fr-2-2 | 200 | 601 | 112 | 713 | 2039,3421 | interpretation_error |
+| fr-2-3 | 200 | 596 | 62 | 658 | 1678,9478 | interpretation_error |
+| fr-2-4 | 200 | 601 | 62 | 663 | 2867,071 | interpretation_error |
+| fr-2-5 | 200 | 601 | 62 | 663 | 5202,9916 | interpretation_error |
+
+Total 3 354 tokens (2 994 entrée, 360 sortie), moyenne 670,8, latence moyenne 2 602,2123 ms, 615 neurones réservés. Estimation tarifaire ~37 neurones (hors arrondis et éventuels autres frais), consommation du compte non relevée après le test. Exactitude 0/5 sur **une intention**, non extrapolable. Aucun nouvel appel effectué lors de 8C.4.
+
+### Audit et instrumentation
+
+Le validateur contrôle les slots autorisés, pas leur concordance sémantique avec un nom dans le texte ; `ownerSlotForName` existe pour certaines règles locales, pas pour la normalisation générale. Le prompt donne today comme date du mouvement par défaut ; hier doit être déduit par le modèle hors règles locales. `contextualCategoryHint` utilise une frontière de mot après le symbole euro, ce qui peut rater « 45,90 € de » (test de caractérisation). La normalisation peut remplacer une catégorie proposée à partir du libellé ou de la règle ; un test contrôlé montre home → fuel. Ces constats ne prouvent pas la cause du premier lot. Aucun changement du moteur, prompt ou validation de production à ce stade ; priorité à la preuve diagnostique avant correction. Le runner rapporte désormais champs attendus, projection des champs modèle/normalisés, écarts avant/après et motif de validation. Le score officiel garde le matcher initial ; l'ordre des actions n'est pas pénalisé. Le rapport n'inclut pas l'enveloppe HTTP brute, les en-têtes ni les secrets ; corpus exclusivement fictif.
+
+### Lot de diagnostic et retest borné
+
+`node scripts/assistant-benchmark.mjs --plan --diagnostic-lot` affiche cinq intentions distinctes : fr-2-1 (payeur/date/catégorie, une seule reprise du cas précédemment réservé), fr-5-1 (revenu), fr-7-4 (salaire récurrent), fr-16-1 (comparaison), fr-17-1 (montant manquant). Aucun changement du corpus original ni de son empreinte. Après CI verte et quota/forfait revérifiés, activation manuelle `SMART_ASSISTANT_BENCHMARK_DIAGNOSTIC_CONFIRMED=yes` et `--live --diagnostic-lot` sur le **même** répertoire de registre. Le retest exige la réservation originale et utilise un marqueur fixe 8C.4-diagnostic-v1, une seule fois ; quatre cas neufs soumis aux gardes ordinaires. Tous les appels, retest compris, restent comptés dans le plafond quotidien existant et enregistrés avant réseau ; aucun effacement du registre, aucune relance automatique. Ce lot est destiné au diagnostic, pas à une mesure représentative ni à prouver une amélioration du moteur. Relever le compteur Cloudflare avant/après ; ne pas lancer tant que le quota disponible et le forfait gratuit ne sont pas confirmés. Tests hors ligne ajoutés ; CI à confirmer.
+
+
+## 8C.6 — refus d'authentification et récupération bornée (28 novembre 2026)
+
+Le rapport diagnostic fourni indique une seule tentative fr-2-1, HTTP 401 après 133,6237 ms, aucune réponse interprétable et aucun échantillon de tokens. La réserve augmente de 615 à 738 neurones sur le même jour UTC (123 pour le refus). Consommation réelle du compte inconnue. Aucune déduction sur l'exactitude du modèle. Les quatre autres cas n'ont pas été envoyés. Ne pas effacer le registre ni considérer le refus comme un échec d'interprétation.
+
+Avant toute inférence, vérifier le jeton utilisateur via GET /user/tokens/verify (ou le point de vérification compte pour un jeton de compte) et vérifier la permission Account > Workers AI > Read sur le compte exact. Le runner vérifie désormais le catalogue du compte par GET /accounts/{id}/ai/models/search avant toute réservation nouvelle. Aucun appel d'inférence dans ce contrôle. Les en-têtes et réponses brutes ne sont pas enregistrés. Un jeton actif seul ne prouve pas l'autorisation sur le compte.
+
+Une récupération explicite unique est possible uniquement pour le cas fr-2-1 précédemment réservé avec le marqueur 8C.4-diagnostic-v1 et un rapport local correspondant au refus HTTP 401, une seule tentative, zéro token, même jour de réserve et même corpus. Conserver le rapport d'origine dans le répertoire du registre (JSON UTF-8 ou UTF-16LE Windows). Paramètres `SMART_ASSISTANT_BENCHMARK_AUTH_FAILURE_REPORT` (chemin du fichier), `SMART_ASSISTANT_BENCHMARK_AUTH_RECOVERY_CONFIRMED=yes`, `--live --diagnostic-lot --recover-401`. Autorisation de diagnostic et Free restent nécessaires. La reprise conserve le marqueur original et ajoute 8C.6-auth-401-v1 avant le réseau ; aucun remboursement ni reprise automatique, même si le second essai échoue. Tous les plafonds restent inchangés. Ce mécanisme s'appuie sur le rapport local attesté par l'opérateur, non sur une preuve signée du fournisseur. Les quatre autres cas neufs restent soumis au registre normal. Aucun nouvel appel réalisé dans ce lot.
+
+La CI 501644f a validé l'application/PostgreSQL mais échoué sur le client historique : le garde de synchronisation a refusé 15 archivages lors de la première écriture V3.0 (workflow 46087163785). Aucun contournement du garde, aucune modification de la synchronisation ; le test collecte maintenant des diagnostics de clés de lignes fictives si ce refus se reproduit. Ne pas considérer ce risque résolu avant une nouvelle CI et analyse si récurrent.
+
+
+## 8C.6B — réponses réelles et réparation ciblée (28 novembre 2026)
+
+Récupération 401 réussie : 5 HTTP 200, 1/5 exact, 3 288 tokens (2 990 entrée, 298 sortie), moyenne 657,6 tokens et 1 517,844 ms. Réservation réelle du lot 616, cumul UTC 1 354 (non consommation mesurée). L'opérateur a déclaré 6 000 neurones gratuits disponibles avant lancement ; relever le compteur après appel. Aucun nouvel appel dans ce sous-lot.
+
+| Cas | Erreur observée | Correctif ciblé |
+| --- | --- | --- |
+| fr-2-1 | owner common au lieu de A, date/montant/catégorie corrects | Rapprochement exact du nom du payeur sur une phrase bornée, membre unique du contexte, contrôle du montant et de la date |
+| fr-5-1 | date today, validation refusée | Alias today seulement si demande bornée de cadeau aujourd'hui, date dérivée du contexte, montant et acteur cohérents |
+| fr-7-4 | modèle exact, catégorie salary transformée en null | Préserver ID disponible et libellé salaire + nom exact du membre propriétaire, pas de catégorie inventée |
+| fr-16-1 | month absent, compareMonth inversé, champs null absents | Reconstituer consultation comparaison depuis deux mois/années explicites, sans filtre ni écriture, validation existante |
+| fr-17-1 | clarification correcte | Inchangé |
+
+Rejeu hors ligne des cinq structures métier capturées (texte d'affichage réencodé pour les messages, sans impact sur leur score). Nouvelle fonction normalizeProviderResult utilisée par le runner et l'Edge V3.1 ; garde de confirmation, routing local, corpus, quotas, prompt et moteur historique inchangés. Tests négatifs : payeur inconnu/ambigu/solo, montant/date contradictoires, catégorie indisponible ou autre propriétaire, consultation ambiguë/filtrée/hors plage, lot partiel. CI à confirmer. Ne pas extrapoler un rejeu déterministe à une nouvelle réponse Gemma. Aucun nouveau retest live autorisé ; registre intact.
+
+La CI 54536ce confirme également un risque de coexistence : l'ancien client réintroduit des catégories/budgets par défaut absents du foyer Builder (neuf catégories côté serveur), et le garde bloque la première écriture. Le plan observé après refus ne reconstruit pas exactement les 15 archivages initiaux. Ce risque distinct reste bloquant pour la publication ; ne pas affaiblir le garde ni masquer le test.
+
+
+## 8C.7 — validation hors ligne
+
+CI `f595303` : [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46088280355), 336 tests réussis, zéro échec. Les cinq tests de rejeu fr-2-1, fr-5-1, fr-7-4, fr-16-1, fr-17-1 passent (ok 201–205). Cela valide la correction déterministe des réponses capturées, pas une nouvelle inférence ni l'ensemble du corpus. Aucune réservation supplémentaire.

@@ -1,10 +1,10 @@
 // V2.7 — apparence personnelle, sélecteur custom stable et sauvegarde par compte
-const APPEARANCE_DEFAULT={color:"green",font:"current",customColor:"#7c73d8"};
+const APPEARANCE_DEFAULT={color:"purple",font:"current",customColor:"#5C29D6"};
 const APPEARANCE_COLORS={
  green:{label:"Vert",accent:"#2f6b51",deep:"#173c2d",soft:"#e9f2ed",border:"#bfd2c6"},
  blue:{label:"Bleu",accent:"#3f6fa6",deep:"#243f60",soft:"#e9eff6",border:"#c4d2e2"},
  pink:{label:"Rose",accent:"#b6537c",deep:"#673047",soft:"#f7eaf0",border:"#e5c2d1"},
- purple:{label:"Violet",accent:"#7558a6",deep:"#443460",soft:"#f0ecf6",border:"#d2c7e2"},
+ purple:{label:"Violet Smart Budget",accent:"#5C29D6",deep:"#39138F",soft:"#F0EAFE",border:"#D6C7FA"},
  orange:{label:"Orange",accent:"#b36a3c",deep:"#673d23",soft:"#f7eee8",border:"#e3c9b7"}
 };
 const APPEARANCE_FONTS={
@@ -30,6 +30,18 @@ function appearanceLuminance(hex){
  const linear=value=>{const c=value/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};
  return .2126*linear(r)+.7152*linear(g)+.0722*linear(b);
 }
+function accessibleLightAccent(base){
+ const background=appearanceLuminance("#F4F5F1");
+ const contrast=color=>(background+.05)/(appearanceLuminance(color)+.05);
+ if(contrast(base)>=4.5)return base;
+ let low=0,high=1;
+ for(let step=0;step<12;step++){
+  const middle=(low+high)/2;
+  if(contrast(mixAppearanceHex(base,"#000000",middle))>=4.5)high=middle;
+  else low=middle;
+ }
+ return mixAppearanceHex(base,"#000000",high);
+}
 function normalizeUserAppearance(value){
  const color=value?.color==="custom"?"custom":APPEARANCE_COLORS[value?.color]?value.color:APPEARANCE_DEFAULT.color;
  const font=APPEARANCE_FONTS[value?.font]?value.font:APPEARANCE_DEFAULT.font;
@@ -40,16 +52,16 @@ function appearancePalette(value){
  const appearance=normalizeUserAppearance(value);
  if(appearance.color!=="custom"){
   const preset=APPEARANCE_COLORS[appearance.color];
-  return {...preset,base:preset.accent,surface:preset.accent};
+  const accent=accessibleLightAccent(preset.accent);
+  return {...preset,base:preset.accent,accent,surface:accent};
  }
- const base=appearance.customColor,luminance=appearanceLuminance(base);
- const accent=luminance>.52?mixAppearanceHex(base,"#000000",.38):base;
- const surface=luminance>.62?mixAppearanceHex(base,"#000000",.22):base;
+ const base=appearance.customColor;
+ const accent=accessibleLightAccent(base);
  return {
   label:"Personnalisé",
   base,
   accent,
-  surface,
+  surface:accent,
   deep:mixAppearanceHex(base,"#000000",.58),
   soft:mixAppearanceHex(base,"#FFFFFF",.88),
   border:mixAppearanceHex(base,"#FFFFFF",.60)
@@ -107,7 +119,7 @@ function applyUserAppearance(value,{persistLocal=false,userId=appearanceUserId()
  root.style.setProperty("--accent-soft",palette.soft);
  root.style.setProperty("--accent-border",palette.border);
  root.style.setProperty("--accent-rgb",`${rgb.r},${rgb.g},${rgb.b}`);
- root.style.setProperty("--income",palette.accent);
+ root.style.setProperty("--income","#216B4D");
  root.style.setProperty("--app-font",font.stack);
  root.dataset.appearanceColor=appearance.color;
  root.dataset.appearanceFont=appearance.font;

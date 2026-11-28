@@ -1,0 +1,159 @@
+name: V3.1 connected test
+
+on:
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  connected:
+    name: Supabase local · comptes fictifs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: "2.90.0"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.5.0"
+      - name: Start a disposable Supabase instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/smart-budget-stack"
+          cd "$RUNNER_TEMP/smart-budget-stack"
+          supabase init
+          supabase start -x studio,imgproxy,storage-api,inbucket,logflare,vector,supavisor,postgres-meta,edge-runtime
+          supabase status -o json > "$RUNNER_TEMP/smart-budget-stack/status.json"
+      - name: Load the synthetic V3.0.2 contract and versioned migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_url="$(jq -er .DB_URL "$RUNNER_TEMP/smart-budget-stack/status.json")"
+          case "$db_url" in
+            postgresql://*@127.0.0.1:54322/postgres) ;;
+            *) echo 'Expected local disposable database'; exit 1 ;;
+          esac
+          psql "$db_url" -X -v baseline_only=1 -f scripts/connected-test/schema.sql
+      - name: Install Chromium for independent sessions
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/smart-budget-browser" --no-save playwright@1.55.0
+          "$RUNNER_TEMP/smart-budget-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Export the byte-matched historical Edge v30 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin 3b6a340352432428b8145aab086741a995cb6f8a
+          mkdir "$RUNNER_TEMP/smart-budget-edge30"
+          root="$RUNNER_TEMP/smart-budget-edge30"
+          git archive 3b6a340352432428b8145aab086741a995cb6f8a supabase/functions preview/assistant js/assistant-core.js js/assistant-voice.js css/assistant.css icons/icon.svg | tar -x -C "$root"
+          # Recreate the historical publication layout from the exact pinned source.
+          mkdir -p "$root/preview/assistant/js" "$root/preview/assistant/css" "$root/preview/assistant/icons"
+          cp "$root/js/assistant-core.js" "$root/js/assistant-voice.js" "$root/preview/assistant/js/"
+          cp "$root/css/assistant.css" "$root/preview/assistant/css/"
+          cp "$root/icons/icon.svg" "$root/preview/assistant/icons/"
+      - name: Exercise historical client and Edge before and after migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 \
+            https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js \
+            --output "$RUNNER_TEMP/smart-budget-browser/supabase.js"
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_TEST_EDGE30_ROOT="$RUNNER_TEMP/smart-budget-edge30" \
+          node --test --test-timeout=120000 scripts/connected-test/legacy-upgrade.mjs
+      - name: Run connected acceptance checks
+        shell: bash
+        run: |
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          node --test --test-concurrency=1 scripts/connected-test/auth.mjs scripts/connected-test/builder-categories.mjs scripts/connected-test/assistant.mjs
+      - name: Exercise historical Edge v30 on the upgraded disposable schema
+        shell: bash
+        run: |
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_EDGE30_ROOT="$RUNNER_TEMP/smart-budget-edge30" \
+          node --test scripts/connected-test/legacy-edge.mjs
+      - name: Export the pinned V3.0 source without modifying the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin e2072063b30712ffcd1a27dc1f6adffce0d27965
+          mkdir "$RUNNER_TEMP/smart-budget-v30"
+          git archive e2072063b30712ffcd1a27dc1f6adffce0d27965 | tar -x -C "$RUNNER_TEMP/smart-budget-v30"
+      - name: Exercise the actual connected UI
+        id: connected_ui
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 \
+            https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js \
+            --output "$RUNNER_TEMP/smart-budget-browser/supabase.js"
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_VISUAL_OUTPUT="$RUNNER_TEMP/smart-budget-visual" \
+          SB_TEST_V30_ROOT="$RUNNER_TEMP/smart-budget-v30" \
+          node --test --test-concurrency=1 scripts/connected-test/interface.mjs scripts/connected-test/coexistence.mjs
+      - name: Exercise encrypted application backup and independent restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y age
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" bash scripts/connected-test/backup-drill.sh
+      - name: Validate the exact isolated preview package
+        if: ${{ !cancelled() && steps.connected_ui.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/prepare-v31-preview.mjs "$RUNNER_TEMP/smart-budget-connected-preview"
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_TEST_PREVIEW_ROOT="$RUNNER_TEMP/smart-budget-connected-preview" \
+          node --test --test-timeout=90000 scripts/connected-test/preview-package.mjs
+      - name: Exercise real administrator access on the disposable stack
+        if: ${{ !cancelled() && steps.connected_ui.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          deno cache --config supabase/functions/admin-api/deno.json supabase/functions/admin-api/index.ts
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          node --test --test-timeout=90000 scripts/connected-test/admin-access.mjs
+      - name: Check PWA updates and measure local startup
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/smart-budget-visual"
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_VISUAL_OUTPUT="$RUNNER_TEMP/smart-budget-visual" \
+          node --test --test-timeout=45000 scripts/connected-test/pwa.mjs
+      - name: Keep browser screenshots and measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-budget-visual
+          path: ${{ runner.temp }}/smart-budget-visual/
+          if-no-files-found: warn
+      - name: Stop the disposable stack
+        if: always()
+        shell: bash
+        run: |
+          if [ -d "$RUNNER_TEMP/smart-budget-stack/supabase" ]; then
+            cd "$RUNNER_TEMP/smart-budget-stack"
+            supabase stop
+          fi

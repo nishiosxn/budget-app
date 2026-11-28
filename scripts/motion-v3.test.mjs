@@ -19,7 +19,8 @@ test("la V3 reprend le moteur V2.9 et ajoute le suivi accessible",()=>{
  const html=read("index.html"),tracking=read("js/tracking.js"),subscriptions=read("js/subscriptions-overview.js");
  assert.match(html,/js\/motion\.js/);
  assert.match(html,/history-filters\.js/);
- assert.match(html,/subscriptions-overview\.js/);
+ assert.doesNotMatch(html,/subscriptions-overview\.js/);
+ assert.match(html,/category-distribution\.js/);
  assert.match(tracking,/data-month-index/);
  assert.match(tracking,/SmartBudgetMotion\?\.chartHover/);
  assert.match(subscriptions,/sb-subscription-secondary/);
