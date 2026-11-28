@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.5 : reprise initiale et recette admin (validation en attente)
+
+- Checkpoints privés du Builder aux transitions d'étape, reprise et contrôle de révision ; aucun stockage financier navigateur. Recette réelle des rôles admin sur pile jetable. CI à confirmer.
+
 ## V3.1 — 8D.4 : correction de restauration et contrôles CORS (validation en attente)
 
 - Restauration sur base neuve sans nettoyage destructif, vérification ACL étendue et reprise des demandes en attente ; recette du paquet indépendante et contrôles directs de CORS. Inventaire et plan de préversion gratuite documentés, aucun déploiement.

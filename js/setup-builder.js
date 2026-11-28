@@ -136,8 +136,16 @@ class SetupBuilderController{
   this.initialDigest=cloudSyncDigest();
   this.prepared=!!this.initialPayload;
   this.draft=this.createInitialDraft();
-  this.emptyDraft=JSON.stringify(this.draft);
   this.step=this.prepared?6:0;
+  this.checkpointId=initialSetup?.checkpointId||null;
+  this.checkpointAttempt=null;
+  this.checkpointInvalid=false;
+  if(!this.prepared&&this.checkpointId){
+   const restored=this.restoreCheckpoint(initialSetup.checkpoint);
+   if(restored){this.draft=restored.editor;this.step=restored.step}
+   else this.checkpointInvalid=true;
+  }
+  this.emptyDraft=JSON.stringify(this.draft);
   this.editingName="";
   this.customPickerOpen=this.draft.appearance.color==="custom";
   this.customPickerHsv=hexToHsv(this.draft.appearance.customColor);
@@ -151,6 +159,8 @@ class SetupBuilderController{
   document.documentElement.classList.add("setup-builder-open");
   this.render({preserveScroll:false});
   if(this.prepared)this.setStatus("Brouillon retrouvé. Vérifie le bilan et reprends la validation.");
+  else if(this.checkpointInvalid)this.setStatus("Brouillon incompatible. Aucune donnée ne sera remplacée.","error");
+  else if(this.checkpointId)this.setStatus("Brouillon retrouvé. Reprends à la dernière étape enregistrée.");
  }
 
  close(){
@@ -167,6 +177,102 @@ class SetupBuilderController{
   this.draft=null;
   this.emptyDraft=null;
   this.initialPayload=null;
+  this.checkpointAttempt=null;
+  this.checkpointId=null;
+  this.checkpointInvalid=false;
+ }
+
+ // Restore only known fields; the editor never interprets stored text as HTML.
+ restoreCheckpoint(value){
+  const obj=v=>v&&typeof v==="object"&&!Array.isArray(v);
+  if(!obj(value)||!Number.isInteger(value.step)||value.step<0||value.step>6||!obj(value.editor))return null;
+  const d=value.editor, fresh=this.createInitialDraft();
+  if(!obj(d.household)||!obj(d.appearance)||!["solo","couple"].includes(d.household.mode))return null;
+  for(const [k,max] of [["name",80],["personA",40],["personB",40]]){
+   if(typeof d.household[k]!=="string"||d.household[k].length>max)return null;
+   fresh.household[k]=d.household[k];
+  }
+  fresh.household.mode=d.household.mode;
+  fresh.appearance=normalizeUserAppearance(d.appearance);
+  const row=(v,base={},custom=false)=>{
+   if(!obj(v)||typeof v.name!=="string"||v.name.length>100||
+    typeof v.selected!=="boolean"||!["A","B","common"].includes(v.owner))return null;
+   const result={...base,name:v.name,selected:v.selected,owner:v.owner};
+   for(const k of ["amount","duration","target"]){
+    if(v[k]===undefined)continue;
+    if(!["string","number"].includes(typeof v[k])||String(v[k]).length>32||
+     (String(v[k])!==""&&(!Number.isFinite(Number(v[k]))||Number(v[k])<0)))return null;
+    result[k]=v[k];
+   }
+   for(const k of ["renamed","saving","envelope"]){
+    if(v[k]===undefined)continue;
+    if(typeof v[k]!=="boolean")return null;
+    result[k]=v[k];
+   }
+   if(v.section!==undefined){if(!["Obligatoires","Abonnements","Vie courante"].includes(v.section))return null;result.section=v.section}
+   if(v.period!==undefined){if(!["monthly","annual"].includes(v.period))return null;result.period=v.period}
+   if(v.plan!==undefined){if(!Number.isInteger(v.plan)||v.plan<0||v.plan>10)return null;result.plan=v.plan}
+   if(custom){
+    if(typeof v.id!=="string"||!/^setup-[a-z0-9_-]{1,95}$/i.test(v.id))return null;
+    result.id=v.id;result.custom=true;
+   }
+   return result;
+  };
+  for(const group of ["income","expense","subscriptions"]){
+   if(!obj(d[group])||Object.keys(d[group]).length!==Object.keys(fresh[group]).length)return null;
+   for(const key of Object.keys(fresh[group])){
+    const restored=row(d[group][key],fresh[group][key]);
+    if(!restored)return null;
+    fresh[group][key]=restored;
+   }
+  }
+  const ids=new Set();
+  for(const group of ["customIncome","customExpense","customSubscriptions"]){
+   if(!Array.isArray(d[group])||d[group].length>250)return null;
+   for(const entry of d[group]){
+    const restored=row(entry,{},true);
+    if(!restored||ids.has(restored.id)||ids.size>=250)return null;
+    ids.add(restored.id);fresh[group].push(restored);
+   }
+  }
+  return {step:value.step,editor:fresh};
+ }
+
+ // Commit a private editor checkpoint before advancing. The final stage and
+ // financial commit remain separate and require explicit confirmation.
+ async moveToStep(next){
+  if(this.busy||this.prepared||!Number.isInteger(next)||next<0||next>6)return;
+  if(!this.initialSetup){this.step=next;this.editingName="";this.render({preserveScroll:false});return}
+  if(this.checkpointInvalid||!navigator.onLine||!cloudSyncReady){
+   this.setStatus("Connexion requise ou brouillon incompatible. La saisie reste sur cet écran.","error");return;
+  }
+  const household=this.householdId,user=this.userId;
+  const same=()=>activeHouseholdId===household&&cloudSession?.user?.id===user&&this.householdId===household&&this.userId===user&&!!this.draft;
+  if(!same())return;
+  const editor=JSON.parse(JSON.stringify(this.draft));
+  const data={previous:this.checkpointId,step:next,editor};
+  const signature=JSON.stringify(data);
+  const request=this.checkpointAttempt?.signature===signature?this.checkpointAttempt.request:crypto.randomUUID();
+  this.checkpointAttempt={signature,request};
+  this.busy=true;this.render();
+  const content=this.root?.querySelector?.("#setupBuilderContent");
+  if(content)content.inert=true;
+  this.setStatus("Enregistrement du brouillon…");
+  try{
+   const receipt=await cloudBudgetBuilderSetup(household,"checkpoint",request,data);
+   if(!same())return;
+   if(receipt?.status!=="checkpoint"||receipt.checkpointId!==request)throw Error("Brouillon non confirmé.");
+   this.checkpointId=request;this.checkpointAttempt=null;
+   this.emptyDraft=JSON.stringify(editor);this.step=next;this.editingName="";
+   this.busy=false;this.render({preserveScroll:false});
+   this.setStatus("Brouillon enregistré.");
+  }catch(error){
+   if(!same())return;
+   this.busy=false;this.render();
+   this.setStatus(error?.code==="40001"?"Brouillon modifié sur un autre appareil. Rouvre le Builder pour reprendre la version enregistrée.":"Enregistrement non confirmé. Réessaie sans fermer cet écran.","error");
+  }finally{
+   if(same()){this.busy=false;if(content)content.inert=false}
+  }
  }
 
  hasUnreceivedDraft(){
@@ -542,7 +648,7 @@ class SetupBuilderController{
   if(!target||!this.root?.classList.contains("open"))return;
 
   const stepButton=target.closest("[data-step]");
-  if(stepButton&&!stepButton.disabled&&!this.busy&&!this.prepared){this.step=Number(stepButton.dataset.step);this.render({preserveScroll:false});return}
+  if(stepButton&&!stepButton.disabled&&!this.busy&&!this.prepared){this.moveToStep(Number(stepButton.dataset.step));return}
   const action=target.closest("[data-setup-action]");
   if(action){
    const name=action.dataset.setupAction;
@@ -830,9 +936,7 @@ class SetupBuilderController{
 
  goBack(){
   if(this.busy||this.prepared||this.step<=0)return;
-  this.editingName="";
-  this.step--;
-  this.render({preserveScroll:false});
+  this.moveToStep(this.step-1);
  }
 
  goNext(){
@@ -840,9 +944,7 @@ class SetupBuilderController{
   const invalid=this.root?.querySelector("input:invalid");
   if(invalid){invalid.reportValidity();return}
   if(this.step<6){
-   this.editingName="";
-   this.step++;
-   this.render({preserveScroll:false});
+   this.moveToStep(this.step+1);
    return;
   }
   this.finish();
@@ -1032,6 +1134,7 @@ class SetupBuilderController{
   const household=this.householdId,user=this.userId;
   const sameSession=()=>activeHouseholdId===household&&cloudSession?.user?.id===user&&this.householdId===household&&this.userId===user;
   if(this.busy||!sameSession())return;
+  if(this.checkpointInvalid){this.setStatus("Brouillon incompatible : création bloquée.","error");return;}
   if(!navigator.onLine||!cloudSyncReady||cloudPushInProgress){
    this.setStatus("Connexion requise. Garde cet écran ouvert pour conserver la saisie en cours.","error");return;
   }
@@ -1040,7 +1143,7 @@ class SetupBuilderController{
   this.render();
   this.setStatus("Enregistrement du brouillon et création du budget.");
   try{
-   this.initialPayload??=this.buildInitialPayload(skip);
+   if(!this.initialPayload){this.initialPayload=this.buildInitialPayload(skip);if(this.checkpointId)this.initialPayload.checkpointId=this.checkpointId;}
    this.requestId??=crypto.randomUUID();
    this.prepared=true;
    let receipt=await cloudBudgetBuilderSetup(household,"stage",this.requestId,this.initialPayload);

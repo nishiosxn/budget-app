@@ -179,9 +179,12 @@ export async function connected(t,{baseline=false}={}){
   }
   throw Error("Disposable Edge Function failed to start.");
  }
+ function setAdmin(id,enabled=true){
+  sql(enabled?"insert into public.app_admins(user_id) values("+uuid(id)+") on conflict do nothing":"delete from public.app_admins where user_id="+uuid(id));
+ }
  function upgradeV31(){
   assert.ok(baseline,"Only the baseline fixture can be upgraded here");
   execFileSync("psql",[status.DB_URL,"-X","-v","ON_ERROR_STOP=1","-f","scripts/connected-test/upgrade-v31.sql"],{stdio:"pipe"});
  }
- return {origin,users,session,startAssistant,setBuilderPilot,upgradeV31};
+ return {origin,users,session,startAssistant,setBuilderPilot,setAdmin,upgradeV31};
 }

@@ -203,3 +203,38 @@ test("only a changed, unreceived draft requires a navigation warning; closing cl
  assert.equal(client.builder.initialPayload,null);
  assert.equal(client.builder.draft,null);
 });
+
+test("private step checkpoint is acknowledged before navigation and resumes without plaintext browser storage",async()=>{
+ const api=transport();let saved=null;
+ const original=api.rpc;
+ api.rpc=async(h,action,request,data)=>{
+  if(action!=="checkpoint")return original(h,action,request,data);
+  if(saved?.id===request)return {status:"checkpoint",checkpointId:request};
+  assert.equal(data.previous,saved?.id||null);
+  saved={id:request,checkpoint:{step:data.step,editor:JSON.parse(JSON.stringify(data.editor))}};
+  return {status:"checkpoint",checkpointId:request};
+ };
+ const first=tab(api);
+ first.builder.draft.household.name="Foyer enregistré";
+ first.builder.draft.income["salary-b"].amount="1456.01";
+ await first.builder.moveToStep(2);
+ assert.equal(first.builder.step,2);
+ assert.equal(first.marker.size,0);
+ assert.equal(first.builder.hasUnreceivedDraft(),false);
+ const restored=tab(api,{status:"pending",checkpointId:saved.id,checkpoint:saved.checkpoint});
+ assert.equal(restored.builder.step,2);
+ assert.equal(restored.builder.draft.household.name,"Foyer enregistré");
+ assert.equal(restored.builder.draft.income["salary-b"].amount,"1456.01");
+ restored.builder.draft.income["salary-b"].amount="1500";
+ restored.box.navigator.onLine=false;
+ await restored.builder.moveToStep(3);
+ assert.equal(restored.builder.step,2);
+ assert.equal(restored.builder.hasUnreceivedDraft(),true);
+});
+test("malformed checkpoint never overwrites server state",async()=>{
+ const api=transport(),client=tab(api,{status:"pending",checkpointId:randomUUID(),checkpoint:{step:9,editor:{}}});
+ assert.equal(client.builder.checkpointInvalid,true);
+ await client.builder.finish();
+ await client.builder.moveToStep(1);
+ assert.deepEqual(api.calls,[]);
+});

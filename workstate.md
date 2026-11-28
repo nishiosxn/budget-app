@@ -1,5 +1,12 @@
 # Workstate — Budget foyer
 
+## Lot 8D.5 — checkpoints privés et admin (CI à confirmer)
+
+- 839c59b application/PostgreSQL verts, recette connectée 46089920648 en cours ; 10aa635 a échoué sur l'ancien DROP POLICY déjà corrigé.
+- Checkpoint privé de l'éditeur Builder à chaque navigation d'étape, contrôle de révision/foyer/acteur, reprise de la dernière étape reçue, effacement lors du stage atomique. Pas de données financières dans localStorage. Limite : les modifications non acquittées depuis la dernière navigation restent volatiles en cas de fermeture forcée. Tests Node et SQL ajoutés, CI à confirmer.
+- Test réel Edge admin sur pile jetable : JWT, rôles, refus auto-promotion, auto-modification/autre admin, révocation et isolation. Pas de test de suppression effective de foyer ; pas de changement de la fonction en production.
+- Livraison gratuite : recette CI, pilote fermé de production uniquement après sauvegarde et autorisation distincte ; pas de troisième projet confirmé. Aucun secret/commande utilisateur, aucune inférence, fusion, publication ou écriture hébergée.
+
 ## Lot 8D.4 — correction de restauration et CORS (CI à confirmer)
 
 - bc759c4 : application/PostgreSQL verts ; restauration échouée sur DROP POLICY service_app_admins ON public.app_admins dans base vide (46089496890). Cause précise : --clean inutile ; --if-exists ne protège pas la relation absente. Retrait de --clean, garde vide et traitement éventuel de public sans CASCADE. Empreintes ACL colonnes, fonctions et schémas renforcées, reprise réelle revue/Builder avec rejeu et rollback.

@@ -12,6 +12,8 @@ create table private.budget_builder_setup (
  owner_id uuid not null references auth.users(id) on delete cascade,
  request_id uuid,
  draft jsonb,
+ checkpoint_id uuid,
+ checkpoint jsonb,
  completed_at timestamptz
 );
 alter table private.budget_builder_setup enable row level security;
@@ -64,7 +66,7 @@ begin
   if p_action='status' then return jsonb_build_object('status','unavailable');end if;
   raise insufficient_privilege;
  end if;
- if p_action is null or p_action not in ('status','stage','commit') then
+ if p_action is null or p_action not in ('status','checkpoint','stage','commit') then
   raise exception 'Invalid builder action' using errcode='22023';
  end if;
  perform 1 from private.v31_pilot_builder_users p where p.user_id=actor for share;
@@ -77,7 +79,7 @@ begin
   return jsonb_build_object('status','complete','requestId',setup.request_id);
  end if;
  if p_action='status' then
-  return case when setup.request_id is null then jsonb_build_object('status','pending')
+  return case when setup.request_id is null then jsonb_build_object('status','pending') || case when setup.checkpoint_id is null then '{}'::jsonb else jsonb_build_object('checkpointId',setup.checkpoint_id,'checkpoint',setup.checkpoint) end
    else jsonb_build_object('status','staged','requestId',setup.request_id,'draft',setup.draft) end;
  end if;
 
@@ -95,12 +97,34 @@ begin
  then raise exception 'Ce foyer contient déjà des données budgétaires.' using errcode='55000';end if;
  if p_request is null then raise exception 'Missing builder request' using errcode='22023';end if;
 
+ -- The editor checkpoint is private, not a reviewed financial payload.
+ -- Revision comparison prevents an older tab from replacing a newer step.
+ if p_action='checkpoint' then
+  if setup.request_id is not null then raise exception 'Brouillon déjà validé pour création.' using errcode='40001';end if;
+  if jsonb_typeof(p_draft) is distinct from 'object' or pg_column_size(p_draft)>150000
+   or jsonb_typeof(p_draft->'editor') is distinct from 'object'
+   or coalesce(p_draft->>'step','') !~ '^[0-6]$'
+   or (p_draft - array['previous','step','editor'])<>'{}'::jsonb
+  then raise exception 'Invalid editor checkpoint' using errcode='22023';end if;
+  if setup.checkpoint_id=p_request and setup.checkpoint=p_draft-'previous' then
+   return jsonb_build_object('status','checkpoint','checkpointId',p_request);
+  end if;
+  if setup.checkpoint_id::text is distinct from p_draft->>'previous' then
+   raise exception 'Le brouillon a changé sur un autre appareil.' using errcode='40001';
+  end if;
+  update private.budget_builder_setup set checkpoint_id=p_request,checkpoint=p_draft-'previous' where household_id=p_household;
+  return jsonb_build_object('status','checkpoint','checkpointId',p_request);
+ end if;
+
  if p_action='stage' then
   if setup.request_id is not null then
    if setup.request_id<>p_request or setup.draft is distinct from p_draft then
     return jsonb_build_object('status','staged','requestId',setup.request_id,'draft',setup.draft);
    end if;
    return jsonb_build_object('status','staged','requestId',p_request);
+  end if;
+  if setup.checkpoint_id::text is distinct from p_draft->>'checkpointId' then
+   raise exception 'Le brouillon a changé sur un autre appareil.' using errcode='40001';
   end if;
   draft_mode:=p_draft->>'mode';
   if jsonb_typeof(p_draft) is distinct from 'object' or pg_column_size(p_draft)>150000
@@ -131,7 +155,7 @@ begin
    then raise exception 'Invalid builder category' using errcode='22023';end if;
    ids:=array_append(ids,category_id);
   end loop;
-  update private.budget_builder_setup set request_id=p_request,draft=p_draft where household_id=p_household;
+  update private.budget_builder_setup set request_id=p_request,draft=p_draft,checkpoint_id=null,checkpoint=null where household_id=p_household;
   return jsonb_build_object('status','staged','requestId',p_request);
  end if;
 

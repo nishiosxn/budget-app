@@ -72,6 +72,21 @@ begin
  h:=public.provision_budget_builder('Provisoire','Alex');
  assert public.provision_budget_builder('Ignoré','Ignoré')=h;
  assert public.budget_builder_setup(h)->>'status'='pending';
+ -- Checkpoint stores no financial rows, is owner-only and revision checked.
+ assert public.budget_builder_setup(h,'checkpoint',competing,jsonb_build_object('previous',null,'step',2,'editor',jsonb_build_object('fixture',true)))->>'status'='checkpoint';
+ assert public.budget_builder_setup(h)->>'checkpointId'=competing::text;
+ assert not exists(select from public.categories where household_id=h);
+ begin
+  perform public.budget_builder_setup(h,'checkpoint',req,jsonb_build_object('previous',null,'step',3,'editor','{}'::jsonb));
+  raise exception 'Stale checkpoint accepted';
+ exception when serialization_failure then null;
+ end;
+ begin
+  perform public.budget_builder_setup(h,'stage',req,payload);
+  raise exception 'Stale stage accepted';
+ exception when serialization_failure then null;
+ end;
+ payload:=payload||jsonb_build_object('checkpointId',competing);
  begin
   perform public.budget_builder_setup(h,'stage',req,jsonb_set(payload,'{categories,0,name}',to_jsonb(repeat('X',101))));
   raise exception 'Oversize category was staged';
