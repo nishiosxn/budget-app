@@ -3,6 +3,9 @@ function cloudCategoriesToLocal(rows,next){
  const idMap=new Map(),ib=[],ic=[],eb=[],ec=[];
  for(const row of rows){
   const localId=row.legacy_id||row.id;
+  // Compatibility tombstones remain in the remote sync baseline, not in V3.1
+  // category lists or backups. V3.0 reads them to suppress its default fallback.
+  if(row.archived_at&&["v31-compat-base-income","v31-compat-base-expense"].includes(localId))continue;
   idMap.set(row.id,localId);
   const c={id:localId,name:row.name,budget:0,owner:slotToOwner(row.owner_slot),createdFrom:String(row.created_from).slice(0,7),sortOrder:Number.isFinite(Number(row.sort_order))?Number(row.sort_order):0};
   if(row.type==="expense"){c.section=row.group_name||"Vie courante";c.saving=!!row.is_saving}

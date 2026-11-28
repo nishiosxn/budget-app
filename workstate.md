@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.7 — rejeu Gemma validé, correctif coexistence (CI à confirmer)
+
+- CI f595303 46088280355 : 336 tests réussis, dont les cinq réponses capturées Gemma (5/5 hors ligne), PostgreSQL vert. Pas de nouvelle inférence. Le résultat ne garantit pas les réponses futures.
+- V3.0 épinglée réinjecte ses catégories de base lorsque le catalogue d'un type est entièrement custom ou vide. Correction dans la migration Builder non publiée : maximum deux marqueurs archivés sans budget, réservés et protégés, invisibles dans V3.1 ; limite V3.0 : visibles dans les archives mais non réactivables. Aucun effet sur les anciens foyers. Tests renforcés sans toucher au garde de synchronisation ni au client épinglé.
+- Nouvelle CI à confirmer ; ne pas publier. Comparer schéma cible et collisions réservées avant migration autorisée ; ne pas rejouer si déjà appliquée. 95 % estimés inchangés, aucun appel fournisseur, aucune écriture hébergée, fusion ou publication.
+
 ## Lot 8C.6B — correction de quatre divergences observées (CI à confirmer)
 
 - Rapport réel de récupération : 5 HTTP 200, 1/5 correct, 3 288 tokens, 1,52 s moyen, 616 neurones réservés (1 354 cumul). Payeur common incorrect, today littéral, catégorie salaire perdue par normalisation, comparaison incomplète ; clarification correcte. Consommation du compte après appels inconnue.

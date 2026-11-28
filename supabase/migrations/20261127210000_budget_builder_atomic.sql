@@ -117,7 +117,7 @@ begin
   end if;
   for row_data in select value from jsonb_array_elements(p_draft->'categories') loop
    category_id:=row_data->>'id';
-   if coalesce(category_id,'') !~ '^[a-z0-9][a-z0-9_-]{0,100}$' or category_id=any(ids)
+   if coalesce(category_id,'') !~ '^[a-z0-9][a-z0-9_-]{0,100}$' or category_id=any(ids) or category_id in ('v31-compat-base-income','v31-compat-base-expense')
     or char_length(coalesce(row_data->>'name','')) not between 1 and 100
     or coalesce(row_data->>'type','') not in ('income','expense')
     or coalesce(row_data->>'owner','') not in ('A','B','common')
@@ -153,6 +153,16 @@ begin
   values(p_household,inserted_id,start_month,budget_cents/100,'forward',nullif(row_data->>'owner','common'));
   ids:=array_append(ids,row_data->>'id');
  end loop;
+
+ -- Historical V3.0 treats an empty base-category array as a request to
+ -- restore its entire default catalogue. An archived non-custom row prevents
+ -- that fallback without adding an active category or a budget. Only necessary
+ -- when a kind has no base row (including a completely empty catalogue).
+ insert into public.categories(household_id,legacy_id,name,type,group_name,owner_slot,is_saving,is_custom,created_from,sort_order,archived_at)
+ select p_household,'v31-compat-base-'||k.kind,'Compatibilité V3.0 (archivée)',k.kind,
+  case when k.kind='expense' then 'Vie courante' end,'B',false,false,start_month,cardinality(ids),clock_timestamp()
+ from (values ('income'),('expense')) as k(kind)
+ where not exists(select 1 from public.categories c where c.household_id=p_household and c.type=k.kind and c.is_custom=false);
 
  -- The receipt is committed with the financial rows and survives a lost HTTP response.
  update private.budget_builder_setup set draft=null,completed_at=clock_timestamp() where household_id=p_household;
@@ -226,3 +236,44 @@ create trigger v31_guard_pending_invites before insert on public.household_invit
  for each row execute function private.v31_guard_pending_invites();
 create trigger v31_guard_pending_members before insert on public.household_members
  for each row execute function private.v31_guard_pending_invites();
+
+
+-- Reserved compatibility rows are infrastructure, never selectable money
+-- categories. Old browsers may display them in their archived list, but cannot
+-- restore, rename, delete, or assign a transaction/budget/recurrence to them.
+-- Normal historical households and all non-reserved categories keep their rules.
+create function private.v31_guard_compat_category()
+returns trigger language plpgsql security invoker set search_path='' as $$
+declare
+ old_key text;
+ new_key text;
+ target_category uuid;
+begin
+ if TG_TABLE_NAME='categories' then
+  if TG_OP<>'INSERT' then old_key:=to_jsonb(OLD)->>'legacy_id'; end if;
+  if TG_OP<>'DELETE' then new_key:=to_jsonb(NEW)->>'legacy_id'; end if;
+  if current_user in ('authenticated','anon') and
+   (old_key in ('v31-compat-base-income','v31-compat-base-expense') or
+    new_key in ('v31-compat-base-income','v31-compat-base-expense')) then
+   raise exception 'Catégorie technique archivée : non modifiable.' using errcode='55000';
+  end if;
+ elsif TG_OP<>'DELETE' then
+  target_category:=(to_jsonb(NEW)->>'category_id')::uuid;
+  if exists(select 1 from public.categories c where c.id=target_category
+   and c.legacy_id in ('v31-compat-base-income','v31-compat-base-expense')) then
+   raise exception 'Catégorie technique : opération interdite.' using errcode='55000';
+  end if;
+ end if;
+ if TG_OP='DELETE' then return OLD; end if;
+ return NEW;
+end $$;
+revoke all on function private.v31_guard_compat_category() from public,anon,authenticated;
+create trigger v31_guard_compat_category before insert or update or delete on public.categories
+ for each row execute function private.v31_guard_compat_category();
+do $$
+declare t text;
+begin
+ foreach t in array array['budgets','transactions','recurrences'] loop
+  execute format('create trigger v31_guard_compat_category before insert or update on public.%I for each row execute function private.v31_guard_compat_category()',t);
+ end loop;
+end $$;

@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — 8C.7 : rejeu Gemma et compatibilité Builder (validation en attente)
+
+- Rejeu hors ligne des cinq réponses capturées réussi sur f595303 ; 336 tests verts.
+- Correction de la réinjection des catégories par défaut V3.0 via des marqueurs archivés protégés, sans budgets ni catégories actives supplémentaires ; recette croisée renforcée. Migration non publiée, nouvelle CI à confirmer.
+
 ## V3.1 — Correctifs de normalisation Gemma 8C.6B (validation en attente)
 
 - Rejeu hors ligne des cinq structures métier du lot réel, attribution explicite du payeur, alias today contextualisé, préservation d'une catégorie salaire personnelle disponible, comparaison explicite de deux mois. Validation/confirmation strictes conservées. Aucun appel fournisseur supplémentaire.

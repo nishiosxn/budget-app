@@ -61,7 +61,19 @@ test("Builder results survive lost HTTP responses and are visible to the invited
  assert.deepEqual(await setup(device,h,"commit",req),receipt);
  await invite(device,partner,h);
 
- const categories=await rows(partner,"categories",h),budgets=await rows(partner,"budgets",h);
+ const allCategories=await rows(partner,"categories",h),categories=allCategories.filter(c=>!c.archived_at),budgets=await rows(partner,"budgets",h);
+ const markers=allCategories.filter(c=>c.archived_at);
+ assert.deepEqual(markers.map(c=>c.legacy_id).sort(),["v31-compat-base-expense","v31-compat-base-income"]);
+ assert.ok(markers.every(c=>c.is_custom===false));
+ assert.ok(markers.every(c=>!budgets.some(b=>b.category_id===c.id)));
+ for(const marker of markers){
+  const restored=await device.call("/rest/v1/categories?id=eq."+marker.id,{method:"PATCH",body:{archived_at:null}});
+  assert.equal(restored.ok,false);assert.equal(restored.data?.code,"55000");
+  const removed=await device.call("/rest/v1/categories?id=eq."+marker.id,{method:"DELETE"});
+  assert.equal(removed.ok,false);assert.equal(removed.data?.code,"55000");
+  const assigned=await device.call("/rest/v1/budgets",{method:"POST",body:{household_id:h,category_id:marker.id,month:"2025-01-01",planned_amount:10,scope:"forward",owner_slot:"B"}});
+  assert.equal(assigned.ok,false);assert.equal(assigned.data?.code,"55000");
+ }
  assert.equal(categories.length,draft.categories.length);
  assert.equal(budgets.length,categories.length);
  const actual=categories.map(c=>{
@@ -76,7 +88,7 @@ test("Builder results survive lost HTTP responses and are visible to the invited
  assert.notEqual(solo.h,h);
  const legacyStatus=await verified(outsider.rpc("ensure_personal_household",{p_household_name:"Ancienne version",p_display_name:"Test"}));
  assert.equal(legacyStatus,solo.h);
- assert.equal((await rows(outsider,"categories",solo.h)).length,solo.draft.categories.length);
+ assert.equal((await rows(outsider,"categories",solo.h,"&archived_at=is.null")).length,solo.draft.categories.length);
 });
 
 test("two sessions sync adjustments, opening balances, transactions and recurring subscriptions",async t=>{

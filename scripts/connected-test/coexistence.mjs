@@ -27,7 +27,14 @@ test("pinned V3.0 and V3.1 pages share one ledger after interrupted Builder reco
  await current.locator('[data-setup-action="next"]').click();
  await current.locator("#setupBuilderBackdrop").waitFor({state:"hidden",timeout:10000});
  assert.deepEqual(await setup(resumed,h,"status"),{status:"complete",requestId:req});
- assert.equal((await rows(resumed,"categories",h)).length,draft.categories.length);
+ const catalog=async()=>({
+  categories:(await rows(resumed,"categories",h)).sort((a,b)=>a.id.localeCompare(b.id)),
+  budgets:(await rows(resumed,"budgets",h)).sort((a,b)=>a.id.localeCompare(b.id))
+ });
+ const before=await catalog();
+ assert.equal(before.categories.filter(c=>!c.archived_at).length,draft.categories.length);
+ assert.deepEqual(before.categories.filter(c=>c.archived_at).map(c=>c.legacy_id).sort(),["v31-compat-base-expense","v31-compat-base-income"]);
+ assert.equal(before.budgets.length,draft.categories.length);
 
  assert.ok(process.env.SB_TEST_V30_ROOT,"Pinned V3.0 source is required");
  const legacy=await env.session(env.users[0]);
@@ -36,6 +43,17 @@ test("pinned V3.0 and V3.1 pages share one ledger after interrupted Builder reco
  assert.match(await current.locator(".settings-version").textContent(),/V3\.1/);
  await old.waitForFunction(()=>cloudSyncReady&&activeHouseholdId,null,{timeout:10000});
  await current.waitForFunction(()=>cloudSyncReady&&activeHouseholdId,null,{timeout:10000});
+ const expectedIds=draft.categories.map(c=>c.id).sort();
+ for(const page of [old,current]){
+  // Inspect the genuine client snapshot, before modifying anything.
+  const ids=await page.evaluate(()=>[...cloudBuildLocalSnapshot().tables.categories.keys()].sort());
+  assert.deepEqual(ids,expectedIds,"No default category reinjection");
+  const mutations=await page.evaluate(async()=>{
+   const p=cloudBuildSyncPlan(cloudBuildLocalSnapshot(),await cloudFetchRemoteSyncSnapshot(),cloudReadSyncBaseline());
+   return p.mutations.filter(m=>["categories","budgets"].includes(m.table)).map(m=>[m.table,m.key,m.action]);
+  });
+  assert.deepEqual(mutations,[],"No unsolicited catalogue/budget changes");
+ }
  const id1="coexist-"+randomUUID(),id2="coexist-"+randomUUID();
  async function write(page,id,amount){
   await page.evaluate(async ({id,amount})=>{
@@ -62,6 +80,7 @@ test("pinned V3.0 and V3.1 pages share one ledger after interrupted Builder reco
  assert.equal(await old.evaluate(id=>state.transactions.find(x=>x.id===id)?.amount,id2),23.45);
  const ledger=await rows(resumed,"transactions",h,"&archived_at=is.null");
  assert.equal(ledger.length,2);
+ assert.deepEqual(await catalog(),before,"Legacy and V3.1 writes must leave all categories and budgets unchanged");
  assert.deepEqual(ledger.map(r=>Math.round(Number(r.amount)*100)).sort((a,b)=>a-b),[1234,2345]);
  assert.deepEqual(await setup(resumed,h,"commit",req),{status:"complete",requestId:req});
 });

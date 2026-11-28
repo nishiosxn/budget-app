@@ -15,7 +15,7 @@ create table public.household_members(household_id uuid references public.househ
  display_name text,role text,slot text,joined_at timestamptz default clock_timestamp(),primary key(household_id,user_id));
 create table public.categories(id uuid primary key default gen_random_uuid(),household_id uuid references public.households,
  legacy_id text,name text check(char_length(name) between 1 and 100),type text,group_name text,owner_slot text,is_saving boolean,is_custom boolean,
- created_from date,sort_order int,unique(household_id,legacy_id));
+ created_from date,sort_order int,archived_at timestamptz,unique(household_id,legacy_id));
 create table public.budgets(household_id uuid references public.households,category_id uuid references public.categories,
  month date,planned_amount numeric check(planned_amount<>123.45),scope text,owner_slot text,primary key(category_id,month));
 create table public.transactions(household_id uuid references public.households);
@@ -78,6 +78,12 @@ begin
  exception when invalid_parameter_value then null;
  end;
  assert public.budget_builder_setup(h)->>'status'='pending';
+ begin
+  perform public.budget_builder_setup(h,'stage',req,jsonb_set(payload,'{categories,0,id}','"v31-compat-base-income"'));
+  raise exception 'Reserved category ID accepted';
+ exception when invalid_parameter_value then null;
+ end;
+ assert public.budget_builder_setup(h)->>'status'='pending';
  -- The boundary must be accepted by both the stage validator and the actual constraint.
  payload:=jsonb_set(payload,'{categories,0,name}',to_jsonb(repeat('X',100)));
  assert public.budget_builder_setup(h,'stage',req,payload)->>'status'='staged';
@@ -110,6 +116,8 @@ begin
  assert public.budget_builder_setup(h)=receipt;
  assert public.budget_builder_setup(h,'commit',req)=receipt;
  assert (select count(*)=3 and sum(planned_amount)=1587.79 from public.budgets where household_id=h);
+ assert (select count(*)=3 from public.categories where household_id=h and archived_at is null);
+ assert not exists(select 1 from public.categories where household_id=h and archived_at is not null);
  assert (select count(*)=1 from public.household_members where household_id=h and display_name='Alex' and slot='B');
  assert (select person_a_label='Camille' and household_mode='couple' from public.households where id=h);
  assert (select amount=34.56 from public.account_opening_balances where household_id=h);
@@ -125,6 +133,9 @@ begin
  assert public.budget_builder_setup(solo,'stage',req,payload)->>'status'='staged';
  assert public.budget_builder_setup(solo,'commit',req)->>'status'='complete';
  assert (select count(*)=1 and sum(planned_amount)=1456.01 from public.budgets where household_id=solo);
+ assert (select count(*)=1 from public.categories where household_id=solo and archived_at is null);
+ assert (select count(*)=1 from public.categories where household_id=solo and legacy_id='v31-compat-base-expense' and archived_at is not null and not is_custom);
+ assert not exists(select 1 from public.budgets b join public.categories c on c.id=b.category_id where c.legacy_id like 'v31-compat-base-%');
  assert (select household_mode='solo' from public.households where id=solo);
 end $$;
 rollback;

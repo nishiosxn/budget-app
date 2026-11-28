@@ -72,6 +72,10 @@ Rapport de diagnostic : 1 requête refusée (401), zéro token rapporté, 738 ne
 
 Récupération 401 : 5 HTTP 200, 1/5 exact ; 3 288 tokens, 616 neurones réservés (1 354 cumul UTC). Quatre causes isolées, rejeu des structures métier réelles et protections ciblées côté normalisation fournisseur, CI à confirmer. Aucun nouvel appel. CI connectée 54536ce échouée : ancien client réintroduit des catégories par défaut et garde anti-archivage déclenché, coexistence non validée pour la dernière révision. Aucun déploiement. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md).
 
+## 8C.7 — rejeu Gemma et correction de coexistence
+
+CI f595303 : 336 tests verts, rejeu des cinq réponses capturées 5/5, PostgreSQL réussi (46088280355). Le client historique réinjecte les catégories neutres lorsque la liste de base est vide. Correctif de compatibilité dans la migration Builder non publiée, marqueurs archivés sans budget, protections et vérifications croisées supplémentaires ; nouvelle CI à confirmer. Aucun appel IA ni modification hébergée. Voir [coexistence](V3_1_COEXISTENCE.md).
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

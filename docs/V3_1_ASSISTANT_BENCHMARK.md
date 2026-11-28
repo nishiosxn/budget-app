@@ -102,3 +102,8 @@ Récupération 401 réussie : 5 HTTP 200, 1/5 exact, 3 288 tokens (2 990 entrée
 Rejeu hors ligne des cinq structures métier capturées (texte d'affichage réencodé pour les messages, sans impact sur leur score). Nouvelle fonction normalizeProviderResult utilisée par le runner et l'Edge V3.1 ; garde de confirmation, routing local, corpus, quotas, prompt et moteur historique inchangés. Tests négatifs : payeur inconnu/ambigu/solo, montant/date contradictoires, catégorie indisponible ou autre propriétaire, consultation ambiguë/filtrée/hors plage, lot partiel. CI à confirmer. Ne pas extrapoler un rejeu déterministe à une nouvelle réponse Gemma. Aucun nouveau retest live autorisé ; registre intact.
 
 La CI 54536ce confirme également un risque de coexistence : l'ancien client réintroduit des catégories/budgets par défaut absents du foyer Builder (neuf catégories côté serveur), et le garde bloque la première écriture. Le plan observé après refus ne reconstruit pas exactement les 15 archivages initiaux. Ce risque distinct reste bloquant pour la publication ; ne pas affaiblir le garde ni masquer le test.
+
+
+## 8C.7 — validation hors ligne
+
+CI `f595303` : [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46088280355), 336 tests réussis, zéro échec. Les cinq tests de rejeu fr-2-1, fr-5-1, fr-7-4, fr-16-1, fr-17-1 passent (ok 201–205). Cela valide la correction déterministe des réponses capturées, pas une nouvelle inférence ni l'ensemble du corpus. Aucune réservation supplémentaire.
