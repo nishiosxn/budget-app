@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.2 : recette chiffrée isolée (validation en attente)
+
+- Coexistence b592fcc validée. Ajout de l'exercice de sauvegarde/restauration applicative avec contrôle des empreintes, droits, brouillons et reçus sur pile jetable. Aucun changement de production.
+
 ## V3.1 — 8D.1 : audit hébergé en lecture seule
 
 - Schéma et gardes historiques vérifiés, quatre migrations V3.1 non appliquées, zéro collision réservée ; sauvegarde automatique huit tables réussie, extension et restauration isolée à valider. Aucun changement de production.

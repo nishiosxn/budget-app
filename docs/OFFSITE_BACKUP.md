@@ -85,3 +85,8 @@ Références : https://supabase.com/docs/guides/deployment/ci/backups et https:/
 ## Extension V3.1 à préparer
 
 Le relevé 8D.1 n'a pas vérifié la configuration active de ce workflow ni sa restaurabilité. Les schémas private et smart_assistant_private doivent être pris en compte pour les brouillons, revues, listes pilotes et réservations ; valider les dépendances Auth et les droits lors d'une restauration jetable. Ne pas copier de clé privée de récupération ni publier de données en clair. Les essais de chiffrement utilisent une clé éphémère fictive, sans demander de manipulation à l'utilisateur. Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md).
+
+
+## Recette automatisée 8D.2
+
+La CI connectée exécute `scripts/connected-test/backup-drill.sh` sur la pile locale après les tests métier. Clé age éphémère, flux chiffré, restauration dans une base distincte du même cluster, contrôle des empreintes des données et du schéma puis récupération des reçus. Aucun dump clair sur disque, aucune archive ni clé dans les artefacts. La reconstitution d'identités Auth fictives ne vaut pas restauration des comptes Auth réels ni validation des secrets de l'export quotidien. Aucun changement de la tâche de production dans ce lot. CI à confirmer.

@@ -29,3 +29,8 @@ Références : https://supabase.com/docs/guides/database/database-linter?lint=00
 ## Portes de livraison
 
 CI b592fcc : application et PostgreSQL verts (46089009818) ; recette connectée 46089009807 en cours au relevé. Les contrôles avant/après migration historique et les scénarios connectés ont réussi ; les tests UI de coexistence et PWA restent à confirmer. Paquet 40b35e6 validé en CI, configuré loopback uniquement. Aucun projet de recette hébergé isolé n'est confirmé. Aucun projet à créer, suspendre, facturer ou migrer dans ce lot. Le projet Budget n'est pas un environnement jetable. Aucun nouvel appel Gemma ; rejeu hors ligne déjà validé.
+
+
+## 8D.2 — recette de restauration automatisée
+
+CI b592fcc 46089009807 terminée avec succès (coexistence historique incluse). Une recette de sauvegarde applicative chiffrée a été ajoutée : pile locale Supabase, données fictives, création de brouillon Builder et revue Assistant préparée, reçu exécuté, règle et quota, capture historique ; pg_dump custom des cinq schémas applicatifs puis age en flux, restauration dans une base distincte du même cluster jetable, empreintes des lignes/contraintes/politiques/triggers et droits, vérification des RPC et rejeu idempotent du reçu. La clé age et l'archive sont éphémères, aucun artefact de sauvegarde publié. Auth est reconstitué par des identités fictives minimales : ce n'est pas un test de restauration complète Auth/Storage, ni de récupération d'une archive de production. CI de cette nouvelle recette à confirmer. Aucun accès à une base hébergée.

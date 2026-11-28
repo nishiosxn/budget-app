@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8D.2 — coexistence validée, recette de sauvegarde (CI à confirmer)
+
+- CI b592fcc 46089009807 entièrement verte, coexistence V3.0/V3.1 validée sur la pile jetable. CI 80239dd application/PostgreSQL verts, connectée en cours au relevé.
+- Exercice automatisé chiffré sur Supabase jetable : cinq schémas applicatifs, brouillon staged, revue préparée, reçu complet, règle, quota et instantané historique ; restauration dans autre base du même cluster, comparaison empreintes, droits et rejeu idempotent. Aucun dump clair ni clé publié ; Auth synthétique reconstitué, pas de restauration complète Auth/Storage. CI à confirmer.
+- Suite : valider recette et qualifier accès hébergé/backup externe réel avant publication. Aucune commande utilisateur, aucun jeton, aucun nouvel appel IA, aucune écriture hébergée, fusion ou publication.
+
 ## Lot 8D.1 — audit hébergé en lecture seule
 
 - CI b592fcc : application/PostgreSQL verts 46089009818, recette connectée 46089009807 en cours (historique avant/après migration et scénarios connectés verts au relevé, coexistence finale en attente).

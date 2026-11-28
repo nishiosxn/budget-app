@@ -88,6 +88,10 @@ CI 40b35e6 : 339 tests réussis, PostgreSQL vert ; artefact `smart-budget-v31-pr
 
 Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md). Catalogue et métadonnées vérifiés le 28 novembre : 24 migrations historiques, quatre nouvelles absentes, six gardes actifs, RLS sur les neuf tables contrôlées, aucune collision de marqueurs réservés. Dernière sauvegarde automatique terminée à 00:17 UTC, huit tables historiques ; couverture des futurs objets privés et export chiffré/restauration à compléter. Conseiller sécurité : quatre INFO et cinq WARN à qualifier. Aucun changement hébergé. CI b592fcc application/PostgreSQL réussie, coexistence en cours.
 
+## 8D.2 — sauvegarde et restauration d'exercice
+
+Coexistence b592fcc entièrement verte (46089009807). Recette chiffrée automatisée ajoutée sur pile jetable, cinq schémas applicatifs, comparaison d'intégrité et droits, récupération du brouillon et du reçu avec rejeu sans double écriture. Auth fictif reconstitué séparément ; restauration complète Auth/Storage et archive externe réelle non validées. CI de la recette nouvelle à confirmer. Aucun changement hébergé.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

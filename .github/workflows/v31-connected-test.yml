@@ -106,6 +106,12 @@ jobs:
           SB_VISUAL_OUTPUT="$RUNNER_TEMP/smart-budget-visual" \
           SB_TEST_V30_ROOT="$RUNNER_TEMP/smart-budget-v30" \
           node --test --test-concurrency=1 scripts/connected-test/interface.mjs scripts/connected-test/coexistence.mjs
+      - name: Exercise encrypted application backup and independent restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y age
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" bash scripts/connected-test/backup-drill.sh
       - name: Check PWA updates and measure local startup
         if: ${{ !cancelled() }}
         shell: bash
