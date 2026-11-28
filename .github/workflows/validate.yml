@@ -28,8 +28,8 @@ jobs:
         run: |
           node --test scripts/*.test.mjs
           node scripts/validate.mjs
-          node scripts/assistant-benchmark.mjs --plan > "$RUNNER_TEMP/gemma-plan.json"
-          node -e 'const p=require(process.env.RUNNER_TEMP+"/gemma-plan.json"); if(p.fallback!==153||p.groups.draft!==86||p.groups.query!==35||p.groups.clarify!==32||p.maximumPerCase>320)process.exit(1)'
+          node scripts/assistant-benchmark.mjs --plan --diagnostic-lot > "$RUNNER_TEMP/gemma-plan.json"
+          node -e 'const p=require(process.env.RUNNER_TEMP+"/gemma-plan.json"); if(p.fallback!==153||p.groups.draft!==86||p.groups.query!==35||p.groups.clarify!==32||p.maximumPerCase>320||p.diagnosticLot?.length!==5)process.exit(1)'
 
   household-rules:
     name: PostgreSQL · isolation des foyers

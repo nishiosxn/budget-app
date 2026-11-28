@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.4 — diagnostic du premier benchmark (CI à confirmer)
+
+- CI 3d797bd : deux workflows verts (46086549774, 46086549823). Premier rapport réel du 28 novembre : 5 HTTP 200, 0/5 correct sur une intention répétée, 3 354 tokens, 2,60 s moyen, 615 neurones réservés. Consommation compte non mesurée. Rapport et limites documentés sans identifiant ni secret.
+- Audit : payeur nommé non rapproché systématiquement dans normalisation, date today dans le prompt, frontière de mot après € dans contextualCategoryHint. Cause réelle des échecs inconnue ; aucune modification moteur/prompt. Diagnostics détaillés et tests hors ligne ajoutés.
+- Lot diagnostic fixe de cinq intentions avec un seul retest fr-2-1 explicitement activé et enregistré dans le registre existant. CI à confirmer. Prochaine action : vérifier CI, relever compteur Workers AI, puis autoriser exécution locale et analyser écarts avant correction ciblée. Aucun nouvel appel, aucune écriture hébergée, fusion ou publication. 95 % estimés inchangés.
+
 ## État actuel — clôture locale 8B et préparation du premier lot Gemma (28 novembre 2026)
 
 - 8B clôturé pour la recette locale sur comptes fictifs. Référence validée : `a6fa3ead1020f515a2d9fdd54a66fba8dc6ccde7`, [intégrité et PostgreSQL](https://github.com/nishiosxn/budget-app/actions/runs/46084716412), [recette connectée](https://github.com/nishiosxn/budget-app/actions/runs/46084716354). Les deux workflows et toutes les étapes de recette connectée sont réussis. Correction de l'export historique confirmée : Edge v30 et client 31ap avant/après les quatre migrations, coexistence des interfaces V3.0/V3.1, tests d'accès et de reprise du Builder, PWA. Les entrées historiques ci-dessous conservent les états successifs et ne sont pas des blocages CI actuels.

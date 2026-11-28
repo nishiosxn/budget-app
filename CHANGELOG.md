@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — Diagnostic Gemma 8C.4 (validation en attente)
+
+- Premier benchmark réel documenté (0/5 exacts sur une intention, 5 HTTP 200, 3 354 tokens). Diagnostic des valeurs attendues, modèle et normalisées, tests hors ligne, lot diversifié et retest unique avec registre conservé. Aucun changement du moteur ou appel fournisseur supplémentaire.
+
 ## V3.1 — Clôture locale 8B (28 novembre 2026)
 
 - Recette locale de sécurité, rétention et coexistence des interfaces V3.0/V3.1 et du client 31ap/Edge v30 avant/après migration validée sur `a6fa3ea` (workflows 46084716412 et 46084716354). Les validations hébergées restent distinctes.

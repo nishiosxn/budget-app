@@ -60,6 +60,10 @@ Les quatre workflows de 889d0e8 et 98f124d sont verts. Le nouveau scénario avan
 
 Plan hors ligne des 153 cas fournisseur, verrou de gratuité et plafonds dans le runner. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). Aucun appel réel ; compte Free et solde à vérifier avant activation. Le dernier test historique 8B.5C a échoué à l'ouverture du client ; export des ressources historiques corrigé, CI à confirmer. Ne pas clôturer 8B avant succès.
 
+## 8C.4 — diagnostic réel
+
+Premier lot : 5 HTTP 200, 0/5 exacts sur une intention répétée, 3 354 tokens, 615 neurones réservés, consommation effective non relevée. Instrumentation détaillée et lot diversifié de cinq cas (un retest borné) préparés ; aucun nouvel appel. Voir [benchmark](V3_1_ASSISTANT_BENCHMARK.md). Attendre CI verte et rapport diagnostic avant modification du moteur. Le contrôle fournisseur reste ouvert.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

@@ -52,3 +52,25 @@ Références Cloudflare vérifiées le 28 novembre 2026 : [tarifs](https://devel
 ## 8C.2 — vérification du forfait et premier lot (28 novembre 2026)
 
 Les captures de l'opérateur montrent Workers Free actif, aucun moyen de paiement enregistré et 0/10 000 neurones utilisés au moment du relevé. Le solde est à revérifier avant chaque lot ; les valeurs ne constituent pas une mesure des appels du benchmark. Le renouvellement du jeton est déclaré par l'opérateur ; il doit rester hors dépôt et être saisi localement de manière masquée. Premier lot : offset 0, limit 5, compte Free vérifié et au moins 3 600 neurones libres recommandés. Rapport JSON et registre persistant hors dépôt ; ne pas relancer automatiquement après un échec ou une réponse perdue. Aucun appel réel ni résultat fournisseur encore enregistré. La recette locale 8B est validée sur `a6fa3ea` (CI 46084716412 et 46084716354).
+
+## 8C.4 — premier essai réel et diagnostic (28 novembre 2026)
+
+Rapport transmis par l'opérateur : corpus SHA-256 `15b688fa528fb64bd365940aaca48f19de44583729cdbb6008a1fd72de5f7c02`, cinq variantes fr-2-1 à fr-2-5 de la même intention (« Noa a dépensé 45,90 € de carburant hier »). Attendu : dépense fuel, A, 4590 centimes, 2026-11-16, once. Aucun champ obtenu n'a été conservé dans le premier rapport ; cause exacte inconnue.
+
+| Cas | HTTP | Entrée | Sortie | Total | Latence ms | Résultat |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| fr-2-1 | 200 | 595 | 62 | 657 | 1222,709 | interpretation_error |
+| fr-2-2 | 200 | 601 | 112 | 713 | 2039,3421 | interpretation_error |
+| fr-2-3 | 200 | 596 | 62 | 658 | 1678,9478 | interpretation_error |
+| fr-2-4 | 200 | 601 | 62 | 663 | 2867,071 | interpretation_error |
+| fr-2-5 | 200 | 601 | 62 | 663 | 5202,9916 | interpretation_error |
+
+Total 3 354 tokens (2 994 entrée, 360 sortie), moyenne 670,8, latence moyenne 2 602,2123 ms, 615 neurones réservés. Estimation tarifaire ~37 neurones (hors arrondis et éventuels autres frais), consommation du compte non relevée après le test. Exactitude 0/5 sur **une intention**, non extrapolable. Aucun nouvel appel effectué lors de 8C.4.
+
+### Audit et instrumentation
+
+Le validateur contrôle les slots autorisés, pas leur concordance sémantique avec un nom dans le texte ; `ownerSlotForName` existe pour certaines règles locales, pas pour la normalisation générale. Le prompt donne today comme date du mouvement par défaut ; hier doit être déduit par le modèle hors règles locales. `contextualCategoryHint` utilise une frontière de mot après le symbole euro, ce qui peut rater « 45,90 € de » (test de caractérisation). La normalisation peut remplacer une catégorie proposée à partir du libellé ou de la règle ; un test contrôlé montre home → fuel. Ces constats ne prouvent pas la cause du premier lot. Aucun changement du moteur, prompt ou validation de production à ce stade ; priorité à la preuve diagnostique avant correction. Le runner rapporte désormais champs attendus, projection des champs modèle/normalisés, écarts avant/après et motif de validation. Le score officiel garde le matcher initial ; l'ordre des actions n'est pas pénalisé. Le rapport n'inclut pas l'enveloppe HTTP brute, les en-têtes ni les secrets ; corpus exclusivement fictif.
+
+### Lot de diagnostic et retest borné
+
+`node scripts/assistant-benchmark.mjs --plan --diagnostic-lot` affiche cinq intentions distinctes : fr-2-1 (payeur/date/catégorie, une seule reprise du cas précédemment réservé), fr-5-1 (revenu), fr-7-4 (salaire récurrent), fr-16-1 (comparaison), fr-17-1 (montant manquant). Aucun changement du corpus original ni de son empreinte. Après CI verte et quota/forfait revérifiés, activation manuelle `SMART_ASSISTANT_BENCHMARK_DIAGNOSTIC_CONFIRMED=yes` et `--live --diagnostic-lot` sur le **même** répertoire de registre. Le retest exige la réservation originale et utilise un marqueur fixe 8C.4-diagnostic-v1, une seule fois ; quatre cas neufs soumis aux gardes ordinaires. Tous les appels, retest compris, restent comptés dans le plafond quotidien existant et enregistrés avant réseau ; aucun effacement du registre, aucune relance automatique. Ce lot est destiné au diagnostic, pas à une mesure représentative ni à prouver une amélioration du moteur. Relever le compteur Cloudflare avant/après ; ne pas lancer tant que le quota disponible et le forfait gratuit ne sont pas confirmés. Tests hors ligne ajoutés ; CI à confirmer.
