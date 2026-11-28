@@ -37,3 +37,12 @@ Si aucune cible gratuite et isolée n'est disponible, ne pas connecter un fronte
 7. Retour arrière : fermer les pilotes/Edge recette, revenir au SHA précédent de la recette, conserver les reçus et réconcilier les confirmations ; pas de suppression globale ni de restauration aveugle.
 
 Aucun point de cette procédure hébergée n'est exécuté dans 8D.3. Les tests locaux restent autonomes, aucune commande ni jeton utilisateur.
+
+
+## 8D.4 — possibilité gratuite et validation indépendante
+
+Inventaire en lecture seule des deux connexions disponibles : un projet actif dans Budget et un projet actif dans Primary. Aucun troisième environnement de recette libre confirmé. Le plafond Supabase Free est de deux projets actifs par propriétaire/administrateur sur ses organisations Free (https://supabase.com/docs/guides/platform/billing-on-supabase). Les projets ne doivent pas être suspendus, transférés ou facturés pour contourner cette limite. La capacité effective et le coût d'une nouvelle cible restent à confirmer avant toute création.
+
+Frontend possible à coût nul : Cloudflare Pages Free sur un sous-domaine pages.dev dédié, séparé de l'origine de production (https://developers.cloudflare.com/pages/platform/limits/ ; https://developers.cloudflare.com/pages/configuration/preview-deployments/). Cela n'apporte pas une base Supabase isolée. Aucune connexion Cloudflare Pages ni autorisation de déploiement disponible dans ce lot ; aucun site ni domaine créé. Ne pas fabriquer d'URL. La cible connectée gratuite reste la pile CI jetable (non accessible publiquement, durée de vie du job). Une préversion publique statique à données fictives pourrait être distincte mais ne prouverait pas la synchro hébergée. Une recette pilote sur la production serait un autre périmètre, à autoriser séparément et à protéger par sauvegarde, listes pilotes, garde historique et retour arrière ; elle n'est pas proposée comme isolation physique.
+
+Le test du paquet exact devient indépendant du résultat de la restauration si l'UI connectée a réussi, afin de recueillir les deux preuves sans masquer l'échec du job. Ajout des requêtes CORS directes (origine historique acceptée, origine tierce/null refusée, POST sans JWT refusé). La configuration de l'origine dédiée hébergée reste à préparer une fois la cible approuvée ; aucun changement de politique Edge dans ce lot.

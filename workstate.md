@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8D.4 — correction de restauration et CORS (CI à confirmer)
+
+- bc759c4 : application/PostgreSQL verts ; restauration échouée sur DROP POLICY service_app_admins ON public.app_admins dans base vide (46089496890). Cause précise : --clean inutile ; --if-exists ne protège pas la relation absente. Retrait de --clean, garde vide et traitement éventuel de public sans CASCADE. Empreintes ACL colonnes, fonctions et schémas renforcées, reprise réelle revue/Builder avec rejeu et rollback.
+- 10aa635 : application/PostgreSQL verts, recette connectée en cours au relevé. Paquet exact testé indépendamment de restauration si UI verte, CORS direct origine officielle, origines tierces/null refusées, absence JWT refusée. Aucun changement Edge.
+- Inventaire des deux connexions Supabase : deux projets actifs, aucune cible gratuite supplémentaire confirmée. Cloudflare Pages Free peut héberger un frontend à origine dédiée, pas la base isolée ; aucun accès de déploiement ni création. La pile CI reste la recette gratuite non publique. Voir docs/V3_1_PREVIEW_DEPLOYMENT.md. Aucun appel IA, aucune mutation hébergée, fusion ou publication ; aucune manipulation utilisateur. CI à confirmer.
+
 ## Lot 8D.3 — préversion exacte et contrat de déploiement (CI à confirmer)
 
 - CI b592fcc et 80239dd entièrement vertes, dont coexistence (46089009807, 46089273241). CI bc759c4 application/PostgreSQL verts ; restauration chiffrée en attente au relevé (46089496890).

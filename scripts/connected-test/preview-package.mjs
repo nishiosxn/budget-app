@@ -36,6 +36,20 @@ test("the exact isolated preview package loads and confirms a local-only expense
  const outsider=await env.session(env.users[2]);
  const {h}=await completeSetup(owner,"solo");
  await env.startAssistant(h,[owner.user.id]);
+ // Exercise the actual Edge CORS policy without the browser bridge removing Origin.
+ const edge="http://127.0.0.1:8000";
+ const official="https://nishiosxn.github.io";
+ const preflight=await fetch(edge,{method:"OPTIONS",headers:{Origin:official,"Access-Control-Request-Method":"POST","Access-Control-Request-Headers":"authorization, apikey, content-type"},redirect:"error"});
+ assert.equal(preflight.status,204);
+ assert.equal(preflight.headers.get("access-control-allow-origin"),official);
+ for(const origin of ["https://preview-unapproved.example.test","null","https://nishiosxn.github.io.example.test"]){
+  for(const method of ["OPTIONS","POST"]){
+   const blocked=await fetch(edge,{method,headers:{Origin:origin},redirect:"error"});
+   assert.equal(blocked.status,403);
+  }
+ }
+ const unsigned=await fetch(edge,{method:"POST",headers:{Origin:official,"Content-Type":"application/json"},body:"{}",redirect:"error"});
+ assert.equal(unsigned.status,401);
  const page=await owner.openApp(h,"",root);
  await page.waitForFunction(h=>cloudSyncReady&&activeHouseholdId===h&&!cloudBootstrapPromise&&
   cloudReadSyncBaseline()?.householdId===h&&cloudLastSyncedDigest===cloudSyncDigest(),h,{timeout:10000});

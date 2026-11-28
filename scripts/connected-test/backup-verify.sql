@@ -55,6 +55,21 @@ begin
  reset role;
  assert (select count(*) from public.transactions where household_id=h)=before_count;
  assert not exists(select from public.categories where household_id=pending_h);
+ -- Actually resume the pending review, then replay it. Entire drill rolls back.
+ set local role service_role;
+ receipt:=public.smart_assistant_atomic_review(h,a,array[a],pending_req,'commit');
+ assert receipt->>'status'='complete',receipt::text;
+ assert public.smart_assistant_atomic_review(h,a,array[a],pending_req,'commit')=receipt;
+ reset role;
+ assert (select count(*) from public.transactions where household_id=h)=before_count+1;
+ -- Resume the staged Builder through the restored RPC and check idempotence.
+ set local role authenticated;
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ receipt:=public.budget_builder_setup(pending_h,'commit',stage_req);
+ assert receipt->>'status'='complete';
+ assert public.budget_builder_setup(pending_h,'commit',stage_req)=receipt;
+ reset role;
+ assert (select count(*) from public.categories where household_id=pending_h and archived_at is null)=jsonb_array_length(draft->'categories');
 end $$;
 rollback;
 select 'RESTORE_DRILL_OK' as result;

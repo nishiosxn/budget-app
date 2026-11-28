@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.4 : correction de restauration et contrôles CORS (validation en attente)
+
+- Restauration sur base neuve sans nettoyage destructif, vérification ACL étendue et reprise des demandes en attente ; recette du paquet indépendante et contrôles directs de CORS. Inventaire et plan de préversion gratuite documentés, aucun déploiement.
+
 ## V3.1 — 8D.3 : recette du paquet exact et plan de préversion (validation en attente)
 
 - Coexistence 80239dd validée. Contrôle du paquet isolé en Chromium sur pile jetable, empreintes, confirmation et isolation. Plan de configuration hébergée à origine distincte et cible séparée ; aucun déploiement.

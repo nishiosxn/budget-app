@@ -94,6 +94,7 @@ jobs:
           mkdir "$RUNNER_TEMP/smart-budget-v30"
           git archive e2072063b30712ffcd1a27dc1f6adffce0d27965 | tar -x -C "$RUNNER_TEMP/smart-budget-v30"
       - name: Exercise the actual connected UI
+        id: connected_ui
         shell: bash
         run: |
           set -euo pipefail
@@ -113,6 +114,7 @@ jobs:
           sudo apt-get install -y age
           SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" bash scripts/connected-test/backup-drill.sh
       - name: Validate the exact isolated preview package
+        if: ${{ !cancelled() && steps.connected_ui.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

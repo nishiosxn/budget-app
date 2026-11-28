@@ -46,10 +46,23 @@ create schema extensions;
 create extension if not exists pgcrypto with schema extensions;
 SQL
 psql_source -At -c "select format('insert into auth.users(id,email) values (%L,%L);',id,email) from auth.users order by id" | psql_restore >/dev/null
+# Fresh database: no destructive --clean phase. Even --if-exists cannot
+# drop a policy on an absent table. Require an empty application target.
+test "$(psql_restore -At -c "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','smart_assistant_private','smart_budget_backups','incident_backup_20261116') and c.relkind in ('r','p','v','m','S')")" = 0
+# A dump may explicitly include CREATE SCHEMA public; remove only the empty
+# template schema if the archive declares it, never use CASCADE.
+age -d -i "$tmp/identity.agekey" "$tmp/fixture.dump.age" | pg pg_restore --list > "$tmp/archive-list.txt"
+if grep -Eq '^[0-9]+; [0-9]+ [0-9]+ SCHEMA - public ' "$tmp/archive-list.txt"; then
+ psql_restore -c 'drop schema public' >/dev/null
+fi
 # Decrypt directly into pg_restore; no plaintext dump is saved.
 age -d -i "$tmp/identity.agekey" "$tmp/fixture.dump.age" |
- pg pg_restore -h 127.0.0.1 -U postgres -d "$restore_db" --clean --if-exists --exit-on-error --single-transaction
+ pg pg_restore -h 127.0.0.1 -U postgres -d "$restore_db" --exit-on-error --single-transaction
 psql_restore -At -f - < scripts/connected-test/backup-fingerprint.sql > "$tmp/restored.txt"
-cmp -s "$tmp/source.txt" "$tmp/restored.txt" || { echo "Restored application data or schema fingerprint differs"; exit 1; }
+if ! cmp -s "$tmp/source.txt" "$tmp/restored.txt"; then
+ echo "Restored application data or schema fingerprint differs (synthetic fixture only)"
+ diff -u "$tmp/source.txt" "$tmp/restored.txt" | head -80 || true
+ exit 1
+fi
 psql_restore -f - < scripts/connected-test/backup-verify.sql
 printf '%s\n' "Encrypted restore drill verified: app tables, constraints, policies, triggers, receipt replay and isolation."

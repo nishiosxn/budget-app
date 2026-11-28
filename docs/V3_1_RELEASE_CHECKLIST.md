@@ -96,6 +96,10 @@ Coexistence b592fcc entièrement verte (46089009807). Recette chiffrée automati
 
 Coexistence 80239dd également verte (46089273241). CI bc759c4 : application/PostgreSQL verts, exercice de restauration en attente. La connexion Supabase Budget ne présente qu'un projet actif, la production ; aucune cible isolée hébergée confirmée. Nouveau contrôle du paquet exact dans la recette Chromium locale, avec confirmation déterministe et isolation. Voir [contrat de déploiement](V3_1_PREVIEW_DEPLOYMENT.md) : origine HTTPS distincte, configuration publique de recette seulement, Auth/CORS/Edge et garde de publication. Aucun changement hébergé.
 
+## 8D.4 — correction de la recette de restauration
+
+CI bc759c4 : échec du pg_restore sur DROP POLICY public.app_admins absent dans la base vide (46089496890). Le dump chiffré a été produit ; restauration non validée. Suppression de --clean, garde de base applicative vide, traitement éventuel du schéma public du template sans CASCADE. Contrôle renforcé des droits par colonne, fonctions, schémas, et reprise réelle des brouillons/revues en transaction annulée. Test du paquet exact indépendant si UI réussie, CORS direct et JWT absent contrôlés. CI nouvelle à confirmer. Deux projets actifs accessibles, aucun troisième projet gratuit confirmé ; frontend Pages gratuit envisageable mais backend isolé non confirmé. Voir [plan](V3_1_PREVIEW_DEPLOYMENT.md). Aucun changement hébergé.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.
