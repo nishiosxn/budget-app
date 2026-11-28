@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8D.3 : recette du paquet exact et plan de préversion (validation en attente)
+
+- Coexistence 80239dd validée. Contrôle du paquet isolé en Chromium sur pile jetable, empreintes, confirmation et isolation. Plan de configuration hébergée à origine distincte et cible séparée ; aucun déploiement.
+
 ## V3.1 — 8D.2 : recette chiffrée isolée (validation en attente)
 
 - Coexistence b592fcc validée. Ajout de l'exercice de sauvegarde/restauration applicative avec contrôle des empreintes, droits, brouillons et reçus sur pile jetable. Aucun changement de production.

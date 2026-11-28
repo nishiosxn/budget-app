@@ -47,3 +47,8 @@ Le workflow d'intégrité produit `smart-budget-v31-preview` à partir des blobs
 ## 8D.1 — contrôle du schéma hébergé
 
 Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md) : absence des quatre migrations V3.1, garde historique actif, contraintes/indices clés conformes sur le périmètre inspecté, zéro collision réservée. Le projet historique reste inchangé. La couverture des sauvegardes des objets privés et la recette de restauration restent ouvertes.
+
+
+## 8D.3 — recette du paquet exact
+
+Nouveau test preview-package.mjs : SHA et empreintes, paquet isolé, authentification et ressources frontend sur loopback, confirmation locale d'une dépense de 28 €, contrôle de l'absence d'écriture avant confirmation, refus autre foyer et admin. Le proxy local ne valide pas CORS hébergé. Aucun appel fournisseur ni publication. CI à confirmer.

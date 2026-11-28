@@ -92,6 +92,10 @@ Voir [audit hébergé](V3_1_HOSTED_PREFLIGHT.md). Catalogue et métadonnées vé
 
 Coexistence b592fcc entièrement verte (46089009807). Recette chiffrée automatisée ajoutée sur pile jetable, cinq schémas applicatifs, comparaison d'intégrité et droits, récupération du brouillon et du reçu avec rejeu sans double écriture. Auth fictif reconstitué séparément ; restauration complète Auth/Storage et archive externe réelle non validées. CI de la recette nouvelle à confirmer. Aucun changement hébergé.
 
+## 8D.3 — préparation de la préversion connectée
+
+Coexistence 80239dd également verte (46089273241). CI bc759c4 : application/PostgreSQL verts, exercice de restauration en attente. La connexion Supabase Budget ne présente qu'un projet actif, la production ; aucune cible isolée hébergée confirmée. Nouveau contrôle du paquet exact dans la recette Chromium locale, avec confirmation déterministe et isolation. Voir [contrat de déploiement](V3_1_PREVIEW_DEPLOYMENT.md) : origine HTTPS distincte, configuration publique de recette seulement, Auth/CORS/Edge et garde de publication. Aucun changement hébergé.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

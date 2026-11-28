@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8D.3 — préversion exacte et contrat de déploiement (CI à confirmer)
+
+- CI b592fcc et 80239dd entièrement vertes, dont coexistence (46089009807, 46089273241). CI bc759c4 application/PostgreSQL verts ; restauration chiffrée en attente au relevé (46089496890).
+- Lecture seule : la connexion Supabase Budget contient uniquement budget-foyer, aucune cible de recette hébergée confirmée. Nouveau plan docs/V3_1_PREVIEW_DEPLOYMENT.md, séparation d'origine et de projet, public config, Auth/CORS et pilotes fermés, procédure conditionnée à autorisation. Aucun changement hébergé ni forfait.
+- Recette du paquet exact ajoutée : vérification SHA/empreintes, vrai frontend, confirmation locale, isolation et refus admin. Nouveau workflow à confirmer ; pas de preuve de restauration réelle, ni de CORS hébergé. Suite : vérifier restauration et paquet, corriger si nécessaire, puis traiter les dernières portes de recette. Aucun jeton, commande utilisateur, nouvel appel IA, fusion ou publication.
+
 ## Lot 8D.2 — coexistence validée, recette de sauvegarde (CI à confirmer)
 
 - CI b592fcc 46089009807 entièrement verte, coexistence V3.0/V3.1 validée sur la pile jetable. CI 80239dd application/PostgreSQL verts, connectée en cours au relevé.

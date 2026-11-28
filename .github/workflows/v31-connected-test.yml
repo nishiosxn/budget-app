@@ -112,6 +112,16 @@ jobs:
           set -euo pipefail
           sudo apt-get install -y age
           SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" bash scripts/connected-test/backup-drill.sh
+      - name: Validate the exact isolated preview package
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/prepare-v31-preview.mjs "$RUNNER_TEMP/smart-budget-connected-preview"
+          SB_STACK_STATUS="$RUNNER_TEMP/smart-budget-stack/status.json" \
+          SB_TEST_PLAYWRIGHT="$RUNNER_TEMP/smart-budget-browser/node_modules/playwright/index.mjs" \
+          SB_TEST_SDK="$RUNNER_TEMP/smart-budget-browser/supabase.js" \
+          SB_TEST_PREVIEW_ROOT="$RUNNER_TEMP/smart-budget-connected-preview" \
+          node --test --test-timeout=90000 scripts/connected-test/preview-package.mjs
       - name: Check PWA updates and measure local startup
         if: ${{ !cancelled() }}
         shell: bash
