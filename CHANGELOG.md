@@ -1,5 +1,9 @@
 # Changelog
 
+## V3.1 — 8C.9B : paquet CI et disponibilité du bootstrap (validation en attente)
+
+- Paquet isolé généré sur 40b35e6 (74 fichiers, 339 tests verts). Protection contre le double bootstrap Auth et les pushes pendant le chargement ; attente de disponibilité réelle et diagnostics renforcés dans la recette historique. CI à confirmer.
+
 ## V3.1 — 8C.9 : préparation automatisée du paquet (validation en attente)
 
 - Génération CI d'un paquet de préversion isolé depuis le SHA exact, avec empreintes, vérification des dépendances et configurations loopback fictives ; aucun déploiement.

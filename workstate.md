@@ -1,5 +1,11 @@
 # Workstate — Budget foyer
 
+## Lot 8C.9B — paquet validé, protection du bootstrap (CI à confirmer)
+
+- CI 40b35e6 46088804362 : 339 tests réussis, PostgreSQL vert, paquet isolé 74 fichiers et artefact 15240436520 créé (pas de publication). Cible loopback fictive, non connectée à un projet hébergé.
+- CI 68a61fd 46088496681 : catalogue local neutre au lieu du catalogue réel avant écriture. Code historique : événement Auth redondant peut remettre à zéro l'état pendant que cloudSyncReady reste vrai. V3.1 ignore les doublons Auth et désactive la disponibilité au début d'un bootstrap, bloque les pushes durant ce chargement. Le test attend la stabilisation réelle du client épinglé et conserve tous les contrôles. Hypothèse de course à confirmer ; pas de contournement du garde ni modification du client historique. Deux tests unitaires ajoutés.
+- Suite : confirmer les nouvelles CI, paquet et coexistence ; préparer audit et recette isolée. Aucun jeton demandé, aucune inférence supplémentaire, aucun changement hébergé, fusion ou publication.
+
 ## Lot 8C.9 — préparation automatisée de la préversion (CI à confirmer)
 
 - CI 68a61fd : application et PostgreSQL verts 46088496675, recette connectée 46088496681 en cours. Rejeu Gemma déjà validé hors ligne ; pas de nouveau jeton ni de commande demandés à l'opérateur.

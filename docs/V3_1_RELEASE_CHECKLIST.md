@@ -80,6 +80,10 @@ CI f595303 : 336 tests verts, rejeu des cinq réponses capturées 5/5, PostgreSQ
 
 Le workflow d'intégrité prépare désormais un paquet à partir des blobs du SHA exact, avec liste de ressources autorisées, contrôles de dépendances et de portée PWA, empreinte SHA-256 et exclusion des migrations, tests et secrets. Les trois configurations navigateur sont remplacées par une URL loopback et une clé fictive non utilisable ; aucune cible hébergée ne peut être fournie à cet outil. Artefact CI uniquement, aucune publication Pages. Le paquet n'est pas encore connecté à une recette hébergée ; CORS/Auth et schéma cible restent à valider. CI de coexistence du commit 68a61fd encore en cours au moment de cette préparation. Aucun nouvel appel Gemma, aucun jeton demandé à l'opérateur.
 
+## 8C.9 — preuve du paquet et relance de la recette
+
+CI 40b35e6 : 339 tests réussis, PostgreSQL vert ; artefact `smart-budget-v31-preview` (74 fichiers, empreinte du paquet `07aea062b1b6b3fdb174b9a8ba17858939bd4f1151dfb1b2fe2ad3cc0f9b89ff`), workflow 46088804362. La CI connectée 68a61fd a échoué sur un état local constitué de catégories neutres avant écriture. La relance Auth redondante est une cause plausible ; correctif de disponibilité V3.1 et test de bootstrap stabilisé ajoutés sans changer le client historique. Nouvelle CI à confirmer. Aucune publication ni modification hébergée.
+
 ## Checklist ouverte
 
 Chaque validation est clôturée avec un environnement, un SHA et une preuve.

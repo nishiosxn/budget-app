@@ -528,6 +528,7 @@ async function cloudApplySyncPlan(plan){
 
 async function cloudPushLocalStateV25({force=false,conflictPreference=null}={}){
  if(!cloudSession||!activeHouseholdId)return;
+ if(typeof cloudSyncReady!=="undefined"&&!cloudSyncReady)throw Error("Chargement du foyer en cours — envoi bloqué.");
  if(cloudPushInProgress){cloudPushRequested=true;return}
  const source=cloneData(state),digest=cloudSyncDigest(source);
  if(!force&&!conflictPreference&&digest===cloudLastSyncedDigest&&!cloudUnsyncedSession)return;

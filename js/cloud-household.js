@@ -50,8 +50,15 @@ async function loadCloudMemberships(){
  }else cloudHouseholds=[];
  return cloudMemberships;
 }
+// INITIAL_SESSION / SIGNED_IN can repeat after the first successful bootstrap.
+// An already hydrated session must not reset its financial state to seedState.
+function shouldBootstrapAuthSession(userId){
+ if(!userId||cloudSession?.user?.id!==userId)return false;
+ return !cloudSyncReady||!activeHouseholdId||activeMembership?.user_id!==userId||!!pendingInviteToken;
+}
 function requestCloudBootstrap(){
  if(cloudBootstrapPromise)return cloudBootstrapPromise;
+ cloudSyncReady=false;
  cloudBootstrapPromise=cloudBootstrap().finally(()=>{cloudBootstrapPromise=null});
  return cloudBootstrapPromise;
 }

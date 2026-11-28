@@ -367,7 +367,10 @@ async function initCloudAuth(){
   }
   if(!session||isPasswordRecoveryReturn())return;
   if(["SIGNED_IN","INITIAL_SESSION"].includes(event)){
-   setTimeout(()=>{requestCloudBootstrap().catch(error=>console.error("Cloud auth bootstrap",error))},0);
+   const userId=session.user?.id;
+   setTimeout(()=>{
+    if(shouldBootstrapAuthSession(userId))requestCloudBootstrap().catch(error=>console.error("Cloud auth bootstrap",error));
+   },0);
   }
  });
  cloudAuthSubscription=listener?.subscription||null;

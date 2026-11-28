@@ -41,18 +41,38 @@ test("pinned V3.0 and V3.1 pages share one ledger after interrupted Builder reco
  const old=await legacy.openApp(h,"",process.env.SB_TEST_V30_ROOT);
  assert.match(await old.locator(".settings-version").textContent(),/V3\.0/);
  assert.match(await current.locator(".settings-version").textContent(),/V3\.1/);
- await old.waitForFunction(()=>cloudSyncReady&&activeHouseholdId,null,{timeout:10000});
- await current.waitForFunction(()=>cloudSyncReady&&activeHouseholdId,null,{timeout:10000});
+ // The pinned V3.0 may schedule a second bootstrap on INITIAL_SESSION.
+ // cloudSyncReady alone stays true while that bootstrap resets its local seed.
+ // Observe a settled real session and baseline, without modifying either client.
+ for(const [version,page] of [["V3.0",old],["V3.1",current]]){
+  await page.waitForFunction(h=>{
+   const ready=cloudSyncReady&&activeHouseholdId===h&&!cloudBootstrapPromise&&!cloudPushInProgress&&
+    cloudReadSyncBaseline()?.householdId===h&&cloudLastSyncedDigest===cloudSyncDigest()&&
+    document.getElementById("cloudGate")?.getAttribute("aria-hidden")==="true";
+   if(!ready){globalThis.__testSettledSince=0;return false}
+   globalThis.__testSettledSince||=performance.now();
+   return performance.now()-globalThis.__testSettledSince>=250;
+  },h,{timeout:10000});
+  const info=await page.evaluate(async()=>{
+   const remote=await cloudFetchRemoteSyncSnapshot();
+   return {baseIncome:state.baseIncomeCategories.map(c=>c.id),baseExpense:state.baseExpenseCategories.map(c=>c.id),
+    customIncome:state.customIncomeCategories.map(c=>c.id),customExpense:state.customExpenseCategories.map(c=>c.id),
+    archivedIncome:state.deletedIncomeCategoriesGlobal,archivedExpense:state.deletedCategoriesGlobal,
+    remote:[...remote.tables.categories].map(([key,e])=>[key,e.payload===null]),
+    baseline:Object.keys(cloudReadSyncBaseline()?.tables?.categories||{})};
+  });
+  console.log("Settled synthetic catalogue "+version,JSON.stringify(info));
+ }
  const expectedIds=draft.categories.map(c=>c.id).sort();
- for(const page of [old,current]){
+ for(const [version,page] of [["V3.0",old],["V3.1",current]]){
   // Inspect the genuine client snapshot, before modifying anything.
   const ids=await page.evaluate(()=>[...cloudBuildLocalSnapshot().tables.categories.keys()].sort());
-  assert.deepEqual(ids,expectedIds,"No default category reinjection");
+  assert.deepEqual(ids,expectedIds,version+": no default category reinjection");
   const mutations=await page.evaluate(async()=>{
    const p=cloudBuildSyncPlan(cloudBuildLocalSnapshot(),await cloudFetchRemoteSyncSnapshot(),cloudReadSyncBaseline());
    return p.mutations.filter(m=>["categories","budgets"].includes(m.table)).map(m=>[m.table,m.key,m.action]);
   });
-  assert.deepEqual(mutations,[],"No unsolicited catalogue/budget changes");
+  assert.deepEqual(mutations,[],version+": no unsolicited catalogue/budget changes");
  }
  const id1="coexist-"+randomUUID(),id2="coexist-"+randomUUID();
  async function write(page,id,amount){
